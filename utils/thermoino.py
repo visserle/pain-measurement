@@ -1,15 +1,14 @@
-# wip
+# work in progress
 
+import re
 import serial
 import serial.tools.list_ports
-import serial
 import time
-import re
 import numpy as np
 
 
 def list_com_ports():
-    """List all serial ports"""
+    """Lists all serial ports"""
     ports = serial.tools.list_ports.comports()
     if len(ports) == 0:
         print("No serial ports found.")
@@ -19,10 +18,10 @@ def list_com_ports():
 
 class Thermoino:
     """  
-    The `Thermoino` class facilitates communication with a Thermoino device, a device for controlling temperature.
+    The `Thermoino` class facilitates communication with the Thermoino.
     
     The class provides methods to initialize the device, set target temperature, 
-    create and load complex temperature courses (ctc), and execute these courses on the device.
+    create and load complex temperature courses (ctc), and execute these courses.
     
     It is roughly based on the MATLAB script UseThermoino.m.
     
@@ -37,18 +36,24 @@ class Thermoino:
     error_msg : `list` of `str`
         List of possible error messages.
     temp_baseline : `int`
-        Baseline temperature in degree Celsius. Default is 30.
+        Baseline temperature in degree Celsius. Default is 32. 
+        Has to be set up in MMS as well.
+    temp_course_duration : `int`
+        Duration of the temperature course in seconds.
+    temp_course_resampled : `np.array`
+        Resampled temperature course used to calculate the ctc.
+    ctc : `numpy.array`
+        The resampled, differentiated, binned temperature course to be loaded into the Thermoino.
     rate_of_rise : `int`
         Rate of rise of temperature in degree Celsius per second. Default is 10 for Pathways. 
         For TAS 2 it should be 13. For CHEPS something over 50 (ask Björn).
+        Has to be set up in MMS as well.
     debug : `bool`
         If True, debug information will be printed. Default is True.
     ser : `serial.Serial`
-        Serial object for communication with the Thermoino device.
+        Serial object for communication with the Thermoino.
     bin_size_ms : `int`
         Bin size in milliseconds for the complex temperature course.
-    ctc : `numpy.ndarray`
-        The complex temperature course (ctc) to be loaded into the Thermoino device.
         
     Methods
     -------
@@ -59,15 +64,15 @@ class Thermoino:
     diag():
         Get basic diagnostic information from the Arduino.
     set_temp(temp_target):
-        Set a target temperature on the Thermoino device.
+        Set a target temperature on the Thermoino.
     init_ctc(bin_size_ms):
-        Initialize a complex temperature course (ctc) on the Thermoino device by sending the bin size only.
+        Initialize a complex temperature course (ctc) on the Thermoino by sending the bin size only.
     create_ctc(temp_course, sample_rate = 100, rate_of_rise = None):
         Create a ctc based on the provided temperature course and the sample rate.
     load_ctc(debug = False):
-        Load the created ctc into the Thermoino device.
+        Load the created ctc into the Thermoino.
     exec_ctc():
-        Execute the loaded ctc on the Thermoino device.
+        Execute the loaded ctc on the Thermoino.
         
     New stuff
     -----------
@@ -76,20 +81,21 @@ class Thermoino:
     Examples
     --------
     ````python
+    import time
     from thermoino import Thermoino, list_com_ports
     list_com_ports() # list all available serial ports
     port = "COM3"
     luigi = Thermoino(port=port)
     
-    # Use Thermoino to set temperatures:
+    # Use luigi to set temperatures:
     luigi.init()
     luigi.trigger()
-    luigi.set_temp(40)
-    time.sleep(10)
+    luigi.set_temp(42)
+    time.sleep(4)
     luigi.set_temp(30)
     luigi.close()
 
-    # Use Thermoino for complex temperature courses:
+    # Use luigi for complex temperature courses:
     luigi.init()
     luigi.trigger()
     luigi.init_ctc(bin_size_ms=500)
@@ -99,16 +105,19 @@ class Thermoino:
         rate_of_rise = 13)
     luigi.load_ctc()
     time.sleep(1)
-    luigi.exec_ctc() TODO: find out if this works without sleep
+    luigi.exec_ctc() # TODO: find out if this works without sleep
     luigi.close()
     ````
 
     TODO
     ----
     - Add error information to the error messages. (Note: Matlab counts from 1)
-    - Add success messages (on Christian's github)
+    - Add success messages (from Christian's github)
     - Add methods await_status and read_buffer and replace time.sleep
-    - ...
+    - Add debug option to hide print statements
+    - Fix query function
+    - Fix all functions
+    - etc.
     
     """
     
@@ -121,7 +130,7 @@ class Thermoino:
         'ERR_ctc_EMPTY', 'ERR_SHOCK_RANGE', 'ERR_SHOCK_ISI',
         'ERR_BUSY', 'ERR_DEBUG_RANGE']
 
-    def __init__(self, port, temp_baseline = 32, debug = True):
+    def __init__(self, port, temp_baseline = 32, rate_of_rise = 10, debug = True):
         """
         Constructs a Thermoino object.
         
@@ -131,13 +140,17 @@ class Thermoino:
             The serial port to which the Thermoino device is connected.
         temp_baseline : `int`, optional
             Baseline temperature in °C. Default is 32. Important: Has to be the same as in MMS.
+        rate_of_rise : `int`
+            Rate of rise of temperature in degree Celsius per second. Default is 10 for Pathways. 
+            For TAS 2 it should be 13. For CHEPS something over 50 (ask Björn).
+            May get changed later with create_ctc(), if not specified here.
         debug : `bool`, optional
             If True, debug information will be printed. Default is True.
         """
         Thermoino.port = port
         self.temp_baseline = temp_baseline
         self.temp = temp_baseline # temperature we start with -> will be updated
-        self.rate_of_rise = 13
+        self.rate_of_rise = rate_of_rise
         self.debug = debug
 
     def init(self):
@@ -237,7 +250,9 @@ class Thermoino:
         sample_rate : `int`, optional
             Sample rate in Hz. Default is 100.
         rate_of_rise : `int`, optional
-            Rate of rise of temperature in degree Celsius per second. If not provided, it will be determined from the temperature course.
+            Rate of rise of temperature in degree Celsius per second. 
+            Most common value is the same as in the Thermoino object as it has to be set up in MMS as well.
+            If None provided, it will be determined from the temperature course.
         
         Returns
         -------
@@ -247,27 +262,27 @@ class Thermoino:
             The created ctc. 
             Note: The length of the ctc is one less than the length of the temperature course because of np.diff. This is accounted for in the Arduino code.
         """
+
+        self.temp_course_duration = temp_course.shape[0] / sample_rate
         # Resample the temperature course according to the bin size:
-        # on the x-axis, the time course is defined in bin_size_ms
-        # temp_course has to account for this,
         # i.e. for a 100 s stimuli we'd need 200 bins á 500 ms
-        # duration of temp course = ctc.shape[0] / (1000 / bin_size_ms) / sample_rate
-        temp_course = temp_course[::int(sample_rate / (1000 / self.bin_size_ms))]
-        self.temp_course = temp_course
-        temp_course_diff = np.diff(temp_course)
+        temp_course_resampled = temp_course[::int(sample_rate / (1000 / self.bin_size_ms))]
+        self.temp_course_resampled = temp_course_resampled
+        temp_course_resampled_diff = np.diff(temp_course_resampled)
 
         if not rate_of_rise:
-            # determine optimal rate of rise
-            rate_of_rise = max(temp_course_diff * (1000 / self.bin_size_ms))
+            # determine optimal rate of rise (has to be updated in MMS accordingly)
+            rate_of_rise = max(temp_course_resampled_diff * (1000 / self.bin_size_ms))
             rate_of_rise = np.ceil(rate_of_rise * 10) / 10  # round up to .1°C precision
             rate_of_rise_ms = rate_of_rise / 1e3
         else:
             rate_of_rise_ms = self.rate_of_rise / 1e3
+        
         # Update the rate of rise
         self.rate_of_rise = rate_of_rise
 
         # scale to rate_of_rise (in milliseconds)
-        temp_course_diff_binned = temp_course_diff / rate_of_rise_ms
+        temp_course_diff_binned = temp_course_resampled_diff / rate_of_rise_ms
         # Thermoino only accepts integers
         temp_course_diff_binned = np.ceil(temp_course_diff_binned).astype(int)
         
@@ -343,7 +358,7 @@ class Thermoino:
         print("Sent 'EXECCTC' (.exec_ctc) to Arduino")
         output = self.ser.readline().decode('ascii')
         print(f"Received output from 'EXECCTC': {output}")
-        self.temp = self.temp_course[-1]
+        self.temp = round(self.temp_course_resampled[-1],2)
         print(f"Set temperature to {self.temp}°C after the ctc was executed.")
 
     def flush_ctc(self):
