@@ -12,14 +12,15 @@ class RemoteControliMotions():
     Query structure:
         - R;2;TEST;STATUS\r\n ... TODO
     """
-    def __init__(self, participant, study_name = "PILOT", debug = False):
+    HOST = "localhost"
+    PORT = 8087
+    
+    def __init__(self, participant, study_name, debug = False):
         # Psychopy experiment info
         self.participant = participant # in psychopy the default is expInfo['participant']
-        self.study_name = study_name # in psychopy the default is expInfo['study_name'] TODO (?????????????)
+        self.study_name = study_name # in psychopy the default is expName
 
         # iMotions info
-        self.HOST = "localhost"
-        self.PORT = 8087
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.status_imotions = None
         self.status_query = "R;2;TEST;STATUS\r\n"
@@ -66,9 +67,11 @@ class RemoteControliMotions():
         
 
 class EventRecievingiMotions():
+    
+    HOST = "localhost"
+    PORT = 8089
+    
     def __init__(self, debug = False):
-        self.HOST = "localhost"
-        self.PORT = 8089
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.debug = debug
         self._time_stamp = self.time_stamp # use self.time_stamp to get the current time stamp
@@ -78,9 +81,9 @@ class EventRecievingiMotions():
     @property
     def time_stamp(self):
         self._time_stamp = datetime.utcnow().isoformat(sep=' ', timespec='milliseconds')
-        return self._time_stamp # use self.time_stamp to get the current time stamp
+        return self._time_stamp # always use self.time_stamp to get the current time stamp
     
-    def print_time_stamp_2(self):
+    def print_time_stamp(self):
         print(self.time_stamp)
 
     def connect(self):
@@ -88,8 +91,13 @@ class EventRecievingiMotions():
         if self.debug:
             print("iMotions is ready for event recieving.")
     
-    def marker(self, marker_name):
+    def send_marker_time_stamp(self, marker_name):
         self.sock.sendall(f"M;2;;;{marker_name};{self.time_stamp};D;\r\n".encode('utf-8'))
+        if self.debug:
+            print(f"iMotions recieved the marker\n{marker_name}")
+			
+    def send_marker_value(self, marker_name, value):
+        self.sock.sendall(f"M;2;;;{marker_name};{value};D;\r\n".encode('utf-8'))
         if self.debug:
             print(f"iMotions recieved the marker\n{marker_name}")
 
