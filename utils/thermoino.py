@@ -63,6 +63,8 @@ class Thermoino:
         Close the serial connection.
     diag():
         Get basic diagnostic information from the Arduino.
+    trigger():
+        Trigger MMS to get ready for action.
     set_temp(temp_target):
         Set a target temperature on the Thermoino.
     init_ctc(bin_size_ms):
@@ -86,15 +88,7 @@ class Thermoino:
     list_com_ports() # list all available serial ports
     port = "COM3"
     luigi = Thermoino(port=port)
-    
-    # Use luigi to set temperatures:
-    luigi.init()
-    luigi.trigger()
-    luigi.set_temp(42)
-    time.sleep(4)
-    luigi.set_temp(30)
-    luigi.close()
-
+	
     # Use luigi for complex temperature courses:
     luigi.init()
     luigi.trigger()
@@ -107,6 +101,14 @@ class Thermoino:
     time.sleep(1)
     luigi.exec_ctc() # TODO: find out if this works without sleep
     luigi.close()
+    
+    # Use luigi to set temperatures:
+    luigi.init()
+    luigi.trigger()
+    luigi.set_temp(42)
+    time.sleep(4)
+    luigi.set_temp(30)
+    luigi.close()
     ````
 
     TODO
@@ -116,7 +118,6 @@ class Thermoino:
     - Add methods await_status and read_buffer and replace time.sleep
     - Add debug option to hide print statements
     - Fix query function
-    - Fix all functions
     - etc.
     
     """
@@ -186,6 +187,9 @@ class Thermoino:
         print(f"Received output from 'DIAG': {output}")
         
     def trigger(self):
+        """
+        Trigger MMS to get ready for action.
+        """
         self.ser.write(b'START\n')
         print("Sent 'START' (.trigger) to Arduino")
         output = self.ser.readline().decode('ascii')
@@ -265,7 +269,7 @@ class Thermoino:
 
         self.temp_course_duration = temp_course.shape[0] / sample_rate
         # Resample the temperature course according to the bin size:
-        # i.e. for a 100 s stimuli we'd need 200 bins á 500 ms
+        # i.e. for a 100 s stimuli with a bin size of 500 ms we'd need 200 bins á 500 ms
         temp_course_resampled = temp_course[::int(sample_rate / (1000 / self.bin_size_ms))]
         self.temp_course_resampled = temp_course_resampled
         temp_course_resampled_diff = np.diff(temp_course_resampled)
