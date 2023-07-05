@@ -41,7 +41,7 @@ class StimuliFunction():
         a flag to determine if the phase of the modulation is randomized.
     wave : numpy.array
         the stimuli function, calculated as the sum of the baseline and the modulation.
-    _wave_dot : numpy.array
+    wave_dot (@property): numpy.array
         the derivative of the stimuli function with respect to time (dx in seconds).
     peaks : list
         a list of peak temperatures in the stimuli function (i.e. self.wave).
@@ -94,6 +94,7 @@ class StimuliFunction():
         VAS70 (M = 40.5°C, SD = 3.2°C, Min = 32.8°C, Max = 46.9°C) pain levels \n
         (for highly effective conditioning, test trials, weakly effective conditioning and pain stimulation, respectively)."
     """
+
     def __init__(self, desired_duration, frequencies, amplitudes, baseline_temp=38, random_phase=True, seed=None):
         if seed is None:
             self.seed = np.random.randint(0, 1000)
@@ -224,7 +225,6 @@ class StimuliFunction():
         return fig
 
 
-
 def stimuli_extra(f, f_dot, time, s_RoC=0.5):
     """
     For plotly graphing of f(x), f'(x), and labels.
@@ -333,3 +333,7 @@ def cooling_segments(labels, sample_rate):
     ).describe().applymap('{:,.2f}'.format))
 
     return change, change_idx, segments
+
+
+if __name__ == "__main__":
+    pass
