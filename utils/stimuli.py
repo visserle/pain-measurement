@@ -1,12 +1,11 @@
+# TODO: option to add plateaus at the end of wave as this comes in handy for the last bin of the ctc.
+
 import math
 import random
 import numpy as np
 import pandas as pd
 import scipy.signal
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from IPython.display import display
 
 
 class StimuliFunction():
@@ -24,15 +23,15 @@ class StimuliFunction():
         an array of periods of the sinusoidal waves, calculated as 1/frequency.
     amplitudes : numpy.array
         an array of amplitudes for the sinusoidal waves.
-    thetas : numpy.array
-        an array of initial angles for the sinusoidal waves, default are zeros.
     baseline_temp : float
         the baseline temperature.
-    desired_duration : float
-        the desired duration for the stimuli function. 
-    duration : float
+    minimal_desired_duration : float
+        the desired minimal duration for the vanilla stimuli function (without add_ methods)
+    minimal_duration : float
         the duration for the vanilla stimuli function (without add_ methods), calculated as a multiple of the period of the modulation.
-        always use self.wave.shape[0] / self.sample_rate to get the actual duration.
+        always use self.duration or self.wave.shape[0] / self.sample_rate to get the actual duration.
+    duration (@property) : float
+        the actual, up-to-date duration of the stimuli function (wave)
     sample_rate : int
         the sample rate for the stimuli function.
     modulation_n_periods : float
@@ -54,32 +53,36 @@ class StimuliFunction():
         Creates the modulation sinusoidal wave with varying frequency.
     wave_dot():
         Calculates the derivative of the stimuli function with respect to time.
+    add_baseline_temp(baseline_temp):
+        Adds a baseline temperature to the stimuli function.
     add_prolonged_peaks(time_to_be_added_per_peak, percetage_of_peaks):
         Adds prolonged peaks to the stimuli function. Not used for now.
     add_plateaus(n_plateaus, duration_per_plateau):
         Adds plateaus to the stimuli function.
     noise_that_sums_to_0(n, factor):
         Returns a noise vector that sums to 0 to be added to the period of the modulation if self.random_phase is True.
-    plot(wave, baseline_temp):
-        Plots the stimuli function in plotly.
-        
+
     Example
     -------
     ````python
-    duration = 200 # in seconds
+    import numpy as np
+    minimal_desired_duration = 200 # in seconds
     amplitudes = [1, 1.5] # the range will be 2 * sum(amplitudes)
     periods = [67, 10]  # 1 : 3 gives a good result
     frequencies = 1./np.array(periods)
     baseline_temp = 39.5 # with a calibrated pain threshold of 38 °C
 
     stimuli = StimuliFunction(
-        duration, frequencies, amplitudes, baseline_temp, 
-        random_phase=True, seed=764)
+        minimal_desired_duration, frequencies, amplitudes, 
+        random_phase=True, seed=160)
+    stimuli.add_baseline_temp(baseline_temp)
     stimuli.add_plateaus(n_plateaus=4, duration_per_plateau=15)
     ````
 
     Notes
     -----
+    The usual range from pain threshold to pain tolerance is about 4 °C (without Capsaicin). \n
+        
     From Andreas Strube's Neuron paper (2023) with stimuli of 8 s: \n
     "During experiment 1, pain levels were calibrated to achieve \n
         VAS10 (M = 38.1°C, SD = 3.5°C, Min = 31.8°C, Max = 44.8°C), \n
@@ -95,29 +98,31 @@ class StimuliFunction():
         (for highly effective conditioning, test trials, weakly effective conditioning and pain stimulation, respectively)."
     """
 
-    def __init__(self, desired_duration, frequencies, amplitudes, baseline_temp=38, random_phase=True, seed=None):
+    def __init__(self, minimal_desired_duration, frequencies, amplitudes, random_phase=True, seed=None):
+        # Create a new instances of random number generators
+        self.rng = random.Random()
         if seed is None:
-            self.seed = np.random.randint(0, 1000)
+            self.seed = self.rng.randint(0, 1000)
         else:
             self.seed = seed
-        random.seed(self.seed), np.random.seed(self.seed)
+        self.rng.seed(self.seed)
+        self.rng_numpy = np.random.default_rng(self.seed)
 
         # Sinusoidal waves where [0] is the baseline and [1] the modulation which gets added on top
         self.frequencies = np.array(frequencies)
         self.periods = 1/self.frequencies
         self.amplitudes = np.array(amplitudes)
-        self.thetas = np.zeros(len(frequencies))  # not used for now
-        self.baseline_temp = baseline_temp
 
         # Duration and sampling (without add_ methods)
-        self.desired_duration = desired_duration
-        # the "true" duration is a multiple of the period of the modulation
-        self.duration = math.ceil(
-            self.desired_duration / self.periods[1]) * self.periods[1]
+        self.minimal_desired_duration = minimal_desired_duration
+        # the "true" minimal duration is a multiple of the period of the modulation
+        self.minimal_duration = math.ceil(
+            self.minimal_desired_duration / self.periods[1]) * self.periods[1]
+        # to get the real duration of the stimuli, always use self.wave.shape[0] / self.sample_rate
         self.sample_rate = 10
 
         # Additional variables
-        self.modulation_n_periods = self.duration / self.periods[1]
+        self.modulation_n_periods = self.minimal_duration / self.periods[1]
         # if True, the phase of the modulation is randomized
         self.random_phase = random_phase
 
@@ -125,14 +130,15 @@ class StimuliFunction():
         self.create_baseline()
         self.create_modulation()
         self.wave = np.array(self.baseline) + np.array(self.modulation)
+        self._duration = self.duration
         self._wave_dot = self.wave_dot
         self.peaks, _ = scipy.signal.find_peaks(
-            self.wave, height=self.baseline_temp)
+            self.wave, height=self.wave[0])
 
     def create_baseline(self):
-        time = np.arange(0, self.duration, 1/self.sample_rate)
+        time = np.arange(0, self.minimal_duration, 1/self.sample_rate)
         self.baseline = self.amplitudes[0] * np.sin(
-            time * 2 * np.pi * self.frequencies[0] + self.thetas[0]) + self.baseline_temp
+            time * 2 * np.pi * self.frequencies[0])
         return self.baseline
 
     def create_modulation(self):
@@ -155,14 +161,24 @@ class StimuliFunction():
             self.modulation.extend(wave_temp)
         self.modulation = np.array(self.modulation)
         return self.modulation
-      
+     
+    @property
+    def duration(self):
+        self._duration = self.wave.shape[0] / self.sample_rate
+        return self._duration
+     
     @property
     def wave_dot(self):
         self._wave_dot = np.gradient(self.wave, 1/self.sample_rate) # dx in seconds
         return self._wave_dot
+    
+    def add_baseline_temp(self, baseline_temp):
+        self.baseline_temp = baseline_temp
+        self.wave = self.wave + self.baseline_temp
+        return self.wave
 
     def add_prolonged_peaks(self, time_to_be_added_per_peak, percetage_of_peaks):
-        peaks_chosen = np.random.choice(self.peaks, int(
+        peaks_chosen = self.rng_numpy.choice(self.peaks, int(
             len(self.peaks) * percetage_of_peaks), replace=False)
         wave_new = []
         for i in range(len(self.wave)):
@@ -181,7 +197,7 @@ class StimuliFunction():
             for i in range(len(self.wave))
             if self.wave[i] > q25 and self.wave[i] < q75 and self.wave_dot[i] > 0.02
         ]
-        idx_plateaus = np.sort(np.random.choice(
+        idx_plateaus = np.sort(self.rng_numpy.choice(
             idx_iqr_values, n_plateaus, replace=False))
         wave_new = []
         for i in range(len(self.wave)):
@@ -194,7 +210,7 @@ class StimuliFunction():
     def noise_that_sums_to_0(self, n, factor):
         """Returns noise vector to be added to the period of the modulation."""
         # create noise for n/2
-        noise = np.random.uniform(
+        noise = self.rng_numpy.uniform(
             -factor * self.periods[1], 
             factor * self.periods[1],
             size = int(n/2))
@@ -203,29 +219,11 @@ class StimuliFunction():
         # add 0 if length of n is odd
         if n % 2 == 1:
             noise = np.append(noise, 0)
-        random.shuffle(noise)
+        self.rng.shuffle(noise)
         return np.round(noise)
+    
 
-    def plot(self, wave, baseline_temp=False):
-        time = np.array(range(len(wave))) / self.sample_rate
-        fig = go.Figure(
-            go.Scatter(x=time, y=wave, line=dict(color='royalblue')),
-            layout=dict(
-                xaxis=dict(
-                    title='Time (s)', tickmode='linear',
-                    tick0=0, dtick=10),
-                yaxis=dict(
-                    title='Temperature (°C)'),
-                    autosize=False,
-                    height=300,
-                    width=900,
-                    margin=dict(l=20, r=20, t=20, b=20)))
-        if baseline_temp:
-            fig.add_hline(y=int(self.baseline_temp))
-        return fig
-
-
-def stimuli_extra(f, f_dot, time, s_RoC=0.5):
+def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.5):
     """
     For plotly graphing of f(x), f'(x), and labels.
     
@@ -235,8 +233,8 @@ def stimuli_extra(f, f_dot, time, s_RoC=0.5):
         The function values at each time point.
     f_dot : array_like
         The derivative of the function at each time point.
-    time : array_like
-        The time points.
+    sample_rate : int
+        The sample rate of the data.
     s_RoC : float, optional
         The rate of change threshold for alternative labels (default is 0.5).
     
@@ -249,6 +247,11 @@ def stimuli_extra(f, f_dot, time, s_RoC=0.5):
     fig : plotly.graph_objects.Figure
         The plotly figure.
     """
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    time = np.array(range(len(f))) / sample_rate
+    
     fig = go.Figure(
         layout=dict(
             xaxis=dict(title='Time (s)'),
@@ -256,6 +259,7 @@ def stimuli_extra(f, f_dot, time, s_RoC=0.5):
 
     fig.update_layout(
         autosize=False,
+        height=300,
         width=900,
         margin=dict(l=20, r=20, t=20, b=20),
         xaxis=dict(
@@ -279,7 +283,6 @@ def stimuli_extra(f, f_dot, time, s_RoC=0.5):
 
     fig.add_scatter(x=time, y=labels_alt,
                     name="Label (alt)", visible="legendonly")
-
     fig.show()
 
     return labels, labels_alt, fig
@@ -307,6 +310,7 @@ def cooling_segments(labels, sample_rate):
         A dictionary that is used to calculate the number and length of the cooling segments. 
         Usually not used, just printed.
     """
+    from IPython.display import display
 
     change = np.concatenate([
         np.array([0]),  # as the sign cannot change with first value
