@@ -57,8 +57,9 @@ class StimuliFunction():
         Adds a baseline temperature to the stimuli function.
     add_prolonged_peaks(time_to_be_added_per_peak, percetage_of_peaks):
         Adds prolonged peaks to the stimuli function. Not used for now.
-    add_plateaus(n_plateaus, duration_per_plateau):
-        Adds plateaus to the stimuli function.
+    add_plateaus(plateau_duration, n_plateaus, add_at_end=True):
+        Adds plateaus to the stimuli function. 
+        If add_at_end is True, a plateau is added at the end of the stimuli function.
     noise_that_sums_to_0(n, factor):
         Returns a noise vector that sums to 0 to be added to the period of the modulation if self.random_phase is True.
 
@@ -71,12 +72,13 @@ class StimuliFunction():
     periods = [67, 10]  # 1 : 3 gives a good result
     frequencies = 1./np.array(periods)
     baseline_temp = 39.5 # with a calibrated pain threshold of 38 °C
+    seed = 619
 
     stimuli = StimuliFunction(
-        minimal_desired_duration, frequencies, amplitudes, 
-        random_phase=True, seed=160)
+        minimal_desired_duration, frequencies, amplitudes,
+        random_phase=True, seed=seed)
     stimuli.add_baseline_temp(baseline_temp)
-    stimuli.add_plateaus(n_plateaus=4, duration_per_plateau=15)
+    stimuli.add_plateaus(plateau_duration=15, n_plateaus=5, add_at_end=True)
     ````
 
     Notes
@@ -99,7 +101,7 @@ class StimuliFunction():
     """
 
     def __init__(self, minimal_desired_duration, frequencies, amplitudes, random_phase=True, seed=None):
-        # Create a new instances of random number generators
+        # New instances of random number generators
         self.rng = random.Random()
         if seed is None:
             self.seed = self.rng.randint(0, 1000)
@@ -132,14 +134,13 @@ class StimuliFunction():
         self.wave = np.array(self.baseline) + np.array(self.modulation)
         self._duration = self.duration
         self._wave_dot = self.wave_dot
-        self.peaks, _ = scipy.signal.find_peaks(
-            self.wave, height=self.wave[0])
+        self._peaks = self.peaks
+        
 
     def create_baseline(self):
         time = np.arange(0, self.minimal_duration, 1/self.sample_rate)
         self.baseline = self.amplitudes[0] * np.sin(
             time * 2 * np.pi * self.frequencies[0])
-        return self.baseline
 
     def create_modulation(self):
         # has to be created period-wise as the frequency varies with every period
@@ -160,22 +161,25 @@ class StimuliFunction():
                     np.sin(np.pi * frequency * time_temp) * -1
             self.modulation.extend(wave_temp)
         self.modulation = np.array(self.modulation)
-        return self.modulation
      
     @property
     def duration(self):
         self._duration = self.wave.shape[0] / self.sample_rate
-        return self._duration
+        return self._duration # alway use return for properties
      
     @property
     def wave_dot(self):
         self._wave_dot = np.gradient(self.wave, 1/self.sample_rate) # dx in seconds
         return self._wave_dot
     
+    @property
+    def peaks(self):
+        self._peaks, _ = scipy.signal.find_peaks(self.wave, prominence=0.5)
+        return self._peaks
+    
     def add_baseline_temp(self, baseline_temp):
         self.baseline_temp = baseline_temp
         self.wave = self.wave + self.baseline_temp
-        return self.wave
 
     def add_prolonged_peaks(self, time_to_be_added_per_peak, percetage_of_peaks):
         peaks_chosen = self.rng_numpy.choice(self.peaks, int(
@@ -187,9 +191,8 @@ class StimuliFunction():
                 wave_new.extend([self.wave[i]] *
                                 time_to_be_added_per_peak * self.sample_rate)
         self.wave = np.array(wave_new)
-        return self.wave
 
-    def add_plateaus(self, n_plateaus, duration_per_plateau):
+    def add_plateaus(self, plateau_duration, n_plateaus, add_at_end=True):
         q25, q75 = np.percentile(self.wave, 25), np.percentile(self.wave, 75)
         # only for IQR temp and only when temp is rising
         idx_iqr_values = [
@@ -197,15 +200,19 @@ class StimuliFunction():
             for i in range(len(self.wave))
             if self.wave[i] > q25 and self.wave[i] < q75 and self.wave_dot[i] > 0.02
         ]
+        # Subtract one from n_plateaus if add_at_end is True
+        n_random_plateaus = n_plateaus - 1 if add_at_end else n_plateaus
         idx_plateaus = np.sort(self.rng_numpy.choice(
-            idx_iqr_values, n_plateaus, replace=False))
+            idx_iqr_values, n_random_plateaus, replace=False))
         wave_new = []
         for i in range(len(self.wave)):
             wave_new.append(self.wave[i])
             if i in idx_plateaus:
-                wave_new.extend([self.wave[i]] * duration_per_plateau * self.sample_rate)
+                wave_new.extend([self.wave[i]] * plateau_duration * self.sample_rate)
+        if add_at_end:
+            plateau = np.full(plateau_duration * self.sample_rate, self.wave[-1])
+            wave_new = np.concatenate((wave_new, plateau))
         self.wave = np.array(wave_new)
-        return self.wave
 
     def noise_that_sums_to_0(self, n, factor):
         """Returns noise vector to be added to the period of the modulation."""
@@ -223,7 +230,7 @@ class StimuliFunction():
         return np.round(noise)
     
 
-def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.5):
+def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.3):
     """
     For plotly graphing of f(x), f'(x), and labels.
     
@@ -236,7 +243,7 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.5):
     sample_rate : int
         The sample rate of the data.
     s_RoC : float, optional
-        The rate of change threshold for alternative labels (default is 0.5).
+        The rate of change threshold (°C/s) for alternative labels (default is 0.3).
     
     Returns
     -------
@@ -273,16 +280,19 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.5):
     labels_alt = np.where(
         np.abs(f_dot) > s_RoC,
         labels, 2)
+    
+    func = [f, f_dot, labels, labels_alt]
+    func_names = "f(x)", "f'(x)", "Label", "Label (alt)"
+    colors = "royalblue", "skyblue", "springgreen", "violet"
 
-    func = [f, f_dot, labels]
-    func_names = "f(x)", "f'(x)", "Label"
-    colors = 'royalblue', 'skyblue', 'springgreen'
     for idx, i in enumerate(func):
-        fig.add_scatter(x=time, y=i, name=func_names[idx])
-        fig.data[idx].line.color = colors[idx]
-
-    fig.add_scatter(x=time, y=labels_alt,
-                    name="Label (alt)", visible="legendonly")
+        visible = "legendonly" if idx != 0 else True # only show the first function by default
+        fig.add_scatter(
+            x=time, y=i,
+            name=func_names[idx],
+            line=dict(color=colors[idx]),
+            visible=visible
+        )
     fig.show()
 
     return labels, labels_alt, fig
