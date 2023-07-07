@@ -102,14 +102,15 @@ class Thermoino:
     # Use luigi for complex temperature courses:
     luigi.init()
     luigi.init_ctc(bin_size_ms=500)
-    ror, ctc = luigi.create_ctc(
+    luigi.create_ctc(
         temp_course = stimuli.wave, 
         sample_rate = stimuli.sample_rate, 
         rate_of_rise_option = "mms_program")
     luigi.load_ctc()
     luigi.trigger()
-    luigi.prep_ctc(sleep_time = 2) # 2 s wait time
-    luigi.exec_ctc() 
+    luigi.prep_ctc()
+    luigi.exec_ctc()
+    luigi.set_temp(32)
     luigi.close()
 
     # Use luigi to set temperatures:
@@ -125,7 +126,7 @@ class Thermoino:
     ----
     - Add error information to the error messages. (Note: Matlab counts from 1)
     - Add success messages (from Christian's github)
-    - Add methods await_status and read_buffer and replace time.sleep
+    - Add methods await_status and read_buffer to replace time.sleep
     - Add debug option to hide print statements
     - Fix query function
     - etc.
@@ -134,7 +135,7 @@ class Thermoino:
     
     port = None
     baud_rate = 115200
-    # s_max_wait = 5
+    s_max_wait = 5
     error_msg = [
         'ERR_NO_PARAM', 'ERR_CMD_NOT_FOUND', 'ERR_ctc_BIN_WIDTH',
         'ERR_ctc_PULSE_WIDTH', 'ERR_ctc_NOT_INIT', 'ERR_ctc_FULL',
@@ -160,7 +161,7 @@ class Thermoino:
         """
         Thermoino.port = port
         self.temp_baseline = temp_baseline
-        self.temp = temp_baseline # will get continuously updated to match the temperature of the Termode
+        self.temp = temp_baseline # will get continuously updated to match the temperature of the Thermode
         self.rate_of_rise = rate_of_rise
         self.debug = debug
         
@@ -270,13 +271,17 @@ class Thermoino:
             If "adjusted" provided, an "optimal" rate of rise will be determined from the temperature course.
             (The lower the rate of rise is, the more precise the temperature control via the thermode.)
         
-        Returns
+        Side effects
         -------
-        `int`
-            The rate of rise of temperature in degree Celsius per second.
-        `numpy.ndarray`
-            The created ctc.
-            Note that the length of the ctc is one less than the length of the temperature course because of (np.diff). 
+        Creates / modifies the following attributes (self.):\n
+        `temp_course_duration` : `int`
+            Duration of the temperature course in seconds.
+        `temp_course_resampled` : `np.array`
+            Resampled temperature course (based on bin_size_ms) used to calculate the ctc.
+        `rate_of_rise` : `int`
+            Mofidied if rate of rise option is "adjusted". The rate of rise of temperature in degree Celsius per second.
+        `ctc` : `numpy.array`
+            The created ctc. Note that the length of the ctc is one less than the length of the temperature course because of (np.diff). 
             This is accounted for in the Arduino code by duplicating the second to last bin.
             Therefore, it is recommended to use a temperature course with no changes in the last second.
         """
@@ -303,9 +308,7 @@ class Thermoino:
         temp_course_resampled_diff_binned = temp_course_resampled_diff / rate_of_rise_ms
         # Thermoino only accepts integers
         temp_course_resampled_diff_binned = np.round(temp_course_resampled_diff_binned).astype(int)
-
         self.ctc = temp_course_resampled_diff_binned
-        return self.rate_of_rise, self.ctc
 
     def load_ctc(self, debug = False):      
         """
@@ -358,15 +361,16 @@ class Thermoino:
         print("Sent 'QUERYCTC' (.query_ctc) to Arduino")
         output = self.ser.readline().decode('ascii')
         print(f"Received output from 'QUERYCTC': {output}")
-        return output
 
-    def prep_ctc(self, sleep_time = 2):
+    def prep_ctc(self):
         """
         Prepare the ctc for the execution by setting the starting temperature and waiting for the temperature to be reached.
-        This is seperate from exec_ctc to be able to use exec_ctc in a psychopy routine and know the exact length of the stimulation.
+        This is seperate from exec_ctc to be able to use exec_ctc in a psychopy routine and control the exact length of the stimulation.
         """
-        print(f"Preparing ctc for execution. Set starting temperature and wait {sleep_time} s for the temperature to be reached.")
         if not self.temp == self.temp_course_resampled[0]:
+            sleep_time = round(abs(self.temp - self.temp_course_resampled[0]) / self.rate_of_rise,1)
+            sleep_time += 0.5 # add 0.5 s to be sure
+            print(f"Preparing ctc for execution. Set starting temperature and wait {sleep_time} s for the temperature to be reached.")
             self.set_temp(self.temp_course_resampled[0])
             time.sleep(sleep_time)
         print(f"Temperature is {self.temp}°C. The ctc is ready to be executed.")
