@@ -1,5 +1,3 @@
-# TODO: option to add plateaus at the end of wave as this comes in handy for the last bin of the ctc.
-
 import math
 import random
 import numpy as np
@@ -42,19 +40,20 @@ class StimuliFunction():
         the stimuli function, calculated as the sum of the baseline and the modulation.
     wave_dot (@property): numpy.array
         the derivative of the stimuli function with respect to time (dx in seconds).
-    peaks : list
+    peaks (@property): list
         a list of peak temperatures in the stimuli function (i.e. self.wave).
 
     Methods
     -------
     create_baseline():
-        Creates the baseline sinusoidal wave.
+        Creates the baseline sinusoidal wave. Class-internal method.
     create_modulation():
-        Creates the modulation sinusoidal wave with varying frequency.
+        Creates the modulation sinusoidal wave with varying frequency. Class-internal method.
     wave_dot():
         Calculates the derivative of the stimuli function with respect to time.
     add_baseline_temp(baseline_temp):
-        Adds a baseline temperature to the stimuli function.
+        Adds a baseline temperature to the stimuli function. 
+        In a seperate function to be able to reuse seed for different baseline temperatures.
     add_prolonged_peaks(time_to_be_added_per_peak, percetage_of_peaks):
         Adds prolonged peaks to the stimuli function. Not used for now.
     add_plateaus(plateau_duration, n_plateaus, add_at_end=True):
@@ -78,7 +77,7 @@ class StimuliFunction():
         minimal_desired_duration, frequencies, amplitudes,
         random_phase=True, seed=seed)
     stimuli.add_baseline_temp(baseline_temp)
-    stimuli.add_plateaus(plateau_duration=15, n_plateaus=5, add_at_end=True)
+    stimuli.add_plateaus(plateau_duration=15, n_plateaus=4, add_at_end=True)
     ````
 
     Notes
@@ -101,6 +100,22 @@ class StimuliFunction():
     """
 
     def __init__(self, minimal_desired_duration, frequencies, amplitudes, random_phase=True, seed=None):
+        """
+        The constructor for StimuliFunction class.
+
+        Parameters
+        ----------
+        minimal_desired_duration : float
+            The minimal desired duration of the wave.
+        frequencies : list
+            The frequencies of the sinusoidal waves.
+        amplitudes : list
+            The amplitudes of the sinusoidal waves.
+        random_phase : bool, optional
+            If True, the phase of the modulation is randomized (default is True).
+        seed : int, optional
+            The seed for the random number generator (default is None, which generates a random seed).
+        """
         # New instances of random number generators
         self.rng = random.Random()
         if seed is None:
@@ -151,15 +166,15 @@ class StimuliFunction():
         for i in range(int(self.modulation_n_periods)):
             period = self.periods[1] + modulation_random_factor[i]
             frequency = 1/period
-            time_temp = np.arange(0, 1/frequency, 1/self.sample_rate)
-            # wave_temp has to be inverted every second period to get a sinosoidal wave
+            time_ = np.arange(0, period, 1/self.sample_rate) # temporary time vector
+            # wave_ has to be inverted every second period to get a sinosoidal wave
             if i % 2 == 0:
-                wave_temp = self.amplitudes[1] * \
-                    np.sin(np.pi * frequency * time_temp)
+                wave_ = self.amplitudes[1] * \
+                    np.sin(np.pi * frequency * time_)
             else:
-                wave_temp = self.amplitudes[1] * \
-                    np.sin(np.pi * frequency * time_temp) * -1
-            self.modulation.extend(wave_temp)
+                wave_ = self.amplitudes[1] * \
+                    np.sin(np.pi * frequency * time_) * -1
+            self.modulation.extend(wave_)
         self.modulation = np.array(self.modulation)
      
     @property
@@ -178,10 +193,28 @@ class StimuliFunction():
         return self._peaks
     
     def add_baseline_temp(self, baseline_temp):
+        """
+        Adds a baseline temperature to the wave.
+
+        Parameters
+        ----------
+        baseline_temp : float
+            The baseline temperature to be added to the wave.
+        """
         self.baseline_temp = baseline_temp
         self.wave = self.wave + self.baseline_temp
 
     def add_prolonged_peaks(self, time_to_be_added_per_peak, percetage_of_peaks):
+        """
+        Adds prolonged peaks to the wave.
+
+        Parameters
+        ----------
+        time_to_be_added_per_peak : int
+            The time to be added per peak.
+        percetage_of_peaks : float
+            The percentage of peaks to be prolonged.
+        """
         peaks_chosen = self.rng_numpy.choice(self.peaks, int(
             len(self.peaks) * percetage_of_peaks), replace=False)
         wave_new = []
@@ -193,8 +226,22 @@ class StimuliFunction():
         self.wave = np.array(wave_new)
 
     def add_plateaus(self, plateau_duration, n_plateaus, add_at_end=True):
+        """
+        Adds plateaus to the wave. 
+        Plateaus are added at random positions, but only when the temperature is rising 
+        and the temperature is between the 25th and 75th percentile.
+
+        Parameters
+        ----------
+        plateau_duration : int
+            The duration of the plateaus.
+        n_plateaus : int
+            The number of plateaus to be added.
+        add_at_end : bool, optional
+            If True, a plateau is added at the end of the wave (default is True).
+        """
         q25, q75 = np.percentile(self.wave, 25), np.percentile(self.wave, 75)
-        # only for IQR temp and only when temp is rising
+        # only for IQR temperature and only when temperature is rising
         idx_iqr_values = [
             i 
             for i in range(len(self.wave))
