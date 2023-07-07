@@ -20,7 +20,6 @@ except ImportError:
     except Exception as e:
         print(f"Failed to install and import 'mouse': {e}")
 
-
 def hold_mouse():
     """Holds down the left mouse button"""
     mouse.hold(button="left")
@@ -35,25 +34,4 @@ def release_mouse():
     mouse.release(button="left")
 
 if __name__ == "__main__":
-    hold_mouse()
-
-
-
-# import pyautogui
-
-# def hold_mouse():
-#     """Holds down the left mouse button"""
-#     pyautogui.mouseDown(button='left')
-
-# def check_mouse():
-#     """Checks if the left mouse button is being held down"""
-#     if not pyautogui.mouseDown(button='left'):
-#         pyautogui.mouseDown(button='left')
-
-# def release_mouse():
-#     """Releases the left mouse button"""
-#     pyautogui.mouseUp(button='left')
-
-
-# if __name__ == "__main__":
-#     hold_mouse()
+    hold_mouse() # trolling
