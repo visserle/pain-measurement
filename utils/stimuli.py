@@ -67,17 +67,20 @@ class StimuliFunction():
     ````python
     import numpy as np
     minimal_desired_duration = 200 # in seconds
-    amplitudes = [1, 1.5] # max should be VAS 70, min should be VAS 0; range is 2 * sum(amplitudes); 
+    amplitudes = [1, 1.5] # max should be VAS 70, min should be VAS 0; °C range is 2 * sum(amplitudes); 
     periods = [67, 20] # in seconds
     frequencies = 1./np.array(periods)
     baseline_temp = 39.5 # should be VAS 35
     seed = 619 # `None` for random seed
 
     stimuli = StimuliFunction(
-        minimal_desired_duration, frequencies, amplitudes,
-        random_phase=True, seed=seed)
+        minimal_desired_duration, 
+        frequencies, 
+        amplitudes,
+        random_phase=True, 
+        seed=seed)
     stimuli.add_baseline_temp(baseline_temp)
-    stimuli.add_plateaus(plateau_duration=20, n_plateaus=4, add_at_end=True)
+    stimuli.add_plateaus(plateau_duration=20, n_plateaus=4, add_at_start=True, add_at_end=True)
     ````
 
     Notes
@@ -225,7 +228,7 @@ class StimuliFunction():
                                 time_to_be_added_per_peak * self.sample_rate)
         self.wave = np.array(wave_new)
 
-    def add_plateaus(self, plateau_duration, n_plateaus, add_at_end=True):
+    def add_plateaus(self, plateau_duration, n_plateaus, add_at_start=True, add_at_end=True):
         """
         Adds plateaus to the wave. 
         Plateaus are added at random positions, but only when the temperature is rising 
@@ -237,29 +240,36 @@ class StimuliFunction():
             The duration of the plateaus.
         n_plateaus : int
             The number of plateaus to be added.
+        add_at_start : bool, optional
+            If True, a plateau is added at the start of the wave (default is True).
         add_at_end : bool, optional
             If True, a plateau is added at the end of the wave (default is True).
         """
+        def generate_plateau(start_value):
+            """ Generate a plateau with the given start value """
+            return np.full(plateau_duration * self.sample_rate, start_value)
+
         q25, q75 = np.percentile(self.wave, 25), np.percentile(self.wave, 75)
-        # only for IQR temperature and only when temperature is rising
         idx_iqr_values = [
             i 
             for i in range(len(self.wave))
             if self.wave[i] > q25 and self.wave[i] < q75 and self.wave_dot[i] > 0.02
         ]
-        # Subtract one from n_plateaus if add_at_end is True
-        n_random_plateaus = n_plateaus - 1 if add_at_end else n_plateaus
+        n_random_plateaus = n_plateaus - int(add_at_start) - int(add_at_end) 
         idx_plateaus = np.sort(self.rng_numpy.choice(
             idx_iqr_values, n_random_plateaus, replace=False))
+        
         wave_new = []
         for i in range(len(self.wave)):
             wave_new.append(self.wave[i])
             if i in idx_plateaus:
-                wave_new.extend([self.wave[i]] * plateau_duration * self.sample_rate)
+                wave_new.extend(generate_plateau(self.wave[i]))
+        if add_at_start:
+            wave_new = np.concatenate((generate_plateau(self.wave[0]), wave_new))
         if add_at_end:
-            plateau = np.full(plateau_duration * self.sample_rate, self.wave[-1])
-            wave_new = np.concatenate((wave_new, plateau))
+            wave_new = np.concatenate((wave_new, generate_plateau(self.wave[-1])))
         self.wave = np.array(wave_new)
+
 
     def noise_that_sums_to_0(self, n, factor):
         """Returns noise vector to be added to the period of the modulation."""
@@ -308,6 +318,29 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.3):
     segments : dict
         A dictionary that is used to calculate the number and length of the cooling segments. 
         Usually not used, just printed.
+        
+    Examples
+    --------
+    ````python
+    from stimuli import StimuliFunction
+    import numpy as np
+    minimal_desired_duration = 200 # in seconds
+    amplitudes = [1, 1.5] # max should be VAS 70, min should be VAS 0; °C range is 2 * sum(amplitudes); 
+    periods = [67, 20] # in seconds
+    frequencies = 1./np.array(periods)
+    baseline_temp = 39.5 # should be VAS 35
+    seed = 619 # `None` for random seed
+
+    stimuli = StimuliFunction(
+        minimal_desired_duration, 
+        frequencies, 
+        amplitudes,
+        random_phase=True, 
+        seed=seed)
+    stimuli.add_baseline_temp(baseline_temp)
+    stimuli.add_plateaus(plateau_duration=20, n_plateaus=4, add_at_start = True, add_at_end=True)
+    _ = stimuli_extra(stimuli.wave, stimuli.wave_dot, stimuli.sample_rate, s_RoC=0.2)
+    ````
     """
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
@@ -332,7 +365,7 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.3):
             dtick=10))
     
     # 0 for cooling, 1 for heating
-    labels = (f_dot > 0).astype(int)
+    labels = (f_dot >= 0).astype(int)
     # alternative: 0 for cooling, 1 for heating, 2 for RoC < s_RoC
     labels_alt = np.where(
         np.abs(f_dot) > s_RoC,
@@ -364,7 +397,7 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.3):
     label_0_segments = df.loc[df['label'] == 0, 'segment_number']
     label_0_sizes = segment_sizes.loc[label_0_segments.unique()]
 
-    # calculate the number and length of segments
+    # calculate the number and length of segments in seconds
     print(f"Cooling segments [s] based on 'Label_alt' with a rate of change threshold of {s_RoC} (°C/s):\n")
     print((label_0_sizes/sample_rate).describe().apply('{:,.2f}'.format))
 

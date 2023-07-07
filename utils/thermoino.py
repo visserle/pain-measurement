@@ -84,7 +84,7 @@ class Thermoino:
 	
     New stuff
     -----------
-    - create_ctc, where you load your temperature course [°C/s] with sampling rate and it returns the ctc (a differentiated, binned temperature course)
+    - create_ctc, where you load your temperature course [°C/s] with sampling rate and it returns the ctc (a resampled, differentiated, binned temperature course)
     - prep_ctc, which sets the right starting temperature for the ctc
     
     Examples
