@@ -67,17 +67,17 @@ class StimuliFunction():
     ````python
     import numpy as np
     minimal_desired_duration = 200 # in seconds
-    amplitudes = [1, 1.5] # the range will be 2 * sum(amplitudes)
-    periods = [67, 10]  # 1 : 3 gives a good result
+    amplitudes = [1, 1.5] # max should be VAS 70, min should be VAS 0; range is 2 * sum(amplitudes); 
+    periods = [67, 20] # in seconds
     frequencies = 1./np.array(periods)
-    baseline_temp = 39.5 # with a calibrated pain threshold of 38 °C
-    seed = 619
+    baseline_temp = 39.5 # should be VAS 35
+    seed = 619 # `None` for random seed
 
     stimuli = StimuliFunction(
         minimal_desired_duration, frequencies, amplitudes,
         random_phase=True, seed=seed)
     stimuli.add_baseline_temp(baseline_temp)
-    stimuli.add_plateaus(plateau_duration=15, n_plateaus=4, add_at_end=True)
+    stimuli.add_plateaus(plateau_duration=20, n_plateaus=4, add_at_end=True)
     ````
 
     Notes
@@ -279,7 +279,7 @@ class StimuliFunction():
 
 def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.3):
     """
-    For plotly graphing of f(x), f'(x), and labels.
+    For plotly graphing of f(x), f'(x), and labels. Also displays the number and length of cooling segments.
     
     Parameters
     ----------
@@ -290,7 +290,8 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.3):
     sample_rate : int
         The sample rate of the data.
     s_RoC : float, optional
-        The rate of change threshold (°C/s) for alternative labels (default is 0.3).
+        The rate of change threshold (°C/s) for alternative labels.
+        See: http://www.scholarpedia.org/article/Thermal_touch#Thermal_thresholds
     
     Returns
     -------
@@ -300,12 +301,21 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.3):
         A ternary array where 0 indicates cooling, 1 indicates heating, and 2 indicates a rate of change less than s_RoC.
     fig : plotly.graph_objects.Figure
         The plotly figure.
+    change : array_like
+        The change of state in the labels, indicating when a transition between cooling and heating occurs.
+    change_idx : array_like
+        The indices where a change of state occurs.
+    segments : dict
+        A dictionary that is used to calculate the number and length of the cooling segments. 
+        Usually not used, just printed.
     """
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
+    from IPython.display import display
 
     time = np.array(range(len(f))) / sample_rate
     
+    # Plot functions and labels
     fig = go.Figure(
         layout=dict(
             xaxis=dict(title='Time (s)'),
@@ -341,59 +351,24 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC=0.3):
             visible=visible
         )
     fig.show()
+    
+    # calculate the change of state in the labels
+    df = pd.DataFrame({'label': labels_alt})
+    df['segment_change'] = df['label'].ne(df['label'].shift())
+    df['segment_number'] = df['segment_change'].cumsum()
+
+    # group by segment number and calculate the size of each group
+    segment_sizes = df.groupby('segment_number').size()
+
+    # filter the segments that correspond to the label 0
+    label_0_segments = df.loc[df['label'] == 0, 'segment_number']
+    label_0_sizes = segment_sizes.loc[label_0_segments.unique()]
+
+    # calculate the number and length of segments
+    print(f"Cooling segments [s] based on 'Label_alt' with a rate of change threshold of {s_RoC} (°C/s):\n")
+    print((label_0_sizes/sample_rate).describe().apply('{:,.2f}'.format))
 
     return labels, labels_alt, fig
-
-
-def cooling_segments(labels, sample_rate):
-    '''Displays the number and length of cooling segments.'''
-    """
-    Displays the number and length of cooling segments.
-    
-    Parameters
-    ----------
-    labels : array_like
-        A binary array where 0 indicates cooling and 1 indicates heating.
-    sample_rate : int
-        The sample rate of the stimuli function.
-    
-    Returns
-    -------
-    change : array_like
-        The change of state in the labels, indicating when a transition between cooling and heating occurs.
-    change_idx : array_like
-        The indices where a change of state occurs.
-    segments : dict
-        A dictionary that is used to calculate the number and length of the cooling segments. 
-        Usually not used, just printed.
-    """
-    from IPython.display import display
-
-    change = np.concatenate([
-        np.array([0]),  # as the sign cannot change with first value
-        np.diff(labels > 0)*1], axis=0)
-
-    # returns a list of indices where the conditions have been met
-    change_idx = np.where(change == 1)[0]
-
-    if labels[0] == 0:  # label we started with (cooling or heating)
-        # in case 0 the first change_idx starts the first heating segment,
-        # that is why we start with i=1::2 and not i=0::2
-        # (we don't prepend / append any values from np.diff here)
-        segments = {
-            idx: np.diff(change_idx)[i::2] for idx, i in enumerate(list(range(2))[::-1])
-        }
-    elif labels[0] == 1:
-        segments = {
-            i: np.diff(change_idx)[i::2] for i in list(range(2))
-        }
-
-    # in seconds; only 1 column because jagged arrays can appear
-    display(pd.DataFrame(
-        {"Cooling segments [s]": segments[0]/sample_rate}
-    ).describe().applymap('{:,.2f}'.format))
-
-    return change, change_idx, segments
 
 
 if __name__ == "__main__":
