@@ -1,9 +1,7 @@
-mpad
+# work in progess
 ==============================
 
-Mobile Pain Assessment Device
-
-Project Organization
+Project Organization (not up-to-date)
 ------------
 
     ├── LICENSE

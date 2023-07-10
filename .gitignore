@@ -1,3 +1,11 @@
+# work in progress
+
+# excluded for now
+/experiments
+/runs
+# remove once logging is correctly defined
+/notebooks/runs
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -76,7 +84,10 @@ target/
 .ipynb_checkpoints/
 
 # exclude data from source control by default
-# /data/
+/data/external
+/data/interim
+/data/processed
+/data/raw
 
 # Mac OS-specific storage files
 .DS_Store
