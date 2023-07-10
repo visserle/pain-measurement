@@ -126,7 +126,7 @@ class Thermoino:
     ----
     - Add option to connect() that checks if the Thermoino is already connected by a try-except block 
         and account for manually removed Thermoino (e.g. by checking if the port is still available)
-        -> best solution is a context manager of course, see if this works with arduino code
+        -> best solution is a context manager of course, find out if this works with arduino code
     - Add option to connect that checks if a Thermoino device is available or if you want to proceed without it by asking with input()
         -> very handy for psychopy testing, where you don't want to have the Thermoino connected all the time
     - Add debug option to hide print statements / add logging
@@ -167,7 +167,7 @@ class Thermoino:
         """
         Thermoino.port = port
         self.temp_baseline = temp_baseline
-        self.temp = temp_baseline # will get continuously recalculated to match the temperature of the Thermode
+        self.temp = temp_baseline # will get continuous class-internal updates to match the temperature of the Thermode
         self.rate_of_rise = rate_of_rise
         self.debug = debug
         
