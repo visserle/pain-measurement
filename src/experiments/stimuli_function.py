@@ -194,8 +194,8 @@ class StimuliFunction():
             return np.round(noise)
 
         modulation_random_factor = _noise_that_sums_to_0(
-            n=int(self.modulation_n_periods),
-            factor=0.6 if self.random_periods else 0)
+            n = int(self.modulation_n_periods),
+            factor = 0.6 if self.random_periods else 0)
         self.modulation = []
         for i in range(int(self.modulation_n_periods)):
             period = self.periods[1] + modulation_random_factor[i]
@@ -292,7 +292,7 @@ class StimuliFunction():
         
         def _to_bool(x):
             """If x is "random", it's converted to a random boolean."""
-            return bool(random.randint(0, 1)) if x == "random" else x
+            return bool(self.rng.randint(0, 1)) if x == "random" else x
 
         for arg in [add_at_start, add_at_end]:
             if not isinstance(arg, (bool, str)) or (isinstance(arg, str) and arg != "random"):
@@ -301,15 +301,23 @@ class StimuliFunction():
 
         # get indices where the temperature is rising and between the 25th and 75th percentile
         q25, q75 = np.percentile(self.wave, 25), np.percentile(self.wave, 75)
-        idx_iqr_values = np.where((self.wave > q25) & (self.wave < q75) & (self.wave_dot > 0.1))[0] # [0] to get the indices
+        idx_iqr_values = np.where((self.wave > q25) & (self.wave < q75) & (self.wave_dot > 0.07))[0] # [0] to get the indices
+
+        # if add_at_start is False, remove indices that are within the first 10 seconds
+        if not add_at_start:
+            idx_iqr_values = idx_iqr_values[idx_iqr_values > 10 * self.sample_rate]
+        # if add_at_end is False, remove indices that are within the last 10 seconds
+        if not add_at_end:
+            idx_iqr_values = idx_iqr_values[idx_iqr_values < len(self.wave) - 10 * self.sample_rate]
 
         # find indices for the random plateaus
         n_random_plateaus = n_plateaus - int(add_at_start) - int(add_at_end) 
         counter = 0
+        
         while True: 
             counter += 1
-            if counter > 5000:
-                raise ValueError("Number and/or duration of plateaus is too high for the given wave")
+            if counter > 10000:
+                raise ValueError("Number and/or duration of plateaus is too high for the given wave (not enough suitable index positions). It is recommended to set add_at_end=True.")
             idx_plateaus = self.rng_numpy.choice(idx_iqr_values, n_random_plateaus, replace=False)
             if add_at_start:
                 idx_plateaus = np.concatenate(([0], idx_plateaus))
