@@ -3,6 +3,8 @@
 # excluded for now
 /experiments
 /runs
+/src/experiments/imotions.py
+
 # remove once logging is correctly defined
 /notebooks/runs
 
