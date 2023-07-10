@@ -133,9 +133,11 @@ class Thermoino:
     - Add methods await_status and read_buffer to replace time.sleep in load_ctc
     - Add error information to the error messages)
     - Add success messages (from Christian's github)
+    - Change to new EXECCTCPWM command and do some testing
     - Fix usage of units in the docstrings (some small inaccuracies)
-    - Add count down to trigger for time out (defined in MMS program) -> maybe with threading? would need to check @property connected for that...
+    - Add count down to trigger for time out (defined in MMS program) -> maybe with threading? would require heartbeat mechanism...
     - Fix query function
+	- Add real documentation (e.g. Sphinx, ...)
     - etc.
     """
     
