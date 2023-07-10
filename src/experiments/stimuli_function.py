@@ -69,7 +69,7 @@ class StimuliFunction():
     frequencies = 1./np.array(periods)
     amplitudes = [1, 1.5] # temp range is 2 * sum(amplitudes): max @ VAS 70, min @ VAS 0
     sample_rate = 60
-    seed = 823 # use None for random seed
+    seed = 463 # use None for random seed
     baseline_temp = 39.2 # @ VAS 35
 
     stimuli = StimuliFunction(
@@ -128,7 +128,7 @@ class StimuliFunction():
         seed : int, optional
             The seed for the random number generator instances (default is None, which generates a random seed).
         """
-        # Class-intern instances of random number generators
+        # Class-internal instances of random number generators
         self.rng = random.Random()
         if seed is None:
             self.seed = self.rng.randint(0, 1000)
@@ -145,8 +145,7 @@ class StimuliFunction():
         # Duration and sampling (without add_ methods)
         self.minimal_desired_duration = minimal_desired_duration
         # the "true" minimal duration is a multiple of the period of the modulation
-        self.minimal_duration = math.ceil(
-            self.minimal_desired_duration / self.periods[1]) * self.periods[1]
+        self.minimal_duration = math.ceil(self.minimal_desired_duration / self.periods[1]) * self.periods[1]
         self.sample_rate = sample_rate
 
         # Additional variables
@@ -196,11 +195,13 @@ class StimuliFunction():
         modulation_random_factor = _noise_that_sums_to_0(
             n = int(self.modulation_n_periods),
             factor = 0.6 if self.random_periods else 0)
+        
+        # create the modulation period-wise
         self.modulation = []
         for i in range(int(self.modulation_n_periods)):
             period = self.periods[1] + modulation_random_factor[i]
             frequency = 1/period
-            time_ = np.arange(0, period, 1/self.sample_rate) # temporary time vector
+            time_ = np.arange(0, period, 1/self.sample_rate)
             # wave_ has to be inverted every second period to get a sinosoidal wave
             if i % 2 == 0:
                 wave_ = self.amplitudes[1] * \
@@ -233,7 +234,7 @@ class StimuliFunction():
     
     def add_baseline_temp(self, baseline_temp):
         """
-        Adds a baseline temperature to the wave.
+        Adds a baseline temperature to the wave. Should be around VAS = 35.
 
         Parameters
         ----------
@@ -313,11 +314,13 @@ class StimuliFunction():
         # find indices for the random plateaus
         n_random_plateaus = n_plateaus - int(add_at_start) - int(add_at_end) 
         counter = 0
-        
         while True: 
             counter += 1
             if counter > 10000:
-                raise ValueError("Number and/or duration of plateaus is too high for the given wave (not enough suitable index positions). It is recommended to set add_at_end=True.")
+                raise ValueError("""
+                    Number and/or duration of plateaus is too high for the given wave (not enough
+                    suitable index positions). It is recommended to always set add_at_end to True.
+                    """)
             idx_plateaus = self.rng_numpy.choice(idx_iqr_values, n_random_plateaus, replace=False)
             if add_at_start:
                 idx_plateaus = np.concatenate(([0], idx_plateaus))
