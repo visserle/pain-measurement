@@ -1,4 +1,4 @@
-Mobile Pain Assessment Device Pilot # work in progess
+# # work in progess
 ==============================
 
 Project Organization (not up-to-date)
