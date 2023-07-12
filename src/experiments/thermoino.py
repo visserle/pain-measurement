@@ -3,6 +3,7 @@ import serial
 import serial.tools.list_ports
 import time
 import numpy as np
+import logging
 
 
 def list_com_ports():
@@ -47,8 +48,6 @@ class Thermoino:
         For Pathways 10 is standard. For TAS 2 it is 13. For CHEPS something over 50 (ask Björn).
         For normal temperature plateaus a higher rate of rise is recommended (faster);
         for complex temperature courses a lower rate of rise is recommended (more precise).
-    debug : `bool`
-        If True, debug information will be printed. Default is True.
     ser : `serial.Serial`
         Serial object for communication with the Thermoino.
     bin_size_ms : `int`
@@ -129,11 +128,10 @@ class Thermoino:
         -> best solution is a context manager of course, find out if this works with arduino code
     - Add option to connect that checks if a Thermoino device is available or if you want to proceed without it by asking with input()
         -> very handy for psychopy testing, where you don't want to have the Thermoino connected all the time
-    - Add debug option to hide print statements / add logging
     - Add methods await_status and read_buffer to replace time.sleep in load_ctc
+    - Change to new EXECCTCPWM command and do some testing
     - Add error information to the error messages)
     - Add success messages (from Christian's github)
-    - Change to new EXECCTCPWM command and do some testing
     - Fix usage of units in the docstrings (some small inaccuracies)
     - Add count down to trigger for time out (defined in MMS program) -> maybe with threading? would require heartbeat mechanism...
     - Fix query function
@@ -150,7 +148,7 @@ class Thermoino:
         'ERR_ctc_EMPTY', 'ERR_SHOCK_RANGE', 'ERR_SHOCK_ISI',
         'ERR_BUSY', 'ERR_DEBUG_RANGE']
 
-    def __init__(self, port, temp_baseline, rate_of_rise, debug = True):
+    def __init__(self, port, temp_baseline, rate_of_rise):
         """
         Constructs a Thermoino object.
         
@@ -164,15 +162,15 @@ class Thermoino:
             Rate of rise of temperature in degree Celsius per second. It has to be the same as in the MMS program.
             For Pathways 10 is standard. For TAS 2 it is 13. For CHEPS something over 50 (ask Björn).
             It can be changed class-wide by calucalting an adjusted rate of rise in the create_ctc method.
-        debug : `bool`, optional
-            If True, debug information will be printed. Default is True.
         """
         Thermoino.port = port
         self.temp_baseline = temp_baseline
         self.temp = temp_baseline # will get continuous class-internal updates to match the temperature of the Thermode
         self.rate_of_rise = rate_of_rise
-        self.debug = debug
-        
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO) # debug, info, warning, error, critical
+
+
     def connect(self):
         """
         Connect to the Thermoino device. 
@@ -198,23 +196,33 @@ class Thermoino:
         print(f"Closed connection to Thermoino @ {self.port}")
         self.connected = False
 
+    def _send_command(self, command, get_response=True):
+        """
+        Send a command to the Arduino and return its response.
+        """
+        self.ser.write(command.encode()) # encode to bytes
+        if get_response:
+            response = self.ser.readline()
+            try:
+                decoded_response = response.decode('ascii')
+            except UnicodeDecodeError:
+                self.logger.error(f"Received invalid response: {response}")
+                decoded_response = None
+            return decoded_response
+    
     def diag(self):
         """
         Send a 'DIAG' command to the Arduino to get basic diagnostic information.
         """
-        self.ser.write(b'DIAG\n')
-        print("Sent 'DIAG' (.diag) to Arduino")
-        output = self.ser.readline().decode('ascii')
-        print(f"Received output from 'DIAG': {output}")
-        
+        output = self._send_command('DIAG\n')
+        self.logger.info(f"Sent 'DIAG' (.diag) to Arduino, received output: {output}")
+
     def trigger(self):
         """
         Trigger MMS to get ready for action.
         """
-        self.ser.write(b'START\n')
-        print("Sent 'START' (.trigger) to Arduino")
-        output = self.ser.readline().decode('ascii')
-        print(f"Received output from 'START': {output}")
+        output = self._send_command('START\n')
+        self.logger.info(f"Sent 'START' (.trigger) to Arduino, received output: {output}")
 
     def set_temp(self, temp_target):
         """
@@ -228,11 +236,8 @@ class Thermoino:
             The target temperature in degree Celsius.
         """
         move_time_us = round(((temp_target - self.temp) / self.rate_of_rise) * 1e6)
-        self.ser.write(f'MOVE;{move_time_us}\n'.encode())
-        print("Sent 'MOVE' (.set_temp) to Arduino")
-        print(f"t = {move_time_us / 1e6}")
-        output = self.ser.readline().decode('ascii')
-        print(f"Received output from 'MOVE': {output}")
+        output = self._send_command(f'MOVE;{move_time_us}\n')
+        self.logger.info(f"Sent 'MOVE' (.set_temp) to Arduino with t = {move_time_us / 1e6}, received output: {output}")
         self.temp = temp_target
 
     def init_ctc(self, bin_size_ms):
@@ -251,10 +256,8 @@ class Thermoino:
         `int`
             The bin size in milliseconds for the ctc.
         """
-        self.ser.write(f'INITCTC;{bin_size_ms}\n'.encode())
-        print("Sent 'INITCTC' (.init_ctc) to Arduino")
-        output = self.ser.readline().decode('ascii')
-        print(f"Received output from 'INITCTC': {output}")
+        output = self._send_command(f'INITCTC;{bin_size_ms}\n')
+        self.logger.info(f"Sent 'INITCTC' (.init_ctc) to Arduino, received output: {output}")
         self.bin_size_ms = bin_size_ms
     
     def create_ctc(self, temp_course, sample_rate, rate_of_rise_option = "mms_program"): 
@@ -324,26 +327,25 @@ class Thermoino:
     def load_ctc(self, debug = False):      
         """
         Load the created ctc into the Thermoino device by sending single bins in a for loop to the Thermoino.
-        The maximum length to store on the Thermoino is 2500. If you want longer stimuli, you could use a larger bin size,
-        but also keep in mind the 10 min limit of MMS.
+        The maximum length to store on the Thermoino is 2500. If you want longer stimuli, you could use a larger bin size.
+        (The max bin size is 500 ms, also keep in mind the 10 min limit of MMS.)
         
         TODO: add await_status
         
         Parameters
         ----------
         debug : `bool`, optional
-            If True, debug information will be printed. Default is False.
+            If True, debug information for every bin. Default is False.
         """
-        print("Loading ctc into Arduino ...")
+        self.logger.info("Loading ctc into Arduino ...")
         for i in range(len(self.ctc)):
-            self.ser.write(f'LOADCTC;{self.ctc[i]}\n'.encode())
+            output = self._send_command(f'LOADCTC;{self.ctc[i]}\n', get_response=debug)
             # workaround: time.sleep after every iteration,
             # not using await_status at the moment
             time.sleep(0.05)
             if debug:
-                output = self.ser.readline().decode('ascii')
-                print(f"Received output from 'LOADCTC': {output}")
-        print("Sent 'LOADCTC' (.load_ctc) to Arduino")        
+                self.logger.debug(f"Sent 'LOADCTC' (.load_ctc) to Arduino with bin {i + 1} of {len(self.ctc)}, received output: {output}")
+        self.logger.info("Finished loading ctc into Arduino.")
 
     def query_ctc(self, queryLvl, statAbort):
         """
@@ -368,10 +370,8 @@ class Thermoino:
         `str`
             The output from the Thermoino device.
         """
-        self.ser.write(f'QUERYCTC;{queryLvl};{statAbort}\n'.encode())
-        print("Sent 'QUERYCTC' (.query_ctc) to Arduino")
-        output = self.ser.readline().decode('ascii')
-        print(f"Received output from 'QUERYCTC': {output}")
+        output = self._send_command(f'QUERYCTC;{queryLvl};{statAbort}\n')
+        self.logger.info(f"Sent 'QUERYCTC' (.query_ctc) to Arduino, received output: {output}")
 
     def prep_ctc(self):
         """
@@ -381,24 +381,23 @@ class Thermoino:
         if not self.temp == self.temp_course_resampled[0]:
             sleep_time = round(abs(self.temp - self.temp_course_resampled[0]) / self.rate_of_rise,1)
             sleep_time += 0.5 # add 0.5 s to be sure
-            print(f"Preparing ctc for execution. Set starting temperature and wait {sleep_time} s for the temperature to be reached.")
+            self.logger.info(f"Preparing ctc for execution. Set starting temperature and wait {sleep_time} s for the temperature to be reached.")
             self.set_temp(self.temp_course_resampled[0])
             time.sleep(sleep_time)
-        print(f"Temperature is {self.temp}°C. The ctc is ready to be executed.")
+        self.logger.info(f"Temperature is {self.temp}°C. The ctc is ready to be executed.")
         
     def exec_ctc(self):
         """
         Execute the ctc on the Thermoino device.
         """
         if self.temp != self.temp_course_resampled[0]:
-            raise ValueError("Temperature is not at the starting temperature of the temperature course. Please run prep_ctc first.")
+            self.logger.critical("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
+            raise ValueError("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
         
-        self.ser.write(f'EXECCTC\n'.encode())
-        print("Sent 'EXECCTC' (.exec_ctc) to Arduino")
-        output = self.ser.readline().decode('ascii')
-        print(f"Received output from 'EXECCTC': {output}")
+        output = self._send_command(f'EXECCTC\n')
+        self.logger.info(f"Sent 'EXECCTC' (.exec_ctc) to Arduino, received output: {output}")
         self.temp = round(self.temp_course_resampled[-2],1) # -2 because np.diff makes the array one shorter, see side effects of create_ctc
-        print(f"Set temperature to {self.temp}°C after the ctc was executed.")
+        self.logger.info(f"Set temperature to {self.temp}°C after the ctc was executed.")
 
     def flush_ctc(self):
         """
@@ -407,11 +406,8 @@ class Thermoino:
         This method sends a 'FLUSHCTC' command to the device. It can be called individually, but it is 
         also automatically called by the `init_ctc` method.
         """
-        self.ser.write(f'FLUSHCTC\n'.encode())
-        print("Sent 'FLUSHCTC' (.flush_ctc) to Arduino")
-        output = self.ser.readline().decode('ascii')
-        print(f"Received output from 'FLUSHCTC': {output}")
-		
+        output = self._send_command(f'FLUSHCTC\n')
+        self.logger.info(f"Sent 'FLUSHCTC' (.flush_ctc) to Arduino, received output: {output}")
 		
 if __name__ == "__main__":
     pass
