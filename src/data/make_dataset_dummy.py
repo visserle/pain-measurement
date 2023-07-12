@@ -17,7 +17,9 @@ class SimulateTrial:
     This class generates physiological dummy signals for a single dummy trial.
 
     A single dummy trial consists of two phases: a "ramp up" of temperature and a "ramp off". 
-    Note that there are no ramps in the physiological signals and the difference between the two phases is only in the physiological profiles (which are constant).
+    These are also the labels of the target array, where 0 corresponds to the "ramp up" phase and 1 to the "ramp off" phase.
+    Note that there are no actual ramps in the data and the difference between the two ramps is only in the constants of the dummy physiological profiles.
+    This is only dummy data for testing purposes.
     
     Attributes
     ----------
@@ -112,6 +114,10 @@ class SimulateSubject:
     ----------
     seed: int
         Seed for the random number generator. One seed corresponds to one subject.
+    ramp_up: dict
+        Physiological profile for the first half of a trial.
+    ramp_off: dict
+        Physiological profile for the second half of a trial.
     '''
     def __init__(self, seed):
         # 1 seed for 1 subject
@@ -150,14 +156,24 @@ class SimulateExperiment(SimulateSubject, SimulateTrial):
     '''
     This class generates experimental data over several trials using distinct physiological profiles.
 
-    It inherits from the SimulateSubject and SimulateTrial classes.
+    It inherits from the SimulateSubject and SimulateTrial classes to simulate a whole experiment with several, distinct subjects and noumerous trials per subject.
 
     Attributes
     ----------
     n_subjects: int, optional
         Number of subjects in the experiment (default is 4)
     n_trials: int, optional
-        Number of trials per subject (default is 3)
+        Number of trials per subject (default is 3). One trial consists of two phases: a "ramp up" of temperature and a "ramp off".
+    n_subject_samples: int
+        Number of samples per subject (ramp up & off). This is equal to n_trials*2.
+    n_samples: int
+        Number of samples in total
+    data: numpy.ndarray
+        3D array containing the experimental data. The shape is [samples, time-steps, features]
+    target: numpy.ndarray
+        1D array containing the target labels for the experimental data.
+    groups: numpy.ndarray
+        1D array containing the group labels for the experimental data. Each subject is assigned a unique group label.
     '''
     def __init__(
             self,
@@ -217,7 +233,8 @@ class SimulateExperiment(SimulateSubject, SimulateTrial):
 
     def simulate_target(self):
         '''
-        This method generates the target array for the experimental data.
+        This method generates the target array for the experimental data, 
+        where 0 corresponds to the "ramp up" phase and 1 to the "ramp off" phase.
 
         Returns
         -------
@@ -238,7 +255,7 @@ class SimulateExperiment(SimulateSubject, SimulateTrial):
 
 def main(n_subjects_train=100, n_subjects_test=20, n_trials=20, plot=True):
     '''
-    This function simulates experimental dummy data, splits it into training and test sets, saves the data,
+    This main function simulates experimental dummy data, splits it into training and test sets, saves the data,
     and optionally saves a plot of a single trial.
 
     Parameters
@@ -251,10 +268,6 @@ def main(n_subjects_train=100, n_subjects_test=20, n_trials=20, plot=True):
         The number of trials to simulate for each subject. Default is 20.
     plot : bool, optional
         If True, a trial will be plotted. Default is True.
-
-    Returns
-    -------
-    None
 
     Notes
     -----
@@ -299,6 +312,12 @@ def main(n_subjects_train=100, n_subjects_test=20, n_trials=20, plot=True):
         plt.savefig(DUMMY_DIR / "_single_dummy_trial.png")
 
 
+if __name__ == '__main__':
+    main()
+
+
+
+
 # Code from make_dataset.py:
 
 # import click
@@ -333,14 +352,4 @@ def main(n_subjects_train=100, n_subjects_test=20, n_trials=20, plot=True):
 
 #     # Save the data and target to the output file path
 #     np.savez(output_filepath, data=data, target=target)
-
-
-if __name__ == '__main__':
-    main()
-
-
-
-
-
-
 
