@@ -109,7 +109,9 @@ class StimuliFunction():
         (for highly effective conditioning, test trials, weakly effective conditioning and pain stimulation, respectively)."
     """
 
-    def __init__(self, minimal_desired_duration, frequencies, amplitudes, sample_rate, random_periods=True, seed=None):
+    def __init__(self, minimal_desired_duration, 
+                 frequencies, amplitudes, sample_rate,
+                 random_periods=True, seed=None):
         """
         The constructor for StimuliFunction class.
 
@@ -265,7 +267,8 @@ class StimuliFunction():
                     [self.wave[i]] * time_to_be_added_per_peak * self.sample_rate)
         self.wave = np.array(wave_new)
 
-    def add_plateaus(self, plateau_duration, n_plateaus, add_at_start="random", add_at_end=True):
+    def add_plateaus(self, plateau_duration, n_plateaus,
+                     add_at_start="random", add_at_end=True):
         """
         Adds plateaus to the wave at random positions, but only when the temperature is rising 
         and the temperature is between the 25th and 75th percentile. The distance between the 
@@ -316,7 +319,7 @@ class StimuliFunction():
         counter = 0
         while True: 
             counter += 1
-            if counter > 10000:
+            if counter > 1000:
                 raise ValueError("""
                     Number and/or duration of plateaus is too high for the given wave (not enough
                     suitable index positions). It is recommended to always set add_at_end to True.

@@ -130,7 +130,7 @@ class Thermoino:
         -> very handy for psychopy testing, where you don't want to have the Thermoino connected all the time
     - Add methods await_status and read_buffer to replace time.sleep in load_ctc
     - Change to new EXECCTCPWM command and do some testing
-    - Add error information to the error messages)
+    - Add error information to the error messages
     - Add success messages (from Christian's github)
     - Fix usage of units in the docstrings (some small inaccuracies)
     - Add count down to trigger for time out (defined in MMS program) -> maybe with threading? would require heartbeat mechanism...
@@ -169,6 +169,10 @@ class Thermoino:
         self.rate_of_rise = rate_of_rise
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO) # debug, info, warning, error, critical
+        if not self.logger.handlers:  # Check if the logger already has a handler for use in e.g. jupyter notebooks
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+            self.logger.addHandler(handler)
 
 
     def connect(self):
@@ -182,7 +186,7 @@ class Thermoino:
             The serial object for communication with the device.
         """
         self.ser = serial.Serial(self.port, self.baud_rate)
-        print(f"Connected to Thermoino @ {self.port}")
+        self.logger.info(f"Connected to Thermoino @ {self.port}")
         self.connected = True  
         time.sleep(1)
 
@@ -193,7 +197,7 @@ class Thermoino:
         As the `Thermoino` class is not a context manager, the connection is not closed automatically.
         """
         self.ser.close()
-        print(f"Closed connection to Thermoino @ {self.port}")
+        self.logger.info(f"Closed connection to Thermoino @ {self.port}")
         self.connected = False
 
     def _send_command(self, command, get_response=True):
@@ -204,7 +208,7 @@ class Thermoino:
         if get_response:
             response = self.ser.readline()
             try:
-                decoded_response = response.decode('ascii')
+                decoded_response = response.decode('ascii').strip()
             except UnicodeDecodeError:
                 self.logger.error(f"Received invalid response: {response}")
                 decoded_response = None
@@ -237,7 +241,7 @@ class Thermoino:
         """
         move_time_us = round(((temp_target - self.temp) / self.rate_of_rise) * 1e6)
         output = self._send_command(f'MOVE;{move_time_us}\n')
-        self.logger.info(f"Sent 'MOVE' (.set_temp) to Arduino with t = {move_time_us / 1e6}, received output: {output}")
+        self.logger.info(f"Sent 'MOVE' (.set_temp) to Arduino with temperature {temp_target}°C, received output: {output}")
         self.temp = temp_target
 
     def init_ctc(self, bin_size_ms):
@@ -245,7 +249,9 @@ class Thermoino:
         Initialize a complex temperature course (ctc) on the Thermoino device
         by firstly defining the bin size. This has to be done before loading the ctc 
         into the Arduino (load_ctc).
-        
+
+        This function also reset all ctc information stored on the Thermoino device.
+                
         Parameters
         ----------
         bin_size_ms : `int`
@@ -329,9 +335,7 @@ class Thermoino:
         Load the created ctc into the Thermoino device by sending single bins in a for loop to the Thermoino.
         The maximum length to store on the Thermoino is 2500. If you want longer stimuli, you could use a larger bin size.
         (The max bin size is 500 ms, also keep in mind the 10 min limit of MMS.)
-        
-        TODO: add await_status
-        
+                
         Parameters
         ----------
         debug : `bool`, optional
