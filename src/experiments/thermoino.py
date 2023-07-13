@@ -385,7 +385,7 @@ class Thermoino:
         if not self.temp == self.temp_course_resampled[0]:
             sleep_time = round(abs(self.temp - self.temp_course_resampled[0]) / self.rate_of_rise,1)
             sleep_time += 0.5 # add 0.5 s to be sure
-            self.logger.info(f"Preparing ctc for execution. Set starting temperature and wait {sleep_time} s for the temperature to be reached.")
+            self.logger.info(f"Preparing ctc for execution. Set starting temperature and wait {sleep_time} s for the temperature to be reached ...")
             self.set_temp(self.temp_course_resampled[0])
             time.sleep(sleep_time)
         self.logger.info(f"Temperature is {self.temp}°C. The ctc is ready to be executed.")

@@ -151,7 +151,7 @@ class StimuliFunction():
         self.sample_rate = sample_rate
 
         # Additional variables
-        self.modulation_n_periods = self.minimal_duration / self.periods[1]
+        self.modulation_n_periods = math.floor(self.minimal_duration / self.periods[1]) # always int in contrast to // operator
         # if True, the periods of the modulation are randomized
         self.random_periods = random_periods
 
@@ -178,29 +178,29 @@ class StimuliFunction():
         """
         def _noise_that_sums_to_0(n, factor):
             """
-            Returns a noise vector that sums to 0 to be added to the period of the modulation 
+            Returns a noise vector that sums to 0 to be added to the periods of the modulation 
             if self.random_periods is True.
             """
-            # create noise for n/2
+            # create noise for n//2
             noise = self.rng_numpy.uniform(
                 -factor * self.periods[1], 
                 factor * self.periods[1],
-                size = int(n/2))
-            # double the noise with inverted values to sum to 0
+                size = n//2)
+            # double the noise with inverted values to exactly sum to 0
             noise = np.concatenate((noise, -noise))
             # add 0 if length of n is odd
             if n % 2 == 1:
                 noise = np.append(noise, 0)
             self.rng.shuffle(noise)
             return np.round(noise)
-
+        
         modulation_random_factor = _noise_that_sums_to_0(
-            n = int(self.modulation_n_periods),
-            factor = 0.6 if self.random_periods else 0)
+            n = self.modulation_n_periods,
+            factor = 0.6) if self.random_periods else np.zeros(self.modulation_n_periods)
         
         # create the modulation period-wise
         self.modulation = []
-        for i in range(int(self.modulation_n_periods)):
+        for i in range(self.modulation_n_periods):
             period = self.periods[1] + modulation_random_factor[i]
             frequency = 1/period
             time_ = np.arange(0, period, 1/self.sample_rate)
@@ -213,7 +213,7 @@ class StimuliFunction():
                     np.sin(np.pi * frequency * time_) * -1
             self.modulation.extend(wave_)
         self.modulation = np.array(self.modulation)
-     
+
     @property
     def duration(self):
         self._duration = self.wave.shape[0] / self.sample_rate
