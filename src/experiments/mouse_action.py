@@ -1,12 +1,9 @@
 # work in progress
 
 # TODO:
-# - Add movement contrains by resetting the y-coordinate of the mouse
-#   to the slider coordinates in psychopy. That way the mouse device can be moved freely and accidental
-#   clicks won't cause any problems in the continous rating.
-#   -> For this to work, find a way to represent pixel coordinates of the slider in psychopy
 #   -> also maybe add a check if we are in a psychopy experiment? (very useful for aborting experiments)
 # - add support for multiple monitors, maybe using the screeninfo library
+# from win32api import GetSystemMetrics
 # width = user32.GetSystemMetrics(0)
 # height = user32.GetSystemMetrics(1)
 # # in a multi-monitor setup, you can use the screeninfo library, for instance
@@ -17,92 +14,131 @@
 # print(width, height)
 
 
-"""The mouse library is in pure python (no dependencies) and works on Windows and Linux (https://pypi.org/project/mouse/)
 """
-import subprocess
-import sys
-# needed to get the correct screen resolution when using DPI scaling
-# this method is safe to use with all types of monitors, whether they use DPI scaling or not
-from win32api import GetSystemMetrics
+This script uses the 'mouse' library to manipulate the mouse state.
+
+The 'mouse' library is a pure Python library with no dependencies, which provides functions to simulate mouse interactions.
+It works on both Windows and Linux. More details about the library can be found here: https://pypi.org/project/mouse/
+
+This script also adjusts the DPI awareness of the application using ctypes to ensure that the correct screen resolution is retrieved 
+even when DPI scaling is in use. This method is safe to use with all types of monitors, whether they use DPI scaling or not.
+
+If the 'mouse' library is not found, the script attempts to install it using pip.
+
+Note: This script requires the 'ctypes' and 'subprocess' libraries, which are included in standard Python distributions.
+
+Raises
+------
+Exception
+    If the 'mouse' library fails to import and install, an exception is raised.
+"""
+
+
 import ctypes
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware()
 
+
 try:
     import mouse
 except ImportError:
-    try:
-        # install mouse using pip in a subprocess
-        subprocess.run([sys.executable, "-m", "pip", "install", mouse], check=True)
+    try: # try to install mouse using pip in a subprocess
+        import subprocess
+        import sys
+        process = subprocess.run([sys.executable, "-m", "pip", "install", "mouse"], check=False)
+        if process.returncode != 0:
+            raise Exception("pip installation failed")
     except Exception as e:
-        print(f"Failed to install and import '{mouse}': {e}")
+        print(f"Failed to install and import 'mouse': {e}")
+        raise e # raise the exception to stop the script
+
 
 def hold():
-    """Holds down the left mouse button"""
+    """
+    Holds down the left mouse button.
+
+    Uses the 'mouse' library to simulate the holding down of the left mouse button.
+    """
     mouse.hold(button="left")
 
-def check(pos_y):
-    """Checks if the mouse is pressed and moves it to the slider position if necessary"""
+
+def check(pixel_y):
+    """
+    Checks if the mouse is pressed and moves it to the pixel y-coordinate if necessary.
+
+    Parameters
+    ----------
+    pixel_y : float
+        The y-coordinate in pixel to which the mouse should be moved if it is not already there.
+
+    Notes
+    -----
+    If the mouse is not currently being held down (as indicated by mouse.is_pressed), 
+    this function will hold it down using the `hold` function. 
+    It then checks if the current y-coordinate of the mouse (as indicated by mouse.get_position) 
+    is within a certain range of the desired y-coordinate. 
+    If it is not, it moves the mouse to the desired y-coordinate using mouse.move.
+    """
     if not mouse.is_pressed(button='left'):
         hold()
-    if not mouse.get_position()[1] == pos_y: # get y-coordinate
-        mouse.move(mouse.get_position()[0], pos_y * 1.1, absolute=True, duration=0) # move to slider position
+    if not (pixel_y*0.9 < mouse.get_position()[1] < pixel_y*1.1): # get y-coordinate
+        mouse.move(mouse.get_position()[0], pixel_y * 1.1, absolute=True, duration=0) # move to slider position
+
 
 def release():
-    """Releases the left mouse button"""
+    """
+    Releases the left mouse button.
+
+    Uses the 'mouse' library to simulate the release of the left mouse button.
+    """
     mouse.release(button="left")
 
-def psychopy_to_pixel_coordinates(component_pos, win_size, win_pos):
+
+def pixel_pos_y(component_pos, win_size, win_pos):
     """
-    Converts PsychoPy coordinates to pixel coordinates
+    Converts PsychoPy coordinates of a component to the pixel y-coordinate.
+    
+    The function is used to convert the y-coordinate from the PsychoPy coordinate system 
+    (where the y-axis goes upwards and the coordinates are normalized to the range [-1, 1])
+    to the pixel coordinate system (where the y-axis goes downwards and the coordinates are
+    in the range [0, height]).
+
+    Note that this function needs DPI awareness to work correctly.
     
     Parameters
     ----------
-    component_pos : tuple
-        PsychoPy coordinates of the component (x, y).
-        For instance, see https://www.psychopy.org/builder/components/slider.html#properties:
+    component_pos : Tuple[float, float]
+        PsychoPy coordinates of the component (x, y). 
+        For instance, see the PsychoPy Slider Component documentation:
+        https://www.psychopy.org/builder/components/slider.html#properties
 
-        "Position(X,Y): 
-            The position of the centre of the stimulus, in the units specified by the stimulus or window. 
-            Default is centered left-right, and somewhat lower than the vertical center (0, -0.4)."
+    win_size : Tuple[int, int]
+        Window size in pixels (width, height). 
 
+    win_pos : Tuple[int, int]
+        Window position in pixels (x, y). This is the position of the top-left corner of the window
+        relative to the screen. 
 
-    win_size : tuple
-        Window size in pixels (width, height)
-    win_pos : tuple
-        Window position in pixels (x, y)
-    
     Returns
     -------
-    tuple
-        Pixel coordinates of the psychopy component (x, y). 
-        The origin (0, 0) is at the top-left corner of the screen.
-        Positive x-values are to the right, and positive y-values are downwards.
+    float
+        The y-coordinate in the pixel coordinate system. This is the distance from the top of the screen.
 
-    Example
-    -------
-    In the following example, we convert the PsychoPy coordinates of a visual analog scale to pixel coordinates:
-    ```python
-    psychopy_to_pixel_coordinates(
-        pos=vas.pos,
-        win_size=win.size,
-        win_pos=win.pos)
-    ```
+    Examples
+    --------
+    >>> pixel_pos_y(slider.pos, win.size, win.pos)
+    450.0
     """
-    x, y = component_pos
-    width, height = win_size
-    win_x, win_y = win_pos
+    _, y = component_pos
+    _, height = win_size
+    _, win_y = win_pos
 
-    # To convert the x-coordinate, we add 1 to shift it from [-1, 1] to [0, 2], 
-    # divide by 2 to scale it to [0, 1], and multiply by `width` to scale it to [0, width].
-    # Then we add `win_x` to account for the window's position.
     # To convert the y-coordinate, we subtract it from 1 to flip it 
     # (because PsychoPy's y-axis is upwards while pixel count downwards), 
     # divide by 2 to scale it to [0, 1], and multiply by `height` to scale it to [0, height]. 
     # Then we add `win_y` to account for the window's position.
-    pixel_x = (x + 1) / 2 * width + win_x
     pixel_y = (1 - y) / 2 * height + win_y
-    return pixel_x, pixel_y
+    return pixel_y
 
 
 if __name__ == "__main__":
