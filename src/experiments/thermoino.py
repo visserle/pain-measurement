@@ -99,26 +99,19 @@ class Thermoino:
         rate_of_rise=5) # has to be the same as in MMS
 
     # Use luigi for complex temperature courses:
-    luigi.connect()
-    luigi.init_ctc(bin_size_ms=500)
-    luigi.create_ctc(
+    luigi.connect().init_ctc(bin_size_ms=500).create_ctc(
         temp_course = stimuli.wave, 
         sample_rate = stimuli.sample_rate, 
-        rate_of_rise_option = "mms_program")
-    luigi.load_ctc()
-    luigi.trigger()
-    luigi.prep_ctc()
+        rate_of_rise_option = "mms_program"
+        ).load_ctc()
+    luigi.trigger().prep_ctc()
     luigi.exec_ctc()
-    luigi.set_temp(32)
-    luigi.close()
+    luigi.set_temp(32).close()
 
     # Use luigi to set temperatures:
-    luigi.connect()
-    luigi.trigger()
-    luigi.set_temp(42)
+    luigi.connect().trigger().set_temp(42)
     time.sleep(4)
-    luigi.set_temp(32)
-    luigi.close()
+    luigi.set_temp(32).close()
     ````
 
     TODO
@@ -189,6 +182,7 @@ class Thermoino:
         self.logger.info(f"Connected to Thermoino @ {self.port}")
         self.connected = True  
         time.sleep(1)
+        return self
 
     def close(self):
         """
@@ -199,6 +193,7 @@ class Thermoino:
         self.ser.close()
         self.logger.info(f"Closed connection to Thermoino @ {self.port}")
         self.connected = False
+        return self
 
     def _send_command(self, command, get_response=True):
         """
@@ -227,6 +222,7 @@ class Thermoino:
         """
         output = self._send_command('START\n')
         self.logger.info(f"Sent 'START' (.trigger) to Arduino, received output: {output}")
+        return self
 
     def set_temp(self, temp_target):
         """
@@ -243,6 +239,7 @@ class Thermoino:
         output = self._send_command(f'MOVE;{move_time_us}\n')
         self.logger.info(f"Sent 'MOVE' (.set_temp) to Arduino with temperature {temp_target}°C, received output: {output}")
         self.temp = temp_target
+        return self
 
     def init_ctc(self, bin_size_ms):
         """
@@ -265,6 +262,7 @@ class Thermoino:
         output = self._send_command(f'INITCTC;{bin_size_ms}\n')
         self.logger.info(f"Sent 'INITCTC' (.init_ctc) to Arduino, received output: {output}")
         self.bin_size_ms = bin_size_ms
+        return self
     
     def create_ctc(self, temp_course, sample_rate, rate_of_rise_option = "mms_program"): 
         """
@@ -329,6 +327,8 @@ class Thermoino:
         # Thermoino only accepts integers
         temp_course_resampled_diff_binned = np.round(temp_course_resampled_diff_binned).astype(int)
         self.ctc = temp_course_resampled_diff_binned
+        self.logger.info(f"Created ctc with {len(self.ctc)} bins á {self.bin_size_ms} ms.")
+        return self
 
     def load_ctc(self, debug = False):      
         """
@@ -350,6 +350,7 @@ class Thermoino:
             if debug:
                 self.logger.debug(f"Sent 'LOADCTC' (.load_ctc) to Arduino with bin {i + 1} of {len(self.ctc)}, received output: {output}")
         self.logger.info("Finished loading ctc into Arduino.")
+        return self
 
     def query_ctc(self, queryLvl, statAbort):
         """
@@ -389,6 +390,7 @@ class Thermoino:
             self.set_temp(self.temp_course_resampled[0])
             time.sleep(sleep_time)
         self.logger.info(f"Temperature is {self.temp}°C. The ctc is ready to be executed.")
+        return self
         
     def exec_ctc(self):
         """
@@ -402,6 +404,7 @@ class Thermoino:
         self.logger.info(f"Sent 'EXECCTC' (.exec_ctc) to Arduino, received output: {output}")
         self.temp = round(self.temp_course_resampled[-2],1) # -2 because np.diff makes the array one shorter, see side effects of create_ctc
         self.logger.info(f"Set temperature to {self.temp}°C after the ctc was executed.")
+        return self
 
     def flush_ctc(self):
         """

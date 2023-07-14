@@ -50,8 +50,6 @@ class StimuliFunction():
         Creates the baseline sinusoidal wave.
     _create_modulation():
         Creates the modulation sinusoidal wave (with varying periods if random_periods=True).
-    wave_dot():
-        Calculates the derivative of the stimuli function with respect to time (dx in seconds).
     add_baseline_temp(baseline_temp):
         Adds a baseline temperature to the stimuli function. Should be around VAS = 35. 
         (handled in a seperate function to be able to reuse the same seed for different baseline temperatures)
@@ -73,14 +71,19 @@ class StimuliFunction():
     baseline_temp = 39.2 # @ VAS 35
 
     stimuli = StimuliFunction(
-        minimal_desired_duration, 
-        frequencies, 
+        minimal_desired_duration,
+        frequencies,
         amplitudes,
         sample_rate,
-        random_periods=True, 
-        seed=seed)
-    stimuli.add_baseline_temp(baseline_temp)
-    stimuli.add_plateaus(plateau_duration=20, n_plateaus=4, add_at_start="random", add_at_end=True)
+        random_periods=True,
+        seed=seed
+        ).add_baseline_temp(
+            baseline_temp
+            ).add_plateaus(
+                plateau_duration=20, 
+                n_plateaus=4, 
+                add_at_start="random", 
+                add_at_end=True)
     ````
 	For more information on the resulting stimuli wave use:
 	>>> from stimuli_function import stimuli_extra
@@ -91,7 +94,7 @@ class StimuliFunction():
     -----
     Inspecting the stimuli function is best done with a vanilla wave, i.e. without random periods or the add_ methods.
     The function stimuli_extra can be used to plot the stimuli function with plotly.\n
-
+    _________________________________________________________________\n
     The usual range from pain threshold to pain tolerance is about 4 °C. \n
         
     From Andreas Strube's Neuron paper (2023) with stimuli of 8 s and Capsaicin: \n
@@ -174,7 +177,7 @@ class StimuliFunction():
     def _create_modulation(self):
         """
         Creates the modulation sinusoidal wave (with varying frequency if random_periods=True).
-        The modulation has to be created period-wise as the frequency varies with every period
+        The modulation has to be created period-wise as the frequency varies with every period.
         """
         def _noise_that_sums_to_0(n, factor):
             """
@@ -242,9 +245,15 @@ class StimuliFunction():
         ----------
         baseline_temp : float
             The baseline temperature to be added to the wave.
+
+        Returns
+        -------
+        self : StimuliFunction
+            The StimuliFunction object with the added baseline temperature.
         """
         self.baseline_temp = baseline_temp
         self.wave = self.wave + self.baseline_temp
+        return self # to be able to chain methods
 
     def add_prolonged_peaks(self, time_to_be_added_per_peak, percetage_of_peaks):
         """
@@ -256,6 +265,11 @@ class StimuliFunction():
             The time to be added per peak.
         percetage_of_peaks : float
             The percentage of peaks to be prolonged.
+
+        Returns
+        -------
+        self : StimuliFunction
+            The StimuliFunction object with the added prolonged peaks.
         """
         peaks_chosen = self.rng_numpy.choice(self.peaks, int(
             len(self.peaks) * percetage_of_peaks), replace=False)
@@ -266,6 +280,7 @@ class StimuliFunction():
                 wave_new.extend(
                     [self.wave[i]] * time_to_be_added_per_peak * self.sample_rate)
         self.wave = np.array(wave_new)
+        return self
 
     def add_plateaus(self, plateau_duration, n_plateaus,
                      add_at_start="random", add_at_end=True):
@@ -285,6 +300,11 @@ class StimuliFunction():
             If "random", it's randomly decided whether to add at the start (default is "random").
         add_at_end : bool or str, optional
             If True, a plateau is added at the end of the wave (default is True).
+
+        Returns
+        -------
+        self : StimuliFunction
+            The StimuliFunction object with the added plateaus.
 
         Examples
         --------
@@ -320,10 +340,11 @@ class StimuliFunction():
         while True: 
             counter += 1
             if counter > 1000:
-                raise ValueError("""
-                    Number and/or duration of plateaus is too high for the given wave (not enough
-                    suitable index positions). It is recommended to always set add_at_end to True.
-                    """)
+                raise ValueError(
+                    "Unable to add the specified number of plateaus within the given wave.\n"
+                    "This issue usually arises when the number and/or duration of plateaus is too high "
+                    "relative to the length of the wave.\n"
+                    "Try again with a different seed or change the parameters of the add_plateaus method.")
             idx_plateaus = self.rng_numpy.choice(idx_iqr_values, n_random_plateaus, replace=False)
             if add_at_start:
                 idx_plateaus = np.concatenate(([0], idx_plateaus))
@@ -340,6 +361,7 @@ class StimuliFunction():
             if i in idx_plateaus:
                 wave_new.extend(_generate_plateau(self.wave[i]))
         self.wave = np.array(wave_new)
+        return self
     
 
 def stimuli_extra(f, f_dot, sample_rate, s_RoC):
