@@ -77,13 +77,13 @@ class StimuliFunction():
         sample_rate,
         random_periods=True,
         seed=seed
-        ).add_baseline_temp(
-            baseline_temp
-            ).add_plateaus(
-                plateau_duration=20, 
-                n_plateaus=4, 
-                add_at_start="random", 
-                add_at_end=True)
+    ).add_baseline_temp(
+        baseline_temp
+    ).add_plateaus(
+        plateau_duration=20, 
+        n_plateaus=4, 
+        add_at_start="random", 
+        add_at_end=True)
     ````
 	For more information on the resulting stimuli wave use:
 	>>> from stimuli_function import stimuli_extra
