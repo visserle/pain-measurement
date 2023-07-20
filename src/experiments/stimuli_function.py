@@ -356,10 +356,10 @@ class StimuliFunction():
                 break # do-while loop in Python
                 
         wave_new = []
-        for i in range(len(self.wave)):
-            wave_new.append(self.wave[i])
-            if i in idx_plateaus:
-                wave_new.extend(_generate_plateau(self.wave[i]))
+        for idx, i in enumerate(self.wave):
+            wave_new.append(i)
+            if idx in idx_plateaus:
+                wave_new.extend(_generate_plateau(i))
         self.wave = np.array(wave_new)
         return self
     

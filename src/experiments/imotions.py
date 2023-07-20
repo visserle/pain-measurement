@@ -3,7 +3,7 @@
 # TODO
 # - documentation, especially for the query structure
 # - logging
-# - queary structure / query types
+# - query structure / query types
 # - xml data in imotions
 # - new names for data streams
 # - Add option to connect that checks if imotions is avaiable or if you wwant to proceed without it by asking with input()
@@ -62,8 +62,8 @@ class RemoteControliMotions():
                 # e.g. 1;RemoteControl;STATUS;;-1;TEST;1;;;;;0;;
                 self.connected = int(status_recv.split(";")[-3])
             self.logger.info("iMotions is ready for remote control.")
-        except socket.error as e:
-            self.logger.error(f"Error connecting to server: {e}")
+        except socket.error as exc:
+            self.logger.error(f"Error connecting to server: {exc}")
 
     def _send_and_receive(self, query):
         """Helper function to send and receive data from iMotions."""
