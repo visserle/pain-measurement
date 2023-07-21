@@ -1,5 +1,7 @@
+"""A module used to represent different sklearn scalers for 3D data."""
+
 from sklearn.base import TransformerMixin, BaseEstimator
-from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler, MaxAbsScaler
 
 
 class Scaler3D(BaseEstimator, TransformerMixin):
@@ -34,7 +36,6 @@ class Scaler3D(BaseEstimator, TransformerMixin):
         Validates the input data.
     """
 
-   
     def __init__(self, scaler, copy=True):
         """
         Parameters
@@ -227,7 +228,7 @@ class MinMaxScaler3D(Scaler3D):
     
     This class is a wrapper around the MinMaxScaler from scikit-learn, designed to work with 3D data. The MinMaxScaler transforms features by scaling each feature to a given range, typically between zero and one. The transformation is given by:
 
-        X_std = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0))
+        X_std = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0))\n
         X_scaled = X_std * (max - min) + min
         
     where min, max are the feature range. The scaler instance can then be used on new data to transform it the same way it did on the training set.
@@ -256,3 +257,38 @@ class MinMaxScaler3D(Scaler3D):
     """
     def __init__(self, copy=True):
         super().__init__(MinMaxScaler(copy=copy), copy)
+
+class MinAbsScaler3D(Scaler3D):
+    """
+    A class used to represent a 3D Max Absolute scaler.
+
+    This class is a wrapper around the MaxAbsScaler from scikit-learn, designed to work with 3D data. The MaxAbsScaler transforms features by scaling each feature to the range [-1, 1] by dividing each feature by its maximum absolute value. The transformation is given by:
+
+        X_scaled = X / abs(X.max(axis=0))
+
+    where X.max(axis=0) is the maximum absolute value of each feature. This scaler is especially useful for data that is already centered at zero or is sparse. Once fitted, the scaler instance can be used on new data to transform it the same way it did on the training set.
+       
+    Attributes
+    ----------
+    copy : bool
+        Determines whether the input data should be copied, or overwritten when transformed (default is True).
+    scaler : object
+        The scaler object to be used for scaling the data.
+    is_fitted : bool
+        Tracks if the scaler has been fitted.
+        
+    Methods
+    -------
+    fit(X, y=None)
+        Fits the scaler to the data.
+    transform(X)
+        Transforms the data using the fitted scaler.
+    fit_transform(X, y=None)
+        Fits the scaler to the data and then transforms the data.
+    inverse_transform(X)
+        Transforms the data back to its original space using the fitted scaler.
+    _validate_input(X)
+        Validates the input data.
+    """
+    def __init__(self, copy=True):
+        super().__init__(MaxAbsScaler(copy=copy), copy)
