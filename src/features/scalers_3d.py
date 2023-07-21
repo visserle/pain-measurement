@@ -258,7 +258,7 @@ class MinMaxScaler3D(Scaler3D):
     def __init__(self, copy=True):
         super().__init__(MinMaxScaler(copy=copy), copy)
 
-class MinAbsScaler3D(Scaler3D):
+class MaxAbsScaler3D(Scaler3D):
     """
     A class used to represent a 3D Max Absolute scaler.
 
