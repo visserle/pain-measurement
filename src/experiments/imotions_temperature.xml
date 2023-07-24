@@ -1,0 +1,5 @@
+  <EventSource Id="TemperatureCurve" Version="1" Name="TemperatureCurve">
+      <Sample Id="TemperatureCurve" Name="TemperatureCurve">
+          <Field Id="Temperature" Range="Variable"></Field>
+      </Sample>
+  </EventSource>

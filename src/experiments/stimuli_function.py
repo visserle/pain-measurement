@@ -7,8 +7,12 @@ import scipy.signal
 
 class StimuliFunction():
     """
-    The `StimuliFunction` class represent stimuli functions with sinusoidal waves and plateaus.
-
+    The `StimuliFunction` class creates a wave-like pattern that can be used for various stimuli functions. 
+    
+    Its main attribute, `wave`, is a numpy array that is computed by adding a low-frequency baseline wave and 
+    a high-frequency modulation wave (optionally with varying periods) together. The resulting `wave` can be 
+    modified using different methods in the class, like adding flat regions (plateaus) or adjusting the
+    baseline temperature.
 
     Attributes
     ----------
@@ -87,7 +91,7 @@ class StimuliFunction():
     ````
 	For more information on the resulting stimuli wave use:
 	>>> from stimuli_function import stimuli_extra
-	>>> _ = stimuli_extra(stimuli.wave, stimuli.wave_dot, stimuli.sample_rate, s_RoC=0.2)
+	>>> _ = stimuli_extra(stimuli.wave, stimuli.wave_dot, stimuli.sample_rate, s_RoC=0.2, display_stats=True)
 
 
     Notes
@@ -154,7 +158,7 @@ class StimuliFunction():
         self.sample_rate = sample_rate
 
         # Additional variables
-        self.modulation_n_periods = math.floor(self.minimal_duration / self.periods[1]) # always int in contrast to // operator
+        self.modulation_n_periods = int(self.minimal_duration / self.periods[1])
         # if True, the periods of the modulation are randomized
         self.random_periods = random_periods
 
@@ -171,8 +175,8 @@ class StimuliFunction():
     def _create_baseline(self):
         """Creates the baseline sinusoidal wave"""
         time = np.arange(0, self.minimal_duration, 1/self.sample_rate)
-        self.baseline = self.amplitudes[0] * np.sin(
-            time * 2 * np.pi * self.frequencies[0])
+        self.baseline = \
+            self.amplitudes[0] * np.sin(time * 2 * np.pi * self.frequencies[0])
 
     def _create_modulation(self):
         """
@@ -209,18 +213,18 @@ class StimuliFunction():
             time_ = np.arange(0, period, 1/self.sample_rate)
             # wave_ has to be inverted every second period to get a sinosoidal wave
             if i % 2 == 0:
-                wave_ = self.amplitudes[1] * \
-                    np.sin(np.pi * frequency * time_)
+                wave_ = \
+                    self.amplitudes[1] * np.sin(np.pi * frequency * time_)
             else:
-                wave_ = self.amplitudes[1] * \
-                    np.sin(np.pi * frequency * time_) * -1
+                wave_ = \
+                    self.amplitudes[1] * np.sin(np.pi * frequency * time_) * -1
             self.modulation.extend(wave_)
         self.modulation = np.array(self.modulation)
 
     @property
     def duration(self):
         self._duration = self.wave.shape[0] / self.sample_rate
-        return self._duration # alway include return for properties
+        return self._duration
      
     @property
     def wave_dot(self):
@@ -253,8 +257,8 @@ class StimuliFunction():
         """
         self.baseline_temp = baseline_temp
         self.wave = self.wave + self.baseline_temp
-        return self # to be able to chain methods
-
+        return self
+    
     def add_prolonged_peaks(self, time_to_be_added_per_peak, percetage_of_peaks):
         """
         Adds prolonged peaks to the wave.
@@ -353,7 +357,7 @@ class StimuliFunction():
             idx_plateaus = np.sort(idx_plateaus)
             # the distance between the plateaus should be at least 1.5 plateau_duration
             if np.all(np.diff(idx_plateaus) > 1.5 * plateau_duration * self.sample_rate):
-                break # do-while loop in Python
+                break
                 
         wave_new = []
         for idx, i in enumerate(self.wave):
@@ -364,7 +368,7 @@ class StimuliFunction():
         return self
     
 
-def stimuli_extra(f, f_dot, sample_rate, s_RoC):
+def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
     """
     For plotly graphing of f(x), f'(x), and labels. Also displays the number and length of cooling segments.
     
@@ -378,7 +382,9 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC):
         The sample rate of the data.
     s_RoC : float, optional
         The rate of change threshold (°C/s) for alternative labels.
-        For more information about thresholds, also see: http://www.scholarpedia.org/article/Thermal_touch#Thermal_thresholds
+        For more information about thresholds, also see: http://www.scholarpedia.org/article/Thermal_touch#Thermal_thresholds 
+    display_stats : bool, optional
+        If True, the number and length of cooling segments are displayed (default is True).
     
     Returns
     -------
@@ -448,8 +454,9 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC):
     label_0_sizes = segment_sizes.loc[label_0_segments.unique()]
 
     # calculate the number and length of segments in seconds
-    print(f"Cooling segments [s] based on 'Label_alt' with a rate of change threshold of {s_RoC} (°C/s):\n")
-    print((label_0_sizes/sample_rate).describe().apply('{:,.2f}'.format))
+    if display_stats:
+        print(f"Cooling segments [s] based on 'Label_alt' with a rate of change threshold of {s_RoC} (°C/s):\n")
+        print((label_0_sizes/sample_rate).describe().apply('{:,.2f}'.format))
 
     return labels, labels_alt, fig
 

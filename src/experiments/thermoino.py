@@ -17,7 +17,7 @@ def list_com_ports():
 
 class Thermoino:
     """  
-    The `Thermoino` class facilitates communication with the Thermoino.
+    The `Thermoino` class facilitates communication with the Thermoino (a composite of Thermode and Arduino).
     
     The class provides methods to initialize the device, set target temperatures, 
     create and load complex temperature courses (ctc) on the Thermoino, and execute these courses.
@@ -27,7 +27,7 @@ class Thermoino:
     Attributes
     ----------
     port : `str`
-        The serial port that the Arduino is connected to.
+        The serial port that the Thermoino is connected to.
     baud_rate : `int`
         The baud rate for the serial communication. Default is 115200.
     error_msg : `list` of `str`
@@ -56,11 +56,11 @@ class Thermoino:
     Methods
     -------
     connect():
-        Connect to the Arduino.
+        Connect to the Thermoino.
     close():
         Close the serial connection.
     diag():
-        Get basic diagnostic information from the Arduino.
+        Get basic diagnostic information from the Thermoino.
     trigger():
         Trigger MMS to get ready for action.
     set_temp(temp_target):
@@ -104,22 +104,28 @@ class Thermoino:
     )
 
     # Use luigi for complex temperature courses:
-    luigi.connect().init_ctc(
+    luigi.connect()
+    luigi.init_ctc(
         bin_size_ms=500
     ).create_ctc(
         temp_course=stimuli.wave,
         sample_rate=stimuli.sample_rate,
         rate_of_rise_option="mms_program"
     ).load_ctc()
+    luigi.trigger()
+    luigi.prep_ctc()
 
-    luigi.trigger().prep_ctc()
     luigi.exec_ctc()
-    luigi.set_temp(32).close()
+    luigi.set_temp(32)
+    luigi.close()
 
     # Use luigi to set temperatures:
-    luigi.connect().trigger().set_temp(42)
+    luigi.connect()
+    luigi.trigger()
+    luigi.set_temp(42)
     time.sleep(4)
-    luigi.set_temp(32).close()
+    luigi.set_temp(32)
+    luigi.close()
     ````
 
     TODO
@@ -127,7 +133,7 @@ class Thermoino:
     - Add option to connect() that checks if the Thermoino is already 
     connected by a try-except block
     and account for manually removed Thermoino (e.g. by checking if the port is still available)
-        -> best solution is a context manager of course, find out if this works with arduino code
+        -> best solution is a context manager of course, find out if this works with Thermoino code
     - Add option to connect that checks if a Thermoino device is available or if you want to proceed without it by asking with input()
         -> very handy for psychopy testing, where you don't want to have the Thermoino connected all the time
     - Add methods await_status and read_buffer to replace time.sleep in load_ctc
@@ -138,6 +144,7 @@ class Thermoino:
     - Add count down to trigger for time out (defined in MMS program) -> maybe with threading? would require heartbeat mechanism...
     - Fix query function
 	- Add real documentation (e.g. Sphinx, ...)
+    - Maybe create a subclass for ctc
     - etc.
     """
     
@@ -189,8 +196,8 @@ class Thermoino:
             The serial object for communication with the device.
         """
         self.ser = serial.Serial(self.port, self.baud_rate)
-        self.logger.info(f"Connected to Thermoino @ {self.port}")
         self.connected = True  
+        self.logger.info(f"Thermoino connection established @ {self.port}")
         time.sleep(1)
         return self
 
@@ -201,13 +208,14 @@ class Thermoino:
         As the `Thermoino` class is not a context manager, the connection is not closed automatically.
         """
         self.ser.close()
-        self.logger.info(f"Closed connection to Thermoino @ {self.port}")
         self.connected = False
+        self.logger.info(f"Thermoino connection closed @ {self.port}")
+        time.sleep(1)
         return self
 
     def _send_command(self, command, get_response=True):
         """
-        Send a command to the Arduino and return its response.
+        Send a command to the Thermoino and return its response.
         """
         self.ser.write(command.encode()) # encode to bytes
         if get_response:
@@ -215,23 +223,24 @@ class Thermoino:
             try:
                 decoded_response = response.decode('ascii').strip()
             except UnicodeDecodeError:
-                self.logger.error(f"Received invalid response: {response}")
+                self.logger.error(f"Thermoino response could not be decoded: {response}")
                 decoded_response = None
             return decoded_response
     
     def diag(self):
         """
-        Send a 'DIAG' command to the Arduino to get basic diagnostic information.
+        Send a 'DIAG' command to the Thermoino to get basic diagnostic information.
         """
         output = self._send_command('DIAG\n')
-        self.logger.info(f"Sent 'DIAG' (.diag) to Arduino, received output: {output}")
+        self.logger.info(f"Thermoino response to 'DIAG' (.diag): {output}")
 
     def trigger(self):
         """
         Trigger MMS to get ready for action. Waits for 50 ms to avoid errors.
         """
         output = self._send_command('START\n')
-        self.logger.info(f"Sent 'START' (.trigger) to Arduino, received output: {output}")
+        self.logger.info(f"Thermoino response to 'START' (.trigger): {output}")
+        self.logger.info("Thermoino waits 50 ms to avoid errors.")
         time.sleep(0.05) # to avoid errors
         return self
 
@@ -248,7 +257,7 @@ class Thermoino:
         """
         move_time_us = round(((temp_target - self.temp) / self.rate_of_rise) * 1e6)
         output = self._send_command(f'MOVE;{move_time_us}\n')
-        self.logger.info(f"Sent 'MOVE' (.set_temp) to Arduino with temperature {temp_target}°C, received output: {output}")
+        self.logger.info(f"Thermoino response to 'MOVE' (.set_temp), temperature {temp_target} °C: {output}")
         self.temp = temp_target
         return self
 
@@ -256,7 +265,7 @@ class Thermoino:
         """
         Initialize a complex temperature course (ctc) on the Thermoino device
         by firstly defining the bin size. This has to be done before loading the ctc 
-        into the Arduino (load_ctc).
+        into the Thermoino (load_ctc).
 
         This function also reset all ctc information stored on the Thermoino device.
                 
@@ -271,7 +280,7 @@ class Thermoino:
             The bin size in milliseconds for the ctc.
         """
         output = self._send_command(f'INITCTC;{bin_size_ms}\n')
-        self.logger.info(f"Sent 'INITCTC' (.init_ctc) to Arduino, received output: {output}")
+        self.logger.info(f"Thermoino response to 'INITCTC' (.init_ctc): {output}")
         self.bin_size_ms = bin_size_ms
         return self
     
@@ -311,7 +320,7 @@ class Thermoino:
             Mofidied if rate of rise option is "adjusted". The rate of rise of temperature in degree Celsius per second.
         `ctc` : `numpy.array`
             The created ctc. Note that the length of the ctc is one less than the length of the temperature course because of (np.diff). 
-            This is accounted for in the Arduino code by duplicating the second to last bin.
+            This is accounted for in the Thermoino code by duplicating the second to last bin.
             Therefore, it is recommended to use a temperature course with no changes in the last second.
         """
         
@@ -330,7 +339,7 @@ class Thermoino:
             self.rate_of_rise = rate_of_rise_adjusted
         else:
             if rate_of_rise_option != "mms_program":
-                raise ValueError("rate_of_raise_value has to be either mms_program or adjusted")
+                raise ValueError("Thermoino rate of raise value has to be either mms_program or adjusted")
 
         rate_of_rise_ms = self.rate_of_rise / 1e3
         # scale to rate_of_rise (in milliseconds)
@@ -339,6 +348,7 @@ class Thermoino:
         temp_course_resampled_diff_binned = np.round(temp_course_resampled_diff_binned).astype(int)
         self.ctc = temp_course_resampled_diff_binned
         self.logger.info(f"Created ctc with {len(self.ctc)} bins á {self.bin_size_ms} ms.")
+        self.logger.info(f"Thermoino-adapted ctc is ready to be loaded with {len(self.ctc)} bins á {self.bin_size_ms} ms.")
         return self
 
     def load_ctc(self, debug = False):      
@@ -352,15 +362,15 @@ class Thermoino:
         debug : `bool`, optional
             If True, debug information for every bin. Default is False.
         """
-        self.logger.info("Loading ctc into Arduino ...")
+        self.logger.info("Thermoino is receiving the ctc in single bins ...")
         for idx, i in enumerate(self.ctc):
             output = self._send_command(f'LOADCTC;{i}\n', get_response=debug)
             # workaround: time.sleep after every iteration,
             # not using await_status at the moment
             time.sleep(0.05)
             if debug:
-                self.logger.debug(f"Sent 'LOADCTC' (.load_ctc) to Arduino with bin {idx + 1} of {len(self.ctc)}, received output: {output}")
-        self.logger.info("Finished loading ctc into Arduino.")
+                self.logger.debug(f"Thermoino response to 'LOADCTC' (.load_ctc), bin {idx + 1} of {len(self.ctc)}: {output}")
+        self.logger.info("Thermoino received the whole ctc.")
         return self
 
     def query_ctc(self, queryLvl, statAbort):
@@ -387,7 +397,7 @@ class Thermoino:
             The output from the Thermoino device.
         """
         output = self._send_command(f'QUERYCTC;{queryLvl};{statAbort}\n')
-        self.logger.info(f"Sent 'QUERYCTC' (.query_ctc) to Arduino, received output: {output}")
+        self.loffer.info(f"Thermoino response to 'QUERYCTC' (.query_ctc): {output}")
 
     def prep_ctc(self):
         """
@@ -397,10 +407,10 @@ class Thermoino:
         if not self.temp == self.temp_course_resampled[0]:
             sleep_time = round(abs(self.temp - self.temp_course_resampled[0]) / self.rate_of_rise,1)
             sleep_time += 0.5 # add 0.5 s to be sure
-            self.logger.info(f"Preparing ctc for execution. Set starting temperature and wait {sleep_time} s for the temperature to be reached ...")
+            self.logger.info(f"Thermoino prepares the ctc for execution by setting the starting temperature and waiting {sleep_time} s for the temperature to be reached.")
             self.set_temp(self.temp_course_resampled[0])
             time.sleep(sleep_time)
-        self.logger.info(f"Temperature is {self.temp}°C. The ctc is ready to be executed.")
+        self.logger.info(f"Thermoino set the temperature to {self.temp}°C. The ctc is ready for execution.")
         return self
         
     def exec_ctc(self):
@@ -412,9 +422,9 @@ class Thermoino:
             raise ValueError("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
         
         output = self._send_command(f'EXECCTC\n')
-        self.logger.info(f"Sent 'EXECCTC' (.exec_ctc) to Arduino, received output: {output}")
+        self.logger.info(f"Thermoino response to 'EXECCTC' (.exec_ctc): {output}")
         self.temp = round(self.temp_course_resampled[-2],1) # -2 because np.diff makes the array one shorter, see side effects of create_ctc
-        self.logger.info(f"Set temperature to {self.temp}°C after the ctc was executed.")
+        self.logger.info(f"Thermoino will set the temperature to {self.temp} °C after the ctc has been executed.")
         return self
 
     def flush_ctc(self):
@@ -425,7 +435,7 @@ class Thermoino:
         also automatically called by the `init_ctc` method.
         """
         output = self._send_command('FLUSHCTC\n')
-        self.logger.info(f"Sent 'FLUSHCTC' (.flush_ctc) to Arduino, received output: {output}")
+        self.logger.info(f"Thermoino response to 'FLUSHCTC' (.flush_ctc): {output}")
 		
 if __name__ == "__main__":
     pass

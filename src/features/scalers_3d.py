@@ -8,7 +8,8 @@ class Scaler3D(BaseEstimator, TransformerMixin):
     """
     A class used to represent a 3D scaler.
     
-    This class is a wrapper around various scikit-learn scalers, designed to work with 3D data.
+    This class is a wrapper around various scikit-learn scalers, designed to work with 3D data. 
+    The scaler instance can then be used on new data to transform it the same way it did on the training set.
     
     Attributes
     ----------
@@ -164,7 +165,7 @@ class StandardScaler3D(Scaler3D):
 
         z = (x - u) / s
         
-    where `u` is the mean of the training samples and `s` is the standard deviation of the training samples. The scaler instance can then be used on new data to transform it the same way it did on the training set. 
+    where `u` is the mean of the training samples and `s` is the standard deviation of the training samples. 
     
     Attributes
     ----------
@@ -231,7 +232,7 @@ class MinMaxScaler3D(Scaler3D):
         X_std = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0))\n
         X_scaled = X_std * (max - min) + min
         
-    where min, max are the feature range. The scaler instance can then be used on new data to transform it the same way it did on the training set.
+    where min, max are the feature range.
     
     Attributes
     ----------

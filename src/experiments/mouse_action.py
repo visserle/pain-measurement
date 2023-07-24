@@ -2,7 +2,7 @@
 
 # TODO:
 #   -> also maybe add a check if we are in a psychopy experiment? (very useful for aborting experiments)
-# - add support for multiple monitors, maybe using the screeninfo library
+# - add support for multiple monitors, maybe using the screeninfo library? and how does mouse behave?
 # from win32api import GetSystemMetrics
 # width = user32.GetSystemMetrics(0)
 # height = user32.GetSystemMetrics(1)
@@ -17,7 +17,7 @@
 """
 This script uses the 'mouse' library to manipulate the mouse state.
 
-The 'mouse' library is a pure Python library with no dependencies, which provides functions to simulate mouse interactions.
+The 'mouse' library is written in pure Python library with no dependencies and provides functions to simulate mouse interactions.
 It works on both Windows and Linux. More details about the library can be found here: https://pypi.org/project/mouse/
 
 This script also adjusts the DPI awareness of the application using ctypes to ensure that the correct screen resolution is retrieved 
@@ -31,6 +31,7 @@ Raises
 ------
 Exception
     If the 'mouse' library fails to import and install, an exception is raised.
+    Note: If you are running this script for the first time in psychopy, it will throw an error. Simply run it again and it should work.
 """
 
 
@@ -66,6 +67,8 @@ def check(pixel_y):
     """
     Checks if the mouse is pressed and moves it to the pixel y-coordinate if necessary.
 
+    This function can be used in combination with a psychopy slider component for continuous ratings by calling it every frame.
+
     Parameters
     ----------
     pixel_y : float
@@ -78,6 +81,7 @@ def check(pixel_y):
     It then checks if the current y-coordinate of the mouse (as indicated by mouse.get_position) 
     is within a certain range of the desired y-coordinate. 
     If it is not, it moves the mouse to the desired y-coordinate using mouse.move.
+
     """
     if not mouse.is_pressed(button='left'):
         hold()

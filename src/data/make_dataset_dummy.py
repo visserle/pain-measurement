@@ -3,13 +3,12 @@
 # TODO:
 # - add extra functionalities from make_dataset.py
 # - make reshaping more elegant, e.g. data = np.reshape(data, (self.n_samples, -1, data.shape[-1]))
-
+import random
 from pathlib import Path
+
 import numpy as np
-from numpy.random import randint
 import pandas as pd
 import neurokit2 as nk
-import random
 from matplotlib import pyplot as plt
 
 class SimulateTrial:
@@ -324,7 +323,6 @@ if __name__ == '__main__':
 # import logging
 # from dotenv import find_dotenv, load_dotenv
 # import numpy as np
-# from numpy.random import randint
 # import pandas as pd
 # import matplotlib.pyplot as plt
 # import neurokit2 as nk

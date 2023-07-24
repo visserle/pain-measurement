@@ -1,0 +1,5 @@
+  <EventSource Id="RatingCurve" Version="1" Name="RatingCurve">
+      <Sample Id="RatingCurve" Name="RatingCurve">
+          <Field Id="Rating" Range="Variable"></Field>
+      </Sample>
+  </EventSource>
