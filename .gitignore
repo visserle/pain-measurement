@@ -5,6 +5,8 @@
 /runs
 /src/experiments/imotions.py
 notebooks/testing_stuff.ipynb
+notebooks/_stuff.ipynb
+
 
 # remove once logging is correctly defined
 /notebooks/runs
