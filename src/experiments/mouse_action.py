@@ -13,6 +13,9 @@
 # # this prints out the resolution (width and height), position (x, y), and other information for each monitor 
 # print(width, height)
 
+# https://www.phind.com/search?cache=b7ba5b4f-e9d5-4e1f-8bb1-bed231f1c5a9
+# How can I use the python `mouse` (https://pypi.org/project/mouse/) package with multiple monitors?
+
 
 """
 This script uses the 'mouse' library to manipulate the mouse state.
