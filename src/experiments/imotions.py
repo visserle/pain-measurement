@@ -2,13 +2,29 @@
 
 # TODO
 # - documentation, especially for the query structure
-# - logging
 # - query structure / query types
 # - xml data in imotions
 #    -> check if send_temperatures and send_ratings work
 # - export data function, p. 34 onwards
 # - Add option to connect that checks if imotions is avaiable or if you want to proceed without it by asking with input()
 #    -> very handy for psychopy testing, where you don't want to have imotions connected all the time
+# add per class logger? 
+# - self.logger = logging.getLogger(__name__+"."+self.__class__.__name__)
+# - also add fabric method for logger?
+    # import logging
+
+    # def setup_logger(logger_name, log_file, level=logging.INFO):
+    #     l = logging.getLogger(logger_name)
+    #     formatter = logging.Formatter('%(asctime)s : %(message)s')
+    #     fileHandler = logging.FileHandler(log_file, mode='w')
+    #     fileHandler.setFormatter(formatter)
+    #     streamHandler = logging.StreamHandler()
+    #     streamHandler.setFormatter(formatter)
+
+    #     l.setLevel(level)
+    #     l.addHandler(fileHandler)
+    #     l.addHandler(streamHandler)
+
 
 import socket
 import logging
@@ -46,7 +62,7 @@ class RemoteControliMotions():
 
         # Additional variables
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO) # debug, info, warning, error, critical
+        self.logger.setLevel(logging.INFO)
         if not self.logger.handlers:  # Check if the logger already has a handler for use in e.g. jupyter notebooks
             handler = logging.StreamHandler()
             handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
@@ -75,7 +91,8 @@ class RemoteControliMotions():
                 time.sleep(0.1)
             self.logger.info("iMotions is ready for remote control.")
         except socket.error as exc:
-            self.logger.error(f"iMotions is not ready for remote. Error connecting to server: {exc}")
+            self.logger.error(f"iMotions is not ready for remote control. Error connecting to server:\n{exc}")
+            raise Exception(f"iMotions is not ready for remote control. Error connecting to server:\n{exc}")
 
     def start_study(self):
         """
@@ -116,7 +133,7 @@ class RemoteControliMotions():
             self.sock.close()
             self.logger.info("iMotions connection for remote control closed.")
         except socket.error as exc:
-            self.logger.error(f"iMotions connection for remote control could not be closed: {exc}")
+            self.logger.error(f"iMotions connection for remote control could not be closed:\n{exc}")
         finally:
             self.connected = None
         
@@ -158,7 +175,7 @@ class EventRecievingiMotions():
             self.sock.connect((self.HOST, self.PORT))
             self.logger.info("iMotions is ready for event recieving.")
         except socket.error as exc:
-            self.logger.error(f"iMotions is not ready for event recieving. Error connecting to server: {exc}")
+            self.logger.error(f"iMotions is not ready for event recieving. Error connecting to server:\n{exc}")
 
     def _send_message(self, message):
         self.sock.sendall(message.encode('utf-8'))
@@ -210,7 +227,7 @@ class EventRecievingiMotions():
             self.sock.close()
             self.logger.info("iMotions connection for event recieving closed.")
         except socket.error as exc:
-            self.logger.error(f"iMotions connection for event recieving could not be closed: {exc}")
+            self.logger.error(f"iMotions connection for event recieving could not be closed:\n{exc}")
 
 if __name__ == "__main__":
     pass
