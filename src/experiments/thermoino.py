@@ -30,7 +30,7 @@ class ErrorCodes(Enum):
     ERR_DEBUG_RANGE = -11
 
 class OkCodes(Enum):
-    """OK codes as defined in the Thermoino code (Thermode_PWM.ino)"""
+    """OK codes as defined in the Thermoino code"""
     OK_NULL = 0
     OK = 1
     OK_READY = 2
@@ -76,10 +76,13 @@ class Thermoino:
         Trigger MMS to get ready for action.
     set_temp(temp_target):
         Set a target temperature on the Thermoino.
+    wait(duration):
+        Sleep for a given duration in seconds.
 
     New stuff
     -----------
     - renamed init() to connect to be consistent with python naming conventions
+    - added wait() to have a class-wide sleep function with logging
 
     Examples
     --------
@@ -109,8 +112,7 @@ class Thermoino:
 
     TODO
     ----
-    - Add option to connect() that checks if the Thermoino is already 
-        connected by a try-except block
+    - Add option to connect() that checks if the Thermoino is already connected by a try-except block
         and account for manually removed Thermoino (e.g. by checking if the port is still available)
         -> best solution is a context manager of course, find out if this works with Thermoino code
     - Add count down to trigger for time out (defined in MMS program) -> maybe with threading? would require heartbeat mechanism...
@@ -246,14 +248,21 @@ class Thermoino:
         self.logger.info(f"Thermoino response to 'MOVE' (.set_temp), temperature {temp_target} °C: {output}.")
         self.temp = temp_target
         return self
+    
+    def wait(self, duration):
+        """
+        Sleep for a given duration in seconds.
+        """
+        self.logger.info(f"Thermoino waits for {duration} s.")
+        time.sleep(duration)
+        return self
 
 
-# not composition, but inheritance because of the same methods
 class ThermoinoComplexTimeCourses(Thermoino):
     """
-    The `ThermoinoComplexTimeCourses` class facilitates communication with the Thermoino (a composite of Thermode and Arduino).
+    The `ThermoinoComplexTimeCourses` class facilitates communication with the Thermoino for complex temperature courses (ctc).
     
-    The class provides methods to initialize the device and set target temperatures.
+    The class provides methods to initialize the device and set target temperatures,
     create and load complex temperature courses (ctc) on the Thermoino, and execute these courses.
     
     For the most part, it is based on the MATLAB script UseThermoino.m.
@@ -298,6 +307,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
         Trigger MMS to get ready for action.
     set_temp(temp_target):
         Set a target temperature on the Thermoino.
+    wait(duration):
+        Sleep for a given duration in seconds.
     init_ctc(bin_size_ms):
         Initialize a complex temperature course (ctc) on the Thermoino by sending the bin size only.
     create_ctc(temp_course, sample_rate, rate_of_rise_option = "mms_program"):
@@ -349,6 +360,14 @@ class ThermoinoComplexTimeCourses(Thermoino):
     luigi.exec_ctc()
     luigi.set_temp(32)
     luigi.close()
+
+    # Use luigi to set temperatures:
+    luigi.connect()
+    luigi.trigger()
+    luigi.set_temp(42)
+    time.sleep(4)
+    luigi.set_temp(32)
+    luigi.close()
     ````
     
     TODO
@@ -357,7 +376,6 @@ class ThermoinoComplexTimeCourses(Thermoino):
     - Fix usage of units in the docstrings (some small inaccuracies)
     - Fix query function
     """
-    
     
     
     def __init__(self, port, temp_baseline, rate_of_rise):
@@ -457,7 +475,6 @@ class ThermoinoComplexTimeCourses(Thermoino):
         # Thermoino only accepts integers
         temp_course_resampled_diff_binned = np.round(temp_course_resampled_diff_binned).astype(int)
         self.ctc = temp_course_resampled_diff_binned
-        self.logger.info(f"Created ctc with {len(self.ctc)} bins á {self.bin_size_ms} ms.")
         self.logger.info(f"Thermoino-adapted ctc is ready to be loaded with {len(self.ctc)} bins á {self.bin_size_ms} ms.")
         return self
 
@@ -515,11 +532,11 @@ class ThermoinoComplexTimeCourses(Thermoino):
         This is seperate from exec_ctc to be able to use exec_ctc in a psychopy routine and control the exact length of the stimulation.
         """
         if not self.temp == self.temp_course_resampled[0]:
-            sleep_time = round(abs(self.temp - self.temp_course_resampled[0]) / self.rate_of_rise,1)
-            sleep_time += 0.5 # add 0.5 s to be sure
-            self.logger.info(f"Thermoino prepares the ctc for execution by setting the starting temperature and waiting {sleep_time} s for the temperature to be reached.")
+            self.logger.info(f"Thermoino prepares the ctc for execution by setting the starting temperature waiting for it to be reached.")
+            duration = round(abs(self.temp - self.temp_course_resampled[0]) / self.rate_of_rise,1)
+            duration += 0.5 # add 0.5 s to be sure
             self.set_temp(self.temp_course_resampled[0])
-            time.sleep(sleep_time)
+            self.wait(duration)
         self.logger.info(f"Thermoino set the temperature to {self.temp}°C. The ctc is ready for execution.")
         return self
 
