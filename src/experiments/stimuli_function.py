@@ -210,7 +210,8 @@ class StimuliFunction():
         for i in range(self.modulation_n_periods):
             period = self.periods[1] + modulation_random_factor[i]
             frequency = 1/period
-            time_ = np.arange(0, period, 1/self.sample_rate)
+            num_steps = int(period * self.sample_rate)
+            time_ = np.linspace(0, period, num_steps) # do not use arange here
             # wave_ has to be inverted every second period to get a sinosoidal wave
             if i % 2 == 0:
                 wave_ = \
@@ -380,7 +381,7 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
         The derivative of the function at each time point.
     sample_rate : int
         The sample rate of the data.
-    s_RoC : float, optional
+    s_RoC : float
         The rate of change threshold (°C/s) for alternative labels.
         For more information about thresholds, also see: http://www.scholarpedia.org/article/Thermal_touch#Thermal_thresholds 
     display_stats : bool, optional
