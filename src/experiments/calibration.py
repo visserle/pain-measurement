@@ -15,9 +15,13 @@ import numpy as np
 from scipy import stats
 import logging
 
+from src.experiments.logger import setup_logger, close_logger
+
 class PainThresholdEstimator:
     """
-    
+    Recursive Bayesian estimation to
+        1. update belief about the heat pain threshold and
+        2. decide on the temperature for the next trial.
 
     Example
     -------
@@ -32,6 +36,7 @@ class PainThresholdEstimator:
     ```
     """
     def __init__(self, mean_temperature, std_temperature=4, likelihood_std=1, reduction_factor=0.9, trials=7):
+        self.logger = setup_logger(__name__, level=logging.INFO)
         self.mean_temperature = mean_temperature
         self.std_temperature = std_temperature
         self.likelihood_std = likelihood_std
@@ -46,18 +51,12 @@ class PainThresholdEstimator:
         self.prior = stats.norm.pdf(self.range_temperature, loc=self.mean_temperature, scale=self.std_temperature)
         self.prior /= np.sum(self.prior)  # normalize
 
-        self.current_temperature = np.round(self.range_temperature[np.argmax(self.prior)], 1)
+        self.current_temperature = np.round(self.range_temperature[np.argmax(self.prior)], 1) # = mean_temperature
         self.temperatures = [self.current_temperature]
         self.priors = []
         self.likelihoods = []
         self.posteriors = []
-
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-        if not self.logger.handlers:
-            handler = logging.StreamHandler()
-            handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
-            self.logger.addHandler(handler)
+    
 
     @property
     def steps(self):
@@ -92,9 +91,47 @@ class PainThresholdEstimator:
         self.prior = np.copy(posterior)
 
         if trial == self.trials - 1: # last trial
-            self.logger.info(f"Calibration pain threshold steps (°C) were {self.steps}.\n")
+            self.logger.info(f"Calibration pain threshold steps (°C) were: {self.steps}.\n")
             self.logger.info(f"Calibration pain threshold estimate: {self.get_estimate()} °C")
 
     def get_estimate(self):
         return self.temperatures[-1]
+
+
+class PainRegressor:
+    """
+    
+    Notes
+    -----
+    Renamed from Psychometric-perceptual scaling to PainRegressor.
+    """
+    def __init__(self, pain_threshold):
+        self.logger = setup_logger(__name__, level=logging.INFO)
+        self.pain_threshold = np.array(pain_threshold)
+        self.fixed_temperatures = np.array(pain_threshold + [0.5, 1, 2, 1])
+        self.fixed_vas = np.array([10, 30, 90])
+
+        self.vas_ratings = [0]
+        self.temperatures = [pain_threshold]
+
+        self.slope = None
+        self.intercept = None
+            
+
+    def create_regression_(self, vas_rating, fixed_temperatures):
+        self.vas_ratings.append(vas_rating)
+        self.temperatures.append(fixed_temperatures)
+        self.logger.info(f"Calibration psychometric-perceptual scaling: {fixed_temperatures} °C was rated {vas_rating} on the VAS scale.")
+
+        if len(self.temperatures) == len(self.fixed_temperatures) + 1: # last trial for first regression
+            self.slope, self.intercept = np.polyfit(self.temperatures, self.vas_ratings, 1)
+            # y_pred = slope * x + intercept
+
+    def t():
+        pass
+        # x = (y_pred - intercept) / slope
+        # 10 30 90...
+
+    def improve_regression():
+        pass
 

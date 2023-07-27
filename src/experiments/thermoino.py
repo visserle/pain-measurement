@@ -1,3 +1,8 @@
+# work in progress
+
+# TODO
+# - check if new logger works
+
 import re
 import time
 import logging
@@ -5,6 +10,9 @@ from enum import Enum
 import numpy as np
 import serial
 import serial.tools.list_ports
+
+from src.experiments.logger import setup_logger, close_logger
+
 
 def list_com_ports():
     """List all serial ports"""
@@ -54,12 +62,12 @@ class Thermoino:
     ser : `serial.Serial`
         Serial object for communication with the Thermoino.
     temp : `int`
-        Current (calculated) temperature in degree Celsius. Starts at the baseline temperature.
+        Current (calculated) temperature [°C]. Starts at the baseline temperature.
     temp_baseline : `int`
-        Baseline temperature in degree Celsius. 
+        Baseline temperature [°C]. 
         It has to be the same as in the MMS program.
     rate_of_rise : `int`
-        Rate of rise of temperature in degree Celsius per second. It has to be the same as in the MMS program.
+        Rate of rise of temperature [°C/s]. It has to be the same as in the MMS program.
         For Pathways 10 is standard. For TAS 2 it is 13. For CHEPS something over 50 (ask Björn).
         For normal temperature plateaus a higher rate of rise is recommended (faster);
         for complex temperature courses a lower rate of rise is recommended (more precise).
@@ -77,7 +85,7 @@ class Thermoino:
     set_temp(temp_target):
         Set a target temperature on the Thermoino.
     wait(duration):
-        Sleep for a given duration in seconds.
+        Wait for a given duration in seconds.
 
     New stuff
     -----------
@@ -138,7 +146,7 @@ class Thermoino:
         temp_baseline : `int`, optional
             Baseline temperature in °C. It has to be the same as in the MMS program.
         rate_of_rise : `int`
-            Rate of rise of temperature in degree Celsius per second. It has to be the same as in the MMS program.
+            Rate of rise of temperature in °C/s. It has to be the same as in the MMS program.
             For Pathways 10 is standard. For TAS 2 it is 13. For CHEPS something over 50 (ask Björn).
             It can be changed class-wide by calucalting an adjusted rate of rise in the create_ctc method.
         """
@@ -148,14 +156,9 @@ class Thermoino:
         self.temp = temp_baseline # will get continuous class-internal updates to match the temperature of the Thermode
         self.rate_of_rise = rate_of_rise
 
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-        if not self.logger.handlers:  # Check if the logger already has a handler for use in e.g. jupyter notebooks
-            handler = logging.StreamHandler()
-            handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
-            self.logger.addHandler(handler)
         self.connected = False # will be set to True in connect()
 
+        self.logger = setup_logger(__name__, level=logging.INFO)
 
     def connect(self):
         """
@@ -183,6 +186,7 @@ class Thermoino:
         self.ser.close()
         self.connected = False
         self.logger.info(f"Thermoino connection closed @ {self.PORT}.")
+        close_logger(self.logger)
         time.sleep(1)
     
     def _handle_response(self, decoded_response):
@@ -211,7 +215,7 @@ class Thermoino:
             try:
                 decoded_response = response.decode('ascii').strip()
             except UnicodeDecodeError:
-                self.logger.error(f"Thermoino response could not be decoded: {encoded_response}.")
+                self.logger.error(f"Thermoino response could not be decoded: {response}.")
                 decoded_response = None
             return self._handle_response(decoded_response)
 
@@ -245,13 +249,13 @@ class Thermoino:
         """
         move_time_us = round(((temp_target - self.temp) / self.rate_of_rise) * 1e6)
         output = self._send_command(f'MOVE;{move_time_us}\n')
-        self.logger.info(f"Thermoino response to 'MOVE' (.set_temp), temperature {temp_target} °C: {output}.")
+        self.logger.info(f"Thermoino response to 'MOVE' (.set_temp) to {temp_target} °C: {output}.")
         self.temp = temp_target
         return self
     
     def wait(self, duration):
         """
-        Sleep for a given duration in seconds.
+        Wait for a given duration in seconds.
         """
         self.logger.info(f"Thermoino waits for {duration} s.")
         time.sleep(duration)
@@ -262,7 +266,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     """
     The `ThermoinoComplexTimeCourses` class facilitates communication with the Thermoino for complex temperature courses (ctc).
     
-    The class provides methods to initialize the device and set target temperatures,
+    The class inherits from `Thermoino` and provides methods to initialize the device, set target temperatures,
     create and load complex temperature courses (ctc) on the Thermoino, and execute these courses.
     
     For the most part, it is based on the MATLAB script UseThermoino.m.
@@ -277,18 +281,18 @@ class ThermoinoComplexTimeCourses(Thermoino):
     ser : `serial.Serial`
         Serial object for communication with the Thermoino.
     temp : `int`
-        Current (calculated) temperature in degree Celsius. Starts at the baseline temperature.
+        Current (calculated) temperature [°C]. Starts at the baseline temperature.
     temp_baseline : `int`
-        Baseline temperature in degree Celsius. 
+        Baseline temperature [°C]. 
         It has to be the same as in the MMS program.
     temp_course_duration : `int`
-        Duration of the temperature course in seconds.
+        Duration of the temperature course [s].
     temp_course_resampled : `np.array`
         Resampled temperature course (based on bin_size_ms) used to calculate the ctc.
     ctc : `numpy.array`
         The resampled, differentiated, binned temperature course to be loaded into the Thermoino.
     rate_of_rise : `int`
-        Rate of rise of temperature in degree Celsius per second. It has to be the same as in the MMS program.
+        Rate of rise of temperature [°C/s]. It has to be the same as in the MMS program.
         For Pathways 10 is standard. For TAS 2 it is 13. For CHEPS something over 50 (ask Björn).
         For normal temperature plateaus a higher rate of rise is recommended (faster);
         for complex temperature courses a lower rate of rise is recommended (more precise).
@@ -308,7 +312,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     set_temp(temp_target):
         Set a target temperature on the Thermoino.
     wait(duration):
-        Sleep for a given duration in seconds.
+        Wait for a given duration in seconds.
     init_ctc(bin_size_ms):
         Initialize a complex temperature course (ctc) on the Thermoino by sending the bin size only.
     create_ctc(temp_course, sample_rate, rate_of_rise_option = "mms_program"):
@@ -327,7 +331,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     New stuff
     -----------
     - renamed init() to connect to be consistent with python naming conventions
-    - create_ctc(), where you load your temperature course [°C/s] with sampling rate and it returns the ctc (a resampled, differentiated, binned temperature course)
+    - create_ctc(), where you load your temperature course with sampling rate and it returns the ctc (a resampled, differentiated, binned temperature course)
     - prep_ctc(), which prepares the starting temperature for execution of the ctc
     
     Examples
@@ -427,7 +431,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         Parameters
         ----------
         temp_course : `numpy.ndarray`
-            The temperature course in degree Celsius per second.
+            The temperature course [°C] in s.
         sample_rate : `int`
             Sample rate in Hz.
         rate_of_rise_option : `str`, optional
@@ -440,11 +444,11 @@ class ThermoinoComplexTimeCourses(Thermoino):
         ------------
         Creates / modifies the following attributes (self.):\n
         `temp_course_duration` : `int`
-            Duration of the temperature course in seconds.
+            Duration of the temperature course [s].
         `temp_course_resampled` : `np.array`
             Resampled temperature course (based on bin_size_ms) used to calculate the ctc.
         `rate_of_rise` : `int`
-            The rate of rise of temperature in degree Celsius per second.
+            The rate of rise of temperature [°C/s].
             Mofidied if rate of rise option is "adjusted".
         `ctc` : `numpy.array`
             The created ctc. Note that the length of the ctc is one less than the length of the temperature course because of (np.diff). 
@@ -532,12 +536,12 @@ class ThermoinoComplexTimeCourses(Thermoino):
         This is seperate from exec_ctc to be able to use exec_ctc in a psychopy routine and control the exact length of the stimulation.
         """
         if not self.temp == self.temp_course_resampled[0]:
-            self.logger.info(f"Thermoino prepares the ctc for execution by setting the starting temperature waiting for it to be reached.")
+            self.logger.info(f"Thermoino prepares the ctc for execution by setting the starting temperature ...")
             duration = round(abs(self.temp - self.temp_course_resampled[0]) / self.rate_of_rise,1)
             duration += 0.5 # add 0.5 s to be sure
             self.set_temp(self.temp_course_resampled[0])
             self.wait(duration)
-        self.logger.info(f"Thermoino set the temperature to {self.temp}°C. The ctc is ready for execution.")
+        self.logger.info(f"Thermoino set the temperature to {self.temp}°C. The ctc is ready to be executed.")
         return self
 
     def exec_ctc(self):
@@ -550,8 +554,9 @@ class ThermoinoComplexTimeCourses(Thermoino):
         
         output = self._send_command(f'EXECCTC\n')
         self.logger.info(f"Thermoino response to 'EXECCTC' (.exec_ctc): {output}.")
+        self.logger.info(f"Thermoino will execute the ctc with a duration of {self.temp_course_duration} s.")
         self.temp = round(self.temp_course_resampled[-2],2) # -2 because np.diff makes the array one shorter, see side effects of create_ctc
-        self.logger.info(f"Thermoino will set the temperature to {self.temp} °C after the ctc has been executed.")
+        self.logger.info(f"Thermoino will set the temperature to {self.temp} °C after the ctc ended.")
         return self
 
     def flush_ctc(self):
