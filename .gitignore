@@ -1,10 +1,9 @@
 # work in progress
 
 # excluded for now
-/experiments
 /runs
+/experiments/mpad1/data
 /src/experiments/imotions.py
-notebooks/testing_stuff.ipynb
 notebooks/_stuff.ipynb
 
 
