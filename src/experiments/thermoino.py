@@ -1,9 +1,5 @@
 # work in progress
 
-# TODO
-# - check if new logger works
-
-import re
 import time
 import logging
 from enum import Enum
@@ -11,8 +7,22 @@ import numpy as np
 import serial
 import serial.tools.list_ports
 
-from src.experiments.logger import setup_logger, close_logger
+def setup_default_logger():
+    l = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
+    l.setLevel(logging.INFO)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    stream_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+    l.addHandler(stream_handler)
+    return l
 
+try:
+    from .logger import setup_logger
+    logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
+except ModuleNotFoundError:
+    logger = setup_default_logger()
+    logger.info("Could not import logger from src.experiments.logger. Using default logger.")
+    
 
 def list_com_ports():
     """List all serial ports"""
@@ -158,7 +168,6 @@ class Thermoino:
 
         self.connected = False # will be set to True in connect()
 
-        self.logger = setup_logger(__name__, level=logging.INFO)
 
     def connect(self):
         """
@@ -172,7 +181,7 @@ class Thermoino:
         """
         self.ser = serial.Serial(self.PORT, self.BAUD_RATE)
         self.connected = True  
-        self.logger.info(f"Thermoino connection established @ {self.PORT}.")
+        logger.info("Thermoino connection established @ %s.", self.PORT)
         time.sleep(1)
         return self
 
@@ -185,8 +194,7 @@ class Thermoino:
         """
         self.ser.close()
         self.connected = False
-        self.logger.info(f"Thermoino connection closed @ {self.PORT}.")
-        close_logger(self.logger)
+        logger.info("Thermoino connection closed @ %s.", self.PORT)
         time.sleep(1)
     
     def _handle_response(self, decoded_response):
@@ -215,7 +223,7 @@ class Thermoino:
             try:
                 decoded_response = response.decode('ascii').strip()
             except UnicodeDecodeError:
-                self.logger.error(f"Thermoino response could not be decoded: {response}.")
+                logger.error("Thermoino response could not be decoded: %s", response)
                 decoded_response = None
             return self._handle_response(decoded_response)
 
@@ -224,15 +232,15 @@ class Thermoino:
         Send a 'DIAG' command to the Thermoino to get basic diagnostic information.
         """
         output = self._send_command('DIAG\n')
-        self.logger.info(f"Thermoino response to 'DIAG' (.diag): {output}.")
+        logger.info("Thermoino response to 'DIAG' (.diag): %s.", output)
 
     def trigger(self):
         """
         Trigger MMS to get ready for action. Wait for 50 ms to avoid errors.
         """
         output = self._send_command('START\n')
-        self.logger.info(f"Thermoino response to 'START' (.trigger): {output}.")
-        self.logger.info("Thermoino waits 50 ms to avoid errors.")
+        logger.info("Thermoino response to 'START' (.trigger): %s.", output)
+        logger.info("Thermoino waits 50 ms to avoid errors.")
         time.sleep(0.05) # to avoid errors
         return self
 
@@ -249,15 +257,21 @@ class Thermoino:
         """
         move_time_us = round(((temp_target - self.temp) / self.rate_of_rise) * 1e6)
         output = self._send_command(f'MOVE;{move_time_us}\n')
-        self.logger.info(f"Thermoino response to 'MOVE' (.set_temp) to {temp_target} °C: {output}.")
+        logger.info("Thermoino response to 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
         self.temp = temp_target
         return self
     
     def wait(self, duration):
         """
         Wait for a given duration in seconds.
+        This delays execution in python for a given number of seconds.
+
+        Note
+        ----
+        Should not be used for continuous ratings as this function blocks the execution
+        of anything else (at least as long as there is no threading).
         """
-        self.logger.info(f"Thermoino waits for {duration} s.")
+        logger.info("Thermoino waits for %s s.", duration)
         time.sleep(duration)
         return self
 
@@ -380,11 +394,10 @@ class ThermoinoComplexTimeCourses(Thermoino):
     - Fix usage of units in the docstrings (some small inaccuracies)
     - Fix query function
     """
-    
-    
+       
     def __init__(self, port, temp_baseline, rate_of_rise):
         super().__init__(port, temp_baseline, rate_of_rise)
-        self.logger.info("Thermoino for complex time courses initialized.")
+        logger.info("Thermoino for complex time courses initialized.")
         self.bin_size_ms = None
         self.temp_course = None
         self.temp_course_duration = None
@@ -404,14 +417,14 @@ class ThermoinoComplexTimeCourses(Thermoino):
         ----------
         bin_size_ms : `int`
             The bin size in milliseconds for the ctc.
-        
+
         Returns
         -------
         `int`
             The bin size in milliseconds for the ctc.
         """
         output = self._send_command(f'INITCTC;{bin_size_ms}\n')
-        self.logger.info(f"Thermoino response to 'INITCTC' (.init_ctc): {output}.")
+        logger.info("Thermoino response to 'INITCTC' (.init_ctc): %s.", output)
         self.bin_size_ms = bin_size_ms
         return self
 
@@ -479,7 +492,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         # Thermoino only accepts integers
         temp_course_resampled_diff_binned = np.round(temp_course_resampled_diff_binned).astype(int)
         self.ctc = temp_course_resampled_diff_binned
-        self.logger.info(f"Thermoino-adapted ctc is ready to be loaded with {len(self.ctc)} bins á {self.bin_size_ms} ms.")
+        logger.info("Thermoino-adapted ctc is ready to be loaded with %s bins á %s ms.", len(self.ctc), self.bin_size_ms)
         return self
 
     def load_ctc(self, debug = False):      
@@ -493,15 +506,15 @@ class ThermoinoComplexTimeCourses(Thermoino):
         debug : `bool`, optional
             If True, debug information for every bin. Default is False.
         """
-        self.logger.info("Thermoino is receiving the ctc in single bins ...")
+        logger.info("Thermoino is receiving the ctc in single bins ...")
         for idx, i in enumerate(self.ctc):
             output = self._send_command(f'LOADCTC;{i}\n', get_response=debug)
             # workaround: time.sleep after every iteration,
             # not using await_status at the moment
             time.sleep(0.05)
             if debug:
-                self.logger.debug(f"Thermoino response to 'LOADCTC' (.load_ctc), bin {idx + 1} of {len(self.ctc)}: {output}.")
-        self.logger.info("Thermoino received the whole ctc.")
+                logger.debug("Thermoino response to 'LOADCTC' (.load_ctc), bin %s of %s: %s.", idx + 1, len(self.ctc), output)
+        logger.info("Thermoino received the whole ctc.")
         return self
 
     def query_ctc(self, queryLvl, statAbort):
@@ -528,7 +541,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             The output from the Thermoino device.
         """
         output = self._send_command(f'QUERYCTC;{queryLvl};{statAbort}\n')
-        self.logger.info(f"Thermoino response to 'QUERYCTC' (.query_ctc): {output}.")
+        logger.info("Thermoino response to 'QUERYCTC' (.query_ctc): %s.", output)
 
     def prep_ctc(self):
         """
@@ -536,12 +549,12 @@ class ThermoinoComplexTimeCourses(Thermoino):
         This is seperate from exec_ctc to be able to use exec_ctc in a psychopy routine and control the exact length of the stimulation.
         """
         if not self.temp == self.temp_course_resampled[0]:
-            self.logger.info(f"Thermoino prepares the ctc for execution by setting the starting temperature ...")
+            logger.info("Thermoino prepares the ctc for execution by setting the starting temperature ...")
             duration = round(abs(self.temp - self.temp_course_resampled[0]) / self.rate_of_rise,1)
             duration += 0.5 # add 0.5 s to be sure
             self.set_temp(self.temp_course_resampled[0])
             self.wait(duration)
-        self.logger.info(f"Thermoino set the temperature to {self.temp}°C. The ctc is ready to be executed.")
+        logger.info("Thermoino set the temperature to %s °C. The ctc is ready to be executed.", self.temp)
         return self
 
     def exec_ctc(self):
@@ -549,14 +562,14 @@ class ThermoinoComplexTimeCourses(Thermoino):
         Execute the ctc on the Thermoino device.
         """
         if self.temp != self.temp_course_resampled[0]:
-            self.logger.error("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
+            logger.error("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
             raise ValueError("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
-        
-        output = self._send_command(f'EXECCTC\n')
-        self.logger.info(f"Thermoino response to 'EXECCTC' (.exec_ctc): {output}.")
-        self.logger.info(f"Thermoino will execute the ctc with a duration of {self.temp_course_duration} s.")
+
+        output = self._send_command('EXECCTC\n')
+        logger.info("Thermoino response to 'EXECCTC' (.exec_ctc): %s.", output)
+        logger.info("Thermoino will execute the ctc with a duration of %s s.", self.temp_course_duration)
         self.temp = round(self.temp_course_resampled[-2],2) # -2 because np.diff makes the array one shorter, see side effects of create_ctc
-        self.logger.info(f"Thermoino will set the temperature to {self.temp} °C after the ctc ended.")
+        logger.info("Thermoino will set the temperature to %s °C after the ctc ended.", self.temp)
         return self
 
     def flush_ctc(self):
@@ -567,8 +580,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         also automatically called by the `init_ctc` method.
         """
         output = self._send_command('FLUSHCTC\n')
-        self.logger.info(f"Thermoino response to 'FLUSHCTC' (.flush_ctc): {output}.")
-
+        logger.info("Thermoino response to 'FLUSHCTC' (.flush_ctc): %s.", output)
 
 
 if __name__ == "__main__":

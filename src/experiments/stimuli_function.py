@@ -166,6 +166,7 @@ class StimuliFunction():
         self._create_baseline()
         self._create_modulation()
         self.wave = self.baseline + self.modulation
+        self.baseline_temp = None
         self._duration = self.duration
         self._wave_dot = self.wave_dot
         self._peaks = self.peaks
@@ -224,7 +225,7 @@ class StimuliFunction():
 
     @property
     def duration(self):
-        self._duration = self.wave.shape[0] / self.sample_rate
+        self._duration = self.wave.shape[0] / self.sample_rate 
         return self._duration
      
     @property
@@ -411,20 +412,24 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
         labels, 2)
     
     # Plot functions and labels
-    fig = go.Figure(
-        layout=dict(
-            xaxis=dict(title='Time (s)'),
-            yaxis=dict(title='Temperature (°C) \ RoC (°C/s)')))
-
+    fig = go.Figure()
     fig.update_layout(
-        autosize=False,
+        autosize=True,
         height=300,
         width=900,
         margin=dict(l=20, r=20, t=20, b=20),
-        xaxis=dict(
-            tickmode='linear',
-            tick0=0,
-            dtick=10))
+    )
+    fig.update_xaxes(
+        title_text='Time (s)',
+        tickmode='linear',
+        tick0=0,
+        dtick=10
+    )
+    fig.update_yaxes(
+        title_text='Temperature (°C) \ RoC (°C/s)'
+    )
+
+
     
     func = [f, f_dot, labels, labels_alt]
     func_names = "f(x)", "f'(x)", "Label", "Label (alt)"

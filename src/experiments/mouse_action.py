@@ -1,8 +1,12 @@
 # work in progress
 
 # TODO:
+# - do we need logging? 
 #   -> also maybe add a check if we are in a psychopy experiment? (very useful for aborting experiments)
 # - add support for multiple monitors, maybe using the screeninfo library? and how does mouse behave?
+# -> good news, y-coordinates are the same for all monitors, so we don't need to worry about that
+# -> although we need to find out from which monitor the y-coordinate is taken in psychopy TODO
+# -> should be window-dependent
 # from win32api import GetSystemMetrics
 # width = user32.GetSystemMetrics(0)
 # height = user32.GetSystemMetrics(1)
@@ -10,7 +14,8 @@
 # # >>> from screeninfo import get_monitors
 # # >>> for m in get_monitors():
 # # >>>    print(str(m))
-# # this prints out the resolution (width and height), position (x, y), and other information for each monitor 
+# # this prints out the resolution (width and height), position (x, y), and 
+# other information for each monitor 
 # print(width, height)
 
 # https://www.phind.com/search?cache=b7ba5b4f-e9d5-4e1f-8bb1-bed231f1c5a9
@@ -37,25 +42,27 @@ Exception
     Note: If you are running this script for the first time in psychopy, it will throw an error. Simply run it again and it should work.
 """
 
-
+import logging
 import ctypes
-user32 = ctypes.windll.user32
-user32.SetProcessDPIAware()
-
+from .logger import setup_logger
 
 try:
     import mouse
 except ImportError:
-    try: # try to install mouse using pip in a subprocess
+    try:  # try to install mouse using pip in a subprocess
         import subprocess
         import sys
         process = subprocess.run([sys.executable, "-m", "pip", "install", "mouse"], check=False)
         if process.returncode != 0:
             raise Exception("pip installation failed")
-    except Exception as e:
-        print(f"Failed to install and import 'mouse': {e}")
-        raise e # raise the exception to stop the script
+    except Exception as exc:
+        print(f"Failed to install and import 'mouse': {exc}")
+        raise exc # raise the exception to stop the script
 
+user32 = ctypes.windll.user32
+user32.SetProcessDPIAware()
+
+# logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
 
 def hold():
     """
@@ -89,7 +96,7 @@ def check(pixel_y):
     if not mouse.is_pressed(button='left'):
         hold()
     if not (pixel_y*0.9 < mouse.get_position()[1] < pixel_y*1.1): # get y-coordinate
-        mouse.move(mouse.get_position()[0], pixel_y * 1.1, absolute=True, duration=0) # move to slider position
+        mouse.move(mouse.get_position()[0], pixel_y, absolute=True, duration=0) # move to slider position
 
 
 def release():

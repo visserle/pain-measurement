@@ -10,12 +10,14 @@ Notes
 -----
 See calibration notebook for more details and visualizations.
 """
-
+import logging
 import numpy as np
 from scipy import stats
-import logging
 
-from src.experiments.logger import setup_logger, close_logger
+from .logger import setup_logger
+
+logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
+
 
 class PainThresholdEstimator:
     """
@@ -35,8 +37,7 @@ class PainThresholdEstimator:
     print(f"Calibration pain threshold estimate: {pain_estimator.get_estimate()} °C")
     ```
     """
-    def __init__(self, mean_temperature, std_temperature=4, likelihood_std=1, reduction_factor=0.9, trials=7):
-        self.logger = setup_logger(__name__, level=logging.INFO)
+    def __init__(self, mean_temperature, std_temperature=4, likelihood_std=1, reduction_factor=0.95, trials=7):   
         self.mean_temperature = mean_temperature
         self.std_temperature = std_temperature
         self.likelihood_std = likelihood_std
@@ -65,10 +66,11 @@ class PainThresholdEstimator:
     def conduct_trial(self, response, trial=None):
         # Collect the subject's response and define a cdf likelihood function based on it
         if response == 'y':
-            self.logger.info(f"Calibration pain threshold trial {trial+1}: {self.current_temperature} °C was painful.")
+            logger.info("Calibration pain threshold trial %s: %s °C was painful.", trial+1, self.current_temperature)
             likelihood = 1 - stats.norm.cdf(self.range_temperature, loc=self.current_temperature, scale=self.likelihood_std)
         else:
-            self.logger.info(f"Calibration pain threshold trial {trial+1}: {self.current_temperature} °C was not painful.")
+            logger.info("Calibration pain threshold trial %s: %s °C was not painful.", trial+1, self.current_temperature)
+
             likelihood = stats.norm.cdf(self.range_temperature, loc=self.current_temperature, scale=self.likelihood_std)
         
         # Decrease the standard deviation of the likelihood function as we gain more information
@@ -91,8 +93,8 @@ class PainThresholdEstimator:
         self.prior = np.copy(posterior)
 
         if trial == self.trials - 1: # last trial
-            self.logger.info(f"Calibration pain threshold steps (°C) were: {self.steps}.\n")
-            self.logger.info(f"Calibration pain threshold estimate: {self.get_estimate()} °C")
+            logger.info("Calibration pain threshold steps (°C) were: %s\n.", self.steps)
+            logger.info("Calibration pain threshold estimate: %s °C.", self.get_estimate())
 
     def get_estimate(self):
         return self.temperatures[-1]
@@ -105,11 +107,10 @@ class PainRegressor:
     -----
     Renamed from Psychometric-perceptual scaling to PainRegressor.
     """
-    def __init__(self, pain_threshold):
-        self.logger = setup_logger(__name__, level=logging.INFO)
+    def __init__(self, pain_threshold):     
         self.pain_threshold = np.array(pain_threshold)
         self.fixed_temperatures = np.array(pain_threshold + [0.5, 1, 2, 1])
-        self.fixed_vas = np.array([10, 30, 90])
+        self.vas_targtes = np.array([10, 30, 90])
 
         self.vas_ratings = [0]
         self.temperatures = [pain_threshold]
@@ -121,7 +122,7 @@ class PainRegressor:
     def create_regression_(self, vas_rating, fixed_temperatures):
         self.vas_ratings.append(vas_rating)
         self.temperatures.append(fixed_temperatures)
-        self.logger.info(f"Calibration psychometric-perceptual scaling: {fixed_temperatures} °C was rated {vas_rating} on the VAS scale.")
+        logger.info("Calibration psychometric-perceptual scaling: %s °C was rated %s on the VAS scale.", fixed_temperatures, vas_rating)
 
         if len(self.temperatures) == len(self.fixed_temperatures) + 1: # last trial for first regression
             self.slope, self.intercept = np.polyfit(self.temperatures, self.vas_ratings, 1)
@@ -135,3 +136,6 @@ class PainRegressor:
     def improve_regression():
         pass
 
+
+if __name__ == "__main__":
+    pass

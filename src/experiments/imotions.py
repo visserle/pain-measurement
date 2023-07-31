@@ -1,14 +1,15 @@
 # work in progress
 
 # TODO
-# - update logger
+# - how to close logger the right way
 # - documentation, especially for the query structure
-# - query structure / query types
+# - query structure / query types, esp. for event recieving
 # - xml data in imotions
 #    -> check if send_temperatures and send_ratings work
 # - export data function, p. 34 onwards
 # - Add option to connect that checks if imotions is avaiable or if you want to proceed without it by asking with input()
 #    -> very handy for psychopy testing, where you don't want to have imotions connected all the time
+# age and gender important for analysis in imotions?
 
 
 import socket
@@ -16,7 +17,9 @@ import logging
 import time
 from datetime import datetime
 
-from src.experiments.logger import setup_logger, close_logger
+from .logger import setup_logger #, close_logger
+
+logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
 
 
 class RemoteControliMotions():
@@ -39,7 +42,6 @@ class RemoteControliMotions():
     PORT = 8087 # hardcoded in iMotions
     
     def __init__(self, study, participant):
-        self.logger = setup_logger(__name__, level=logging.INFO)
         # Psychopy experiment info
         self.study = study # psychopy default is expName
         self.participant = participant # psychopy default is expInfo['participant']
@@ -69,10 +71,10 @@ class RemoteControliMotions():
             while not self.connected == 0:
                 self.connected = self._check_status()
                 time.sleep(0.1)
-            self.logger.info("iMotions is ready for remote control.")
+            logger.info("iMotions is ready for remote control.")
         except socket.error as exc:
-            self.logger.error(f"iMotions is not ready for remote control. Error connecting to server:\n{exc}")
-            raise Exception(f"iMotions is not ready for remote control. Error connecting to server:\n{exc}")
+            logger.error("iMotions is not ready for remote control. Error connecting to server:\n%s", exc)
+            raise Exception("iMotions is not ready for remote control. Error connecting to server:\n%s", exc) from exc
 
     def start_study(self):
         """
@@ -81,11 +83,11 @@ class RemoteControliMotions():
         """
         # sent status request to iMotions and proceed if iMotions is ready
         if self._check_status() != 0:
-            self.logger.error("iMotions is not ready the start the study.")
+            logger.error("iMotions is not ready the start the study.")
             raise Exception("iMotions is not ready the start the study.")
         start_study_query = f"R;2;TEST;RUN;{self.study};{self.participant};Age={0} Gender={0}\r\n" 
         self._send_and_receive(start_study_query)
-        self.logger.info(f"iMotions started the study {self.study} for participant {self.participant}.")
+        logger.info("iMotions started the study %s for participant %s.", self.study, self.participant)
 
     def end_study(self):
         """
@@ -93,7 +95,7 @@ class RemoteControliMotions():
         """
         end_study_query = "R;1;;SLIDESHOWNEXT\r\n"
         self._send_and_receive(end_study_query)
-        self.logger.info(f"iMotions ended the study {self.study} for participant {self.participant}.")
+        logger.info("iMotions ended the study %s for participant %s.", self.study, self.participant)
 
     def abort_study(self):
         """
@@ -101,23 +103,22 @@ class RemoteControliMotions():
         """
         abort_study_query = "R;1;;SLIDESHOWCANCEL\r\n"
         self._send_and_receive(abort_study_query)
-        self.logger.info(f"iMotions aborted the study {self.study} for participant {self.participant}.")
+        logger.info("iMotions aborted the study %s for participant %s.", self.study, self.participant)
+
 
     def export_data(self):
 
-        self.logger.info(f"iMotions exported the data for study {self.study} for participant {self.participant} to {path}.")
+        logger.info("iMotions exported the data for study %s for participant %s to %s.", self.study, self.participant, path)
         pass
 
     def close(self):
         try:
             self.sock.close()
-            self.logger.info("iMotions connection for remote control closed.")
+            logger.info("iMotions connection for remote control closed.")
         except socket.error as exc:
-            self.logger.error(f"iMotions connection for remote control could not be closed:\n{exc}")
+            logger.error("iMotions connection for remote control could not be closed:\n%s", exc)
         finally:
             self.connected = None
-            close_logger(self.logger)
-
         
 
 class EventRecievingiMotions():
@@ -138,8 +139,6 @@ class EventRecievingiMotions():
     PORT = 8089 # hardcoded in iMotions
     
     def __init__(self):
-        self.logger = setup_logger(__name__, level=logging.INFO)
-
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._time_stamp = self.time_stamp # use self.time_stamp to get the current time stamp
 
@@ -152,9 +151,9 @@ class EventRecievingiMotions():
     def connect(self):
         try:
             self.sock.connect((self.HOST, self.PORT))
-            self.logger.info("iMotions is ready for event recieving.")
+            logger.info("iMotions is ready for event recieving.")
         except socket.error as exc:
-            self.logger.error(f"iMotions is not ready for event recieving. Error connecting to server:\n{exc}")
+            logger.error("iMotions is not ready for event recieving. Error connecting to server:\n%s", exc)
 
     def _send_message(self, message):
         self.sock.sendall(message.encode('utf-8'))
@@ -162,22 +161,22 @@ class EventRecievingiMotions():
     def start_study(self):
         start_study_marker = f"M;2;;;marker_start_study;{self.time_stamp};D;\r\n"
         self._send_message(start_study_marker)
-        self.logger.info(f"iMotions received the marker for study start @ {self.time_stamp[11:]}")
+        logger.info("iMotions received the marker for study start @ %s.", self.time_stamp[11:])
 
     def end_study(self):
         end_study_marker = f"M;2;;;marker_end_study;{self.time_stamp};D;\r\n"
         self._send_message(end_study_marker)
-        self.logger.info(f"iMotions received the marker for study end @ {self.time_stamp[11:]}")
+        logger.info("iMotions received the marker for study end @ %s.", self.time_stamp[11:])
 
     def send_marker(self, marker_name, value):
         imotions_marker = f"M;2;;;{marker_name};{value};D;\r\n"
         self._send_message(imotions_marker)
-        self.logger.info(f"iMotions received the marker: {marker_name}")
+        logger.info("iMotions received the marker: %s.", marker_name)
 
     def send_marker_with_time_stamp(self, marker_name):
         imotions_marker = f"M;2;;;{marker_name};{self.time_stamp};D;\r\n"
         self._send_message(imotions_marker)
-        self.logger.info(f"iMotions received the marker: {marker_name} at {self.time_stamp[11:]}")
+        logger.info("iMotions received the marker: {marker_name} at %s.", self.time_stamp[11:])
 
     def send_temperatures(self, temperature):
         """
@@ -196,7 +195,7 @@ class EventRecievingiMotions():
         
     def send_event_x_y(self, x, y):
         """
-        one xml class, shows up as two seperate data streams in imotions
+        Shows up as two seperate data streams in iMotions, based on a generic xml class. 
         """
         values_imotions = f"E;1;GenericInput;1;0.0;;;GenericInput;{x};{y}\r\n"
         self._send_message(values_imotions)
@@ -204,11 +203,10 @@ class EventRecievingiMotions():
     def close(self):
         try:
             self.sock.close()
-            self.logger.info("iMotions connection for event recieving closed.")
+            logger.info("iMotions connection for event recieving closed.")
         except socket.error as exc:
-            self.logger.error(f"iMotions connection for event recieving could not be closed:\n{exc}")
-        finally:
-            close_logger(self.logger)
+            logger.error("iMotions connection for event recieving could not be closed:\n%s", exc)
+            
 
 if __name__ == "__main__":
     pass
