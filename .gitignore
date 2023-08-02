@@ -3,8 +3,8 @@
 # excluded for now
 /runs
 /experiments/mpad1/data
-/src/experiments/imotions.py
 notebooks/_stuff.ipynb
+experiments/README.md
 
 
 # remove once logging is correctly defined
