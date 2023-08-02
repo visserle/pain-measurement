@@ -22,7 +22,7 @@ try:
 except ModuleNotFoundError:
     logger = setup_default_logger()
     logger.info("Could not import logger from src.experiments.logger. Using default logger.")
-    
+
 
 def list_com_ports():
     """List all serial ports"""
@@ -105,7 +105,6 @@ class Thermoino:
     Examples
     --------
     ````python
-    import time
     from thermoino import Thermoino, list_com_ports
 
     # List all available serial ports
@@ -123,7 +122,7 @@ class Thermoino:
     luigi.connect()
     luigi.trigger()
     luigi.set_temp(42)
-    time.sleep(4)
+    luigi.wait(4)
     luigi.set_temp(32)
     luigi.close()
     ````
@@ -142,7 +141,7 @@ class Thermoino:
 	- Add real documentation (e.g. Sphinx, ...)
     - etc.
     """
-    
+
     BAUD_RATE = 115200
 
     def __init__(self, port, temp_baseline, rate_of_rise):
@@ -196,21 +195,6 @@ class Thermoino:
         self.connected = False
         logger.info("Thermoino connection closed @ %s.", self.PORT)
         time.sleep(1)
-    
-    def _handle_response(self, decoded_response):
-        """
-        Take the decoded response from _send_command, determine if it's an error or success 
-        code based on whether it's less than 0, and convert it to the corresponding enum value.
-        """
-        if not decoded_response.isdigit():
-            return decoded_response # e.g. when using diag
-        else:
-            decoded_response = int(decoded_response)
-        if decoded_response < 0:
-            response = ErrorCodes(decoded_response).name
-        else:
-            response = OkCodes(decoded_response).name
-        return response
 
     def _send_command(self, command, get_response=True):
         """
@@ -226,6 +210,22 @@ class Thermoino:
                 logger.error("Thermoino response could not be decoded: %s", response)
                 decoded_response = None
             return self._handle_response(decoded_response)
+        return None
+
+    def _handle_response(self, decoded_response):
+        """
+        Take the decoded response from _send_command, determine if it's an error or success 
+        code based on whether it's less than 0, and convert it to the corresponding enum value.
+        """
+        if not decoded_response.isdigit():
+            return decoded_response # e.g. when using diag
+
+        decoded_response = int(decoded_response)
+        if decoded_response < 0:
+            response = ErrorCodes(decoded_response).name
+        else:
+            response = OkCodes(decoded_response).name
+        return response
 
     def diag(self):
         """
@@ -260,7 +260,7 @@ class Thermoino:
         logger.info("Thermoino response to 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
         self.temp = temp_target
         return self
-    
+
     def wait(self, duration):
         """
         Wait for a given duration in seconds.
@@ -351,11 +351,11 @@ class ThermoinoComplexTimeCourses(Thermoino):
     Examples
     --------
     ````python
-    import time
     from thermoino import ThermoinoComplexTimeCourses, list_com_ports
 
     # List all available serial ports
     list_com_ports()
+
     port = None  # e.g. "COM12"
     luigi = ThermoinoComplexTimeCourses(
         port=port,
@@ -366,12 +366,12 @@ class ThermoinoComplexTimeCourses(Thermoino):
     # Use luigi for complex temperature courses:
     luigi.connect()
     luigi.init_ctc(
-        bin_size_ms=500
-    ).create_ctc(
+        bin_size_ms=500)
+    luigi.create_ctc(
         temp_course=stimuli.wave,
         sample_rate=stimuli.sample_rate,
-        rate_of_rise_option="mms_program"
-    ).load_ctc()
+        rate_of_rise_option="mms_program")
+    luigi..load_ctc()
     luigi.trigger()
     luigi.prep_ctc()
 
@@ -383,7 +383,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     luigi.connect()
     luigi.trigger()
     luigi.set_temp(42)
-    time.sleep(4)
+    luigi.wait(4)
     luigi.set_temp(32)
     luigi.close()
     ````
@@ -394,7 +394,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     - Fix usage of units in the docstrings (some small inaccuracies)
     - Fix query function
     """
-       
+
     def __init__(self, port, temp_baseline, rate_of_rise):
         super().__init__(port, temp_baseline, rate_of_rise)
         logger.info("Thermoino for complex time courses initialized.")
@@ -468,7 +468,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             This is accounted for in the Thermoino code by duplicating the second to last bin.
             Therefore, it is recommended to use a temperature course with no changes in the last second.
         """
-        
+
         self.temp_course_duration = temp_course.shape[0] / sample_rate
         # Resample the temperature course according to the bin size:
         # i.e. for a 100 s stimuli with a bin size of 500 ms we'd need 200 bins á 500 ms
@@ -492,7 +492,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         # Thermoino only accepts integers
         temp_course_resampled_diff_binned = np.round(temp_course_resampled_diff_binned).astype(int)
         self.ctc = temp_course_resampled_diff_binned
-        logger.info("Thermoino-adapted ctc is ready to be loaded with %s bins á %s ms.", len(self.ctc), self.bin_size_ms)
+        logger.info("Thermoino-adapted ctc is ready to be loaded with %s bins, each %s ms long.", len(self.ctc), self.bin_size_ms)
         return self
 
     def load_ctc(self, debug = False):      
@@ -506,12 +506,14 @@ class ThermoinoComplexTimeCourses(Thermoino):
         debug : `bool`, optional
             If True, debug information for every bin. Default is False.
         """
-        logger.info("Thermoino is receiving the ctc in single bins ...")
+        wait = 0.05
+        wait_duration = int(wait*len(self.ctc))
+        logger.info("Thermoino is receiving the ctc in single bins. This will take %s s ...", wait_duration)
         for idx, i in enumerate(self.ctc):
             output = self._send_command(f'LOADCTC;{i}\n', get_response=debug)
             # workaround: time.sleep after every iteration,
             # not using await_status at the moment
-            time.sleep(0.05)
+            time.sleep(wait)
             if debug:
                 logger.debug("Thermoino response to 'LOADCTC' (.load_ctc), bin %s of %s: %s.", idx + 1, len(self.ctc), output)
         logger.info("Thermoino received the whole ctc.")

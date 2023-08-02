@@ -10,6 +10,7 @@ Notes
 -----
 See calibration notebook for more details and visualizations.
 """
+
 import logging
 import numpy as np
 from scipy import stats
@@ -44,10 +45,11 @@ class PainThresholdEstimator:
         self.reduction_factor = reduction_factor
         self.trials = trials
 
+        # Define the range of temperatures to consider
         min_temperature = self.mean_temperature - 6
         max_temperature = self.mean_temperature + 6
-        num_steps = int((max_temperature - min_temperature) / 0.1) + 1
-        self.range_temperature = np.linspace(min_temperature, max_temperature, num_steps)
+        num = int((max_temperature - min_temperature) / 0.1) + 1
+        self.range_temperature = np.linspace(min_temperature, max_temperature, num)
         
         self.prior = stats.norm.pdf(self.range_temperature, loc=self.mean_temperature, scale=self.std_temperature)
         self.prior /= np.sum(self.prior)  # normalize
@@ -70,7 +72,6 @@ class PainThresholdEstimator:
             likelihood = 1 - stats.norm.cdf(self.range_temperature, loc=self.current_temperature, scale=self.likelihood_std)
         else:
             logger.info("Calibration pain threshold trial %s: %s °C was not painful.", trial+1, self.current_temperature)
-
             likelihood = stats.norm.cdf(self.range_temperature, loc=self.current_temperature, scale=self.likelihood_std)
         
         # Decrease the standard deviation of the likelihood function as we gain more information
@@ -93,7 +94,7 @@ class PainThresholdEstimator:
         self.prior = np.copy(posterior)
 
         if trial == self.trials - 1: # last trial
-            logger.info("Calibration pain threshold steps (°C) were: %s\n.", self.steps)
+            logger.info("Calibration pain threshold steps (°C) were: %s.\n", self.steps)
             logger.info("Calibration pain threshold estimate: %s °C.", self.get_estimate())
 
     def get_estimate(self):
@@ -107,7 +108,7 @@ class PainRegressor:
     -----
     Renamed from Psychometric-perceptual scaling to PainRegressor.
     """
-    def __init__(self, pain_threshold):     
+    def __init__(self, pain_threshold):
         self.pain_threshold = np.array(pain_threshold)
         self.fixed_temperatures = np.array(pain_threshold + [0.5, 1, 2, 1])
         self.vas_targtes = np.array([10, 30, 90])

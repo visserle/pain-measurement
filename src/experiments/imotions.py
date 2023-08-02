@@ -9,7 +9,7 @@
 # - export data function, p. 34 onwards
 # - Add option to connect that checks if imotions is avaiable or if you want to proceed without it by asking with input()
 #    -> very handy for psychopy testing, where you don't want to have imotions connected all the time
-# age and gender important for analysis in imotions?
+# age and gender important for analysis in imotions? 
 
 
 import socket
@@ -171,26 +171,26 @@ class EventRecievingiMotions():
     def send_marker(self, marker_name, value):
         imotions_marker = f"M;2;;;{marker_name};{value};D;\r\n"
         self._send_message(imotions_marker)
-        logger.info("iMotions received the marker: %s.", marker_name)
+        logger.info("iMotions received the marker %s: %s.", marker_name, value)
 
     def send_marker_with_time_stamp(self, marker_name):
         imotions_marker = f"M;2;;;{marker_name};{self.time_stamp};D;\r\n"
         self._send_message(imotions_marker)
-        logger.info("iMotions received the marker: {marker_name} at %s.", self.time_stamp[11:])
+        logger.info("iMotions received the marker %s at %s.", marker_name, self.time_stamp[11:])
 
     def send_temperatures(self, temperature):
         """
         For sending the current temperature to iMotions every frame.
         See imotions_temperature.xml for the xml structure.
         """
-        imotions_event = f"E;1;TemperatureCurve;1;0.0;;;Temperature;{temperature}\r\n"
+        imotions_event = f"E;1;TemperatureCurve;1;;;;TemperatureCurve;{temperature}\r\n"
         self._send_message(imotions_event)
 
     def send_ratings(self, rating):
         """
         See imotions_rating.xml for the xml structure.
         """
-        imotions_event = f"E;1;RatingCurve;1;0.0;;;Rating;{rating}\r\n"
+        imotions_event = f"E;1;RatingCurve;1;;;;RatingCurve;{rating}\r\n"
         self._send_message(imotions_event)
         
     def send_event_x_y(self, x, y):

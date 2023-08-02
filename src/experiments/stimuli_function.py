@@ -171,7 +171,7 @@ class StimuliFunction():
         self._wave_dot = self.wave_dot
         self._peaks = self.peaks
         self._troughs = self.troughs
-        
+
 
     def _create_baseline(self):
         """Creates the baseline sinusoidal wave"""
@@ -201,11 +201,11 @@ class StimuliFunction():
                 noise = np.append(noise, 0)
             self.rng.shuffle(noise)
             return np.round(noise)
-        
+
         modulation_random_factor = _noise_that_sums_to_0(
             n = self.modulation_n_periods,
             factor = 0.6) if self.random_periods else np.zeros(self.modulation_n_periods)
-        
+
         # create the modulation period-wise
         self.modulation = []
         for i in range(self.modulation_n_periods):
@@ -227,22 +227,22 @@ class StimuliFunction():
     def duration(self):
         self._duration = self.wave.shape[0] / self.sample_rate 
         return self._duration
-     
+
     @property
     def wave_dot(self):
         self._wave_dot = np.gradient(self.wave, 1/self.sample_rate) # dx in seconds
         return self._wave_dot
-    
+
     @property
     def peaks(self):
         self._peaks, _ = scipy.signal.find_peaks(self.wave, prominence=0.5)
         return self._peaks
-    
+
     @property
     def troughs(self):
         self._troughs, _ = scipy.signal.find_peaks(-self.wave, prominence=0.5)
         return self._troughs
-    
+
     def add_baseline_temp(self, baseline_temp):
         """
         Adds a baseline temperature to the wave. Should be around VAS = 35.
@@ -260,7 +260,7 @@ class StimuliFunction():
         self.baseline_temp = baseline_temp
         self.wave = self.wave + self.baseline_temp
         return self
-    
+
     def add_prolonged_peaks(self, time_to_be_added_per_peak, percetage_of_peaks):
         """
         Adds prolonged peaks to the wave.
@@ -280,11 +280,11 @@ class StimuliFunction():
         peaks_chosen = self.rng_numpy.choice(self.peaks, int(
             len(self.peaks) * percetage_of_peaks), replace=False)
         wave_new = []
-        for i in range(len(self.wave)):
-            wave_new.append(self.wave[i])
-            if i in peaks_chosen:
+        for idx, i in enumerate(self.wave):
+            wave_new.append(i)
+            if idx in peaks_chosen:
                 wave_new.extend(
-                    [self.wave[i]] * time_to_be_added_per_peak * self.sample_rate)
+                    [i] * time_to_be_added_per_peak * self.sample_rate)
         self.wave = np.array(wave_new)
         return self
 
@@ -319,7 +319,7 @@ class StimuliFunction():
         def _generate_plateau(start_value):
             """Generate a plateau with the given start value in °C."""
             return np.full(plateau_duration * self.sample_rate, start_value)
-        
+
         def _to_bool(x):
             """If x is "random", it's converted to a random boolean."""
             return bool(self.rng.randint(0, 1)) if x == "random" else x
@@ -343,7 +343,7 @@ class StimuliFunction():
         # find indices for the random plateaus
         n_random_plateaus = n_plateaus - int(add_at_start) - int(add_at_end) 
         counter = 0
-        while True: 
+        while True:
             counter += 1
             if counter > 1000:
                 raise ValueError(
@@ -410,27 +410,22 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
     labels_alt = np.where(
         np.abs(f_dot) > s_RoC,
         labels, 2)
-    
+
     # Plot functions and labels
     fig = go.Figure()
     fig.update_layout(
         autosize=True,
         height=300,
         width=900,
-        margin=dict(l=20, r=20, t=20, b=20),
-    )
+        margin=dict(l=20, r=20, t=20, b=20))
     fig.update_xaxes(
         title_text='Time (s)',
         tickmode='linear',
         tick0=0,
-        dtick=10
-    )
+        dtick=10)
     fig.update_yaxes(
-        title_text='Temperature (°C) \ RoC (°C/s)'
-    )
+        title_text=r'Temperature (°C) \ RoC (°C/s)')
 
-
-    
     func = [f, f_dot, labels, labels_alt]
     func_names = "f(x)", "f'(x)", "Label", "Label (alt)"
     colors = "royalblue", "skyblue", "springgreen", "violet"
@@ -444,7 +439,7 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
             visible=visible
         )
     fig.show()
-    
+
     # Calculate the number and length of cooling segments from the alternative labels.
     # segment_change indicates where the label changes, 
     # segment_number is the cumulative sum of segment_change
