@@ -37,6 +37,13 @@ class PainThresholdEstimator:
 
     print(f"Calibration pain threshold estimate: {pain_estimator.get_estimate()} °C")
     ```
+
+    Side notes
+    ----------
+    This code could be extended into a Kalman filter.
+    For some intution on Kalman filters, see
+    https://www.bzarg.com/p/how-a-kalman-filter-works-in-pictures/ and
+    https://praveshkoirala.com/2023/06/13/a-non-mathematical-introduction-to-kalman-filters-for-programmers/.
     """
     def __init__(self, mean_temperature, std_temperature=4, likelihood_std=1, reduction_factor=0.95, trials=7):   
         self.mean_temperature = mean_temperature

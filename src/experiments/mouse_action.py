@@ -1,8 +1,6 @@
 # work in progress
 
 # TODO:
-# - do we need logging? 
-#   -> also maybe add a check if we are in a psychopy experiment? (very useful for aborting experiments)
 # - add support for multiple monitors, maybe using the screeninfo library? and how does mouse behave?
 # -> good news, y-coordinates are the same for all monitors, so we don't need to worry about that
 # -> although we need to find out from which monitor the y-coordinate is taken in psychopy TODO
@@ -42,9 +40,7 @@ Exception
     Note: If you are running this script for the first time in psychopy, it will throw an error. Simply run it again and it should work.
 """
 
-import logging
 import ctypes
-from .logger import setup_logger
 
 try:
     import mouse
@@ -62,7 +58,6 @@ except ImportError:
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware()
 
-# logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
 
 def hold():
     """
@@ -97,7 +92,6 @@ def check(pixel_y):
         hold()
     if not (pixel_y*0.9 < mouse.get_position()[1] < pixel_y*1.1): # get y-coordinate
         mouse.move(mouse.get_position()[0], pixel_y, absolute=True, duration=0) # move to slider position
-
 
 def release():
     """
@@ -156,4 +150,4 @@ def pixel_pos_y(component_pos, win_size, win_pos):
 
 
 if __name__ == "__main__":
-    hold() # trollin'
+    hold() # trolling

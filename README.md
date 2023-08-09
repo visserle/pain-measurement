@@ -36,14 +36,14 @@ Project Organization (not up-to-date)
     │   │
     │   ├── data           <- Scripts to download or generate data
     │   │   ├── make_dataset.py
-    |   |   └── make_dataset_dummy.py
+    │   │   └── make_dataset_dummy.py
     │   │
     │   ├── experiments    <- Scripts to use in the psychopy experiments.
-    |   |
+    │   │
     │   ├── features       <- Scripts to turn raw data into features for modeling
     │   │   ├── build_features.py
-    |   |   ├── reshape_features_to_2d.py
-    |   |   └── scalers_3d.py
+    │   │   ├── reshape_features_to_2d.py
+    │   │   └── scalers_3d.py
     │   │
     │   ├── models         <- Scripts to train models and then use trained models to make
     │   │   │                 predictions

@@ -1,11 +1,13 @@
 # work in progress
 
-import time
 import logging
+import time
 from enum import Enum
+
 import numpy as np
 import serial
 import serial.tools.list_ports
+
 
 def setup_default_logger():
     l = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
@@ -21,7 +23,8 @@ try:
     logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
 except ModuleNotFoundError:
     logger = setup_default_logger()
-    logger.info("Could not import logger from src.experiments.logger. Using default logger.")
+    logger.info("Could not import logger from src.experiments.logger. \
+                Using default logger.")
 
 
 def list_com_ports():
@@ -57,7 +60,8 @@ class OkCodes(Enum):
 
 class Thermoino:
     """  
-    The `Thermoino` class facilitates communication with the Thermoino (a composite of Thermode and Arduino).
+    The `Thermoino` class facilitates communication with the Thermoino (a composite of 
+    Thermode and Arduino).
     
     The class provides methods to initialize the device and set target temperatures.
     
@@ -428,7 +432,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         self.bin_size_ms = bin_size_ms
         return self
 
-    def create_ctc(self, temp_course, sample_rate, rate_of_rise_option = "mms_program"): 
+    def create_ctc(self, temp_course, sample_rate, rate_of_rise_option = "mms_program"):
         """
         Create a complex temperature course (ctc) based on the provided temperature course, the sample rate.
         A ctc is a differentiated, binned temperature course. The rate of rise either is either the
@@ -495,7 +499,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         logger.info("Thermoino-adapted ctc is ready to be loaded with %s bins, each %s ms long.", len(self.ctc), self.bin_size_ms)
         return self
 
-    def load_ctc(self, debug = False):      
+    def load_ctc(self, debug = False):
         """
         Load the created ctc into the Thermoino device by sending single bins in a for loop to the Thermoino.
         The maximum length to store on the Thermoino is 2500. If you want longer stimuli, you could use a larger bin size.
@@ -504,7 +508,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         Parameters
         ----------
         debug : `bool`, optional
-            If True, debug information for every bin. Default is False.
+            If True, debug information for every bin. Default is False for performance.
         """
         wait = 0.05
         wait_duration = int(wait*len(self.ctc))
