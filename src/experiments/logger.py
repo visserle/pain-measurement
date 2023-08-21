@@ -35,7 +35,3 @@ def close_logger(logger):
     for handler in handlers:
         handler.close()
         logger.removeHandler(handler)
-
-
-if __name__ == "__main__":
-    pass

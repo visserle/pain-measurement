@@ -587,7 +587,3 @@ class ThermoinoComplexTimeCourses(Thermoino):
         """
         output = self._send_command('FLUSHCTC\n')
         logger.info("Thermoino response to 'FLUSHCTC' (.flush_ctc): %s.", output)
-
-
-if __name__ == "__main__":
-    pass

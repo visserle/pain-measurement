@@ -460,7 +460,3 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
         print((label_0_sizes/sample_rate).describe().apply('{:,.2f}'.format))
 
     return labels, labels_alt, fig
-
-
-if __name__ == "__main__":
-    pass
