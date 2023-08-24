@@ -1,15 +1,11 @@
 # work in progress
 
 # TODO
-# - how to close logger the right way
-# - documentation, especially for the query structure
-# - query structure / query types, esp. for event recieving
-# - xml data in imotions
-#    -> check if send_temperatures and send_ratings work
-# - export data function, p. 34 onwards
+# - close logger, maybe just put it into psychopy script 
+# - add export data function, p. 34 onwards for experiment2
 # - Add option to connect that checks if imotions is avaiable or if you want to proceed without it by asking with input()
-#    -> very handy for psychopy testing, where you don't want to have imotions connected all the time
-# age and gender important for analysis in imotions? 
+#    -> could come in handy for psychopy testing, where you don't want to have imotions connected all the time
+# - find out if age and gender are considered in the analysis in imotions
 
 
 import socket
@@ -23,19 +19,52 @@ logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
 
 
 class RemoteControliMotions():
-    """ 
-    Class to control iMotions remotely, based on the iMotions Remote Control API.
-    The class has to be initated in a psychopy experiment, with the participant number and the study name.
-    To import the class, add the folder containing the class to the python path in the psychopy preferences.
-
-    The class does not work as a context manager, because the connection to iMotions has to be open during the whole experiment.
-
-    Query structure:
-        - R;2;TEST;STATUS\r\n ...
-
-    Example
-    -------
-
+    """    
+    This class provides an interface to control the iMotions software remotely based on the iMotions Remote Control API. 
+    
+    The class is designed to be integrated within a PsychoPy experiment, allowing for the initiation of studies, sending of commands, and receiving responses from the iMotions software.
+    
+    Attributes:
+    -----------
+    - HOST: The host address for the iMotions software, typically "localhost".
+    - PORT: The port number used for communication, default is 8087 as hardcoded in iMotions.
+    
+    Methods:
+    --------
+    - __init__(self, study, participant): Initializes the class with study and participant details.
+    - _send_and_receive(self, query): Sends a query to iMotions and receives a response.
+    - _check_status(self): Checks the status of the iMotions software.
+    - connect(self): Establishes a connection to the iMotions software.
+    - start_study(self): Initiates a study in iMotions.
+    - end_study(self): Ends the current study in iMotions.
+    - abort_study(self): Aborts the current study in iMotions.
+    - export_data(self): Exports data from the iMotions software (implementation pending).
+    - close(self): Closes the connection to the iMotions software.
+    
+    Example Usage:
+    --------------
+    ```python
+    imotions = RemoteControliMotions(study="StudyName", participant="ParticipantID")
+    # in a psychopy experiment use expName and expInfo['participant']
+    imotions.connect()
+    imotions.start_study()
+    # run the experiment ...
+    imotions.end_study()
+    imotions.close()
+    ```
+    
+    Notes:
+    ------
+    - Ensure that the iMotions software is running and the Remote Control API is enabled.
+    - The class does not work as a context manager (because the connection to iMotions has to be open during the whole experiment), 
+      so the connection to iMotions should be managed manually using the connect() and close() methods.
+    - The query structure for communication follows a specific format, e.g., "R;2;TEST;STATUS\\r\\n":
+        - R: Represents a specific command or operation.
+        - 2: Represent a version or type of the command.
+        - TEST: Is a placeholder or specific command identifier.
+        - STATUS: Is the actual command or operation to be performed.
+        - \\r\\n: The end of the query (with only one backslash)
+        -> See the iMotions Remote Control API documentation for more details and the different versions of the commands.
     """
     
     HOST = "localhost"
@@ -122,17 +151,55 @@ class RemoteControliMotions():
         
 
 class EventRecievingiMotions():
-    """"
-    The events are only available for forwarding if the device is hooked up to 
-    iMotions and iMotions has been configured to collect from the device.
+    """
+    EventRecievingiMotions Class
+    ----------------------------
     
-    Single character that identifies the type of message. Two message types are 
-    supported.
-    E - Sensor Event
-    M - Discrete Marker
+    This class provides an interface to receive events from the iMotions software. 
+    
+    The class is designed to interface with external sensors or other third-party applications that can send data to the iMotions software. The received data is treated similarly to data collected from built-in sensors in iMotions, allowing for synchronization, visualization, storage, and export.
+    
+    Two message types are supported: 'E' for Sensor Event and 'M' for Discrete Marker.
 
-    on psychopy level
-    This class does not work as a context manager, because we need to send events every frame in the psychopy experiment.
+    Attributes:
+    -----------
+    - HOST: The host address for the iMotions software, typically "localhost".
+    - PORT: The port number used for communication, default is 8089 as hardcoded in iMotions.
+    
+    Methods:
+    --------
+    - __init__(self): Initializes the class and sets up the socket connection.
+    - time_stamp(self): Returns the current timestamp.
+    - connect(self): Establishes a connection to the iMotions software for event receiving.
+    - _send_message(self, message): Sends a message to iMotions.
+    - start_study(self): Sends a marker indicating the start of a study.
+    - end_study(self): Sends a marker indicating the end of a study.
+    - send_marker(self, marker_name, value): Sends a specific marker with a given value to iMotions.
+    - send_marker_with_time_stamp(self, marker_name): Sends a marker with the current timestamp.
+    - send_temperatures(self, temperature): Sends the current temperature reading to iMotions.
+    - send_ratings(self, rating): Sends a rating value to iMotions.
+    - send_event_x_y(self, x, y): Sends x and y values as separate data streams to iMotions.
+    - close(self): Closes the connection to the iMotions software.
+    
+    Notes:
+    ------
+    - The class interfaces with iMotions using either a UDP or TCP network connection. For this class TCP is used.
+    - Event reception in iMotions is enabled using the Global Settings dialog within the API tab.
+    - The incoming data packet must conform to a specific specification. When a packet is received, it's processed and checked against the registry of configured event sources.
+    - iMotions can receive data from many event sources, and each event source can support multiple sample types. An additional event source definition file (XML text file) is used to describe the samples that can be received from a source.
+    - This class does not work as a context manager, because we need to send events every frame in the psychopy experiment. The connection to iMotions should be managed manually using the connect() and close() methods.
+
+    
+    Example Usage:
+    --------------
+    ```python
+    imotions_events = EventRecievingiMotions()
+    imotions_events.connect()
+    imotions_events.start_study()
+    # ... capture events ...
+    imotions_events.end_study()
+    imotions_events.close()
+    ```
     """
     
     HOST = "localhost"
@@ -206,7 +273,3 @@ class EventRecievingiMotions():
             logger.info("iMotions connection for event recieving closed.")
         except socket.error as exc:
             logger.error("iMotions connection for event recieving could not be closed:\n%s", exc)
-            
-
-if __name__ == "__main__":
-    pass
