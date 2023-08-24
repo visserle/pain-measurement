@@ -258,7 +258,7 @@ class StimuliFunction():
             The StimuliFunction object with the added baseline temperature.
         """
         self.baseline_temp = baseline_temp
-        self.wave = self.wave + self.baseline_temp
+        self.wave += self.baseline_temp
         return self
 
     def add_prolonged_peaks(self, time_to_be_added_per_peak, percetage_of_peaks):
