@@ -14,7 +14,7 @@ def setup_logger(logger_name, log_file = None, level=logging.INFO):
     logger.propagate = False
 
     # Create a stream handler (console handler)
-    stream_formatter = logging.Formatter(fmt='%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
+    stream_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] - %(message)s', datefmt='%H:%M:%S')
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(level)
     stream_handler.setFormatter(stream_formatter)
@@ -23,7 +23,7 @@ def setup_logger(logger_name, log_file = None, level=logging.INFO):
         return logger
     
     # Create a file handler if log_file is specified
-    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s] - %(message)s') # name is the name of the logger
     file_handler = logging.FileHandler(log_file, mode='w') # mode='w' for overwriting, mode='a' for appending
     file_handler.setLevel(level)
     file_handler.setFormatter(file_formatter)
