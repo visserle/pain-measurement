@@ -7,6 +7,7 @@ from enum import Enum
 import numpy as np
 import serial
 import serial.tools.list_ports
+import importlib.util
 
 
 def setup_default_logger():
@@ -108,7 +109,7 @@ class Thermoino:
 
     Examples
     --------
-    ````python
+    ```python
     from thermoino import Thermoino, list_com_ports
 
     # List all available serial ports
@@ -129,7 +130,7 @@ class Thermoino:
     luigi.wait(4)
     luigi.set_temp(32)
     luigi.close()
-    ````
+    ```
 
     TODO
     ----
@@ -221,7 +222,15 @@ class Thermoino:
         Take the decoded response from _send_command, determine if it's an error or success 
         code based on whether it's less than 0, and convert it to the corresponding enum value.
         """
-        if not decoded_response.isdigit():
+        def _is_integer(s):
+            """Check if a string is an integer, .isdigit() does not work for negative numbers."""
+            try:
+                int(s)
+                return True
+            except ValueError:
+                return False
+    
+        if not _is_integer(decoded_response):
             return decoded_response # e.g. when using diag
 
         decoded_response = int(decoded_response)
@@ -264,18 +273,24 @@ class Thermoino:
         logger.info("Thermoino response to 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
         self.temp = temp_target
         return self
-
+    
     def wait(self, duration):
         """
         Wait for a given duration in seconds.
-        This delays execution in python for a given number of seconds.
+        This function delays the execution in Python for a given number of seconds.
+
+        Parameters
+        ----------
+        duration : float
+            The duration to wait in seconds.
 
         Note
         ----
-        Should not be used for continuous ratings as this function blocks the execution
+        Should not be used in a Psychopy experiment (e.g. for continuous ratings) as this function blocks the execution
         of anything else (at least as long as there is no threading).
         """
-        logger.info("Thermoino waits for %s s.", duration)
+
+        logger.info("Thermoino waits for %s s using time.sleep.", duration)
         time.sleep(duration)
         return self
 
