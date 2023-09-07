@@ -97,7 +97,7 @@ class RemoteControliMotions():
         """
         try:
             self.sock.connect((self.HOST, self.PORT))
-            while not self.connected == 0:
+            while self.connected != 0:
                 self.connected = self._check_status()
                 time.sleep(0.1)
             logger.info("iMotions is ready for remote control.")
@@ -136,7 +136,6 @@ class RemoteControliMotions():
 
 
     def export_data(self):
-
         logger.info("iMotions exported the data for study %s for participant %s to %s.", self.study, self.participant, path)
         pass
 
