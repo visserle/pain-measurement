@@ -64,7 +64,7 @@ class StimuliFunction():
 
     Example
     -------
-    ````python
+    ```python
     import numpy as np
     minimal_desired_duration = 200 # in seconds
     periods = [67, 20] # [0] is the baseline and [1] the modulation; in seconds
@@ -88,7 +88,7 @@ class StimuliFunction():
         n_plateaus=4, 
         add_at_start="random", 
         add_at_end=True)
-    ````
+    ```
 	For more information on the resulting stimuli wave use:
 	>>> from stimuli_function import stimuli_extra
 	>>> _ = stimuli_extra(stimuli.wave, stimuli.wave_dot, stimuli.sample_rate, s_RoC=0.2, display_stats=True)
@@ -103,17 +103,17 @@ class StimuliFunction():
         
     From Andreas Strube's Neuron paper (2023) with stimuli of 8 s and Capsaicin: \n
     "During experiment 1, pain levels were calibrated to achieve \n
-        VAS10 (M = 38.1°C, SD = 3.5°C, Min = 31.8°C, Max = 44.8°C), \n
-        VAS30 (M = 39°C, SD = 3.5°C, Min = 32.2°C, Max = 45.3°C), \n
-        VAS50 (M = 39.9°C, SD = 3.6°C, Min = 32.5°C, Max = 46.2°C) and \n
-        VAS70 (M = 40.8°C, SD = 3.8°C, Min = 32.8°C, Max = 47.2°C) pain levels \n
-        (for highly effective conditioning, test trials, weakly effective conditioning and VAS70 pain stimulation, respectively).\n
+    - VAS10 (M = 38.1°C, SD = 3.5°C, Min = 31.8°C, Max = 44.8°C), \n
+    - VAS30 (M = 39°C, SD = 3.5°C, Min = 32.2°C, Max = 45.3°C), \n
+    - VAS50 (M = 39.9°C, SD = 3.6°C, Min = 32.5°C, Max = 46.2°C) and \n
+    - VAS70 (M = 40.8°C, SD = 3.8°C, Min = 32.8°C, Max = 47.2°C) pain levels \n
+    - (for highly effective conditioning, test trials, weakly effective conditioning and VAS70 pain stimulation, respectively).\n
     During experiment 2, pain levels were calibrated to achieve \n
-        VAS10 (M = 38.2°C, SD = 3.1°C, Min = 31.72°C, Max = 44.5°C),\n
-        VAS30 (M = 39°C, SD = 3.1°C, Min = 32.1°C, Max = 45.3°C), \n
-        VAS50 (M = 38.19°C, SD = 3.1°C, Min = 32.5°C, Max = 46.1°C) and \n
-        VAS70 (M = 40.5°C, SD = 3.2°C, Min = 32.8°C, Max = 46.9°C) pain levels \n
-        (for highly effective conditioning, test trials, weakly effective conditioning and pain stimulation, respectively)."
+    - VAS10 (M = 38.2°C, SD = 3.1°C, Min = 31.72°C, Max = 44.5°C),\n
+    - VAS30 (M = 39°C, SD = 3.1°C, Min = 32.1°C, Max = 45.3°C), \n
+    - VAS50 (M = 38.19°C, SD = 3.1°C, Min = 32.5°C, Max = 46.1°C) and \n
+    - VAS70 (M = 40.5°C, SD = 3.2°C, Min = 32.8°C, Max = 46.9°C) pain levels \n
+    - (for highly effective conditioning, test trials, weakly effective conditioning and pain stimulation, respectively)."
     """
 
     def __init__(self, minimal_desired_duration, 
