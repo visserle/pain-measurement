@@ -30,12 +30,12 @@ FILE_DIR = EXP_DIR / 'participants.xlsx'
 EXP_DIR.mkdir(parents=True, exist_ok=True)
 
 def init_excel_file():
-    headers = ['time_stamp', 'name', 'gender', 'age', 'vas_0', 'vas_70']
+    headers = ['time_stamp', 'participant', 'age', 'gender', 'vas_0', 'vas_70']
     if not FILE_DIR.exists():
         df = pd.DataFrame(columns=headers)
         df.to_excel(FILE_DIR, index=False)
 
-def add_participant(name, gender, age, vas_0, vas_70):
+def add_participant(participant, age, gender, vas_0, vas_70):
     """
     Example for usage in psychopy:
     -------
@@ -43,8 +43,8 @@ def add_participant(name, gender, age, vas_0, vas_70):
     from participants import add_participant
     add_participant(
         expInfo['participant'],
-        expInfo['gender']
         expInfo['age'],
+        expInfo['gender']
         estimator_vas0.get_estimate(),
         estimator_vas70.get_estimate())
     ```
@@ -52,9 +52,9 @@ def add_participant(name, gender, age, vas_0, vas_70):
     time_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     new_data = pd.DataFrame([{
         'time_stamp': time_stamp,
-        'name': name,
-        'gender': gender,
+        'participant': participant,
         'age': age,
+        'gender': gender,
         'vas_0': vas_0,
         'vas_70': vas_70
     }])
@@ -70,12 +70,12 @@ def read_last_participant():
     df = pd.read_excel(FILE_DIR)
     last_row = df.tail(1)
     for index, row in last_row.iterrows():
-        print(row['name'], row['age'], row['time_stamp'], row['vas_0'], row['vas_70'])
+        print(row['participant'], row['age'], row['time_stamp'], row['vas_0'], row['vas_70'])
 
 def main():
     init_excel_file()
-    add_participant('John', 'm', 22, 3.5, 4.0)
-    add_participant('Jane', 'f', 25, 2.5, 3.8)
+    add_participant('John', 22, 'm', 3.5, 4.0)
+    add_participant('Jane', 25, 'f', 2.5, 3.8)
     read_last_participant()
 
 if __name__ == '__main__':
