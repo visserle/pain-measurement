@@ -21,7 +21,7 @@ from .logger import setup_logger
 logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
 
 
-class BayesianVASEstimator:
+class BayesianEstimatorVAS:
     """
     Recursive Bayesian estimation to:
     1. update belief about the temperature for the specific VAS value and
@@ -30,27 +30,32 @@ class BayesianVASEstimator:
     Example
     -------
     ```python
-    from src.experiments.calibration import EstimatorVAS
-    
-    # get VAS 0 (pain threshold)
-    start_temp_vas_0 = 38
-    vas_estimator_0 = EstimatorVAS(0, start_temp=start_temp_vas_0)
+    from src.experiments.calibration import BayesianEstimatorVAS
 
-    for trial in range(vas_estimator_0.trials):
-        response = input(f'Is {vas_estimator_0.current_temperature} °C painful? (y/n) ') 
-        vas_estimator_0.conduct_trial(response,trial=trial)
+    # Get estimate for VAS 0 (pain threshold)
+    temp_start_vas0 = 38.
+    trials = 7
+    estimator_vas0 = BayesianEstimatorVAS(
+        vas_value= 0, 
+        temp_start=temp_start_vas0, 
+        temp_std=3.5,
+        trials=trials)
 
-    print(f"Calibration pain threshold estimate: {vas_estimator_0.get_estimate()} °C")
-    
-    # get VAS 70
-    start_temp_vas_70 = vas_estimator_0.get_estimate() + 2
-    vas_estimator_70 = VAS_Estimator(70, start_temp=start_temp_vas_70)
+    for trial in range(estimator_vas0.trials):
+        response = input(f'Is this stimulus painful? (y/n) ') 
+        estimator_vas0.conduct_trial(response,trial=trial)
+        
+    # Get estimate for VAS 70
+    temp_start_vas70 = estimator_vas0.get_estimate() + 3
+    estimator_vas70 = BayesianEstimatorVAS(
+        vas_value=70, 
+        temp_start=temp_start_vas70,
+        temp_std=1, # smaller std for higher temperatures
+        trials=5)
 
-    for trial in range(vas_estimator_70.trials):
-        response = input(f'Is {vas_estimator_70.current_temperature} °C painful? (y/n) ') 
-        vas_estimator_70.conduct_trial(response,trial=trial)
-
-    print(f"Calibration pain threshold estimate: {vas_estimator_70.get_estimate()} °C")
+    for trial in range(estimator_vas70.trials):
+        response = input(f'Is this stimulus a 7 out of 10 (strong pain)? (y/n) ') 
+        estimator_vas70.conduct_trial(response,trial=trial)
     
     ```
 
@@ -81,7 +86,7 @@ class BayesianVASEstimator:
     
     MAX_TEMP = 48.
 
-    def __init__(self, vas_value, start_temp=38, std_temp=3.5, trials=7, likelihood_std=1, reduction_factor=0.95):
+    def __init__(self, vas_value, temp_start=38, temp_std=3.5, trials=7, likelihood_std=1, reduction_factor=0.95):
         """
         Initialize the VAS_Estimator object for recursive Bayesian estimation of temperature based on VAS values.
 
@@ -91,11 +96,11 @@ class BayesianVASEstimator:
             The Visual Analog Scale (VAS) value for which the temperature is to be estimated. 
             VAS is usually a scale from 0 to 100, where 0 indicates no pain and 100 indicates extreme pain.
 
-        start_temp : float, optional
+        temp_start : float, optional
             The starting temperature in degrees Celsius for the estimation process. 
             Default is 38 degrees Celsius for VAS 0 (pain threshold) with Capsaicin.
 
-        std_temp : float, optional
+        temp_std : float, optional
             The standard deviation of the initial Gaussian prior distribution for the temperature.
             Default is 3.5 degrees Celsius.
             
@@ -105,7 +110,7 @@ class BayesianVASEstimator:
 
         likelihood_std : float, optional
             The standard deviation of the likelihood function used in Bayesian updating.
-            Default is 1 degree Celsius.
+            Default is 1.
 
         reduction_factor : float, optional
             The factor by which the standard deviation of the likelihood function is reduced after each trial.
@@ -115,7 +120,7 @@ class BayesianVASEstimator:
         Attributes
         ----------
         range_temp : numpy.ndarray
-            The range of temperatures considered for estimation, generated based on the start_temp and std_temp.
+            The range of temperatures considered for estimation, generated based on the temp_start and temp_std.
 
         prior : numpy.ndarray
             The initial prior probability distribution over the range of temperatures.
@@ -137,22 +142,22 @@ class BayesianVASEstimator:
             List to store the posterior distributions obtained in each trial.
         """
         self.vas_value = vas_value
-        self.start_temp = start_temp
-        self.std_temp = std_temp
+        self.temp_start = temp_start
+        self.temp_std = temp_std
         self.likelihood_std = likelihood_std
         self.reduction_factor = reduction_factor
         self.trials = trials
 
         # Define the range of temperatures to consider
-        min_temp = self.start_temp - math.ceil(self.std_temp * 1.5)
-        max_temp = self.start_temp + math.ceil(self.std_temp * 1.5)
+        min_temp = self.temp_start - math.ceil(self.temp_std * 1.5)
+        max_temp = self.temp_start + math.ceil(self.temp_std * 1.5)
         num = int((max_temp - min_temp) / 0.1) + 1
         self.range_temp = np.linspace(min_temp, max_temp, num)
         
-        self.prior = stats.norm.pdf(self.range_temp, loc=self.start_temp, scale=self.std_temp)
+        self.prior = stats.norm.pdf(self.range_temp, loc=self.temp_start, scale=self.temp_std)
         self.prior /= np.sum(self.prior)  # normalize
 
-        self._current_temp = self.start_temp
+        self._current_temp = self.temp_start
         
         self.temps = [self.current_temp]
         self.priors = []
@@ -167,6 +172,8 @@ class BayesianVASEstimator:
     @current_temp.setter
     def current_temp(self, value):
         self._current_temp = value
+        if self._current_temp > self.MAX_TEMP:
+            logger.warning("Maximum temperature of %s °C reached.", self.MAX_TEMP)
 
     @property
     def steps(self):
@@ -201,15 +208,18 @@ class BayesianVASEstimator:
         self.prior = np.copy(posterior)
 
         if trial == self.trials - 1: # last trial
-            logger.info("Calibration steps (°C) were: %s.\n", self.steps)
             logger.info("Calibration estimate for VAS %s: %s °C.", self.vas_value, self.get_estimate())
-
+            logger.info("Calibration steps were (°C): %s.", self.steps)
+            # warning if all steps were in the same direction
+            if np.all(np.diff(self.steps) >= 0) or np.all(np.diff(self.steps) < 0):
+                logger.warning("Calibration steps were all in the same direction.")
+   
     def get_estimate(self):
         return self.temps[-1]
 
 
 
-# not used for now, as we use the BayesianVASEstimator instead
+# not used for now, as we use the BayesianEstimatorVAS instead
 
 # class PainRegressor:
 #     """
