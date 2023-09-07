@@ -1,5 +1,10 @@
 # work in progress
 
+# TODO
+# - test new execctcpwm command
+# - try out what happens if you load several ctcs without flushing in between
+# - do they get flushed automatically when you load a new one? or are they appended?
+
 import logging
 import time
 from enum import Enum
@@ -7,7 +12,6 @@ from enum import Enum
 import numpy as np
 import serial
 import serial.tools.list_ports
-import importlib.util
 
 
 def setup_default_logger():
@@ -184,7 +188,7 @@ class Thermoino:
             The serial object for communication with the device.
         """
         self.ser = serial.Serial(self.PORT, self.BAUD_RATE)
-        self.connected = True  
+        self.connected = True
         logger.info("Thermoino connection established @ %s.", self.PORT)
         time.sleep(1)
         return self
@@ -363,9 +367,10 @@ class ThermoinoComplexTimeCourses(Thermoino):
     
     New stuff
     -----------
-    - renamed init() to connect to be consistent with python naming conventions
+    - renamed init() to connect() to be consistent with python naming conventions
     - create_ctc(), where you load your temperature course with sampling rate and it returns the ctc (a resampled, differentiated, binned temperature course)
-    - prep_ctc(), which prepares the starting temperature for execution of the ctc
+    - prep_ctc() which prepares the starting temperature for execution of the ctc
+    - exec_ctc() uses the new EXECPWM command which is more accurate than the old EXECCTC command and doesn't need to duplicate the last bin
     
     Examples
     --------
@@ -409,7 +414,6 @@ class ThermoinoComplexTimeCourses(Thermoino):
     
     TODO
     ----
-    - Change to new EXECCTCPWM command and do some testing
     - Fix usage of units in the docstrings (some small inaccuracies)
     - Fix query function
     """
@@ -483,9 +487,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             The rate of rise of temperature [°C/s].
             Mofidied if rate of rise option is "adjusted".
         `ctc` : `numpy.array`
-            The created ctc. Note that the length of the ctc is one less than the length of the temperature course because of (np.diff). 
-            This is accounted for in the Thermoino code by duplicating the second to last bin.
-            Therefore, it is recommended to use a temperature course with no changes in the last second.
+            The created ctc.
         """
 
         self.temp_course_duration = temp_course.shape[0] / sample_rate
@@ -493,7 +495,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         # i.e. for a 100 s stimuli with a bin size of 500 ms we'd need 200 bins á 500 ms
         temp_course_resampled = temp_course[::int(sample_rate / (1000 / self.bin_size_ms))]
         self.temp_course_resampled = temp_course_resampled
-        temp_course_resampled_diff = np.diff(temp_course_resampled)
+        temp_course_resampled_diff = np.gradient(temp_course_resampled)
 
         if rate_of_rise_option == "adjusted":
             # determine adjusted rate of rise (has to be updated in MMS accordingly)
@@ -586,10 +588,10 @@ class ThermoinoComplexTimeCourses(Thermoino):
             logger.error("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
             raise ValueError("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
 
-        output = self._send_command('EXECCTC\n')
-        logger.info("Thermoino response to 'EXECCTC' (.exec_ctc): %s.", output)
+        output = self._send_command('EXECCTCPWM\n')
+        logger.info("Thermoino response to 'EXECCTCPWM' (.exec_ctc): %s.", output)
         logger.info("Thermoino will execute the ctc with a duration of %s s.", self.temp_course_duration)
-        self.temp = round(self.temp_course_resampled[-2],2) # -2 because np.diff makes the array one shorter, see side effects of create_ctc
+        self.temp = round(self.temp_course_resampled[-1],2)
         logger.info("Thermoino will set the temperature to %s °C after the ctc ended.", self.temp)
         return self
 
