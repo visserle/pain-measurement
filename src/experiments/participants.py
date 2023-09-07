@@ -2,6 +2,7 @@
 
 # TODO
 # add a function to read the last participant to use calibration values in the next experiment
+# add logging 
 
 import os
 from datetime import datetime
