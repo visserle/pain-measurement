@@ -271,12 +271,18 @@ class Thermoino:
         ----------
         temp_target : `int`
             The target temperature in degree Celsius.
+
+        Returns
+        -------
+        tuple
+            (self, float) - self for chaining, float for the duration in seconds for the temperature change.
         """
         move_time_us = round(((temp_target - self.temp) / self.rate_of_rise) * 1e6)
+        move_time_s = move_time_us / 1e6  # Convert to seconds
         output = self._send_command(f'MOVE;{move_time_us}\n')
         logger.info("Thermoino response to 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
         self.temp = temp_target
-        return self
+        return (self, move_time_s) 
     
     def wait(self, duration):
         """
