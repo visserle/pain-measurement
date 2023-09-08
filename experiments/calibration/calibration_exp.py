@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 08, 2023, at 15:06
+    on September 08, 2023, at 16:15
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -58,17 +58,17 @@ rate_of_rise = 5 # has to be the same as in MMS
 # Stimuli
 stimuli_clock = core.Clock()
 stimuli_duration = 0.2 # 8
-ibi_duration = 0.2 # 8  + np.random.randint(0, 5)
+iti_duration = 0.2 # 8  + np.random.randint(0, 5)
 
 # Pre-exposure
-temps_preexposure = [34, 35, 36]
+temps_preexposure = [35, 36, 37]
 
 # Estimator
-trials_vas0 = 7 # has to be the same as the nReps in the psychopy loop
-temp_start_vas0 = 38.
+trials_vas0 = 7 # is the same as nReps in psychopy loop
+temp_start_vas0 = 39.
 temp_std_vas0 = 3.5
 
-trials_vas70 = 5 # has to be the same as the nReps in the psychopy loop
+trials_vas70 = 5 # is the same as nReps in psychopy loop
 temp_start_vas70 = None #  will be set after VAS 0 estimate
 temp_start_vas70_plus = 3 # VAS 0 estimate plus int
 temp_std_vas70 = 1.5 # smaller std for higher temperatures
@@ -392,6 +392,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         depth=0.0);
     response_preexposure = keyboard.Keyboard()
     
+    # --- Initialize components for Routine "transition_preeposure_to_vas0" ---
+    
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
         win=win, name='cross_neutral', vertices='cross',
@@ -629,7 +631,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # if cross_neutral is stopping this frame...
             if cross_neutral.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > cross_neutral.tStartRefresh + ibi_duration-frameTolerance:
+                if tThisFlipGlobal > cross_neutral.tStartRefresh + iti_duration-frameTolerance:
                     # keep track of stop time/frame for later
                     cross_neutral.tStop = t  # not accounting for scr refresh
                     cross_neutral.frameNStop = frameN  # exact frame index
@@ -678,7 +680,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         checked = False
         stimuli_clock.reset()
         
-        time_for_ramp_up = luigi.set_temp(temps_preexposure[thisLoop_preexposure])[1]
+        trial = loop_preexposure.thisN
+        time_for_ramp_up = luigi.set_temp(temps_preexposure[trial])[1]
         # keep track of which components have finished
         preexposureComponents = [corss_pain_preexposure]
         for thisComponent in preexposureComponents:
@@ -896,6 +899,76 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # the Routine "feedback_preexposure" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
+    # --- Prepare to start Routine "transition_preeposure_to_vas0" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('transition_preeposure_to_vas0.started', globalClock.getTime())
+    # Run 'Begin Routine' code from transition_preexposure_to_vas0
+    # If response was yes
+    print(f"{response_preexposure.keys = }")
+    if response_preexposure.keys == "y":
+        # Decrease starting temperature
+        temp_start_vas0 -= 2
+        # Reinitialize estimator for VAS 0 with differen temp_start
+        estimator_vas0 = BayesianEstimatorVAS(
+            vas_value=0, 
+            temp_start=temp_start_vas0,
+            temp_std=temp_std_vas0,
+            trials=trials_vas0)
+        print("created estimator_vas0")
+    # keep track of which components have finished
+    transition_preeposure_to_vas0Components = []
+    for thisComponent in transition_preeposure_to_vas0Components:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "transition_preeposure_to_vas0" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in transition_preeposure_to_vas0Components:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "transition_preeposure_to_vas0" ---
+    for thisComponent in transition_preeposure_to_vas0Components:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('transition_preeposure_to_vas0.stopped', globalClock.getTime())
+    # the Routine "transition_preeposure_to_vas0" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
+    
     # set up handler to look after randomisation of conditions etc
     loop_vas0 = data.TrialHandler(nReps=trials_vas0, method='random', 
         extraInfo=expInfo, originPath=-1,
@@ -976,7 +1049,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # if cross_neutral is stopping this frame...
             if cross_neutral.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > cross_neutral.tStartRefresh + ibi_duration-frameTolerance:
+                if tThisFlipGlobal > cross_neutral.tStartRefresh + iti_duration-frameTolerance:
                     # keep track of stop time/frame for later
                     cross_neutral.tStop = t  # not accounting for scr refresh
                     cross_neutral.frameNStop = frameN  # exact frame index
@@ -1022,6 +1095,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         # Run 'Begin Routine' code from thermoino_vas0
         checked = False
         stimuli_clock.reset()
+        
         time_for_ramp_up = luigi.set_temp(estimator_vas0.current_temp)[1]
         
         # keep track of which components have finished
@@ -1555,7 +1629,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # if cross_neutral is stopping this frame...
             if cross_neutral.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > cross_neutral.tStartRefresh + ibi_duration-frameTolerance:
+                if tThisFlipGlobal > cross_neutral.tStartRefresh + iti_duration-frameTolerance:
                     # keep track of stop time/frame for later
                     cross_neutral.tStop = t  # not accounting for scr refresh
                     cross_neutral.frameNStop = frameN  # exact frame index
