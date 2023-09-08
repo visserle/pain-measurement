@@ -3,10 +3,13 @@
 # TODO
 # add a function to read the last participant to use calibration values in the next experiment
 # add logging 
+# documentation:
+# this will be run from psychopy, so we need to make sure that the path is correct
 
 import os
 from datetime import datetime
 from pathlib import Path
+import logging
 import pandas as pd
 
 try:
@@ -22,20 +25,26 @@ except ImportError:
         print(f"Failed to install and import 'openpyxl': {exc}")
         raise exc
 
-PROJECT_DIR = Path.cwd()
-EXP_DIR = PROJECT_DIR / 'experiments'
-FILE_DIR = EXP_DIR / 'participants.xlsx'
+from .logger import setup_logger
+logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
 
-# Ensure the directory exists
-EXP_DIR.mkdir(parents=True, exist_ok=True)
+# Set the path to the Excel file
+exp_dirs = "calibration", "mpad1", "mpad2"
+X_DIR = Path.cwd()
+if X_DIR.stem in exp_dirs: # run from psychopy runner
+    FILE_DIR = X_DIR.parent / 'participants.xlsx'
+else: # run from project root
+    EXP_DIR = X_DIR / 'experiments'
+    FILE_DIR = EXP_DIR / 'participants.xlsx'
+
 
 def init_excel_file():
-    headers = ['time_stamp', 'participant', 'age', 'gender', 'vas_0', 'vas_70']
+    headers = ['time_stamp', 'participant', 'age', 'gender', 'vas0', 'vas70', 'baseline_temp', 'temp_range']
     if not FILE_DIR.exists():
         df = pd.DataFrame(columns=headers)
         df.to_excel(FILE_DIR, index=False)
 
-def add_participant(participant, age, gender, vas_0, vas_70):
+def add_participant(participant, age, gender, vas0, vas70):
     """
     Example for usage in psychopy:
     -------
@@ -44,19 +53,22 @@ def add_participant(participant, age, gender, vas_0, vas_70):
     add_participant(
         expInfo['participant'],
         expInfo['age'],
-        expInfo['gender']
+        expInfo['gender'],
         estimator_vas0.get_estimate(),
         estimator_vas70.get_estimate())
     ```
     """
+
     time_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     new_data = pd.DataFrame([{
         'time_stamp': time_stamp,
         'participant': participant,
         'age': age,
         'gender': gender,
-        'vas_0': vas_0,
-        'vas_70': vas_70
+        'vas0': vas0,
+        'vas70': vas70,
+        'baseline_temp': (vas0 + vas70) / 2,
+        'temp_range': vas70 - vas0
     }])
     df = pd.read_excel(FILE_DIR)
     if df.empty or df.isna().all().all():
@@ -64,19 +76,45 @@ def add_participant(participant, age, gender, vas_0, vas_70):
     else:
         df = pd.concat([df, new_data], ignore_index=True)
     df.to_excel(FILE_DIR, index=False)
-
+    logger.info(f"Added participant {participant} to {FILE_DIR}")
 
 def read_last_participant():
+    """
+    Returns important information about the last participant.
+
+    Example for usage in psychopy:
+    -------
+    ```python
+    from participants import read_last_participant
+    participant_info = read_last_participant()
+    ```
+    """
+    # Read the Excel file into a DataFrame
     df = pd.read_excel(FILE_DIR)
-    last_row = df.tail(1)
-    for index, row in last_row.iterrows():
-        print(row['participant'], row['age'], row['time_stamp'], row['vas_0'], row['vas_70'])
 
-def main():
-    init_excel_file()
-    add_participant('John', 22, 'm', 3.5, 4.0)
-    add_participant('Jane', 25, 'f', 2.5, 3.8)
-    read_last_participant()
+    # Get the last row of the DataFrame
+    last_row = df.iloc[-1]
 
-if __name__ == '__main__':
-    main()
+    # Extract relevant information
+    participant_info = {
+        'time_stamp': last_row['time_stamp'],
+        'participant': last_row['participant'],
+        'age': last_row['age'],
+        'gender': last_row['gender'],
+        'baseline_temp': last_row['baseline_temp'],
+        'temp_range': last_row['temp_range']
+    }
+
+    logger.info(f"Participant data from {participant_info['participant']}, {participant_info['time_stemp']}, loaded.")
+
+    return participant_info
+
+# does not work with logging
+# def main():
+#     init_excel_file()
+#     add_participant('John', 22, 'm', 3.5, 4.0)
+#     add_participant('Jane', 25, 'f', 2.5, 3.8)
+#     read_last_participant()
+
+# if __name__ == '__main__':
+#     main()
