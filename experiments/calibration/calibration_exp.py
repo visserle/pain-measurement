@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 08, 2023, at 14:57
+    on September 08, 2023, at 15:06
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -366,7 +366,31 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     luigi.trigger()
     
     
+    # --- Initialize components for Routine "iti" ---
+    cross_neutral = visual.ShapeStim(
+        win=win, name='cross_neutral', vertices='cross',
+        size=(0.2, 0.2),
+        ori=0.0, pos=(0, 0), anchor='center',
+        lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor='white',
+        opacity=None, depth=0.0, interpolate=True)
+    
     # --- Initialize components for Routine "preexposure" ---
+    corss_pain_preexposure = visual.ShapeStim(
+        win=win, name='corss_pain_preexposure', vertices='cross',
+        size=(0.2, 0.2),
+        ori=0.0, pos=(0, 0), anchor='center',
+        lineWidth=1.0,     colorSpace='rgb',  lineColor='red', fillColor='red',
+        opacity=None, depth=-1.0, interpolate=True)
+    
+    # --- Initialize components for Routine "feedback_preexposure" ---
+    question_preexposure = visual.TextStim(win=win, name='question_preexposure',
+        text='War einer der Reize schemrzhaft?\n\n(y/n)',
+        font='Open Sans',
+        pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=0.0);
+    response_preexposure = keyboard.Keyboard()
     
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
@@ -554,6 +578,96 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             for paramName in thisLoop_preexposure:
                 globals()[paramName] = thisLoop_preexposure[paramName]
         
+        # --- Prepare to start Routine "iti" ---
+        continueRoutine = True
+        # update component parameters for each repeat
+        thisExp.addData('iti.started', globalClock.getTime())
+        # keep track of which components have finished
+        itiComponents = [cross_neutral]
+        for thisComponent in itiComponents:
+            thisComponent.tStart = None
+            thisComponent.tStop = None
+            thisComponent.tStartRefresh = None
+            thisComponent.tStopRefresh = None
+            if hasattr(thisComponent, 'status'):
+                thisComponent.status = NOT_STARTED
+        # reset timers
+        t = 0
+        _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+        frameN = -1
+        
+        # --- Run Routine "iti" ---
+        routineForceEnded = not continueRoutine
+        while continueRoutine:
+            # get current time
+            t = routineTimer.getTime()
+            tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+            tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+            frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+            # update/draw components on each frame
+            
+            # *cross_neutral* updates
+            
+            # if cross_neutral is starting this frame...
+            if cross_neutral.status == NOT_STARTED and tThisFlip >= 0-frameTolerance:
+                # keep track of start time/frame for later
+                cross_neutral.frameNStart = frameN  # exact frame index
+                cross_neutral.tStart = t  # local t and not account for scr refresh
+                cross_neutral.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(cross_neutral, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'cross_neutral.started')
+                # update status
+                cross_neutral.status = STARTED
+                cross_neutral.setAutoDraw(True)
+            
+            # if cross_neutral is active this frame...
+            if cross_neutral.status == STARTED:
+                # update params
+                pass
+            
+            # if cross_neutral is stopping this frame...
+            if cross_neutral.status == STARTED:
+                # is it time to stop? (based on global clock, using actual start)
+                if tThisFlipGlobal > cross_neutral.tStartRefresh + ibi_duration-frameTolerance:
+                    # keep track of stop time/frame for later
+                    cross_neutral.tStop = t  # not accounting for scr refresh
+                    cross_neutral.frameNStop = frameN  # exact frame index
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'cross_neutral.stopped')
+                    # update status
+                    cross_neutral.status = FINISHED
+                    cross_neutral.setAutoDraw(False)
+            
+            # check for quit (typically the Esc key)
+            if defaultKeyboard.getKeys(keyList=["escape"]):
+                thisExp.status = FINISHED
+            if thisExp.status == FINISHED or endExpNow:
+                endExperiment(thisExp, inputs=inputs, win=win)
+                return
+            
+            # check if all components have finished
+            if not continueRoutine:  # a component has requested a forced-end of Routine
+                routineForceEnded = True
+                break
+            continueRoutine = False  # will revert to True if at least one component still running
+            for thisComponent in itiComponents:
+                if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                    continueRoutine = True
+                    break  # at least one component has not yet finished
+            
+            # refresh the screen
+            if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+                win.flip()
+        
+        # --- Ending Routine "iti" ---
+        for thisComponent in itiComponents:
+            if hasattr(thisComponent, "setAutoDraw"):
+                thisComponent.setAutoDraw(False)
+        thisExp.addData('iti.stopped', globalClock.getTime())
+        # the Routine "iti" was not non-slip safe, so reset the non-slip timer
+        routineTimer.reset()
+        
         # --- Prepare to start Routine "preexposure" ---
         continueRoutine = True
         # update component parameters for each repeat
@@ -563,11 +677,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         
         checked = False
         stimuli_clock.reset()
-        time_for_ramp_up = luigi.set_temp(estimator_vas0.current_temp)[1]
-        temps_preexposure
-        thisLoop_vas0
+        
+        time_for_ramp_up = luigi.set_temp(temps_preexposure[thisLoop_preexposure])[1]
         # keep track of which components have finished
-        preexposureComponents = []
+        preexposureComponents = [corss_pain_preexposure]
         for thisComponent in preexposureComponents:
             thisComponent.tStart = None
             thisComponent.tStop = None
@@ -597,6 +710,39 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                     luigi.set_temp(temp_baseline)
                     checked = True
             
+            
+            # *corss_pain_preexposure* updates
+            
+            # if corss_pain_preexposure is starting this frame...
+            if corss_pain_preexposure.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                corss_pain_preexposure.frameNStart = frameN  # exact frame index
+                corss_pain_preexposure.tStart = t  # local t and not account for scr refresh
+                corss_pain_preexposure.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(corss_pain_preexposure, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'corss_pain_preexposure.started')
+                # update status
+                corss_pain_preexposure.status = STARTED
+                corss_pain_preexposure.setAutoDraw(True)
+            
+            # if corss_pain_preexposure is active this frame...
+            if corss_pain_preexposure.status == STARTED:
+                # update params
+                pass
+            
+            # if corss_pain_preexposure is stopping this frame...
+            if corss_pain_preexposure.status == STARTED:
+                # is it time to stop? (based on global clock, using actual start)
+                if tThisFlipGlobal > corss_pain_preexposure.tStartRefresh + stimuli_duration + 2-frameTolerance:
+                    # keep track of stop time/frame for later
+                    corss_pain_preexposure.tStop = t  # not accounting for scr refresh
+                    corss_pain_preexposure.frameNStop = frameN  # exact frame index
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'corss_pain_preexposure.stopped')
+                    # update status
+                    corss_pain_preexposure.status = FINISHED
+                    corss_pain_preexposure.setAutoDraw(False)
             
             # check for quit (typically the Esc key)
             if defaultKeyboard.getKeys(keyList=["escape"]):
@@ -633,6 +779,122 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             thisSession.sendExperimentData()
     # completed len(temps_preexposure) repeats of 'loop_preexposure'
     
+    
+    # --- Prepare to start Routine "feedback_preexposure" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('feedback_preexposure.started', globalClock.getTime())
+    response_preexposure.keys = []
+    response_preexposure.rt = []
+    _response_preexposure_allKeys = []
+    # keep track of which components have finished
+    feedback_preexposureComponents = [question_preexposure, response_preexposure]
+    for thisComponent in feedback_preexposureComponents:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "feedback_preexposure" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # *question_preexposure* updates
+        
+        # if question_preexposure is starting this frame...
+        if question_preexposure.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            question_preexposure.frameNStart = frameN  # exact frame index
+            question_preexposure.tStart = t  # local t and not account for scr refresh
+            question_preexposure.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(question_preexposure, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'question_preexposure.started')
+            # update status
+            question_preexposure.status = STARTED
+            question_preexposure.setAutoDraw(True)
+        
+        # if question_preexposure is active this frame...
+        if question_preexposure.status == STARTED:
+            # update params
+            pass
+        
+        # *response_preexposure* updates
+        waitOnFlip = False
+        
+        # if response_preexposure is starting this frame...
+        if response_preexposure.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            response_preexposure.frameNStart = frameN  # exact frame index
+            response_preexposure.tStart = t  # local t and not account for scr refresh
+            response_preexposure.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(response_preexposure, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'response_preexposure.started')
+            # update status
+            response_preexposure.status = STARTED
+            # keyboard checking is just starting
+            waitOnFlip = True
+            win.callOnFlip(response_preexposure.clock.reset)  # t=0 on next screen flip
+            win.callOnFlip(response_preexposure.clearEvents, eventType='keyboard')  # clear events on next screen flip
+        if response_preexposure.status == STARTED and not waitOnFlip:
+            theseKeys = response_preexposure.getKeys(keyList=['y','n'], ignoreKeys=["escape"], waitRelease=False)
+            _response_preexposure_allKeys.extend(theseKeys)
+            if len(_response_preexposure_allKeys):
+                response_preexposure.keys = _response_preexposure_allKeys[-1].name  # just the last key pressed
+                response_preexposure.rt = _response_preexposure_allKeys[-1].rt
+                response_preexposure.duration = _response_preexposure_allKeys[-1].duration
+                # a response ends the routine
+                continueRoutine = False
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in feedback_preexposureComponents:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "feedback_preexposure" ---
+    for thisComponent in feedback_preexposureComponents:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('feedback_preexposure.stopped', globalClock.getTime())
+    # check responses
+    if response_preexposure.keys in ['', [], None]:  # No response was made
+        response_preexposure.keys = None
+    thisExp.addData('response_preexposure.keys',response_preexposure.keys)
+    if response_preexposure.keys != None:  # we had a response
+        thisExp.addData('response_preexposure.rt', response_preexposure.rt)
+        thisExp.addData('response_preexposure.duration', response_preexposure.duration)
+    thisExp.nextEntry()
+    # the Routine "feedback_preexposure" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
     loop_vas0 = data.TrialHandler(nReps=trials_vas0, method='random', 
