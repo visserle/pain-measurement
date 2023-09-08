@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 08, 2023, at 13:35
+    on September 08, 2023, at 14:57
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -57,8 +57,11 @@ rate_of_rise = 5 # has to be the same as in MMS
 
 # Stimuli
 stimuli_clock = core.Clock()
-stimuli_duration = 8
-ibi_duration = 8  + np.random.randint(0, 5)
+stimuli_duration = 0.2 # 8
+ibi_duration = 0.2 # 8  + np.random.randint(0, 5)
+
+# Pre-exposure
+temps_preexposure = [34, 35, 36]
 
 # Estimator
 trials_vas0 = 7 # has to be the same as the nReps in the psychopy loop
@@ -85,7 +88,7 @@ estimator_vas0 = BayesianEstimatorVAS(
 # Run 'Before Experiment' code from estimator_vas70
 # instantiating here does not make sense because we need the values from the VAS 0 esitmator first
 # Run 'Before Experiment' code from save_participant_data
-from src.experiments.participants import add_participant
+from src.experiments.participant_data import add_participant
 
 def showExpInfoDlg(expInfo):
     """
@@ -401,14 +404,14 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         depth=0.0);
     
     # --- Initialize components for Routine "transition_vas0_to_vas70" ---
-    vas70_meaning = visual.TextStim(win=win, name='vas70_meaning',
+    vas70_explanation = visual.TextStim(win=win, name='vas70_explanation',
         text='Als nächstes erhalten Sie einen starken Schmerzreiz.\nAuf einer Skala von 1 bis 10 soll er eine 7 darstellen.\n\n1: kein Schmerz,                           \n10: unerträglicher Schmerz,\n7: schwerer Schmerz .                   \n\n(Bild einfügen)\n\n\n--- Leertaste zum Forfahren ---',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-1.0);
-    vas70_meaning_ok = keyboard.Keyboard()
+    vas70_explanation_ok = keyboard.Keyboard()
     
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
@@ -522,65 +525,117 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # the Routine "welcome" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
-    # --- Prepare to start Routine "preexposure" ---
-    continueRoutine = True
-    # update component parameters for each repeat
-    thisExp.addData('preexposure.started', globalClock.getTime())
-    # keep track of which components have finished
-    preexposureComponents = []
-    for thisComponent in preexposureComponents:
-        thisComponent.tStart = None
-        thisComponent.tStop = None
-        thisComponent.tStartRefresh = None
-        thisComponent.tStopRefresh = None
-        if hasattr(thisComponent, 'status'):
-            thisComponent.status = NOT_STARTED
-    # reset timers
-    t = 0
-    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
-    frameN = -1
+    # set up handler to look after randomisation of conditions etc
+    loop_preexposure = data.TrialHandler(nReps=len(temps_preexposure), method='random', 
+        extraInfo=expInfo, originPath=-1,
+        trialList=[None],
+        seed=None, name='loop_preexposure')
+    thisExp.addLoop(loop_preexposure)  # add the loop to the experiment
+    thisLoop_preexposure = loop_preexposure.trialList[0]  # so we can initialise stimuli with some values
+    # abbreviate parameter names if possible (e.g. rgb = thisLoop_preexposure.rgb)
+    if thisLoop_preexposure != None:
+        for paramName in thisLoop_preexposure:
+            globals()[paramName] = thisLoop_preexposure[paramName]
     
-    # --- Run Routine "preexposure" ---
-    routineForceEnded = not continueRoutine
-    while continueRoutine:
-        # get current time
-        t = routineTimer.getTime()
-        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
-        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
-        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
-        # update/draw components on each frame
+    for thisLoop_preexposure in loop_preexposure:
+        currentLoop = loop_preexposure
+        thisExp.timestampOnFlip(win, 'thisRow.t')
+        # pause experiment here if requested
+        if thisExp.status == PAUSED:
+            pauseExperiment(
+                thisExp=thisExp, 
+                inputs=inputs, 
+                win=win, 
+                timers=[routineTimer], 
+                playbackComponents=[]
+        )
+        # abbreviate parameter names if possible (e.g. rgb = thisLoop_preexposure.rgb)
+        if thisLoop_preexposure != None:
+            for paramName in thisLoop_preexposure:
+                globals()[paramName] = thisLoop_preexposure[paramName]
         
-        # check for quit (typically the Esc key)
-        if defaultKeyboard.getKeys(keyList=["escape"]):
-            thisExp.status = FINISHED
-        if thisExp.status == FINISHED or endExpNow:
-            endExperiment(thisExp, inputs=inputs, win=win)
-            return
+        # --- Prepare to start Routine "preexposure" ---
+        continueRoutine = True
+        # update component parameters for each repeat
+        thisExp.addData('preexposure.started', globalClock.getTime())
+        # Run 'Begin Routine' code from prexposure
+        # TODO: chnge start temp depending on anwser
         
-        # check if all components have finished
-        if not continueRoutine:  # a component has requested a forced-end of Routine
-            routineForceEnded = True
-            break
-        continueRoutine = False  # will revert to True if at least one component still running
+        checked = False
+        stimuli_clock.reset()
+        time_for_ramp_up = luigi.set_temp(estimator_vas0.current_temp)[1]
+        temps_preexposure
+        thisLoop_vas0
+        # keep track of which components have finished
+        preexposureComponents = []
         for thisComponent in preexposureComponents:
-            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
-                continueRoutine = True
-                break  # at least one component has not yet finished
+            thisComponent.tStart = None
+            thisComponent.tStop = None
+            thisComponent.tStartRefresh = None
+            thisComponent.tStopRefresh = None
+            if hasattr(thisComponent, 'status'):
+                thisComponent.status = NOT_STARTED
+        # reset timers
+        t = 0
+        _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+        frameN = -1
         
-        # refresh the screen
-        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
-            win.flip()
+        # --- Run Routine "preexposure" ---
+        routineForceEnded = not continueRoutine
+        while continueRoutine:
+            # get current time
+            t = routineTimer.getTime()
+            tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+            tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+            frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+            # update/draw components on each frame
+            # Run 'Each Frame' code from prexposure
+            routine_duration = time_for_ramp_up + stimuli_clock.getTime() 
+            
+            if not checked:
+                if routine_duration > stimuli_duration:
+                    luigi.set_temp(temp_baseline)
+                    checked = True
+            
+            
+            # check for quit (typically the Esc key)
+            if defaultKeyboard.getKeys(keyList=["escape"]):
+                thisExp.status = FINISHED
+            if thisExp.status == FINISHED or endExpNow:
+                endExperiment(thisExp, inputs=inputs, win=win)
+                return
+            
+            # check if all components have finished
+            if not continueRoutine:  # a component has requested a forced-end of Routine
+                routineForceEnded = True
+                break
+            continueRoutine = False  # will revert to True if at least one component still running
+            for thisComponent in preexposureComponents:
+                if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                    continueRoutine = True
+                    break  # at least one component has not yet finished
+            
+            # refresh the screen
+            if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+                win.flip()
+        
+        # --- Ending Routine "preexposure" ---
+        for thisComponent in preexposureComponents:
+            if hasattr(thisComponent, "setAutoDraw"):
+                thisComponent.setAutoDraw(False)
+        thisExp.addData('preexposure.stopped', globalClock.getTime())
+        # the Routine "preexposure" was not non-slip safe, so reset the non-slip timer
+        routineTimer.reset()
+        thisExp.nextEntry()
+        
+        if thisSession is not None:
+            # if running in a Session with a Liaison client, send data up to now
+            thisSession.sendExperimentData()
+    # completed len(temps_preexposure) repeats of 'loop_preexposure'
     
-    # --- Ending Routine "preexposure" ---
-    for thisComponent in preexposureComponents:
-        if hasattr(thisComponent, "setAutoDraw"):
-            thisComponent.setAutoDraw(False)
-    thisExp.addData('preexposure.stopped', globalClock.getTime())
-    # the Routine "preexposure" was not non-slip safe, so reset the non-slip timer
-    routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
-    loop_vas0 = data.TrialHandler(nReps=7.0, method='random', 
+    loop_vas0 = data.TrialHandler(nReps=trials_vas0, method='random', 
         extraInfo=expInfo, originPath=-1,
         trialList=[None],
         seed=None, name='loop_vas0')
@@ -705,7 +760,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         # Run 'Begin Routine' code from thermoino_vas0
         checked = False
         stimuli_clock.reset()
-        luigi.set_temp(estimator_vas0.current_temp)
+        time_for_ramp_up = luigi.set_temp(estimator_vas0.current_temp)[1]
         
         # keep track of which components have finished
         trial_vas0Components = [cross_pain_vas0]
@@ -764,7 +819,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                     cross_pain_vas0.status = FINISHED
                     cross_pain_vas0.setAutoDraw(False)
             # Run 'Each Frame' code from thermoino_vas0
-            routine_duration = stimuli_clock.getTime()
+            routine_duration = time_for_ramp_up + stimuli_clock.getTime() 
             
             if not checked:
                 if routine_duration > stimuli_duration:
@@ -1029,7 +1084,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         if thisSession is not None:
             # if running in a Session with a Liaison client, send data up to now
             thisSession.sendExperimentData()
-    # completed 7.0 repeats of 'loop_vas0'
+    # completed trials_vas0 repeats of 'loop_vas0'
     
     
     # --- Prepare to start Routine "transition_vas0_to_vas70" ---
@@ -1046,11 +1101,11 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         temp_start= temp_start_vas70,
         temp_std=temp_std_vas70,
         trials=trials_vas70)
-    vas70_meaning_ok.keys = []
-    vas70_meaning_ok.rt = []
-    _vas70_meaning_ok_allKeys = []
+    vas70_explanation_ok.keys = []
+    vas70_explanation_ok.rt = []
+    _vas70_explanation_ok_allKeys = []
     # keep track of which components have finished
-    transition_vas0_to_vas70Components = [vas70_meaning, vas70_meaning_ok]
+    transition_vas0_to_vas70Components = [vas70_explanation, vas70_explanation_ok]
     for thisComponent in transition_vas0_to_vas70Components:
         thisComponent.tStart = None
         thisComponent.tStop = None
@@ -1073,51 +1128,51 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
         # update/draw components on each frame
         
-        # *vas70_meaning* updates
+        # *vas70_explanation* updates
         
-        # if vas70_meaning is starting this frame...
-        if vas70_meaning.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # if vas70_explanation is starting this frame...
+        if vas70_explanation.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
             # keep track of start time/frame for later
-            vas70_meaning.frameNStart = frameN  # exact frame index
-            vas70_meaning.tStart = t  # local t and not account for scr refresh
-            vas70_meaning.tStartRefresh = tThisFlipGlobal  # on global time
-            win.timeOnFlip(vas70_meaning, 'tStartRefresh')  # time at next scr refresh
+            vas70_explanation.frameNStart = frameN  # exact frame index
+            vas70_explanation.tStart = t  # local t and not account for scr refresh
+            vas70_explanation.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(vas70_explanation, 'tStartRefresh')  # time at next scr refresh
             # add timestamp to datafile
-            thisExp.timestampOnFlip(win, 'vas70_meaning.started')
+            thisExp.timestampOnFlip(win, 'vas70_explanation.started')
             # update status
-            vas70_meaning.status = STARTED
-            vas70_meaning.setAutoDraw(True)
+            vas70_explanation.status = STARTED
+            vas70_explanation.setAutoDraw(True)
         
-        # if vas70_meaning is active this frame...
-        if vas70_meaning.status == STARTED:
+        # if vas70_explanation is active this frame...
+        if vas70_explanation.status == STARTED:
             # update params
             pass
         
-        # *vas70_meaning_ok* updates
+        # *vas70_explanation_ok* updates
         waitOnFlip = False
         
-        # if vas70_meaning_ok is starting this frame...
-        if vas70_meaning_ok.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # if vas70_explanation_ok is starting this frame...
+        if vas70_explanation_ok.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
             # keep track of start time/frame for later
-            vas70_meaning_ok.frameNStart = frameN  # exact frame index
-            vas70_meaning_ok.tStart = t  # local t and not account for scr refresh
-            vas70_meaning_ok.tStartRefresh = tThisFlipGlobal  # on global time
-            win.timeOnFlip(vas70_meaning_ok, 'tStartRefresh')  # time at next scr refresh
+            vas70_explanation_ok.frameNStart = frameN  # exact frame index
+            vas70_explanation_ok.tStart = t  # local t and not account for scr refresh
+            vas70_explanation_ok.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(vas70_explanation_ok, 'tStartRefresh')  # time at next scr refresh
             # add timestamp to datafile
-            thisExp.timestampOnFlip(win, 'vas70_meaning_ok.started')
+            thisExp.timestampOnFlip(win, 'vas70_explanation_ok.started')
             # update status
-            vas70_meaning_ok.status = STARTED
+            vas70_explanation_ok.status = STARTED
             # keyboard checking is just starting
             waitOnFlip = True
-            win.callOnFlip(vas70_meaning_ok.clock.reset)  # t=0 on next screen flip
-            win.callOnFlip(vas70_meaning_ok.clearEvents, eventType='keyboard')  # clear events on next screen flip
-        if vas70_meaning_ok.status == STARTED and not waitOnFlip:
-            theseKeys = vas70_meaning_ok.getKeys(keyList=['space'], ignoreKeys=["escape"], waitRelease=False)
-            _vas70_meaning_ok_allKeys.extend(theseKeys)
-            if len(_vas70_meaning_ok_allKeys):
-                vas70_meaning_ok.keys = _vas70_meaning_ok_allKeys[-1].name  # just the last key pressed
-                vas70_meaning_ok.rt = _vas70_meaning_ok_allKeys[-1].rt
-                vas70_meaning_ok.duration = _vas70_meaning_ok_allKeys[-1].duration
+            win.callOnFlip(vas70_explanation_ok.clock.reset)  # t=0 on next screen flip
+            win.callOnFlip(vas70_explanation_ok.clearEvents, eventType='keyboard')  # clear events on next screen flip
+        if vas70_explanation_ok.status == STARTED and not waitOnFlip:
+            theseKeys = vas70_explanation_ok.getKeys(keyList=['space'], ignoreKeys=["escape"], waitRelease=False)
+            _vas70_explanation_ok_allKeys.extend(theseKeys)
+            if len(_vas70_explanation_ok_allKeys):
+                vas70_explanation_ok.keys = _vas70_explanation_ok_allKeys[-1].name  # just the last key pressed
+                vas70_explanation_ok.rt = _vas70_explanation_ok_allKeys[-1].rt
+                vas70_explanation_ok.duration = _vas70_explanation_ok_allKeys[-1].duration
                 # a response ends the routine
                 continueRoutine = False
         
@@ -1148,18 +1203,18 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             thisComponent.setAutoDraw(False)
     thisExp.addData('transition_vas0_to_vas70.stopped', globalClock.getTime())
     # check responses
-    if vas70_meaning_ok.keys in ['', [], None]:  # No response was made
-        vas70_meaning_ok.keys = None
-    thisExp.addData('vas70_meaning_ok.keys',vas70_meaning_ok.keys)
-    if vas70_meaning_ok.keys != None:  # we had a response
-        thisExp.addData('vas70_meaning_ok.rt', vas70_meaning_ok.rt)
-        thisExp.addData('vas70_meaning_ok.duration', vas70_meaning_ok.duration)
+    if vas70_explanation_ok.keys in ['', [], None]:  # No response was made
+        vas70_explanation_ok.keys = None
+    thisExp.addData('vas70_explanation_ok.keys',vas70_explanation_ok.keys)
+    if vas70_explanation_ok.keys != None:  # we had a response
+        thisExp.addData('vas70_explanation_ok.rt', vas70_explanation_ok.rt)
+        thisExp.addData('vas70_explanation_ok.duration', vas70_explanation_ok.duration)
     thisExp.nextEntry()
     # the Routine "transition_vas0_to_vas70" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
-    loop_vas70 = data.TrialHandler(nReps=5.0, method='random', 
+    loop_vas70 = data.TrialHandler(nReps=trials_vas70, method='random', 
         extraInfo=expInfo, originPath=-1,
         trialList=[None],
         seed=None, name='loop_vas70')
@@ -1284,7 +1339,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         # Run 'Begin Routine' code from thermoino_vas70
         checked = False
         stimuli_clock.reset()
-        luigi.set_temp(estimator_vas70.current_temp)
+        time_for_ramp_up = luigi.set_temp(estimator_vas70.current_temp)[1]
         
         # keep track of which components have finished
         trial_vas70Components = [cross_pain_vas70]
@@ -1343,7 +1398,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                     cross_pain_vas70.status = FINISHED
                     cross_pain_vas70.setAutoDraw(False)
             # Run 'Each Frame' code from thermoino_vas70
-            routine_duration = stimuli_clock.getTime()
+            routine_duration = time_for_ramp_up + stimuli_clock.getTime()
             
             if not checked:
                 if routine_duration > stimuli_duration:
@@ -1608,7 +1663,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         if thisSession is not None:
             # if running in a Session with a Liaison client, send data up to now
             thisSession.sendExperimentData()
-    # completed 5.0 repeats of 'loop_vas70'
+    # completed trials_vas70 repeats of 'loop_vas70'
     
     
     # --- Prepare to start Routine "goodbye" ---
@@ -1702,7 +1757,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     add_participant(
         expInfo['participant'],
         expInfo['age'],
-        expInfo['gender']
+        expInfo['gender'],
         estimator_vas0.get_estimate(),
         estimator_vas70.get_estimate())
     # using non-slip timing so subtract the expected duration of this Routine (unless ended on request)
@@ -1710,6 +1765,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         routineTimer.reset()
     else:
         routineTimer.addTime(-1.000000)
+    # Run 'End Experiment' code from thermoino
+    luigi.close()
     
     # mark experiment as finished
     endExperiment(thisExp, win=win, inputs=inputs)

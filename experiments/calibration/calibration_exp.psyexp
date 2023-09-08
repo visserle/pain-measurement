@@ -86,7 +86,7 @@
         <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
       </RoutineSettingsComponent>
       <CodeComponent name="all_variables" plugin="None">
-        <Param val="# Thermoino&amp;#10;port = &quot;COM7&quot; # COM7 for top usb port on the front, use list_com_ports() to find out&amp;#10;temp_baseline = 30 # has to be the same as in MMS&amp;#10;rate_of_rise = 5 # has to be the same as in MMS&amp;#10;&amp;#10;# Stimuli&amp;#10;stimuli_clock = core.Clock()&amp;#10;stimuli_duration = 0.2 # 8&amp;#10;ibi_duration = 0.2 # 8  + np.random.randint(0, 5)&amp;#10;&amp;#10;# Estimator&amp;#10;trials_vas0 = 7 # has to be the same as the nReps in the psychopy loop&amp;#10;temp_start_vas0 = 38.&amp;#10;temp_std_vas0 = 3.5&amp;#10;&amp;#10;trials_vas70 = 5 # has to be the same as the nReps in the psychopy loop&amp;#10;temp_start_vas70 = None #  will be set after VAS 0 estimate&amp;#10;temp_start_vas70_plus = 3 # VAS 0 estimate plus int&amp;#10;temp_std_vas70 = 1.5 # smaller std for higher temperatures&amp;#10;" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="# Thermoino&amp;#10;port = &quot;COM7&quot; # COM7 for top usb port on the front, use list_com_ports() to find out&amp;#10;temp_baseline = 30 # has to be the same as in MMS&amp;#10;rate_of_rise = 5 # has to be the same as in MMS&amp;#10;&amp;#10;# Stimuli&amp;#10;stimuli_clock = core.Clock()&amp;#10;stimuli_duration = 0.2 # 8&amp;#10;ibi_duration = 0.2 # 8  + np.random.randint(0, 5)&amp;#10;&amp;#10;# Pre-exposure&amp;#10;temps_preexposure = [34, 35, 36]&amp;#10;&amp;#10;# Estimator&amp;#10;trials_vas0 = 7 # has to be the same as the nReps in the psychopy loop&amp;#10;temp_start_vas0 = 38.&amp;#10;temp_std_vas0 = 3.5&amp;#10;&amp;#10;trials_vas70 = 5 # has to be the same as the nReps in the psychopy loop&amp;#10;temp_start_vas70 = None #  will be set after VAS 0 estimate&amp;#10;temp_start_vas70_plus = 3 # VAS 0 estimate plus int&amp;#10;temp_std_vas70 = 1.5 # smaller std for higher temperatures&amp;#10;" valType="extendedCode" updates="constant" name="Before Experiment"/>
         <Param val="ibi_duration = 8;&amp;#10;" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
@@ -180,6 +180,23 @@
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
       </RoutineSettingsComponent>
+      <CodeComponent name="prexposure" plugin="None">
+        <Param val="" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="checked = false;&amp;#10;stimuli_clock.reset();&amp;#10;time_for_ramp_up = luigi.set_temp(estimator_vas0.current_temp)[1];&amp;#10;" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
+        <Param val="# TODO: chnge start temp depending on anwser&amp;#10;&amp;#10;checked = False&amp;#10;stimuli_clock.reset()&amp;#10;&amp;#10;time_for_ramp_up = luigi.set_temp(temps_preexposure[thisLoop_preexposure])[1]" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="Py" valType="str" updates="None" name="Code Type"/>
+        <Param val="routine_duration = time_for_ramp_up + stimuli_clock.getTime() &amp;#10;&amp;#10;if not checked:&amp;#10;    if routine_duration &gt; stimuli_duration:&amp;#10;        luigi.set_temp(temp_baseline)&amp;#10;        checked = True&amp;#10;" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="prexposure" valType="code" updates="None" name="name"/>
+      </CodeComponent>
     </Routine>
     <Routine name="trial_vas0">
       <RoutineSettingsComponent name="trial_vas0" plugin="None">
@@ -680,10 +697,84 @@
         <Param val="save_participant_data" valType="code" updates="None" name="name"/>
       </CodeComponent>
     </Routine>
+    <Routine name="feedback_preexposure">
+      <RoutineSettingsComponent name="feedback_preexposure" plugin="None">
+        <Param val="none" valType="str" updates="None" name="backgroundFit"/>
+        <Param val="" valType="str" updates="None" name="backgroundImg"/>
+        <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
+        <Param val="rgb" valType="str" updates="None" name="colorSpace"/>
+        <Param val="War ein Reiz schmerzhaft?&amp;#10;&amp;#10;(y/n)" valType="str" updates="constant" name="desc"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="feedback_preexposure" valType="code" updates="None" name="name"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="constant" name="skipIf"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
+      </RoutineSettingsComponent>
+      <TextComponent name="question_preexposure" plugin="None">
+        <Param val="white" valType="color" updates="constant" name="color"/>
+        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
+        <Param val="1" valType="num" updates="constant" name="contrast"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="None" valType="str" updates="constant" name="flip"/>
+        <Param val="Open Sans" valType="str" updates="constant" name="font"/>
+        <Param val="LTR" valType="str" updates="None" name="languageStyle"/>
+        <Param val="0.05" valType="num" updates="constant" name="letterHeight"/>
+        <Param val="question_preexposure" valType="code" updates="None" name="name"/>
+        <Param val="" valType="num" updates="constant" name="opacity"/>
+        <Param val="0" valType="num" updates="constant" name="ori"/>
+        <Param val="(0, 0)" valType="list" updates="constant" name="pos"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
+        <Param val="War einer der Reize schemrzhaft?&amp;#10;&amp;#10;(y/n)" valType="str" updates="constant" name="text"/>
+        <Param val="from exp settings" valType="str" updates="None" name="units"/>
+        <Param val="" valType="num" updates="constant" name="wrapWidth"/>
+      </TextComponent>
+      <KeyboardComponent name="response_preexposure" plugin="None">
+        <Param val="'y','n'" valType="list" updates="constant" name="allowedKeys"/>
+        <Param val="" valType="str" updates="constant" name="correctAns"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="True" valType="bool" updates="constant" name="discard previous"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="True" valType="bool" updates="constant" name="forceEndRoutine"/>
+        <Param val="response_preexposure" valType="code" updates="None" name="name"/>
+        <Param val="press" valType="str" updates="constant" name="registerOn"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="last key" valType="str" updates="constant" name="store"/>
+        <Param val="False" valType="bool" updates="constant" name="storeCorrect"/>
+        <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
+      </KeyboardComponent>
+    </Routine>
   </Routines>
   <Flow>
     <Routine name="welcome"/>
+    <LoopInitiator loopType="TrialHandler" name="loop_preexposure">
+      <Param name="Selected rows" updates="None" val="" valType="str"/>
+      <Param name="conditions" updates="None" val="None" valType="str"/>
+      <Param name="conditionsFile" updates="None" val="" valType="file"/>
+      <Param name="endPoints" updates="None" val="[0, 1]" valType="num"/>
+      <Param name="isTrials" updates="None" val="True" valType="bool"/>
+      <Param name="loopType" updates="None" val="random" valType="str"/>
+      <Param name="nReps" updates="None" val="len(temps_preexposure)" valType="num"/>
+      <Param name="name" updates="None" val="loop_preexposure" valType="code"/>
+      <Param name="random seed" updates="None" val="" valType="code"/>
+    </LoopInitiator>
     <Routine name="preexposure"/>
+    <LoopTerminator name="loop_preexposure"/>
+    <Routine name="feedback_preexposure"/>
     <LoopInitiator loopType="TrialHandler" name="loop_vas0">
       <Param name="Selected rows" updates="None" val="" valType="str"/>
       <Param name="conditions" updates="None" val="None" valType="str"/>
@@ -691,7 +782,7 @@
       <Param name="endPoints" updates="None" val="[0, 1]" valType="num"/>
       <Param name="isTrials" updates="None" val="True" valType="bool"/>
       <Param name="loopType" updates="None" val="random" valType="str"/>
-      <Param name="nReps" updates="None" val="7" valType="num"/>
+      <Param name="nReps" updates="None" val="trials_vas0" valType="num"/>
       <Param name="name" updates="None" val="loop_vas0" valType="code"/>
       <Param name="random seed" updates="None" val="" valType="code"/>
     </LoopInitiator>
@@ -708,7 +799,7 @@
       <Param name="endPoints" updates="None" val="[0, 1]" valType="num"/>
       <Param name="isTrials" updates="None" val="True" valType="bool"/>
       <Param name="loopType" updates="None" val="random" valType="str"/>
-      <Param name="nReps" updates="None" val="5" valType="num"/>
+      <Param name="nReps" updates="None" val="trials_vas70" valType="num"/>
       <Param name="name" updates="None" val="loop_vas70" valType="code"/>
       <Param name="random seed" updates="None" val="" valType="code"/>
     </LoopInitiator>
