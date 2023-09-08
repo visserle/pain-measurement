@@ -1,8 +1,8 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This experiment was created using PsychoPy3 Experiment Builder (v2023.2.0),
-    on August 02, 2023, at 12:08
+This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
+    on August 24, 2023, at 12:53
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -37,7 +37,7 @@ from psychopy.hardware import keyboard
 # Ensure that relative paths start from the same directory as this script
 _thisDir = os.path.dirname(os.path.abspath(__file__))
 # Store info about the experiment session
-psychopyVersion = '2023.2.0'
+psychopyVersion = '2023.2.1'
 expName = 'mpad1_exp'  # from the Builder filename that created this script
 expInfo = {
     'participant': f"{randint(0, 999999):06.0f}",
@@ -602,7 +602,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     mouse_action.hold()
     # Run 'Begin Routine' code from imotions_event
     """ Send discrete marker for stimuli beginning """
-    imotions_event.send_marker("stimuli", "Stimuli begins.")
+    imotions_event.send_marker("stimuli", "Stimuli begins")
     # Start the clock
     stimuli_clock.reset()
     # keep track of which components have finished
@@ -740,7 +740,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     mouse_action.release()
     # Run 'End Routine' code from imotions_event
     """ Send discrete marker for stimuli ending """
-    imotions_event.send_marker("stimuli", "Stimuli ends.")
+    imotions_event.send_marker("stimuli", "Stimuli ends")
     
     # the Routine "trial_vas_continuous" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 01, 2023, at 11:34
+    on September 08, 2023, at 14:14
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -42,6 +42,8 @@ expName = 'calibration_exp'  # from the Builder filename that created this scrip
 expInfo = {
     'participant': f"{randint(0, 999999):06.0f}",
     'session': '001',
+    'age': '0',
+    'gender': '# 0 for ???. 1 for ???',
     'date': data.getDateStr(),  # add a simple timestamp
     'expName': expName,
     'psychopyVersion': psychopyVersion,
@@ -54,16 +56,16 @@ temp_baseline = 30 # has to be the same as in MMS
 rate_of_rise = 5 # has to be the same as in MMS
 
 # Stimuli
-stimulus_clock = core.Clock()
-stimulus_duration = 8
-ibi_duration = 8 # randint(0,5) gets added in the code
+stimuli_clock = core.Clock()
+stimuli_duration = 0.2 # 8
+ibi_duration = 0.2 # 8  + np.random.randint(0, 5)
 
 # Estimator
-trials_vas0 = 7
+trials_vas0 = 7 # has to be the same as the nReps in the psychopy loop
 temp_start_vas0 = 38.
 temp_std_vas0 = 3.5
 
-trials_vas70 = 5
+trials_vas70 = 5 # has to be the same as the nReps in the psychopy loop
 temp_start_vas70 = None #  will be set after VAS 0 estimate
 temp_start_vas70_plus = 3 # VAS 0 estimate plus int
 temp_std_vas70 = 1.5 # smaller std for higher temperatures
@@ -82,6 +84,8 @@ estimator_vas0 = BayesianEstimatorVAS(
 
 # Run 'Before Experiment' code from estimator_vas70
 # instantiating here does not make sense because we need the values from the VAS 0 esitmator first
+# Run 'Before Experiment' code from save_participant_data
+from src.experiments.participant_data import add_participant
 
 def showExpInfoDlg(expInfo):
     """
@@ -359,6 +363,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     luigi.trigger()
     
     
+    # --- Initialize components for Routine "preexposure" ---
+    
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
         win=win, name='cross_neutral', vertices='cross',
@@ -439,6 +445,15 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         languageStyle='LTR',
         depth=0.0);
     
+    # --- Initialize components for Routine "goodbye" ---
+    bye = visual.TextStim(win=win, name='bye',
+        text='Thanks!',
+        font='Open Sans',
+        pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=0.0);
+    
     # create some handy timers
     if globalClock is None:
         globalClock = core.Clock()  # to track the time since experiment started
@@ -505,6 +520,63 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             thisComponent.setAutoDraw(False)
     thisExp.addData('welcome.stopped', globalClock.getTime())
     # the Routine "welcome" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
+    
+    # --- Prepare to start Routine "preexposure" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('preexposure.started', globalClock.getTime())
+    # keep track of which components have finished
+    preexposureComponents = []
+    for thisComponent in preexposureComponents:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "preexposure" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in preexposureComponents:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "preexposure" ---
+    for thisComponent in preexposureComponents:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('preexposure.stopped', globalClock.getTime())
+    # the Routine "preexposure" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
@@ -587,7 +659,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # if cross_neutral is stopping this frame...
             if cross_neutral.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > cross_neutral.tStartRefresh + ibi_duration + np.random.randint(0, 5)-frameTolerance:
+                if tThisFlipGlobal > cross_neutral.tStartRefresh + ibi_duration-frameTolerance:
                     # keep track of stop time/frame for later
                     cross_neutral.tStop = t  # not accounting for scr refresh
                     cross_neutral.frameNStop = frameN  # exact frame index
@@ -632,8 +704,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         thisExp.addData('trial_vas0.started', globalClock.getTime())
         # Run 'Begin Routine' code from thermoino_vas0
         checked = False
-        stimulus_clock.reset()
-        luigi.set_temp(estimator_vas0.current_temp)
+        stimuli_clock.reset()
+        time_for_ramp_up = luigi.set_temp(estimator_vas0.current_temp)[1]
         
         # keep track of which components have finished
         trial_vas0Components = [cross_pain_vas0]
@@ -682,7 +754,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # if cross_pain_vas0 is stopping this frame...
             if cross_pain_vas0.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > cross_pain_vas0.tStartRefresh + stimulus_duration + 2-frameTolerance:
+                if tThisFlipGlobal > cross_pain_vas0.tStartRefresh + stimuli_duration + 2-frameTolerance:
                     # keep track of stop time/frame for later
                     cross_pain_vas0.tStop = t  # not accounting for scr refresh
                     cross_pain_vas0.frameNStop = frameN  # exact frame index
@@ -692,10 +764,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                     cross_pain_vas0.status = FINISHED
                     cross_pain_vas0.setAutoDraw(False)
             # Run 'Each Frame' code from thermoino_vas0
-            routine_duration = stimulus_clock.getTime()
+            routine_duration = time_for_ramp_up + stimuli_clock.getTime() 
             
             if not checked:
-                if routine_duration > stimulus_duration:
+                if routine_duration > stimuli_duration:
                     luigi.set_temp(temp_baseline)
                     checked = True
             
@@ -1166,7 +1238,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # if cross_neutral is stopping this frame...
             if cross_neutral.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > cross_neutral.tStartRefresh + ibi_duration + np.random.randint(0, 5)-frameTolerance:
+                if tThisFlipGlobal > cross_neutral.tStartRefresh + ibi_duration-frameTolerance:
                     # keep track of stop time/frame for later
                     cross_neutral.tStop = t  # not accounting for scr refresh
                     cross_neutral.frameNStop = frameN  # exact frame index
@@ -1211,8 +1283,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         thisExp.addData('trial_vas70.started', globalClock.getTime())
         # Run 'Begin Routine' code from thermoino_vas70
         checked = False
-        stimulus_clock.reset()
-        luigi.set_temp(estimator_vas70.current_temp)
+        stimuli_clock.reset()
+        time_for_ramp_up = luigi.set_temp(estimator_vas70.current_temp)[1]
         
         # keep track of which components have finished
         trial_vas70Components = [cross_pain_vas70]
@@ -1261,7 +1333,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # if cross_pain_vas70 is stopping this frame...
             if cross_pain_vas70.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > cross_pain_vas70.tStartRefresh + stimulus_duration + 2-frameTolerance:
+                if tThisFlipGlobal > cross_pain_vas70.tStartRefresh + stimuli_duration + 2-frameTolerance:
                     # keep track of stop time/frame for later
                     cross_pain_vas70.tStop = t  # not accounting for scr refresh
                     cross_pain_vas70.frameNStop = frameN  # exact frame index
@@ -1271,10 +1343,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                     cross_pain_vas70.status = FINISHED
                     cross_pain_vas70.setAutoDraw(False)
             # Run 'Each Frame' code from thermoino_vas70
-            routine_duration = stimulus_clock.getTime()
+            routine_duration = time_for_ramp_up + stimuli_clock.getTime()
             
             if not checked:
-                if routine_duration > stimulus_duration:
+                if routine_duration > stimuli_duration:
                     luigi.set_temp(temp_baseline)
                     checked = True
             
@@ -1538,6 +1610,106 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             thisSession.sendExperimentData()
     # completed 5.0 repeats of 'loop_vas70'
     
+    
+    # --- Prepare to start Routine "goodbye" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('goodbye.started', globalClock.getTime())
+    # keep track of which components have finished
+    goodbyeComponents = [bye]
+    for thisComponent in goodbyeComponents:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "goodbye" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine and routineTimer.getTime() < 1.0:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # *bye* updates
+        
+        # if bye is starting this frame...
+        if bye.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            bye.frameNStart = frameN  # exact frame index
+            bye.tStart = t  # local t and not account for scr refresh
+            bye.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(bye, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'bye.started')
+            # update status
+            bye.status = STARTED
+            bye.setAutoDraw(True)
+        
+        # if bye is active this frame...
+        if bye.status == STARTED:
+            # update params
+            pass
+        
+        # if bye is stopping this frame...
+        if bye.status == STARTED:
+            # is it time to stop? (based on global clock, using actual start)
+            if tThisFlipGlobal > bye.tStartRefresh + 1.0-frameTolerance:
+                # keep track of stop time/frame for later
+                bye.tStop = t  # not accounting for scr refresh
+                bye.frameNStop = frameN  # exact frame index
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'bye.stopped')
+                # update status
+                bye.status = FINISHED
+                bye.setAutoDraw(False)
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in goodbyeComponents:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "goodbye" ---
+    for thisComponent in goodbyeComponents:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('goodbye.stopped', globalClock.getTime())
+    # Run 'End Routine' code from save_participant_data
+    add_participant(
+        expInfo['participant'],
+        expInfo['age'],
+        expInfo['gender'],
+        estimator_vas0.get_estimate(),
+        estimator_vas70.get_estimate())
+    # using non-slip timing so subtract the expected duration of this Routine (unless ended on request)
+    if routineForceEnded:
+        routineTimer.reset()
+    else:
+        routineTimer.addTime(-1.000000)
     
     # mark experiment as finished
     endExperiment(thisExp, win=win, inputs=inputs)

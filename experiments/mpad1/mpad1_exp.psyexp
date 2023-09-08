@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" ?>
-<PsychoPy2experiment encoding="utf-8" version="2023.2.0">
+<PsychoPy2experiment encoding="utf-8" version="2023.2.1">
   <Settings>
     <Param val="3" valType="str" updates="None" name="Audio latency priority"/>
     <Param val="ptb" valType="str" updates="None" name="Audio lib"/>
@@ -122,7 +122,7 @@
       <CodeComponent name="imotions_control" plugin="None">
         <Param val="from src.experiments.imotions import RemoteControliMotions" valType="extendedCode" updates="constant" name="Before Experiment"/>
         <Param val="/* Syntax Error: Fix Python code */" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
-        <Param val="imotions_control = RemoteControliMotions(&amp;#10;    study = expName,&amp;#10;    participant = expInfo['participant'],&amp;#10;)&amp;#10;&amp;#10;imotions_control.connect()&amp;#10;imotions_control.start_study()" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="imotions_control = RemoteControliMotions(&amp;#10;    study = expName,&amp;#10;    participant = expInfo['participant'],&amp;#10;    age = expInfo['age'],&amp;#10;    gender = expInfo['gender']&amp;#10;)&amp;#10;&amp;#10;imotions_control.connect()&amp;#10;imotions_control.start_study()" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin Routine"/>

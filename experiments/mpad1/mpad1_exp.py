@@ -1,8 +1,8 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This experiment was created using PsychoPy3 Experiment Builder (v2023.2.0),
-    on August 01, 2023, at 17:04
+This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
+    on August 24, 2023, at 12:49
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -37,7 +37,7 @@ from psychopy.hardware import keyboard
 # Ensure that relative paths start from the same directory as this script
 _thisDir = os.path.dirname(os.path.abspath(__file__))
 # Store info about the experiment session
-psychopyVersion = '2023.2.0'
+psychopyVersion = '2023.2.1'
 expName = 'mpad1_exp'  # from the Builder filename that created this script
 expInfo = {
     'participant': f"{randint(0, 999999):06.0f}",
@@ -52,9 +52,6 @@ expInfo = {
 from src.experiments.stimuli_function import StimuliFunction
 # Run 'Before Experiment' code from imotions_control
 from src.experiments.imotions import RemoteControliMotions
-# Run 'Before Experiment' code from logging
-from psychopy import logging as logging_psychopy
-logging_psychopy.flush()  
 # Run 'Before Experiment' code from thermoino
 from src.experiments.thermoino import ThermoinoComplexTimeCourses
 # Run 'Before Experiment' code from mouse
@@ -62,6 +59,7 @@ import src.experiments.mouse_action as mouse_action
 from src.experiments.mouse_action import pixel_pos_y
 # Run 'Before Experiment' code from imotions_event
 from src.experiments.imotions import EventRecievingiMotions
+from psychopy import core
 
 
 def showExpInfoDlg(expInfo):
@@ -331,10 +329,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_screen" ---
     # Run 'Begin Experiment' code from stimuli_function
-    # TODO
-    # - find seed
-    # - baseline_temp variable
-    
     minimal_desired_duration = 10 # in seconds
     periods = [67, 20] # [0] is the baseline and [1] the modulation; in seconds
     frequencies = 1./np.array(periods)
@@ -348,7 +342,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         frequencies,
         amplitudes,
         sample_rate,
-        random_periods=True,
+        random_periods=False, # for debugging
         seed=seed
     ).add_baseline_temp(
         baseline_temp
@@ -418,9 +412,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     imotions_event.connect()
     imotions_event.start_study
     
-    """ Initialize resampled wave and frame couting to measure seconds """
-    wave_resampled = np.copy(stimuli.wave[::stimuli.sample_rate])
-    frame_count_s = 0
+    # create a clock
+    stimuli_clock = core.Clock()
     
     # --- Initialize components for Routine "blank500" ---
     
@@ -596,9 +589,9 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # --- Prepare to start Routine "trial_vas_continuous" ---
     continueRoutine = True
     # update component parameters for each repeat
+    thisExp.addData('trial_vas_continuous.started', globalClock.getTime())
     # Run 'Begin Routine' code from thermoino
     luigi.exec_ctc()
-    thisExp.addData('trial_vas_continuous.started', globalClock.getTime())
     vas_cont.reset()
     # Run 'Begin Routine' code from mouse
     vas_pos_y = pixel_pos_y(
@@ -608,8 +601,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         
     mouse_action.hold()
     # Run 'Begin Routine' code from imotions_event
-    """ Send discrete marker for experiment start """
-    imotions_event.send_marker(stimuli, "Stimuli begins.")
+    """ Send discrete marker for stimuli beginning """
+    imotions_event.send_marker("stimuli", "Stimuli begins")
+    # Start the clock
+    stimuli_clock.reset()
     # keep track of which components have finished
     trial_vas_continuousComponents = [vas_cont, text_vas_cont]
     for thisComponent in trial_vas_continuousComponents:
@@ -706,14 +701,9 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         imotions_event.send_ratings(
             vas_cont.getMarkerPos())
         
-        """ Stream data for temperature course """
-        # TODO: screen refresh rate is 60 Hz, somehow this runs on 30 only
-        if frameN % 30 == 0:
-            imotions_event.send_temperatures(
-                wave_resampled[frame_count_s])
-            print(wave_resampled[frame_count_s])
-            print(frameN)
-            frame_count_s += 1
+        idx_stimuli = int(stimuli_clock.getTime()*stimuli.sample_rate)
+        if idx_stimuli < len(stimuli.wave):
+            imotions_event.send_temperatures(stimuli.wave[idx_stimuli])
         
         # check for quit (typically the Esc key)
         if defaultKeyboard.getKeys(keyList=["escape"]):
@@ -740,17 +730,17 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     for thisComponent in trial_vas_continuousComponents:
         if hasattr(thisComponent, "setAutoDraw"):
             thisComponent.setAutoDraw(False)
+    thisExp.addData('trial_vas_continuous.stopped', globalClock.getTime())
     # Run 'End Routine' code from thermoino
     luigi.set_temp(32)
     luigi.close()
-    thisExp.addData('trial_vas_continuous.stopped', globalClock.getTime())
     thisExp.addData('vas_cont.response', vas_cont.getRating())
     thisExp.addData('vas_cont.rt', vas_cont.getRT())
     # Run 'End Routine' code from mouse
     mouse_action.release()
     # Run 'End Routine' code from imotions_event
-    """ Send discrete marker for experiment start """
-    imotions_event.send_marker(stimuli, "Stimuli ends.")
+    """ Send discrete marker for stimuli ending """
+    imotions_event.send_marker("stimuli", "Stimuli ends")
     
     # the Routine "trial_vas_continuous" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()

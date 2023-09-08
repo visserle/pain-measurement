@@ -1,8 +1,8 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This experiment was created using PsychoPy3 Experiment Builder (v2023.2.0),
-    on September 01, 2023, at 16:36
+This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
+    on September 08, 2023, at 13:35
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -37,11 +37,13 @@ from psychopy.hardware import keyboard
 # Ensure that relative paths start from the same directory as this script
 _thisDir = os.path.dirname(os.path.abspath(__file__))
 # Store info about the experiment session
-psychopyVersion = '2023.2.0'
+psychopyVersion = '2023.2.1'
 expName = 'calibration_exp'  # from the Builder filename that created this script
 expInfo = {
     'participant': f"{randint(0, 999999):06.0f}",
     'session': '001',
+    'age': '0',
+    'gender': '# 0 for ???. 1 for ???',
     'date': data.getDateStr(),  # add a simple timestamp
     'expName': expName,
     'psychopyVersion': psychopyVersion,
@@ -59,11 +61,11 @@ stimuli_duration = 8
 ibi_duration = 8  + np.random.randint(0, 5)
 
 # Estimator
-trials_vas0 = 7
+trials_vas0 = 7 # has to be the same as the nReps in the psychopy loop
 temp_start_vas0 = 38.
 temp_std_vas0 = 3.5
 
-trials_vas70 = 5
+trials_vas70 = 5 # has to be the same as the nReps in the psychopy loop
 temp_start_vas70 = None #  will be set after VAS 0 estimate
 temp_start_vas70_plus = 3 # VAS 0 estimate plus int
 temp_std_vas70 = 1.5 # smaller std for higher temperatures
@@ -82,6 +84,8 @@ estimator_vas0 = BayesianEstimatorVAS(
 
 # Run 'Before Experiment' code from estimator_vas70
 # instantiating here does not make sense because we need the values from the VAS 0 esitmator first
+# Run 'Before Experiment' code from save_participant_data
+from src.experiments.participants import add_participant
 
 def showExpInfoDlg(expInfo):
     """
@@ -142,7 +146,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='C:\\drive\\PhD\\Code\\mpad-pilot\\experiments\\calibration\\calibration_exp.py',
+        originPath='G:\\Meine Ablage\\PhD\\Code\\mpad-pilot\\experiments\\calibration\\calibration_exp.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -359,6 +363,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     luigi.trigger()
     
     
+    # --- Initialize components for Routine "preexposure" ---
+    
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
         win=win, name='cross_neutral', vertices='cross',
@@ -439,6 +445,15 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         languageStyle='LTR',
         depth=0.0);
     
+    # --- Initialize components for Routine "goodbye" ---
+    bye = visual.TextStim(win=win, name='bye',
+        text='Thanks!',
+        font='Open Sans',
+        pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=0.0);
+    
     # create some handy timers
     if globalClock is None:
         globalClock = core.Clock()  # to track the time since experiment started
@@ -505,6 +520,63 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             thisComponent.setAutoDraw(False)
     thisExp.addData('welcome.stopped', globalClock.getTime())
     # the Routine "welcome" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
+    
+    # --- Prepare to start Routine "preexposure" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('preexposure.started', globalClock.getTime())
+    # keep track of which components have finished
+    preexposureComponents = []
+    for thisComponent in preexposureComponents:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "preexposure" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in preexposureComponents:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "preexposure" ---
+    for thisComponent in preexposureComponents:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('preexposure.stopped', globalClock.getTime())
+    # the Routine "preexposure" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
@@ -1538,6 +1610,106 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             thisSession.sendExperimentData()
     # completed 5.0 repeats of 'loop_vas70'
     
+    
+    # --- Prepare to start Routine "goodbye" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('goodbye.started', globalClock.getTime())
+    # keep track of which components have finished
+    goodbyeComponents = [bye]
+    for thisComponent in goodbyeComponents:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "goodbye" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine and routineTimer.getTime() < 1.0:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # *bye* updates
+        
+        # if bye is starting this frame...
+        if bye.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            bye.frameNStart = frameN  # exact frame index
+            bye.tStart = t  # local t and not account for scr refresh
+            bye.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(bye, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'bye.started')
+            # update status
+            bye.status = STARTED
+            bye.setAutoDraw(True)
+        
+        # if bye is active this frame...
+        if bye.status == STARTED:
+            # update params
+            pass
+        
+        # if bye is stopping this frame...
+        if bye.status == STARTED:
+            # is it time to stop? (based on global clock, using actual start)
+            if tThisFlipGlobal > bye.tStartRefresh + 1.0-frameTolerance:
+                # keep track of stop time/frame for later
+                bye.tStop = t  # not accounting for scr refresh
+                bye.frameNStop = frameN  # exact frame index
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'bye.stopped')
+                # update status
+                bye.status = FINISHED
+                bye.setAutoDraw(False)
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in goodbyeComponents:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "goodbye" ---
+    for thisComponent in goodbyeComponents:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('goodbye.stopped', globalClock.getTime())
+    # Run 'End Routine' code from save_participant_data
+    add_participant(
+        expInfo['participant'],
+        expInfo['age'],
+        expInfo['gender']
+        estimator_vas0.get_estimate(),
+        estimator_vas70.get_estimate())
+    # using non-slip timing so subtract the expected duration of this Routine (unless ended on request)
+    if routineForceEnded:
+        routineTimer.reset()
+    else:
+        routineTimer.addTime(-1.000000)
     
     # mark experiment as finished
     endExperiment(thisExp, win=win, inputs=inputs)
