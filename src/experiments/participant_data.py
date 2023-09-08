@@ -58,7 +58,6 @@ def add_participant(participant, age, gender, vas0, vas70):
         estimator_vas70.get_estimate())
     ```
     """
-
     time_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     new_data = pd.DataFrame([{
         'time_stamp': time_stamp,
@@ -67,7 +66,7 @@ def add_participant(participant, age, gender, vas0, vas70):
         'gender': gender,
         'vas0': vas0,
         'vas70': vas70,
-        'baseline_temp': (vas0 + vas70) / 2,
+        'baseline_temp': round((vas0 + vas70) / 2, 1),
         'temp_range': vas70 - vas0
     }])
     df = pd.read_excel(FILE_DIR)

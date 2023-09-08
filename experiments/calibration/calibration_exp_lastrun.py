@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 08, 2023, at 16:21
+    on September 08, 2023, at 17:00
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -43,13 +43,17 @@ expInfo = {
     'participant': f"{randint(0, 999999):06.0f}",
     'session': '001',
     'age': '0',
-    'gender': '# 0 for ???. 1 for ???',
+    'gender': '### Female or Male ###',
     'date': data.getDateStr(),  # add a simple timestamp
     'expName': expName,
     'psychopyVersion': psychopyVersion,
 }
 
 # Run 'Before Experiment' code from all_variables
+from src.experiments.logger import setup_logger, close_logger
+
+logger_for_runner = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
+
 # Thermoino
 port = "COM7" # COM7 for top usb port on the front, use list_com_ports() to find out
 temp_baseline = 30 # has to be the same as in MMS
@@ -384,7 +388,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "feedback_preexposure" ---
     question_preexposure = visual.TextStim(win=win, name='question_preexposure',
-        text='War einer der Reize schemrzhaft?\n\n(y/n)',
+        text='War einer der Reize schmerzhaft?\n\n(y/n)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -905,10 +909,11 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     thisExp.addData('transition_preeposure_to_vas0.started', globalClock.getTime())
     # Run 'Begin Routine' code from transition_preexposure_to_vas0
     # If response was yes
-    print(f"{response_preexposure.keys = }") # TODO remove
+    logger_for_runner.info("Preexposure was painful? Answer: %s", response_preexposure.keys)
+    
     if response_preexposure.keys == "y":
         # Decrease starting temperature
-        global temp_start_vas0 # psychopy has to be able to find the globals
+        global temp_start_vas0 # psychopy has to be able to find it in the spaghetti
         temp_start_vas0 -= 2
         # Reinitialize estimator for VAS 0 with differen temp_start
         global estimator_vas0 
@@ -2102,6 +2107,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         routineTimer.reset()
     else:
         routineTimer.addTime(-1.000000)
+    # Run 'End Experiment' code from all_variables
+    close_logger(logger_for_runner)
     # Run 'End Experiment' code from thermoino
     luigi.close()
     
