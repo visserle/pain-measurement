@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 11, 2023, at 12:28
+    on September 11, 2023, at 13:57
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -75,7 +75,7 @@ random_periods = True
 baseline_temp = participant_info['baseline_temp'] # @ VAS 35
 
 plateau_duration = 20
-n_plateaus = 0
+n_plateaus = 4
 add_at_start = "random"
 add_at_end = True
 
@@ -84,7 +84,7 @@ stimuli_clock = core.Clock()
 iti_duration = 0.2 # 8  + np.random.randint(0, 5)
 
 # Thermoino
-port = "COM7" # use list_com_ports() beforehand to find out
+port = "COM16" #"COM7" # use list_com_ports() beforehand to find out
 temp_baseline = 30 # has to be the same as in MMS (not the same as baseline_temp (sorry for confusing names))
 rate_of_rise = 5 # has to be the same as in MMS
 bin_size_ms = 500
@@ -403,13 +403,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     luigi.connect()
     luigi.init_ctc(bin_size_ms=bin_size_ms)
-    luigi.create_ctc(
-        temp_course=stimuli.wave,
-        sample_rate=stimuli.sample_rate,
-        rate_of_rise_option="mms_program")
-    luigi.load_ctc()
-    luigi.trigger()
-    luigi.prep_ctc() # TODO: start at VAS 35, find out how the start with the ratings
+    
     vas_cont = visual.Slider(win=win, name='vas_cont',
         startValue=50, size=(1.0, 0.1), pos=(0, -0.1), units=win.units,
         labels=("Kein Schmerz","Stärkste vorstellbare Schmerzen"), ticks=(0, 100), granularity=0.0,
@@ -647,13 +641,24 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             seed=seeds[trial]
         ).add_baseline_temp(
             baseline_temp=baseline_temp
-        ).add_plateaus(
-            plateau_duration=plateau_duration, 
-            n_plateaus=n_plateaus, 
-            add_at_start=add_at_start, 
-            add_at_end=add_at_end)
+        )#.add_plateaus(
+        #    plateau_duration=plateau_duration, 
+        #    n_plateaus=n_plateaus, 
+        #    add_at_start=add_at_start, 
+        #    add_at_end=add_at_end)
         
         # Run 'Begin Routine' code from thermoino
+        luigi.create_ctc(
+            temp_course=stimuli.wave,
+            sample_rate=stimuli.sample_rate,
+            rate_of_rise_option="mms_program")
+        luigi.load_ctc()
+        luigi.trigger()
+        
+        # TODO: move into prep
+        luigi.prep_ctc() # TODO: start at VAS 35, find out how the start with the ratings
+        
+        
         luigi.exec_ctc()
         vas_cont.reset()
         # Run 'Begin Routine' code from mouse

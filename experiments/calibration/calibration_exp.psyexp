@@ -186,7 +186,7 @@
         <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
-        <Param val="# TODO: chnge start temp depending on anwser&amp;#10;&amp;#10;checked = False&amp;#10;stimuli_clock.reset()&amp;#10;&amp;#10;trial = loop_preexposure.thisN&amp;#10;time_for_ramp_up = luigi.set_temp(temps_preexposure[trial])[1]" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="checked = False&amp;#10;stimuli_clock.reset()&amp;#10;&amp;#10;trial = loop_preexposure.thisN&amp;#10;time_for_ramp_up = luigi.set_temp(temps_preexposure[trial])[1]" valType="extendedCode" updates="constant" name="Begin Routine"/>
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
         <Param val="routine_duration = time_for_ramp_up + stimuli_clock.getTime() &amp;#10;&amp;#10;if not checked:&amp;#10;    if routine_duration &gt; stimuli_duration:&amp;#10;        luigi.set_temp(temp_baseline)&amp;#10;        checked = True&amp;#10;" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
@@ -285,37 +285,20 @@
         <Param val="False" valType="bool" updates="constant" name="storeCorrect"/>
         <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
       </KeyboardComponent>
-    </Routine>
-    <Routine name="transition_preeposure_to_vas0">
-      <RoutineSettingsComponent name="transition_preeposure_to_vas0" plugin="None">
-        <Param val="none" valType="str" updates="None" name="backgroundFit"/>
-        <Param val="" valType="str" updates="None" name="backgroundImg"/>
-        <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
-        <Param val="rgb" valType="str" updates="None" name="colorSpace"/>
-        <Param val="" valType="str" updates="constant" name="desc"/>
-        <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="" valType="code" updates="None" name="durationEstim"/>
-        <Param val="transition_preeposure_to_vas0" valType="code" updates="None" name="name"/>
-        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
-        <Param val="" valType="code" updates="constant" name="skipIf"/>
-        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
-        <Param val="" valType="code" updates="constant" name="stopVal"/>
-        <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
-      </RoutineSettingsComponent>
       <CodeComponent name="transition_preexposure_to_vas0" plugin="None">
         <Param val="" valType="extendedCode" updates="constant" name="Before Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
-        <Param val="# If response was yes&amp;#10;logger_for_runner.info(&quot;Preexposure painful? Answer: %s&quot;, response_preexposure.keys)&amp;#10;&amp;#10;if response_preexposure.keys == &quot;y&quot;:&amp;#10;    # Decrease starting temperature&amp;#10;    global temp_start_vas0 # psychopy has to be able to find it in the spaghetti&amp;#10;    temp_start_vas0 -= 2&amp;#10;    # Reinitialize estimator for VAS 0 with differen temp_start&amp;#10;    global estimator_vas0 &amp;#10;    estimator_vas0 = BayesianEstimatorVAS(&amp;#10;        vas_value=0,&amp;#10;        temp_start=temp_start_vas0,&amp;#10;        temp_std=temp_std_vas0,&amp;#10;        trials=trials_vas0)" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin Routine"/>
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
         <Param val="/* Syntax Error: Fix Python code */" valType="extendedCode" updates="constant" name="End JS Routine"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
+        <Param val="# If response was yes&amp;#10;logger_for_runner.info(&quot;Preexposure painful? Answer: %s&quot;, response_preexposure.keys)&amp;#10;&amp;#10;if response_preexposure.keys == &quot;y&quot;:&amp;#10;    # Decrease starting temperature&amp;#10;    global temp_start_vas0 # psychopy has to be able to find it in the spaghetti&amp;#10;    temp_start_vas0 -= 2&amp;#10;    # Reinitialize estimator for VAS 0 with different temp_start&amp;#10;    global estimator_vas0 &amp;#10;    estimator_vas0 = BayesianEstimatorVAS(&amp;#10;        vas_value=0,&amp;#10;        temp_start=temp_start_vas0,&amp;#10;        temp_std=temp_std_vas0,&amp;#10;        trials=trials_vas0)" valType="extendedCode" updates="constant" name="End Routine"/>
         <Param val="False" valType="bool" updates="None" name="disabled"/>
         <Param val="transition_preexposure_to_vas0" valType="code" updates="None" name="name"/>
       </CodeComponent>
@@ -677,7 +660,7 @@
         <Param val="condition" valType="str" updates="None" name="stopType"/>
         <Param val="response_vas70.status==FINISHED" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="War der Reiz eine 7 (starker Schmerz) auf der Skala von 1 bis 10?&amp;#10;&amp;#10;(y/n)" valType="str" updates="constant" name="text"/>
+        <Param val="War der Reiz eine 7 von 10 auf der Schmerzskala?&amp;#10;&amp;#10;(y/n)" valType="str" updates="constant" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
@@ -837,7 +820,6 @@
     <Routine name="preexposure"/>
     <LoopTerminator name="loop_preexposure"/>
     <Routine name="feedback_preexposure"/>
-    <Routine name="transition_preeposure_to_vas0"/>
     <LoopInitiator loopType="TrialHandler" name="loop_vas0">
       <Param name="Selected rows" updates="None" val="" valType="str"/>
       <Param name="conditions" updates="None" val="None" valType="str"/>

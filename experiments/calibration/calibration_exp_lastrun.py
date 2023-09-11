@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 08, 2023, at 17:00
+    on September 11, 2023, at 11:07
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -51,7 +51,6 @@ expInfo = {
 
 # Run 'Before Experiment' code from all_variables
 from src.experiments.logger import setup_logger, close_logger
-
 logger_for_runner = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
 
 # Thermoino
@@ -679,8 +678,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         # update component parameters for each repeat
         thisExp.addData('preexposure.started', globalClock.getTime())
         # Run 'Begin Routine' code from prexposure
-        # TODO: chnge start temp depending on anwser
-        
         checked = False
         stimuli_clock.reset()
         
@@ -909,13 +906,13 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     thisExp.addData('transition_preeposure_to_vas0.started', globalClock.getTime())
     # Run 'Begin Routine' code from transition_preexposure_to_vas0
     # If response was yes
-    logger_for_runner.info("Preexposure was painful? Answer: %s", response_preexposure.keys)
+    logger_for_runner.info("Preexposure painful? Answer: %s", response_preexposure.keys)
     
     if response_preexposure.keys == "y":
         # Decrease starting temperature
         global temp_start_vas0 # psychopy has to be able to find it in the spaghetti
         temp_start_vas0 -= 2
-        # Reinitialize estimator for VAS 0 with differen temp_start
+        # Reinitialize estimator for VAS 0 with different temp_start
         global estimator_vas0 
         estimator_vas0 = BayesianEstimatorVAS(
             vas_value=0,
