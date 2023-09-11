@@ -256,9 +256,12 @@ class Thermoino:
         Trigger MMS to get ready for action. Wait for 50 ms to avoid errors.
         """
         output = self._send_command('START\n')
-        logger.info("Thermoino response to 'START' (.trigger): %s.", output)
-        logger.info("Thermoino waits 50 ms to avoid errors.")
-        time.sleep(0.05) # to avoid errors
+        if output in OkCodes.__members__:
+            logger.info("Thermoino response to 'START' (.trigger): %s.", output)
+            logger.info("Thermoino waits 50 ms to avoid errors.")
+            time.sleep(0.05) # to avoid errors
+        elif output in ErrorCodes.__members__:
+            logger.error("Thermoino error for 'START' (.trigger): %s.", output)        
         return self
 
     def set_temp(self, temp_target):
@@ -280,7 +283,10 @@ class Thermoino:
         move_time_us = round(((temp_target - self.temp) / self.rate_of_rise) * 1e6)
         move_time_s = move_time_us / 1e6  # Convert to seconds
         output = self._send_command(f'MOVE;{move_time_us}\n')
-        logger.info("Thermoino response to 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
+        if output in OkCodes.__members__:
+            logger.info("Thermoino response to 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
+        elif output in ErrorCodes.__members__:
+            logger.error("Thermoino error for 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
         self.temp = temp_target
         return (self, move_time_s) 
     
@@ -453,7 +459,10 @@ class ThermoinoComplexTimeCourses(Thermoino):
             The bin size in milliseconds for the ctc.
         """
         output = self._send_command(f'INITCTC;{bin_size_ms}\n')
-        logger.info("Thermoino response to 'INITCTC' (.init_ctc): %s.", output)
+        if output in OkCodes.__members__:
+            logger.info("Thermoino response to 'INITCTC' (.init_ctc): %s.", output)
+        elif output in ErrorCodes.__members__:
+            logger.error("Thermoino error to 'INITCTC' (.init_ctc): %s.", output)
         self.bin_size_ms = bin_size_ms
         return self
 
@@ -522,27 +531,32 @@ class ThermoinoComplexTimeCourses(Thermoino):
         logger.info("Thermoino-adapted ctc is ready to be loaded with %s bins, each %s ms long.", len(self.ctc), self.bin_size_ms)
         return self
 
-    def load_ctc(self, debug = False):
+    def load_ctc(self, debug=False):
         """
         Load the created ctc into the Thermoino device by sending single bins in a for loop to the Thermoino.
         The maximum length to store on the Thermoino is 2500. If you want longer stimuli, you could use a larger bin size.
         (The max bin size is 500 ms, also keep in mind the 10 min limit of MMS.)
-                
+
         Parameters
         ----------
         debug : `bool`, optional
             If True, debug information for every bin. Default is False for performance.
         """
         wait = 0.05
-        wait_duration = int(wait*len(self.ctc))
+        wait_duration = int(wait * len(self.ctc))
         logger.info("Thermoino is receiving the ctc in single bins. This will take %s s ...", wait_duration)
         for idx, i in enumerate(self.ctc):
-            output = self._send_command(f'LOADCTC;{i}\n', get_response=debug)
+            output = self._send_command(f'LOADCTC;{i}\n')
+            if output in ErrorCodes.__members__:
+                logger.error("Thermoino error for 'LOADCTC' (.load_ctc), bin %s of %s: %s.", idx + 1, len(self.ctc), output)
+                raise ValueError(f"Error while loading bin {idx + 1} of {len(self.ctc)}. Error code: {output}")
+            elif debug:
+                logger.debug("Thermoino response to 'LOADCTC' (.load_ctc), bin %s of %s: %s.", idx + 1, len(self.ctc), output)
+            
             # workaround: time.sleep after every iteration,
             # not using await_status at the moment
             time.sleep(wait)
-            if debug:
-                logger.debug("Thermoino response to 'LOADCTC' (.load_ctc), bin %s of %s: %s.", idx + 1, len(self.ctc), output)
+
         logger.info("Thermoino received the whole ctc.")
         return self
 
@@ -595,10 +609,13 @@ class ThermoinoComplexTimeCourses(Thermoino):
             raise ValueError("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
 
         output = self._send_command('EXECCTCPWM\n')
-        logger.info("Thermoino response to 'EXECCTCPWM' (.exec_ctc): %s.", output)
-        logger.info("Thermoino will execute the ctc with a duration of %s s.", self.temp_course_duration)
-        self.temp = round(self.temp_course_resampled[-1],2)
-        logger.info("Thermoino will set the temperature to %s °C after the ctc ended.", self.temp)
+        if output in OkCodes.__members__:
+            logger.info("Thermoino response to 'EXECCTCPWM' (.exec_ctc): %s.", output)
+            logger.info("Thermoino will execute the ctc with a duration of %s s.", self.temp_course_duration)
+            self.temp = round(self.temp_course_resampled[-1],2)
+            logger.info("Thermoino will set the temperature to %s °C after the ctc ended.", self.temp)
+        elif output in ErrorCodes.__members__:
+            logger.error("Thermoino error for 'EXECCTCPWM' (.exec_ctc): %s.", output)
         return self
 
     def flush_ctc(self):
@@ -609,4 +626,9 @@ class ThermoinoComplexTimeCourses(Thermoino):
         also automatically called by the `init_ctc` method.
         """
         output = self._send_command('FLUSHCTC\n')
-        logger.info("Thermoino response to 'FLUSHCTC' (.flush_ctc): %s.", output)
+        if output in OkCodes.__members__:
+            logger.info("Thermoino response to 'FLUSHCTC' (.flush_ctc): %s.", output)
+        elif output in ErrorCodes.__members__:
+            logger.error("Thermoino error for 'FLUSHCTC' (.flush_ctc): %s.", output)
+        return self
+    
