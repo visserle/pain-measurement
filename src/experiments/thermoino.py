@@ -1,7 +1,6 @@
 # work in progress
 
 # TODO
-# - test new execctcpwm command
 # - try out what happens if you load several ctcs without flushing in between
 # - do they get flushed automatically when you load a new one? or are they appended?
 
@@ -608,14 +607,14 @@ class ThermoinoComplexTimeCourses(Thermoino):
             logger.error("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
             raise ValueError("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
 
-        output = self._send_command('EXECCTCPWM\n')
+        output = self._send_command('EXECCTC\n')
         if output in OkCodes.__members__:
-            logger.info("Thermoino response to 'EXECCTCPWM' (.exec_ctc): %s.", output)
+            logger.info("Thermoino response to 'EXECCTC' (.exec_ctc): %s.", output)
             logger.info("Thermoino will execute the ctc with a duration of %s s.", self.temp_course_duration)
             self.temp = round(self.temp_course_resampled[-1],2)
             logger.info("Thermoino will set the temperature to %s °C after the ctc ended.", self.temp)
         elif output in ErrorCodes.__members__:
-            logger.error("Thermoino error for 'EXECCTCPWM' (.exec_ctc): %s.", output)
+            logger.error("Thermoino error for 'EXECCTC' (.exec_ctc): %s.", output)
         return self
 
     def flush_ctc(self):
