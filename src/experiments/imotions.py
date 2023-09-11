@@ -29,7 +29,7 @@ class RemoteControliMotions():
     Attributes:
     -----------
     - HOST: The host address for the iMotions software, typically "localhost".
-    - PORT: The port number used for communication, default is 8087 as hardcoded in iMotions.
+    - PORT: The port number used for communication, default is 8087.
     
     Methods:
     --------
@@ -46,7 +46,11 @@ class RemoteControliMotions():
     Example Usage:
     --------------
     ```python
-    imotions = RemoteControliMotions(study="StudyName", participant="ParticipantID")
+    from src.experiments.imotions import RemoteControliMotions
+    imotions = RemoteControliMotions(
+        study="StudyName", 
+        participant="ParticipantID", 
+        age=0, gender="Female")
     # in a psychopy experiment use expName and expInfo['participant']
     imotions.connect()
     imotions.start_study()
@@ -70,7 +74,7 @@ class RemoteControliMotions():
     """
     
     HOST = "localhost"
-    PORT = 8087 # hardcoded in iMotions
+    PORT = 8087 # default port for iMotions remote control
     
     def __init__(self, study, participant, age, gender):
         # Psychopy experiment info
@@ -81,6 +85,7 @@ class RemoteControliMotions():
 
         # iMotions info
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(20.0) # longer timeout to get everything running
         self.connected = None
 
     def _send_and_receive(self, query):
@@ -90,6 +95,10 @@ class RemoteControliMotions():
         return response
     
     def _check_status(self):
+        """
+        Helper function to check the status of iMotions.
+        Returns 0 if iMotions is ready for remote control.
+        """
         status_query = "R;2;TEST;STATUS\r\n"
         response = self._send_and_receive(status_query)
         # e.g. 1;RemoteControl;STATUS;;-1;TEST;1;;;;;0;;
@@ -118,9 +127,10 @@ class RemoteControliMotions():
         if self._check_status() != 0:
             logger.error("iMotions is not ready the start the study.")
             raise Exception("iMotions is not ready the start the study.")
-        start_study_query = f"R;2;TEST;RUN;{self.study};{self.participant};Age={self.age} Gender={self.gender}\r\n" 
-        self._send_and_receive(start_study_query)
+        start_study_query = f"R;2;TEST;RUN;{self.study};{self.participant};Age={self.age} Gender={self.gender}\r\n"
+        response =self._send_and_receive(start_study_query)
         logger.info("iMotions started the study %s for participant %s.", self.study, self.participant)
+        logger.info("iMotions response: %s", response)
 
     def end_study(self):
         """
@@ -166,7 +176,7 @@ class EventRecievingiMotions():
     Attributes:
     -----------
     - HOST: The host address for the iMotions software, typically "localhost".
-    - PORT: The port number used for communication, default is 8089 as hardcoded in iMotions.
+    - PORT: The port number used for communication, default is 8089.
     
     Methods:
     --------
@@ -205,7 +215,7 @@ class EventRecievingiMotions():
     """
     
     HOST = "localhost"
-    PORT = 8089 # hardcoded in iMotions
+    PORT = 8089 # default port for iMotions event recieving
     
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -223,6 +233,7 @@ class EventRecievingiMotions():
             logger.info("iMotions is ready for event recieving.")
         except socket.error as exc:
             logger.error("iMotions is not ready for event recieving. Error connecting to server:\n%s", exc)
+            raise Exception("iMotions is not ready for event recieving. Error connecting to server:\n%s", exc) from exc
 
     def _send_message(self, message):
         self.sock.sendall(message.encode('utf-8'))

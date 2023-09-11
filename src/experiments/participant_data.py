@@ -31,9 +31,9 @@ logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
 # Set the path to the Excel file
 exp_dirs = "calibration", "mpad1", "mpad2"
 X_DIR = Path.cwd()
-if X_DIR.stem in exp_dirs: # run from psychopy runner
+if X_DIR.stem in exp_dirs: # when running from psychopy runner
     FILE_DIR = X_DIR.parent / 'participants.xlsx'
-else: # run from project root
+else: # when running from project root
     EXP_DIR = X_DIR / 'experiments'
     FILE_DIR = EXP_DIR / 'participants.xlsx'
 
@@ -58,6 +58,7 @@ def add_participant(participant, age, gender, vas0, vas70):
         estimator_vas70.get_estimate())
     ```
     """
+    
     time_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     new_data = pd.DataFrame([{
         'time_stamp': time_stamp,
@@ -109,11 +110,11 @@ def read_last_participant():
         'temp_range': last_row['temp_range']
     }
 
-    logger.info(f"Participant data from {participant_info['participant']}, {participant_info['time_stamp']}, loaded.")
+    logger.info(f"Participant data from {participant_info['participant']} ({participant_info['time_stamp']}) loaded.")
 
     return participant_info
 
-# does not work with logging
+# main() does not work with logging
 # def main():
 #     init_excel_file()
 #     add_participant('John', 22, 'm', 3.5, 4.0)

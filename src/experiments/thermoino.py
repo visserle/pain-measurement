@@ -282,10 +282,12 @@ class Thermoino:
         output = self._send_command(f'MOVE;{move_time_us}\n')
         if output in OkCodes.__members__:
             logger.info("Thermoino response to 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
+            success = True
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error for 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
+            success = False
         self.temp = temp_target
-        return (self, move_time_s) 
+        return (self, move_time_s, success) 
     
     def wait(self, duration):
         """
