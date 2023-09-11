@@ -109,7 +109,7 @@ def read_last_participant():
         'temp_range': last_row['temp_range']
     }
 
-    logger.info(f"Participant data from {participant_info['participant']}, {participant_info['time_stemp']}, loaded.")
+    logger.info(f"Participant data from {participant_info['participant']}, {participant_info['time_stamp']}, loaded.")
 
     return participant_info
 
