@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 11, 2023, at 11:07
+    on September 11, 2023, at 16:56
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -395,8 +395,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         depth=0.0);
     response_preexposure = keyboard.Keyboard()
     
-    # --- Initialize components for Routine "transition_preeposure_to_vas0" ---
-    
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
         win=win, name='cross_neutral', vertices='cross',
@@ -460,7 +458,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "feedback_vas70" ---
     question_vas70 = visual.TextStim(win=win, name='question_vas70',
-        text='War der Reiz eine 7 (starker Schmerz) auf der Skala von 1 bis 10?\n\n(y/n)',
+        text='War der Reiz eine 7 von 10 auf der Schmerzskala?\n\n(y/n)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -897,14 +895,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         thisExp.addData('response_preexposure.rt', response_preexposure.rt)
         thisExp.addData('response_preexposure.duration', response_preexposure.duration)
     thisExp.nextEntry()
-    # the Routine "feedback_preexposure" was not non-slip safe, so reset the non-slip timer
-    routineTimer.reset()
-    
-    # --- Prepare to start Routine "transition_preeposure_to_vas0" ---
-    continueRoutine = True
-    # update component parameters for each repeat
-    thisExp.addData('transition_preeposure_to_vas0.started', globalClock.getTime())
-    # Run 'Begin Routine' code from transition_preexposure_to_vas0
+    # Run 'End Routine' code from transition_preexposure_to_vas0
     # If response was yes
     logger_for_runner.info("Preexposure painful? Answer: %s", response_preexposure.keys)
     
@@ -919,57 +910,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             temp_start=temp_start_vas0,
             temp_std=temp_std_vas0,
             trials=trials_vas0)
-    # keep track of which components have finished
-    transition_preeposure_to_vas0Components = []
-    for thisComponent in transition_preeposure_to_vas0Components:
-        thisComponent.tStart = None
-        thisComponent.tStop = None
-        thisComponent.tStartRefresh = None
-        thisComponent.tStopRefresh = None
-        if hasattr(thisComponent, 'status'):
-            thisComponent.status = NOT_STARTED
-    # reset timers
-    t = 0
-    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
-    frameN = -1
-    
-    # --- Run Routine "transition_preeposure_to_vas0" ---
-    routineForceEnded = not continueRoutine
-    while continueRoutine:
-        # get current time
-        t = routineTimer.getTime()
-        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
-        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
-        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
-        # update/draw components on each frame
-        
-        # check for quit (typically the Esc key)
-        if defaultKeyboard.getKeys(keyList=["escape"]):
-            thisExp.status = FINISHED
-        if thisExp.status == FINISHED or endExpNow:
-            endExperiment(thisExp, inputs=inputs, win=win)
-            return
-        
-        # check if all components have finished
-        if not continueRoutine:  # a component has requested a forced-end of Routine
-            routineForceEnded = True
-            break
-        continueRoutine = False  # will revert to True if at least one component still running
-        for thisComponent in transition_preeposure_to_vas0Components:
-            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
-                continueRoutine = True
-                break  # at least one component has not yet finished
-        
-        # refresh the screen
-        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
-            win.flip()
-    
-    # --- Ending Routine "transition_preeposure_to_vas0" ---
-    for thisComponent in transition_preeposure_to_vas0Components:
-        if hasattr(thisComponent, "setAutoDraw"):
-            thisComponent.setAutoDraw(False)
-    thisExp.addData('transition_preeposure_to_vas0.stopped', globalClock.getTime())
-    # the Routine "transition_preeposure_to_vas0" was not non-slip safe, so reset the non-slip timer
+    # the Routine "feedback_preexposure" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
