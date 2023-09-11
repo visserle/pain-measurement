@@ -6,6 +6,8 @@
 # - Add option to connect that checks if imotions is avaiable or if you want to proceed without it by asking with input()
 #    -> could come in handy for psychopy testing, where you don't want to have imotions connected all the time
 # - find out if age and gender are considered in the analysis in imotions
+# find out what gender means in imotions, so far 0 was used..
+# -> update function accordingly
 
 
 import socket
@@ -70,10 +72,12 @@ class RemoteControliMotions():
     HOST = "localhost"
     PORT = 8087 # hardcoded in iMotions
     
-    def __init__(self, study, participant):
+    def __init__(self, study, participant, age, gender):
         # Psychopy experiment info
         self.study = study # psychopy default is expName
         self.participant = participant # psychopy default is expInfo['participant']
+        self.age = age # psychopy default is expInfo['age']
+        self.gender = gender # psychopy default is expInfo['gender']
 
         # iMotions info
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -114,7 +118,7 @@ class RemoteControliMotions():
         if self._check_status() != 0:
             logger.error("iMotions is not ready the start the study.")
             raise Exception("iMotions is not ready the start the study.")
-        start_study_query = f"R;2;TEST;RUN;{self.study};{self.participant};Age={0} Gender={0}\r\n" 
+        start_study_query = f"R;2;TEST;RUN;{self.study};{self.participant};Age={self.age} Gender={self.gender}\r\n" 
         self._send_and_receive(start_study_query)
         logger.info("iMotions started the study %s for participant %s.", self.study, self.participant)
 
@@ -133,7 +137,6 @@ class RemoteControliMotions():
         abort_study_query = "R;1;;SLIDESHOWCANCEL\r\n"
         self._send_and_receive(abort_study_query)
         logger.info("iMotions aborted the study %s for participant %s.", self.study, self.participant)
-
 
     def export_data(self):
         logger.info("iMotions exported the data for study %s for participant %s to %s.", self.study, self.participant, path)
