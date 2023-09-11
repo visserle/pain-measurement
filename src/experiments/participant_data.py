@@ -73,7 +73,12 @@ def add_participant(participant, age, gender, vas0, vas70):
     if df.empty or df.isna().all().all():
         df = new_data
     else:
+        # Check if the last participant is the same as the one you want to add
+        last_participant = df.iloc[-1]['participant']
+        if last_participant == participant:
+            logger.critical(f"Participant {participant} already exists as the last entry.")
         df = pd.concat([df, new_data], ignore_index=True)
+    
     df.to_excel(FILE_DIR, index=False)
     logger.info(f"Added participant {participant} to {FILE_DIR}")
 
