@@ -255,8 +255,6 @@ class Thermoino:
         output = self._send_command('START\n')
         if output in OkCodes.__members__:
             logger.info("Thermoino response to 'START' (.trigger): %s.", output)
-            logger.info("Thermoino waits 50 ms to avoid errors.")
-            time.sleep(0.05) # to avoid errors
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error for 'START' (.trigger): %s.", output)        
         return self
@@ -372,7 +370,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     exec_ctc():
         Execute the loaded CTC on the Thermoino.
     flush_ctc()
-        Reset CTC information on the Thermoino.
+        Reset CTC information on the Thermoino. This has to be done before loading a new CTC.
     
     New stuff
     -----------
@@ -409,6 +407,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
 
     luigi.exec_ctc()
     luigi.set_temp(32)
+    luigi.flush_ctc()
     luigi.close()
 
     # Use luigi to set temperatures:
@@ -616,8 +615,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         """
         Reset or delete all complex temperature course (CTC) information on the Thermoino device.
 
-        This method sends a 'FLUSHCTC' command to the device. It can be called individually, but it is 
-        also automatically called by the `init_ctc` method.
+        This method sends a 'FLUSHCTC' command to the device. Before loading a new CTC, the old one has to be flushed or else it will be appended.
         """
         output = self._send_command('FLUSHCTC\n')
         if output in OkCodes.__members__:
