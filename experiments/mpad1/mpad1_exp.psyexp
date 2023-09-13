@@ -86,7 +86,7 @@
         <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
       </RoutineSettingsComponent>
       <CodeComponent name="all_variables" plugin="None">
-        <Param val="from src.experiments.logger import setup_logger, close_logger&amp;#10;from src.experiments.participant_data import read_last_participant&amp;#10;&amp;#10;logger_for_runner = setup_logger(__name__.rsplit(&quot;.&quot;, maxsplit=1)[-1], level=logging.INFO)&amp;#10;&amp;#10;expInfo['expName'] = &quot;mpad1_exp&quot;&amp;#10;participant_info = read_last_participant()&amp;#10;expInfo['participant'] = participant_info['participant']&amp;#10;expInfo['age'] = participant_info['age']&amp;#10;expInfo['gender'] = participant_info['gender']&amp;#10;&amp;#10;&amp;#10;# Stimuli&amp;#10;seeds = [463, 320, 12]#, 43, 999, 242, 32, 1, 98, 478, 48, 435]&amp;#10;n_trials = len(seeds)&amp;#10;&amp;#10;minimal_desired_duration = 2 # in seconds&amp;#10;periods = [67, 20] # [0] is the baseline and [1] the modulation; in seconds&amp;#10;frequencies = 1./np.array(periods)&amp;#10;# calculate amplitudes based on VAS 70 - VAS 0&amp;#10;temp_range = participant_info['temp_range'] # VAS 70 - VAS 0&amp;#10;amplitudes = [1/3*temp_range/2, 2/3*temp_range/2]&amp;#10;&amp;#10;sample_rate = 60&amp;#10;random_periods = True&amp;#10;baseline_temp = participant_info['baseline_temp'] # @ VAS 35&amp;#10;&amp;#10;# For debuggins purpose, the code in stimuli_function will be outcommented&amp;#10;plateau_duration = 20&amp;#10;n_plateaus = 4&amp;#10;add_at_start = &quot;random&quot;&amp;#10;add_at_end = True&amp;#10;&amp;#10;# Time&amp;#10;stimuli_clock = core.Clock()&amp;#10;iti_duration = 0.2 # 8  + np.random.randint(0, 5)&amp;#10;&amp;#10;# Thermoino&amp;#10;port = &quot;COM7&quot; # use list_com_ports() beforehand to find out&amp;#10;temp_baseline = 30 # has to be the same as in MMS (not the same as baseline_temp (sorry for confusing names))&amp;#10;rate_of_rise = 5 # has to be the same as in MMS&amp;#10;bin_size_ms = 500" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="# TODO&amp;#10;# fix baseline_temp &amp; temp_baseline for all scripts&amp;#10;# set start_study_mode to NoPrompt&amp;#10;&amp;#10;from src.experiments.logger import setup_logger, close_logger&amp;#10;from src.experiments.participant_data import read_last_participant&amp;#10;&amp;#10;logger_for_runner = setup_logger(__name__.rsplit(&quot;.&quot;, maxsplit=1)[-1], level=logging.INFO)&amp;#10;&amp;#10;expInfo['expName'] = &quot;mpad1_exp&quot;&amp;#10;participant_info = read_last_participant()&amp;#10;expInfo['participant'] = participant_info['participant']&amp;#10;expInfo['age'] = participant_info['age']&amp;#10;expInfo['gender'] = participant_info['gender']&amp;#10;&amp;#10;# iMotions&amp;#10;start_study_mode = &quot;NormalPrompt&quot;&amp;#10;&amp;#10;# Stimuli&amp;#10;seeds = [463, 320, 12]#, 43, 999, 242, 32, 1, 98, 478, 48, 435]&amp;#10;n_trials = len(seeds)&amp;#10;&amp;#10;minimal_desired_duration = 2 # in seconds&amp;#10;periods = [67, 20] # [0] is the baseline and [1] the modulation; in seconds&amp;#10;frequencies = 1./np.array(periods)&amp;#10;# calculate amplitudes based on VAS 70 - VAS 0&amp;#10;temp_range = participant_info['temp_range'] # VAS 70 - VAS 0&amp;#10;amplitudes = [1/3*temp_range/2, 2/3*temp_range/2]&amp;#10;&amp;#10;sample_rate = 60&amp;#10;random_periods = True&amp;#10;baseline_temp = participant_info['baseline_temp'] # @ VAS 35&amp;#10;&amp;#10;# For debuggins purpose, the code in stimuli_function will be outcommented&amp;#10;plateau_duration = 20&amp;#10;n_plateaus = 4&amp;#10;add_at_start = &quot;random&quot;&amp;#10;add_at_end = True&amp;#10;&amp;#10;# Time&amp;#10;stimuli_clock = core.Clock()&amp;#10;iti_duration = 2 # 8  + np.random.randint(0, 5)&amp;#10;&amp;#10;# Thermoino&amp;#10;port = &quot;COM7&quot; # use list_com_ports() beforehand to find out&amp;#10;temp_baseline = 30 # has to be the same as in MMS (not the same as baseline_temp (sorry for confusing names))&amp;#10;rate_of_rise = 5 # has to be the same as in MMS&amp;#10;bin_size_ms = 500&amp;#10;&amp;#10;# Mouse control&amp;#10;factor_to_hit_VAS_slider = 1.1" valType="extendedCode" updates="constant" name="Before Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
@@ -105,7 +105,7 @@
       <CodeComponent name="imotions_control" plugin="None">
         <Param val="from src.experiments.imotions import RemoteControliMotions" valType="extendedCode" updates="constant" name="Before Experiment"/>
         <Param val="/* Syntax Error: Fix Python code */" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
-        <Param val="imotions_control = RemoteControliMotions(&amp;#10;    study = expInfo['expName'],&amp;#10;    participant = expInfo['participant'],&amp;#10;    age = expInfo['age'],&amp;#10;    gender = expInfo['gender']&amp;#10;)&amp;#10;&amp;#10;imotions_control.connect()&amp;#10;imotions_control.start_study()" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="imotions_control = RemoteControliMotions(&amp;#10;    study = expInfo['expName'],&amp;#10;    participant = expInfo['participant'],&amp;#10;    age = expInfo['age'],&amp;#10;    gender = expInfo['gender']&amp;#10;)&amp;#10;&amp;#10;imotions_control.connect()&amp;#10;imotions_control.start_study(mode=start_study_mode)" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin Routine"/>
@@ -189,8 +189,8 @@
         <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
       </KeyboardComponent>
     </Routine>
-    <Routine name="ctc_prep">
-      <RoutineSettingsComponent name="ctc_prep" plugin="None">
+    <Routine name="trial_prep">
+      <RoutineSettingsComponent name="trial_prep" plugin="None">
         <Param val="none" valType="str" updates="None" name="backgroundFit"/>
         <Param val="" valType="str" updates="None" name="backgroundImg"/>
         <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
@@ -198,7 +198,7 @@
         <Param val="" valType="str" updates="constant" name="desc"/>
         <Param val="False" valType="bool" updates="None" name="disabled"/>
         <Param val="" valType="code" updates="None" name="durationEstim"/>
-        <Param val="ctc_prep" valType="code" updates="None" name="name"/>
+        <Param val="trial_prep" valType="code" updates="None" name="name"/>
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="constant" name="skipIf"/>
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
@@ -228,7 +228,7 @@
         <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
-        <Param val="luigi.flush_ctc()&amp;#10;luigi.init_ctc(bin_size_ms=bin_size_ms)&amp;#10;luigi.create_ctc(&amp;#10;    temp_course=stimuli.wave,&amp;#10;    sample_rate=stimuli.sample_rate,&amp;#10;    rate_of_rise_option=&quot;mms_program&quot;)&amp;#10;luigi.load_ctc()&amp;#10;" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="luigi.flush_ctc()&amp;#10;luigi.init_ctc(bin_size_ms=bin_size_ms)&amp;#10;luigi.create_ctc(&amp;#10;    temp_course=stimuli.wave,&amp;#10;    sample_rate=stimuli.sample_rate,&amp;#10;    rate_of_rise_option=&quot;mms_program&quot;)&amp;#10;luigi.load_ctc()&amp;#10;luigi.trigger()&amp;#10;&amp;#10;prep_duration = luigi.prep_ctc()[1]" valType="extendedCode" updates="constant" name="Begin Routine"/>
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
@@ -239,39 +239,22 @@
         <Param val="False" valType="bool" updates="None" name="disabled"/>
         <Param val="thermoino_prep" valType="code" updates="None" name="name"/>
       </CodeComponent>
-    </Routine>
-    <Routine name="trial_prep">
-      <RoutineSettingsComponent name="trial_prep" plugin="None">
-        <Param val="none" valType="str" updates="None" name="backgroundFit"/>
-        <Param val="" valType="str" updates="None" name="backgroundImg"/>
-        <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
-        <Param val="rgb" valType="str" updates="None" name="colorSpace"/>
-        <Param val="" valType="str" updates="constant" name="desc"/>
-        <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="" valType="code" updates="None" name="durationEstim"/>
-        <Param val="trial_prep" valType="code" updates="None" name="name"/>
-        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
-        <Param val="" valType="code" updates="constant" name="skipIf"/>
-        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
-        <Param val="" valType="code" updates="constant" name="stopVal"/>
-        <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
-      </RoutineSettingsComponent>
-      <CodeComponent name="trial_prep" plugin="None">
-        <Param val="" valType="extendedCode" updates="constant" name="Before Experiment"/>
+      <CodeComponent name="mouse_for_prep" plugin="None">
+        <Param val="import src.experiments.mouse_action as mouse_action&amp;#10;from src.experiments.mouse_action import pixel_pos_y" valType="extendedCode" updates="constant" name="Before Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
-        <Param val="luigi.trigger()&amp;#10;&amp;#10;prep_duration = luigi.prep_ctc()[1] # TODO: start at VAS 35, find out how to start the ratings" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="vas_pos_y = pixel_pos_y(&amp;#10;    component_pos = vas_cont.pos,&amp;#10;    win_size = win.size, &amp;#10;    win_pos = win.pos)&amp;#10;    &amp;#10;mouse_action.hold()&amp;#10;stimuli_clock.reset()" valType="extendedCode" updates="constant" name="Begin Routine"/>
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="mouse_action.check(vas_pos_y*factor_to_hit_VAS_slider)&amp;#10;&amp;#10;# Cheap workaround to get the last rating of the prep slider&amp;#10;if prep_duration - 1 &lt; stimuli_clock.getTime():&amp;#10;    prep_vas_rating = vas_cont_prep.getRating()" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
+        <Param val="mouse_action.release()" valType="extendedCode" updates="constant" name="End Routine"/>
         <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="trial_prep" valType="code" updates="None" name="name"/>
+        <Param val="mouse_for_prep" valType="code" updates="None" name="name"/>
       </CodeComponent>
       <SliderComponent name="vas_cont_prep" plugin="None">
         <Param val="White" valType="color" updates="constant" name="borderColor"/>
@@ -309,23 +292,6 @@
         <Param val="(0, 100)" valType="list" updates="constant" name="ticks"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
       </SliderComponent>
-      <CodeComponent name="mouse_for_prep" plugin="None">
-        <Param val="import src.experiments.mouse_action as mouse_action&amp;#10;from src.experiments.mouse_action import pixel_pos_y" valType="extendedCode" updates="constant" name="Before Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
-        <Param val="vas_pos_y = pixel_pos_y(&amp;#10;    component_pos = vas_cont.pos,&amp;#10;    win_size = win.size, &amp;#10;    win_pos = win.pos)&amp;#10;    &amp;#10;mouse_action.hold()" valType="extendedCode" updates="constant" name="Begin Routine"/>
-        <Param val="Py" valType="str" updates="None" name="Code Type"/>
-        <Param val="mouse_action.check(vas_pos_y*1.1) # 1.1 to exactly hit the slider" valType="extendedCode" updates="constant" name="Each Frame"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
-        <Param val="mouse_action.release()" valType="extendedCode" updates="constant" name="End Routine"/>
-        <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="mouse_for_prep" valType="code" updates="None" name="name"/>
-      </CodeComponent>
     </Routine>
     <Routine name="trial_vas_continuous">
       <RoutineSettingsComponent name="trial_vas_continuous" plugin="None">
@@ -359,6 +325,40 @@
         <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
         <Param val="False" valType="bool" updates="None" name="disabled"/>
         <Param val="thermoino" valType="code" updates="None" name="name"/>
+      </CodeComponent>
+      <CodeComponent name="mouse" plugin="None">
+        <Param val="import src.experiments.mouse_action as mouse_action&amp;#10;from src.experiments.mouse_action import pixel_pos_y" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
+        <Param val="vas_pos_y = pixel_pos_y(&amp;#10;    component_pos = vas_cont.pos,&amp;#10;    win_size = win.size, &amp;#10;    win_pos = win.pos)&amp;#10;&amp;#10;# Set the starting VAS value of the slider accordingly to the prep slider&amp;#10;vas_cont.startValue = prep_vas_rating&amp;#10;mouse_action.hold()" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="Py" valType="str" updates="None" name="Code Type"/>
+        <Param val="mouse_action.check(vas_pos_y*factor_to_hit_VAS_slider)" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
+        <Param val="mouse_action.release()" valType="extendedCode" updates="constant" name="End Routine"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="mouse" valType="code" updates="None" name="name"/>
+      </CodeComponent>
+      <CodeComponent name="imotions_event" plugin="None">
+        <Param val="from src.experiments.imotions import EventRecievingiMotions&amp;#10;from psychopy import core&amp;#10;" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="/* Syntax Error: Fix Python code */" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
+        <Param val="&quot;&quot;&quot; Connect with event recieving API &quot;&quot;&quot;&amp;#10;imotions_event = EventRecievingiMotions()&amp;#10;imotions_event.connect()&amp;#10;imotions_event.start_study&amp;#10;&amp;#10;# create a clock&amp;#10;stimuli_clock = core.Clock()" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
+        <Param val="&quot;&quot;&quot; Send discrete marker for stimuli beginning &quot;&quot;&quot;&amp;#10;# TODO: add imotions marker for stimuli start and end&amp;#10;imotions_event.send_marker(&quot;stimuli&quot;, &quot;Stimuli begins&quot;)&amp;#10;# Start the clock&amp;#10;stimuli_clock.reset()" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="Py" valType="str" updates="None" name="Code Type"/>
+        <Param val="&quot;&quot;&quot; Stream data for pain rating &quot;&quot;&quot;&amp;#10;imotions_event.send_ratings(&amp;#10;    vas_cont.getMarkerPos())&amp;#10;&amp;#10;idx_stimuli = int(stimuli_clock.getTime()*stimuli.sample_rate)&amp;#10;if idx_stimuli &lt; len(stimuli.wave):&amp;#10;    imotions_event.send_temperatures(stimuli.wave[idx_stimuli])" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
+        <Param val="&quot;&quot;&quot; Close event recieving API connection &quot;&quot;&quot;&amp;#10;imotions_event.end_study()&amp;#10;imotions_event.close()" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
+        <Param val="&quot;&quot;&quot; Send discrete marker for stimuli ending &quot;&quot;&quot;&amp;#10;imotions_event.send_marker(&quot;stimuli&quot;, &quot;Stimuli ends&quot;)&amp;#10;" valType="extendedCode" updates="constant" name="End Routine"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="imotions_event" valType="code" updates="None" name="name"/>
       </CodeComponent>
       <SliderComponent name="vas_cont" plugin="None">
         <Param val="White" valType="color" updates="constant" name="borderColor"/>
@@ -396,50 +396,6 @@
         <Param val="(0, 100)" valType="list" updates="constant" name="ticks"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
       </SliderComponent>
-      <CodeComponent name="mouse" plugin="None">
-        <Param val="import src.experiments.mouse_action as mouse_action&amp;#10;from src.experiments.mouse_action import pixel_pos_y" valType="extendedCode" updates="constant" name="Before Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
-        <Param val="vas_pos_y = pixel_pos_y(&amp;#10;    component_pos = vas_cont.pos,&amp;#10;    win_size = win.size, &amp;#10;    win_pos = win.pos)&amp;#10;    &amp;#10;mouse_action.hold()" valType="extendedCode" updates="constant" name="Begin Routine"/>
-        <Param val="Py" valType="str" updates="None" name="Code Type"/>
-        <Param val="mouse_action.check(vas_pos_y*1.1) # 1.1 to exactly hit the slider" valType="extendedCode" updates="constant" name="Each Frame"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
-        <Param val="mouse_action.release()" valType="extendedCode" updates="constant" name="End Routine"/>
-        <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="mouse" valType="code" updates="None" name="name"/>
-      </CodeComponent>
-      <PolygonComponent name="fix_cross" plugin="None">
-        <Param val="center" valType="str" updates="constant" name="anchor"/>
-        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
-        <Param val="1" valType="num" updates="constant" name="contrast"/>
-        <Param val="True" valType="bool" updates="None" name="disabled"/>
-        <Param val="" valType="code" updates="None" name="durationEstim"/>
-        <Param val="white" valType="color" updates="constant" name="fillColor"/>
-        <Param val="linear" valType="str" updates="constant" name="interpolate"/>
-        <Param val="white" valType="color" updates="constant" name="lineColor"/>
-        <Param val="1" valType="num" updates="constant" name="lineWidth"/>
-        <Param val="4" valType="int" updates="constant" name="nVertices"/>
-        <Param val="fix_cross" valType="code" updates="None" name="name"/>
-        <Param val="" valType="num" updates="constant" name="opacity"/>
-        <Param val="0" valType="num" updates="constant" name="ori"/>
-        <Param val="(0, 0)" valType="list" updates="constant" name="pos"/>
-        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
-        <Param val="cross" valType="str" updates="None" name="shape"/>
-        <Param val="(0.1, 0.1)" valType="list" updates="constant" name="size"/>
-        <Param val="" valType="code" updates="None" name="startEstim"/>
-        <Param val="time (s)" valType="str" updates="None" name="startType"/>
-        <Param val="0.0" valType="code" updates="None" name="startVal"/>
-        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
-        <Param val="stimuli.duration" valType="code" updates="constant" name="stopVal"/>
-        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="from exp settings" valType="str" updates="None" name="units"/>
-        <Param val="" valType="list" updates="constant" name="vertices"/>
-      </PolygonComponent>
       <TextComponent name="text_vas_cont" plugin="None">
         <Param val="white" valType="color" updates="constant" name="color"/>
         <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
@@ -465,82 +421,6 @@
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
-      <CodeComponent name="imotions_event" plugin="None">
-        <Param val="from src.experiments.imotions import EventRecievingiMotions&amp;#10;from psychopy import core&amp;#10;" valType="extendedCode" updates="constant" name="Before Experiment"/>
-        <Param val="/* Syntax Error: Fix Python code */" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
-        <Param val="&quot;&quot;&quot; Connect with event recieving API &quot;&quot;&quot;&amp;#10;imotions_event = EventRecievingiMotions()&amp;#10;imotions_event.connect()&amp;#10;imotions_event.start_study&amp;#10;&amp;#10;# create a clock&amp;#10;stimuli_clock = core.Clock()" valType="extendedCode" updates="constant" name="Begin Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
-        <Param val="&quot;&quot;&quot; Send discrete marker for stimuli beginning &quot;&quot;&quot;&amp;#10;# TODO: add imotions marker for stimuli start and end&amp;#10;imotions_event.send_marker(&quot;stimuli&quot;, &quot;Stimuli begins&quot;)&amp;#10;# Start the clock&amp;#10;stimuli_clock.reset()" valType="extendedCode" updates="constant" name="Begin Routine"/>
-        <Param val="Py" valType="str" updates="None" name="Code Type"/>
-        <Param val="&quot;&quot;&quot; Stream data for pain rating &quot;&quot;&quot;&amp;#10;imotions_event.send_ratings(&amp;#10;    vas_cont.getMarkerPos())&amp;#10;&amp;#10;idx_stimuli = int(stimuli_clock.getTime()*stimuli.sample_rate)&amp;#10;if idx_stimuli &lt; len(stimuli.wave):&amp;#10;    imotions_event.send_temperatures(stimuli.wave[idx_stimuli])" valType="extendedCode" updates="constant" name="Each Frame"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
-        <Param val="&quot;&quot;&quot; Close event recieving API connection &quot;&quot;&quot;&amp;#10;imotions_event.end_study()&amp;#10;imotions_event.close()" valType="extendedCode" updates="constant" name="End Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
-        <Param val="&quot;&quot;&quot; Send discrete marker for stimuli ending &quot;&quot;&quot;&amp;#10;imotions_event.send_marker(&quot;stimuli&quot;, &quot;Stimuli ends&quot;)&amp;#10;" valType="extendedCode" updates="constant" name="End Routine"/>
-        <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="imotions_event" valType="code" updates="None" name="name"/>
-      </CodeComponent>
-    </Routine>
-    <Routine name="no_pain">
-      <RoutineSettingsComponent name="no_pain" plugin="None">
-        <Param val="none" valType="str" updates="None" name="backgroundFit"/>
-        <Param val="" valType="str" updates="None" name="backgroundImg"/>
-        <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
-        <Param val="rgb" valType="str" updates="None" name="colorSpace"/>
-        <Param val="" valType="str" updates="constant" name="desc"/>
-        <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="" valType="code" updates="None" name="durationEstim"/>
-        <Param val="no_pain" valType="code" updates="None" name="name"/>
-        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
-        <Param val="" valType="code" updates="constant" name="skipIf"/>
-        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
-        <Param val="" valType="code" updates="constant" name="stopVal"/>
-        <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
-      </RoutineSettingsComponent>
-      <TextComponent name="text" plugin="None">
-        <Param val="white" valType="color" updates="constant" name="color"/>
-        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
-        <Param val="1" valType="num" updates="constant" name="contrast"/>
-        <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="" valType="code" updates="None" name="durationEstim"/>
-        <Param val="None" valType="str" updates="constant" name="flip"/>
-        <Param val="Open Sans" valType="str" updates="constant" name="font"/>
-        <Param val="LTR" valType="str" updates="None" name="languageStyle"/>
-        <Param val="0.05" valType="num" updates="constant" name="letterHeight"/>
-        <Param val="text" valType="code" updates="None" name="name"/>
-        <Param val="" valType="num" updates="constant" name="opacity"/>
-        <Param val="0" valType="num" updates="constant" name="ori"/>
-        <Param val="(0, 0)" valType="list" updates="constant" name="pos"/>
-        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
-        <Param val="" valType="code" updates="None" name="startEstim"/>
-        <Param val="time (s)" valType="str" updates="None" name="startType"/>
-        <Param val="0.0" valType="code" updates="None" name="startVal"/>
-        <Param val="condition" valType="str" updates="None" name="stopType"/>
-        <Param val="success == True" valType="code" updates="constant" name="stopVal"/>
-        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Any text&amp;#10;&amp;#10;including line breaks" valType="str" updates="constant" name="text"/>
-        <Param val="from exp settings" valType="str" updates="None" name="units"/>
-        <Param val="" valType="num" updates="constant" name="wrapWidth"/>
-      </TextComponent>
-      <CodeComponent name="no_pain" plugin="None">
-        <Param val="" valType="extendedCode" updates="constant" name="Before Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
-        <Param val="success = False" valType="extendedCode" updates="constant" name="Begin Routine"/>
-        <Param val="Py" valType="str" updates="None" name="Code Type"/>
-        <Param val="if not success and frameN % 20 == 0:&amp;#10;    success = luigi.set_temp(temp_baseline)[2]" valType="extendedCode" updates="constant" name="Each Frame"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
-        <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="no_pain" valType="code" updates="None" name="name"/>
-      </CodeComponent>
     </Routine>
     <Routine name="goodbye_screen">
       <RoutineSettingsComponent name="goodbye_screen" plugin="None">
@@ -584,6 +464,172 @@
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
     </Routine>
+    <Routine name="trial_end">
+      <RoutineSettingsComponent name="trial_end" plugin="None">
+        <Param val="none" valType="str" updates="None" name="backgroundFit"/>
+        <Param val="" valType="str" updates="None" name="backgroundImg"/>
+        <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
+        <Param val="rgb" valType="str" updates="None" name="colorSpace"/>
+        <Param val="" valType="str" updates="constant" name="desc"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="trial_end" valType="code" updates="None" name="name"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="constant" name="skipIf"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
+      </RoutineSettingsComponent>
+      <CodeComponent name="reset_temp" plugin="None">
+        <Param val="" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
+        <Param val="# Sometimes the Theroino takes some time to set the temperature back to baseline&amp;#10;# Here, we force this with a loop for each frame.&amp;#10;success = False" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="Py" valType="str" updates="None" name="Code Type"/>
+        <Param val="if not success and frameN % 20 == 0:&amp;#10;    success = luigi.set_temp(temp_baseline)[2]" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="reset_temp" valType="code" updates="None" name="name"/>
+      </CodeComponent>
+      <PolygonComponent name="fix_cross" plugin="None">
+        <Param val="center" valType="str" updates="constant" name="anchor"/>
+        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
+        <Param val="1" valType="num" updates="constant" name="contrast"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="8" valType="code" updates="None" name="durationEstim"/>
+        <Param val="white" valType="color" updates="constant" name="fillColor"/>
+        <Param val="linear" valType="str" updates="constant" name="interpolate"/>
+        <Param val="white" valType="color" updates="constant" name="lineColor"/>
+        <Param val="1" valType="num" updates="constant" name="lineWidth"/>
+        <Param val="4" valType="int" updates="constant" name="nVertices"/>
+        <Param val="fix_cross" valType="code" updates="None" name="name"/>
+        <Param val="" valType="num" updates="constant" name="opacity"/>
+        <Param val="0" valType="num" updates="constant" name="ori"/>
+        <Param val="(0, 0)" valType="list" updates="constant" name="pos"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="cross" valType="str" updates="None" name="shape"/>
+        <Param val="(0.1, 0.1)" valType="list" updates="constant" name="size"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="iti_duration" valType="code" updates="constant" name="stopVal"/>
+        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
+        <Param val="from exp settings" valType="str" updates="None" name="units"/>
+        <Param val="" valType="list" updates="constant" name="vertices"/>
+      </PolygonComponent>
+      <KeyboardComponent name="key_resp" plugin="None">
+        <Param val="'y','n','left','right','space'" valType="list" updates="constant" name="allowedKeys"/>
+        <Param val="" valType="str" updates="constant" name="correctAns"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="True" valType="bool" updates="constant" name="discard previous"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="True" valType="bool" updates="constant" name="forceEndRoutine"/>
+        <Param val="key_resp" valType="code" updates="None" name="name"/>
+        <Param val="press" valType="str" updates="constant" name="registerOn"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="last key" valType="str" updates="constant" name="store"/>
+        <Param val="False" valType="bool" updates="constant" name="storeCorrect"/>
+        <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
+      </KeyboardComponent>
+      <TextComponent name="trial_end_text" plugin="None">
+        <Param val="white" valType="color" updates="constant" name="color"/>
+        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
+        <Param val="1" valType="num" updates="constant" name="contrast"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="None" valType="str" updates="constant" name="flip"/>
+        <Param val="Open Sans" valType="str" updates="constant" name="font"/>
+        <Param val="LTR" valType="str" updates="None" name="languageStyle"/>
+        <Param val="0.05" valType="num" updates="constant" name="letterHeight"/>
+        <Param val="trial_end_text" valType="code" updates="None" name="name"/>
+        <Param val="" valType="num" updates="constant" name="opacity"/>
+        <Param val="0" valType="num" updates="constant" name="ori"/>
+        <Param val="(0, 0)" valType="list" updates="constant" name="pos"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="condition" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
+        <Param val="Dieser Block ist geschafft.&amp;#10;&amp;#10;Nun wechseln wir die Haustelle am Arm.&amp;#10;&amp;#10;(Leertaste zum Fortfahren)" valType="str" updates="constant" name="text"/>
+        <Param val="from exp settings" valType="str" updates="None" name="units"/>
+        <Param val="" valType="num" updates="constant" name="wrapWidth"/>
+      </TextComponent>
+    </Routine>
+    <Routine name="trial_next">
+      <RoutineSettingsComponent name="trial_next" plugin="None">
+        <Param val="none" valType="str" updates="None" name="backgroundFit"/>
+        <Param val="" valType="str" updates="None" name="backgroundImg"/>
+        <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
+        <Param val="rgb" valType="str" updates="None" name="colorSpace"/>
+        <Param val="" valType="str" updates="constant" name="desc"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="trial_next" valType="code" updates="None" name="name"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="constant" name="skipIf"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
+      </RoutineSettingsComponent>
+      <KeyboardComponent name="trial_next_approve" plugin="None">
+        <Param val="'space'" valType="list" updates="constant" name="allowedKeys"/>
+        <Param val="" valType="str" updates="constant" name="correctAns"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="True" valType="bool" updates="constant" name="discard previous"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="True" valType="bool" updates="constant" name="forceEndRoutine"/>
+        <Param val="trial_next_approve" valType="code" updates="None" name="name"/>
+        <Param val="press" valType="str" updates="constant" name="registerOn"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="last key" valType="str" updates="constant" name="store"/>
+        <Param val="False" valType="bool" updates="constant" name="storeCorrect"/>
+        <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
+      </KeyboardComponent>
+      <TextComponent name="trial_next_text" plugin="None">
+        <Param val="white" valType="color" updates="constant" name="color"/>
+        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
+        <Param val="1" valType="num" updates="constant" name="contrast"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="None" valType="str" updates="constant" name="flip"/>
+        <Param val="Open Sans" valType="str" updates="constant" name="font"/>
+        <Param val="LTR" valType="str" updates="None" name="languageStyle"/>
+        <Param val="0.05" valType="num" updates="constant" name="letterHeight"/>
+        <Param val="trial_next_text" valType="code" updates="None" name="name"/>
+        <Param val="" valType="num" updates="constant" name="opacity"/>
+        <Param val="0" valType="num" updates="constant" name="ori"/>
+        <Param val="(0, 0)" valType="list" updates="constant" name="pos"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0" valType="code" updates="None" name="startVal"/>
+        <Param val="condition" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
+        <Param val="(Leertaste zum Fortzufahren)" valType="str" updates="constant" name="text"/>
+        <Param val="from exp settings" valType="str" updates="None" name="units"/>
+        <Param val="" valType="num" updates="constant" name="wrapWidth"/>
+      </TextComponent>
+    </Routine>
   </Routines>
   <Flow>
     <Routine name="welcome_screen"/>
@@ -598,10 +644,10 @@
       <Param name="name" updates="None" val="loop_trials" valType="code"/>
       <Param name="random seed" updates="None" val="" valType="code"/>
     </LoopInitiator>
-    <Routine name="ctc_prep"/>
     <Routine name="trial_prep"/>
     <Routine name="trial_vas_continuous"/>
-    <Routine name="no_pain"/>
+    <Routine name="trial_end"/>
+    <Routine name="trial_next"/>
     <LoopTerminator name="loop_trials"/>
     <Routine name="goodbye_screen"/>
   </Flow>

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 11, 2023, at 19:48
+    on September 13, 2023, at 20:04
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -47,6 +47,10 @@ expInfo = {
 }
 
 # Run 'Before Experiment' code from all_variables
+# TODO
+# fix baseline_temp & temp_baseline for all scripts
+# set start_study_mode to NoPrompt
+
 from src.experiments.logger import setup_logger, close_logger
 from src.experiments.participant_data import read_last_participant
 
@@ -58,6 +62,8 @@ expInfo['participant'] = participant_info['participant']
 expInfo['age'] = participant_info['age']
 expInfo['gender'] = participant_info['gender']
 
+# iMotions
+start_study_mode = "NormalPrompt"
 
 # Stimuli
 seeds = [463, 320, 12]#, 43, 999, 242, 32, 1, 98, 478, 48, 435]
@@ -82,13 +88,16 @@ add_at_end = True
 
 # Time
 stimuli_clock = core.Clock()
-iti_duration = 0.2 # 8  + np.random.randint(0, 5)
+iti_duration = 2 # 8  + np.random.randint(0, 5)
 
 # Thermoino
 port = "COM7" # use list_com_ports() beforehand to find out
 temp_baseline = 30 # has to be the same as in MMS (not the same as baseline_temp (sorry for confusing names))
 rate_of_rise = 5 # has to be the same as in MMS
 bin_size_ms = 500
+
+# Mouse control
+factor_to_hit_VAS_slider = 1.1
 # Run 'Before Experiment' code from imotions_control
 from src.experiments.imotions import RemoteControliMotions
 # Run 'Before Experiment' code from stimuli_function
@@ -381,7 +390,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     )
     
     imotions_control.connect()
-    imotions_control.start_study()
+    imotions_control.start_study(mode=start_study_mode)
     text_welcome = visual.TextStim(win=win, name='text_welcome',
         text='Willkommen zum Experiment!',
         font='Open Sans',
@@ -398,8 +407,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         depth=-3.0);
     key_welcome = keyboard.Keyboard()
     
-    # --- Initialize components for Routine "ctc_prep" ---
-    
     # --- Initialize components for Routine "trial_prep" ---
     vas_cont_prep = visual.Slider(win=win, name='vas_cont_prep',
         startValue=50, size=(1.0, 0.1), pos=(0, -0.1), units=win.units,
@@ -407,7 +414,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         style='rating', styleTweaks=('triangleMarker',), opacity=None,
         labelColor='LightGray', markerColor='Red', lineColor='White', colorSpace='rgb',
         font='Open Sans', labelHeight=0.05,
-        flip=False, ori=0.0, depth=-1, readOnly=False)
+        flip=False, ori=0.0, depth=-3, readOnly=False)
     
     # --- Initialize components for Routine "trial_vas_continuous" ---
     # Run 'Begin Experiment' code from thermoino
@@ -419,20 +426,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     luigi.connect()
     
     
-    vas_cont = visual.Slider(win=win, name='vas_cont',
-        startValue=50, size=(1.0, 0.1), pos=(0, -0.1), units=win.units,
-        labels=("Kein Schmerz", "Sehr starke Schmerzen"), ticks=(0, 100), granularity=0.0,
-        style='rating', styleTweaks=('triangleMarker',), opacity=None,
-        labelColor='LightGray', markerColor='Red', lineColor='White', colorSpace='rgb',
-        font='Open Sans', labelHeight=0.05,
-        flip=False, ori=0.0, depth=-1, readOnly=False)
-    text_vas_cont = visual.TextStim(win=win, name='text_vas_cont',
-        text='',
-        font='Open Sans',
-        pos=(0, 0.3), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
-        languageStyle='LTR',
-        depth=-3.0);
     # Run 'Begin Experiment' code from imotions_event
     """ Connect with event recieving API """
     imotions_event = EventRecievingiMotions()
@@ -441,15 +434,46 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # create a clock
     stimuli_clock = core.Clock()
+    vas_cont = visual.Slider(win=win, name='vas_cont',
+        startValue=50, size=(1.0, 0.1), pos=(0, -0.1), units=win.units,
+        labels=("Kein Schmerz", "Sehr starke Schmerzen"), ticks=(0, 100), granularity=0.0,
+        style='rating', styleTweaks=('triangleMarker',), opacity=None,
+        labelColor='LightGray', markerColor='Red', lineColor='White', colorSpace='rgb',
+        font='Open Sans', labelHeight=0.05,
+        flip=False, ori=0.0, depth=-3, readOnly=False)
+    text_vas_cont = visual.TextStim(win=win, name='text_vas_cont',
+        text='',
+        font='Open Sans',
+        pos=(0, 0.3), height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=-4.0);
     
-    # --- Initialize components for Routine "no_pain" ---
-    text = visual.TextStim(win=win, name='text',
-        text='Any text\n\nincluding line breaks',
+    # --- Initialize components for Routine "trial_end" ---
+    fix_cross = visual.ShapeStim(
+        win=win, name='fix_cross', vertices='cross',
+        size=(0.1, 0.1),
+        ori=0.0, pos=(0, 0), anchor='center',
+        lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor='white',
+        opacity=None, depth=-1.0, interpolate=True)
+    key_resp = keyboard.Keyboard()
+    trial_end_text = visual.TextStim(win=win, name='trial_end_text',
+        text='Dieser Block ist geschafft.\n\nNun wechseln wir die Haustelle am Arm.\n\n(Leertaste zum Fortfahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
-        depth=0.0);
+        depth=-3.0);
+    
+    # --- Initialize components for Routine "trial_next" ---
+    trial_next_approve = keyboard.Keyboard()
+    trial_next_text = visual.TextStim(win=win, name='trial_next_text',
+        text='(Leertaste zum Fortzufahren)',
+        font='Open Sans',
+        pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=-1.0);
     
     # --- Initialize components for Routine "goodbye_screen" ---
     text_goodbye = visual.TextStim(win=win, name='text_goodbye',
@@ -649,10 +673,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             for paramName in thisLoop_trial:
                 globals()[paramName] = thisLoop_trial[paramName]
         
-        # --- Prepare to start Routine "ctc_prep" ---
+        # --- Prepare to start Routine "trial_prep" ---
         continueRoutine = True
         # update component parameters for each repeat
-        thisExp.addData('ctc_prep.started', globalClock.getTime())
+        thisExp.addData('trial_prep.started', globalClock.getTime())
         # Run 'Begin Routine' code from stimuli_function
         trial = loop_trials.thisN
         
@@ -679,69 +703,9 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             sample_rate=stimuli.sample_rate,
             rate_of_rise_option="mms_program")
         luigi.load_ctc()
-        
-        # keep track of which components have finished
-        ctc_prepComponents = []
-        for thisComponent in ctc_prepComponents:
-            thisComponent.tStart = None
-            thisComponent.tStop = None
-            thisComponent.tStartRefresh = None
-            thisComponent.tStopRefresh = None
-            if hasattr(thisComponent, 'status'):
-                thisComponent.status = NOT_STARTED
-        # reset timers
-        t = 0
-        _timeToFirstFrame = win.getFutureFlipTime(clock="now")
-        frameN = -1
-        
-        # --- Run Routine "ctc_prep" ---
-        routineForceEnded = not continueRoutine
-        while continueRoutine:
-            # get current time
-            t = routineTimer.getTime()
-            tThisFlip = win.getFutureFlipTime(clock=routineTimer)
-            tThisFlipGlobal = win.getFutureFlipTime(clock=None)
-            frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
-            # update/draw components on each frame
-            
-            # check for quit (typically the Esc key)
-            if defaultKeyboard.getKeys(keyList=["escape"]):
-                thisExp.status = FINISHED
-            if thisExp.status == FINISHED or endExpNow:
-                endExperiment(thisExp, inputs=inputs, win=win)
-                return
-            
-            # check if all components have finished
-            if not continueRoutine:  # a component has requested a forced-end of Routine
-                routineForceEnded = True
-                break
-            continueRoutine = False  # will revert to True if at least one component still running
-            for thisComponent in ctc_prepComponents:
-                if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
-                    continueRoutine = True
-                    break  # at least one component has not yet finished
-            
-            # refresh the screen
-            if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
-                win.flip()
-        
-        # --- Ending Routine "ctc_prep" ---
-        for thisComponent in ctc_prepComponents:
-            if hasattr(thisComponent, "setAutoDraw"):
-                thisComponent.setAutoDraw(False)
-        thisExp.addData('ctc_prep.stopped', globalClock.getTime())
-        # the Routine "ctc_prep" was not non-slip safe, so reset the non-slip timer
-        routineTimer.reset()
-        
-        # --- Prepare to start Routine "trial_prep" ---
-        continueRoutine = True
-        # update component parameters for each repeat
-        thisExp.addData('trial_prep.started', globalClock.getTime())
-        # Run 'Begin Routine' code from trial_prep
         luigi.trigger()
         
-        prep_duration = luigi.prep_ctc()[1] # TODO: start at VAS 35, find out how to start the ratings
-        vas_cont_prep.reset()
+        prep_duration = luigi.prep_ctc()[1]
         # Run 'Begin Routine' code from mouse_for_prep
         vas_pos_y = pixel_pos_y(
             component_pos = vas_cont.pos,
@@ -749,6 +713,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             win_pos = win.pos)
             
         mouse_action.hold()
+        stimuli_clock.reset()
+        vas_cont_prep.reset()
         # keep track of which components have finished
         trial_prepComponents = [vas_cont_prep]
         for thisComponent in trial_prepComponents:
@@ -772,6 +738,12 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             tThisFlipGlobal = win.getFutureFlipTime(clock=None)
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
+            # Run 'Each Frame' code from mouse_for_prep
+            mouse_action.check(vas_pos_y*factor_to_hit_VAS_slider)
+            
+            # Cheap workaround to get the last rating of the prep slider
+            if prep_duration - 1 < stimuli_clock.getTime():
+                prep_vas_rating = vas_cont_prep.getRating()
             
             # *vas_cont_prep* updates
             
@@ -805,8 +777,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                     # update status
                     vas_cont_prep.status = FINISHED
                     vas_cont_prep.setAutoDraw(False)
-            # Run 'Each Frame' code from mouse_for_prep
-            mouse_action.check(vas_pos_y*1.1) # 1.1 to exactly hit the slider
             
             # check for quit (typically the Esc key)
             if defaultKeyboard.getKeys(keyList=["escape"]):
@@ -834,10 +804,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             if hasattr(thisComponent, "setAutoDraw"):
                 thisComponent.setAutoDraw(False)
         thisExp.addData('trial_prep.stopped', globalClock.getTime())
-        loop_trials.addData('vas_cont_prep.response', vas_cont_prep.getRating())
-        loop_trials.addData('vas_cont_prep.rt', vas_cont_prep.getRT())
         # Run 'End Routine' code from mouse_for_prep
         mouse_action.release()
+        loop_trials.addData('vas_cont_prep.response', vas_cont_prep.getRating())
+        loop_trials.addData('vas_cont_prep.rt', vas_cont_prep.getRT())
         # the Routine "trial_prep" was not non-slip safe, so reset the non-slip timer
         routineTimer.reset()
         
@@ -848,13 +818,14 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         # Run 'Begin Routine' code from thermoino
         # After we have reached the starting temperature for the ctc.
         luigi.exec_ctc()
-        vas_cont.reset()
         # Run 'Begin Routine' code from mouse
         vas_pos_y = pixel_pos_y(
             component_pos = vas_cont.pos,
             win_size = win.size, 
             win_pos = win.pos)
-            
+        
+        # Set the starting VAS value of the slider accordingly to the prep slider
+        vas_cont.startValue = prep_vas_rating
         mouse_action.hold()
         # Run 'Begin Routine' code from imotions_event
         """ Send discrete marker for stimuli beginning """
@@ -862,6 +833,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         imotions_event.send_marker("stimuli", "Stimuli begins")
         # Start the clock
         stimuli_clock.reset()
+        vas_cont.reset()
         # keep track of which components have finished
         trial_vas_continuousComponents = [vas_cont, text_vas_cont]
         for thisComponent in trial_vas_continuousComponents:
@@ -885,6 +857,16 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             tThisFlipGlobal = win.getFutureFlipTime(clock=None)
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
+            # Run 'Each Frame' code from mouse
+            mouse_action.check(vas_pos_y*factor_to_hit_VAS_slider)
+            # Run 'Each Frame' code from imotions_event
+            """ Stream data for pain rating """
+            imotions_event.send_ratings(
+                vas_cont.getMarkerPos())
+            
+            idx_stimuli = int(stimuli_clock.getTime()*stimuli.sample_rate)
+            if idx_stimuli < len(stimuli.wave):
+                imotions_event.send_temperatures(stimuli.wave[idx_stimuli])
             
             # *vas_cont* updates
             
@@ -918,8 +900,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                     # update status
                     vas_cont.status = FINISHED
                     vas_cont.setAutoDraw(False)
-            # Run 'Each Frame' code from mouse
-            mouse_action.check(vas_pos_y*1.1) # 1.1 to exactly hit the slider
             
             # *text_vas_cont* updates
             
@@ -953,14 +933,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                     # update status
                     text_vas_cont.status = FINISHED
                     text_vas_cont.setAutoDraw(False)
-            # Run 'Each Frame' code from imotions_event
-            """ Stream data for pain rating """
-            imotions_event.send_ratings(
-                vas_cont.getMarkerPos())
-            
-            idx_stimuli = int(stimuli_clock.getTime()*stimuli.sample_rate)
-            if idx_stimuli < len(stimuli.wave):
-                imotions_event.send_temperatures(stimuli.wave[idx_stimuli])
             
             # check for quit (typically the Esc key)
             if defaultKeyboard.getKeys(keyList=["escape"]):
@@ -988,26 +960,31 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             if hasattr(thisComponent, "setAutoDraw"):
                 thisComponent.setAutoDraw(False)
         thisExp.addData('trial_vas_continuous.stopped', globalClock.getTime())
-        loop_trials.addData('vas_cont.response', vas_cont.getRating())
-        loop_trials.addData('vas_cont.rt', vas_cont.getRT())
         # Run 'End Routine' code from mouse
         mouse_action.release()
         # Run 'End Routine' code from imotions_event
         """ Send discrete marker for stimuli ending """
         imotions_event.send_marker("stimuli", "Stimuli ends")
         
+        loop_trials.addData('vas_cont.response', vas_cont.getRating())
+        loop_trials.addData('vas_cont.rt', vas_cont.getRT())
         # the Routine "trial_vas_continuous" was not non-slip safe, so reset the non-slip timer
         routineTimer.reset()
         
-        # --- Prepare to start Routine "no_pain" ---
+        # --- Prepare to start Routine "trial_end" ---
         continueRoutine = True
         # update component parameters for each repeat
-        thisExp.addData('no_pain.started', globalClock.getTime())
-        # Run 'Begin Routine' code from no_pain
+        thisExp.addData('trial_end.started', globalClock.getTime())
+        # Run 'Begin Routine' code from reset_temp
+        # Sometimes the Theroino takes some time to set the temperature back to baseline
+        # Here, we force this with a loop for each frame.
         success = False
+        key_resp.keys = []
+        key_resp.rt = []
+        _key_resp_allKeys = []
         # keep track of which components have finished
-        no_painComponents = [text]
-        for thisComponent in no_painComponents:
+        trial_endComponents = [fix_cross, key_resp, trial_end_text]
+        for thisComponent in trial_endComponents:
             thisComponent.tStart = None
             thisComponent.tStop = None
             thisComponent.tStartRefresh = None
@@ -1019,7 +996,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         _timeToFirstFrame = win.getFutureFlipTime(clock="now")
         frameN = -1
         
-        # --- Run Routine "no_pain" ---
+        # --- Run Routine "trial_end" ---
         routineForceEnded = not continueRoutine
         while continueRoutine:
             # get current time
@@ -1028,41 +1005,90 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             tThisFlipGlobal = win.getFutureFlipTime(clock=None)
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
+            # Run 'Each Frame' code from reset_temp
+            if not success and frameN % 20 == 0:
+                success = luigi.set_temp(temp_baseline)[2]
             
-            # *text* updates
+            # *fix_cross* updates
             
-            # if text is starting this frame...
-            if text.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # if fix_cross is starting this frame...
+            if fix_cross.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                 # keep track of start time/frame for later
-                text.frameNStart = frameN  # exact frame index
-                text.tStart = t  # local t and not account for scr refresh
-                text.tStartRefresh = tThisFlipGlobal  # on global time
-                win.timeOnFlip(text, 'tStartRefresh')  # time at next scr refresh
+                fix_cross.frameNStart = frameN  # exact frame index
+                fix_cross.tStart = t  # local t and not account for scr refresh
+                fix_cross.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(fix_cross, 'tStartRefresh')  # time at next scr refresh
                 # add timestamp to datafile
-                thisExp.timestampOnFlip(win, 'text.started')
+                thisExp.timestampOnFlip(win, 'fix_cross.started')
                 # update status
-                text.status = STARTED
-                text.setAutoDraw(True)
+                fix_cross.status = STARTED
+                fix_cross.setAutoDraw(True)
             
-            # if text is active this frame...
-            if text.status == STARTED:
+            # if fix_cross is active this frame...
+            if fix_cross.status == STARTED:
                 # update params
                 pass
             
-            # if text is stopping this frame...
-            if text.status == STARTED:
-                if bool(success == True):
+            # if fix_cross is stopping this frame...
+            if fix_cross.status == STARTED:
+                # is it time to stop? (based on global clock, using actual start)
+                if tThisFlipGlobal > fix_cross.tStartRefresh + iti_duration-frameTolerance:
                     # keep track of stop time/frame for later
-                    text.tStop = t  # not accounting for scr refresh
-                    text.frameNStop = frameN  # exact frame index
+                    fix_cross.tStop = t  # not accounting for scr refresh
+                    fix_cross.frameNStop = frameN  # exact frame index
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'text.stopped')
+                    thisExp.timestampOnFlip(win, 'fix_cross.stopped')
                     # update status
-                    text.status = FINISHED
-                    text.setAutoDraw(False)
-            # Run 'Each Frame' code from no_pain
-            if not success and frameN % 20 == 0:
-                success = luigi.set_temp(temp_baseline)[2]
+                    fix_cross.status = FINISHED
+                    fix_cross.setAutoDraw(False)
+            
+            # *key_resp* updates
+            waitOnFlip = False
+            
+            # if key_resp is starting this frame...
+            if key_resp.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                key_resp.frameNStart = frameN  # exact frame index
+                key_resp.tStart = t  # local t and not account for scr refresh
+                key_resp.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(key_resp, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'key_resp.started')
+                # update status
+                key_resp.status = STARTED
+                # keyboard checking is just starting
+                waitOnFlip = True
+                win.callOnFlip(key_resp.clock.reset)  # t=0 on next screen flip
+                win.callOnFlip(key_resp.clearEvents, eventType='keyboard')  # clear events on next screen flip
+            if key_resp.status == STARTED and not waitOnFlip:
+                theseKeys = key_resp.getKeys(keyList=['y','n','left','right','space'], ignoreKeys=["escape"], waitRelease=False)
+                _key_resp_allKeys.extend(theseKeys)
+                if len(_key_resp_allKeys):
+                    key_resp.keys = _key_resp_allKeys[-1].name  # just the last key pressed
+                    key_resp.rt = _key_resp_allKeys[-1].rt
+                    key_resp.duration = _key_resp_allKeys[-1].duration
+                    # a response ends the routine
+                    continueRoutine = False
+            
+            # *trial_end_text* updates
+            
+            # if trial_end_text is starting this frame...
+            if trial_end_text.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                trial_end_text.frameNStart = frameN  # exact frame index
+                trial_end_text.tStart = t  # local t and not account for scr refresh
+                trial_end_text.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(trial_end_text, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'trial_end_text.started')
+                # update status
+                trial_end_text.status = STARTED
+                trial_end_text.setAutoDraw(True)
+            
+            # if trial_end_text is active this frame...
+            if trial_end_text.status == STARTED:
+                # update params
+                pass
             
             # check for quit (typically the Esc key)
             if defaultKeyboard.getKeys(keyList=["escape"]):
@@ -1076,7 +1102,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                 routineForceEnded = True
                 break
             continueRoutine = False  # will revert to True if at least one component still running
-            for thisComponent in no_painComponents:
+            for thisComponent in trial_endComponents:
                 if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
                     continueRoutine = True
                     break  # at least one component has not yet finished
@@ -1085,12 +1111,134 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
                 win.flip()
         
-        # --- Ending Routine "no_pain" ---
-        for thisComponent in no_painComponents:
+        # --- Ending Routine "trial_end" ---
+        for thisComponent in trial_endComponents:
             if hasattr(thisComponent, "setAutoDraw"):
                 thisComponent.setAutoDraw(False)
-        thisExp.addData('no_pain.stopped', globalClock.getTime())
-        # the Routine "no_pain" was not non-slip safe, so reset the non-slip timer
+        thisExp.addData('trial_end.stopped', globalClock.getTime())
+        # check responses
+        if key_resp.keys in ['', [], None]:  # No response was made
+            key_resp.keys = None
+        loop_trials.addData('key_resp.keys',key_resp.keys)
+        if key_resp.keys != None:  # we had a response
+            loop_trials.addData('key_resp.rt', key_resp.rt)
+            loop_trials.addData('key_resp.duration', key_resp.duration)
+        # the Routine "trial_end" was not non-slip safe, so reset the non-slip timer
+        routineTimer.reset()
+        
+        # --- Prepare to start Routine "trial_next" ---
+        continueRoutine = True
+        # update component parameters for each repeat
+        thisExp.addData('trial_next.started', globalClock.getTime())
+        trial_next_approve.keys = []
+        trial_next_approve.rt = []
+        _trial_next_approve_allKeys = []
+        # keep track of which components have finished
+        trial_nextComponents = [trial_next_approve, trial_next_text]
+        for thisComponent in trial_nextComponents:
+            thisComponent.tStart = None
+            thisComponent.tStop = None
+            thisComponent.tStartRefresh = None
+            thisComponent.tStopRefresh = None
+            if hasattr(thisComponent, 'status'):
+                thisComponent.status = NOT_STARTED
+        # reset timers
+        t = 0
+        _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+        frameN = -1
+        
+        # --- Run Routine "trial_next" ---
+        routineForceEnded = not continueRoutine
+        while continueRoutine:
+            # get current time
+            t = routineTimer.getTime()
+            tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+            tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+            frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+            # update/draw components on each frame
+            
+            # *trial_next_approve* updates
+            waitOnFlip = False
+            
+            # if trial_next_approve is starting this frame...
+            if trial_next_approve.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                trial_next_approve.frameNStart = frameN  # exact frame index
+                trial_next_approve.tStart = t  # local t and not account for scr refresh
+                trial_next_approve.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(trial_next_approve, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'trial_next_approve.started')
+                # update status
+                trial_next_approve.status = STARTED
+                # keyboard checking is just starting
+                waitOnFlip = True
+                win.callOnFlip(trial_next_approve.clock.reset)  # t=0 on next screen flip
+                win.callOnFlip(trial_next_approve.clearEvents, eventType='keyboard')  # clear events on next screen flip
+            if trial_next_approve.status == STARTED and not waitOnFlip:
+                theseKeys = trial_next_approve.getKeys(keyList=['space'], ignoreKeys=["escape"], waitRelease=False)
+                _trial_next_approve_allKeys.extend(theseKeys)
+                if len(_trial_next_approve_allKeys):
+                    trial_next_approve.keys = _trial_next_approve_allKeys[-1].name  # just the last key pressed
+                    trial_next_approve.rt = _trial_next_approve_allKeys[-1].rt
+                    trial_next_approve.duration = _trial_next_approve_allKeys[-1].duration
+                    # a response ends the routine
+                    continueRoutine = False
+            
+            # *trial_next_text* updates
+            
+            # if trial_next_text is starting this frame...
+            if trial_next_text.status == NOT_STARTED and tThisFlip >= 0-frameTolerance:
+                # keep track of start time/frame for later
+                trial_next_text.frameNStart = frameN  # exact frame index
+                trial_next_text.tStart = t  # local t and not account for scr refresh
+                trial_next_text.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(trial_next_text, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'trial_next_text.started')
+                # update status
+                trial_next_text.status = STARTED
+                trial_next_text.setAutoDraw(True)
+            
+            # if trial_next_text is active this frame...
+            if trial_next_text.status == STARTED:
+                # update params
+                pass
+            
+            # check for quit (typically the Esc key)
+            if defaultKeyboard.getKeys(keyList=["escape"]):
+                thisExp.status = FINISHED
+            if thisExp.status == FINISHED or endExpNow:
+                endExperiment(thisExp, inputs=inputs, win=win)
+                return
+            
+            # check if all components have finished
+            if not continueRoutine:  # a component has requested a forced-end of Routine
+                routineForceEnded = True
+                break
+            continueRoutine = False  # will revert to True if at least one component still running
+            for thisComponent in trial_nextComponents:
+                if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                    continueRoutine = True
+                    break  # at least one component has not yet finished
+            
+            # refresh the screen
+            if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+                win.flip()
+        
+        # --- Ending Routine "trial_next" ---
+        for thisComponent in trial_nextComponents:
+            if hasattr(thisComponent, "setAutoDraw"):
+                thisComponent.setAutoDraw(False)
+        thisExp.addData('trial_next.stopped', globalClock.getTime())
+        # check responses
+        if trial_next_approve.keys in ['', [], None]:  # No response was made
+            trial_next_approve.keys = None
+        loop_trials.addData('trial_next_approve.keys',trial_next_approve.keys)
+        if trial_next_approve.keys != None:  # we had a response
+            loop_trials.addData('trial_next_approve.rt', trial_next_approve.rt)
+            loop_trials.addData('trial_next_approve.duration', trial_next_approve.duration)
+        # the Routine "trial_next" was not non-slip safe, so reset the non-slip timer
         routineTimer.reset()
         thisExp.nextEntry()
         
