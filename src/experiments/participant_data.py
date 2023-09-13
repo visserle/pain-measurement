@@ -110,6 +110,11 @@ def read_last_participant():
         'temp_range': last_row['temp_range']
     }
 
+    # Check if the participant data is from today
+    today = datetime.now().strftime('%Y-%m-%d')
+    if today not in participant_info['time_stamp']:
+        logger.warning(f"Participant data from {participant_info['participant']} ({participant_info['time_stamp']}) is not from today.")
+
     logger.info(f"Participant data from {participant_info['participant']} ({participant_info['time_stamp']}) loaded.")
 
     return participant_info

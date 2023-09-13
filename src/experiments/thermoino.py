@@ -30,7 +30,6 @@ except ModuleNotFoundError:
     logger.info("Could not import logger from src.experiments.logger. \
                 Using default logger.")
 
-
 def list_com_ports():
     """List all serial ports"""
     ports = serial.tools.list_ports.comports()
@@ -285,7 +284,7 @@ class Thermoino:
             logger.error("Thermoino error for 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
             success = False
         self.temp = temp_target
-        return (self, move_time_s, success) 
+        return (self, move_time_s, success)
     
     def wait(self, duration):
         """
@@ -586,10 +585,10 @@ class ThermoinoComplexTimeCourses(Thermoino):
             prep_duration += 0.5 # add 0.5 s to be sure
             self.set_temp(self.temp_course_resampled[0])
             logger.info("Thermoino prepares the CTC for execution by setting the starting temperature at %s °C", self.temp)
+            logger.info("Thermoino is waiting for %s s to reach the starting temperature of the CTC.", prep_duration)
         else:
             prep_duration = 0
-
-        logger.info("Thermoino is ready to for CTC execution in %s s.", prep_duration)
+            logger.info("Thermoino is ready for CTC execution.")
         return (self, prep_duration)
 
     def exec_ctc(self):

@@ -6,8 +6,8 @@
 # - Add option to connect that checks if imotions is avaiable or if you want to proceed without it by asking with input()
 #    -> could come in handy for psychopy testing, where you don't want to have imotions connected all the time
 # - find out if age and gender are considered in the analysis in imotions
-# find out what gender means in imotions, so far 0 was used..
-# -> update function accordingly
+# - set to NoPrompt for data acquisition
+# -> find out how errors are logged for that
 
 
 import socket
@@ -50,7 +50,7 @@ class RemoteControliMotions():
     imotions = RemoteControliMotions(
         study="StudyName", 
         participant="ParticipantID", 
-        age=0, gender="Female")
+        age=20, gender="Female")
     # in a psychopy experiment use expName and expInfo['participant']
     imotions.connect()
     imotions.start_study()
@@ -85,13 +85,13 @@ class RemoteControliMotions():
 
         # iMotions info
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(20.0) # longer timeout to get everything running
+        self.sock.settimeout(30.0) # longer timeout to have time to react to iMotions prompts (if enabled)
         self.connected = None
 
     def _send_and_receive(self, query):
         """Helper function to send and receive data from iMotions."""
         self.sock.sendall(query.encode('utf-8'))
-        response = self.sock.recv(1024).decode('utf-8')
+        response = self.sock.recv(1024).decode('utf-8').strip()
         return response
     
     def _check_status(self):
@@ -99,9 +99,9 @@ class RemoteControliMotions():
         Helper function to check the status of iMotions.
         Returns 0 if iMotions is ready for remote control.
         """
-        status_query = "R;2;TEST;STATUS\r\n"
+        status_query = "R;2;;STATUS\r\n"
         response = self._send_and_receive(status_query)
-        # e.g. 1;RemoteControl;STATUS;;-1;TEST;1;;;;;0;;
+        # e.g. 1;RemoteControl;STATUS;;-1;;1;;;;;0;;
         return int(response.split(";")[-3])
 
     def connect(self):
@@ -118,19 +118,29 @@ class RemoteControliMotions():
             logger.error("iMotions is not ready for remote control. Error connecting to server:\n%s", exc)
             raise Exception("iMotions is not ready for remote control. Error connecting to server:\n%s", exc) from exc
 
-    def start_study(self):
+    def start_study(self, mode = "NormalPrompt"):
         """
-        Start study in iMotions.
-        Note: iMotions always asks for age and gender. This could be reused for other variables.
+        Start study in iMotions with participant details.
+
+        Notes
+        -----
+        There are three prompt handling commands in v3:
+        - NormalPrompt: Default behavior where the operator is prompted to confirm continuing when certain conditions are detected e.g. an expected sensor is not active.
+        - NoPromptIgnoreWarnings: The operator is not prompted on warnings, it is assumed that the continue option is desired.
+        - NoPrompt: The operator is not prompted on warnings, they are treated as errors, and the study will not be run.
         """
         # sent status request to iMotions and proceed if iMotions is ready
         if self._check_status() != 0:
             logger.error("iMotions is not ready the start the study.")
             raise Exception("iMotions is not ready the start the study.")
-        start_study_query = f"R;2;TEST;RUN;{self.study};{self.participant};Age={self.age} Gender={self.gender}\r\n"
-        response =self._send_and_receive(start_study_query)
-        logger.info("iMotions started the study %s for participant %s.", self.study, self.participant)
-        logger.info("iMotions response: %s", response)
+        start_study_query = f"R;3;;RUN;{self.study};{self.participant};Age={self.age} Gender={self.gender};{mode}\r\n"
+        response = self._send_and_receive(start_study_query)
+        # e.g. "13;RemoteControl;RUN;;-1;;1;"
+        logger.info("iMotions started study %s for participant %s.", self.study, self.participant)
+        response_msg = response.split(";")[-1]
+        if len(response_msg) > 0:
+            logger.error("iMotions error: %s", response_msg)
+            raise Exception("iMotions error: %s", response_msg)
 
     def end_study(self):
         """
@@ -138,7 +148,7 @@ class RemoteControliMotions():
         """
         end_study_query = "R;1;;SLIDESHOWNEXT\r\n"
         self._send_and_receive(end_study_query)
-        logger.info("iMotions ended the study %s for participant %s.", self.study, self.participant)
+        logger.info("iMotions ended study %s for participant %s.", self.study, self.participant)
 
     def abort_study(self):
         """
@@ -146,10 +156,10 @@ class RemoteControliMotions():
         """
         abort_study_query = "R;1;;SLIDESHOWCANCEL\r\n"
         self._send_and_receive(abort_study_query)
-        logger.info("iMotions aborted the study %s for participant %s.", self.study, self.participant)
+        logger.info("iMotions aborted study %s for participant %s.", self.study, self.participant)
 
     def export_data(self):
-        logger.info("iMotions exported the data for study %s for participant %s to %s.", self.study, self.participant, path)
+        logger.info("iMotions exported data for study %s for participant %s to %s.", self.study, self.participant, path)
         pass
 
     def close(self):
