@@ -1,8 +1,8 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 13, 2023, at 19:50
+This experiment was created using PsychoPy3 Experiment Builder (v2023.2.0),
+    on September 13, 2023, at 23:02
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -37,7 +37,7 @@ from psychopy.hardware import keyboard
 # Ensure that relative paths start from the same directory as this script
 _thisDir = os.path.dirname(os.path.abspath(__file__))
 # Store info about the experiment session
-psychopyVersion = '2023.2.1'
+psychopyVersion = '2023.2.0'
 expName = 'mpad1_exp'  # from the Builder filename that created this script
 expInfo = {
     '': '',
@@ -51,6 +51,7 @@ expInfo = {
 # fix baseline_temp & temp_baseline for all scripts
 # set start_study_mode to NoPrompt
 
+# Experiment
 from src.experiments.logger import setup_logger, close_logger
 from src.experiments.participant_data import read_last_participant
 
@@ -80,7 +81,7 @@ sample_rate = 60
 random_periods = True
 baseline_temp = participant_info['baseline_temp'] # @ VAS 35
 
-# For debuggins purpose, the code in stimuli_function will be outcommented
+# While debugging, the code in stimuli_function is outcommented
 plateau_duration = 20
 n_plateaus = 4
 add_at_start = "random"
@@ -174,7 +175,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='G:\\Meine Ablage\\PhD\\Code\\mpad-pilot\\experiments\\mpad1\\mpad1_exp.py',
+        originPath='C:\\drive\\PhD\\Code\\mpad-pilot\\experiments\\mpad1\\mpad1_exp.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -414,7 +415,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         style='rating', styleTweaks=('triangleMarker',), opacity=None,
         labelColor='LightGray', markerColor='Red', lineColor='White', colorSpace='rgb',
         font='Open Sans', labelHeight=0.05,
-        flip=False, ori=0.0, depth=-3, readOnly=False)
+        flip=False, ori=0.0, depth=-4, readOnly=False)
     
     # --- Initialize components for Routine "trial_vas_continuous" ---
     # Run 'Begin Experiment' code from thermoino
@@ -440,14 +441,14 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         style='rating', styleTweaks=('triangleMarker',), opacity=None,
         labelColor='LightGray', markerColor='Red', lineColor='White', colorSpace='rgb',
         font='Open Sans', labelHeight=0.05,
-        flip=False, ori=0.0, depth=-3, readOnly=False)
+        flip=False, ori=0.0, depth=-4, readOnly=False)
     text_vas_cont = visual.TextStim(win=win, name='text_vas_cont',
         text='',
         font='Open Sans',
         pos=(0, 0.3), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
-        depth=-4.0);
+        depth=-5.0);
     
     # --- Initialize components for Routine "trial_end" ---
     fix_cross = visual.ShapeStim(
@@ -713,6 +714,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             win_pos = win.pos)
             
         mouse_action.hold()
+        # Run 'Begin Routine' code from rating_prep
+        stimuli_clock.reset()
         vas_cont_prep.reset()
         # keep track of which components have finished
         trial_prepComponents = [vas_cont_prep]
@@ -739,6 +742,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # update/draw components on each frame
             # Run 'Each Frame' code from mouse_for_prep
             mouse_action.check(vas_pos_y*factor_to_hit_VAS_slider)
+            # Run 'Each Frame' code from rating_prep
+            # Cheap workaround to get the last rating of the prep slider
+            if prep_duration - 0.1 < stimuli_clock.getTime():
+                prep_vas_rating = vas_cont_prep.getRating()
             
             # *vas_cont_prep* updates
             
@@ -800,7 +807,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                 thisComponent.setAutoDraw(False)
         thisExp.addData('trial_prep.stopped', globalClock.getTime())
         # Run 'End Routine' code from mouse_for_prep
-        prep_vas_rating = vas_cont_prep.getRating()
+        mouse_action.release()
         loop_trials.addData('vas_cont_prep.response', vas_cont_prep.getRating())
         loop_trials.addData('vas_cont_prep.rt', vas_cont_prep.getRT())
         # the Routine "trial_prep" was not non-slip safe, so reset the non-slip timer
@@ -818,8 +825,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             component_pos = vas_cont.pos,
             win_size = win.size, 
             win_pos = win.pos)
-        
-        vas_cont.
         mouse_action.hold()
         # Run 'Begin Routine' code from imotions_event
         """ Send discrete marker for stimuli beginning """
@@ -827,6 +832,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         imotions_event.send_marker("stimuli", "Stimuli begins")
         # Start the clock
         stimuli_clock.reset()
+        # Run 'Begin Routine' code from rating
+        # Set the starting VAS value of the slider accordingly to the prep slider
+        vas_cont.startValue = prep_vas_rating
+        
         vas_cont.reset()
         # keep track of which components have finished
         trial_vas_continuousComponents = [vas_cont, text_vas_cont]
