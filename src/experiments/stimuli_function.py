@@ -260,31 +260,39 @@ class StimuliFunction():
         self.baseline_temp = baseline_temp
         self.wave += self.baseline_temp
         return self
-
-    def add_prolonged_peaks(self, time_to_be_added_per_peak, percetage_of_peaks):
+    
+    def add_prolonged_extrema(self, time_to_be_added, percentage_of_extrema, prolong_type='trough'):
         """
-        Adds prolonged peaks to the wave.
+        Adds prolonged extrema (either peaks or troughs) to the wave.
 
         Parameters
         ----------
-        time_to_be_added_per_peak : int
-            The time to be added per peak.
-        percetage_of_peaks : float
-            The percentage of peaks to be prolonged.
+        time_to_be_added : int
+            The time to be added per extremum.
+        percentage_of_extrema : float
+            The percentage of extrema to be prolonged.
+        prolong_type : str
+            The type of extremum to prolong ('peak' or 'trough').
 
         Returns
         -------
         self : StimuliFunction
-            The StimuliFunction object with the added prolonged peaks.
+            The StimuliFunction object with the added prolonged extrema.
         """
-        peaks_chosen = self.rng_numpy.choice(self.peaks, int(
-            len(self.peaks) * percetage_of_peaks), replace=False)
+
+        if prolong_type not in ['peak', 'trough']:
+            raise ValueError("Invalid prolong_type. Choose either 'peak' or 'trough'.")
+
+        extrema = self.peaks if prolong_type == 'peak' else self.troughs
+        extrema_chosen = self.rng_numpy.choice(extrema, int(len(extrema) * percentage_of_extrema), replace=False)
+
         wave_new = []
         for idx, i in enumerate(self.wave):
             wave_new.append(i)
-            if idx in peaks_chosen:
+            if idx in extrema_chosen:
                 wave_new.extend(
-                    [i] * time_to_be_added_per_peak * self.sample_rate)
+                    [i] * time_to_be_added * self.sample_rate)
+                
         self.wave = np.array(wave_new)
         return self
 
