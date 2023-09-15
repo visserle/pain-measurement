@@ -1,8 +1,8 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This experiment was created using PsychoPy3 Experiment Builder (v2023.2.0),
-    on September 13, 2023, at 23:02
+This experiment was created using PsychoPy3 Experiment Builder (v2023.2.2),
+    on September 15, 2023, at 12:08
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -33,19 +33,6 @@ import sys  # to get file system encoding
 import psychopy.iohub as io
 from psychopy.hardware import keyboard
 
-# --- Setup global variables (available in all functions) ---
-# Ensure that relative paths start from the same directory as this script
-_thisDir = os.path.dirname(os.path.abspath(__file__))
-# Store info about the experiment session
-psychopyVersion = '2023.2.0'
-expName = 'mpad1_exp'  # from the Builder filename that created this script
-expInfo = {
-    '': '',
-    'date': data.getDateStr(),  # add a simple timestamp
-    'expName': expName,
-    'psychopyVersion': psychopyVersion,
-}
-
 # Run 'Before Experiment' code from all_variables
 # TODO
 # fix baseline_temp & temp_baseline for all scripts
@@ -67,8 +54,9 @@ expInfo['gender'] = participant_info['gender']
 start_study_mode = "NormalPrompt"
 
 # Stimuli
-seeds = [463, 320, 12]#, 43, 999, 242, 32, 1, 98, 478, 48, 435]
+seeds = [463, 320]#, 43, 999, 242, 32, 1, 98, 478, 48, 435]
 n_trials = len(seeds)
+this_trial = None # just initializing
 
 minimal_desired_duration = 2 # in seconds
 periods = [67, 20] # [0] is the baseline and [1] the modulation; in seconds
@@ -114,6 +102,19 @@ from src.experiments.mouse_action import pixel_pos_y
 # Run 'Before Experiment' code from imotions_event
 from src.experiments.imotions import EventRecievingiMotions
 from psychopy import core
+
+# --- Setup global variables (available in all functions) ---
+# Ensure that relative paths start from the same directory as this script
+_thisDir = os.path.dirname(os.path.abspath(__file__))
+# Store info about the experiment session
+psychopyVersion = '2023.2.2'
+expName = 'mpad1_exp'  # from the Builder filename that created this script
+expInfo = {
+    '': '',
+    'date': data.getDateStr(),  # add a simple timestamp
+    'expName': expName,
+    'psychopyVersion': psychopyVersion,
+}
 
 
 def showExpInfoDlg(expInfo):
@@ -175,7 +176,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='C:\\drive\\PhD\\Code\\mpad-pilot\\experiments\\mpad1\\mpad1_exp.py',
+        originPath='G:\\Meine Ablage\\PhD\\Code\\mpad-pilot\\experiments\\mpad1\\mpad1_exp.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -199,10 +200,11 @@ def setupLogging(filename):
     psychopy.logging.LogFile
         Text stream to receive inputs from the logging system.
     """
+    # this outputs to the screen, not a file
+    logging.console.setLevel(logging.EXP)
     # save a log file for detail verbose info
     logFile = logging.LogFile(filename+'.log', level=logging.EXP)
-    logging.console.setLevel(logging.WARNING)  # this outputs to the screen, not a file
-    # return log file
+    
     return logFile
 
 
@@ -436,7 +438,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # create a clock
     stimuli_clock = core.Clock()
     vas_cont = visual.Slider(win=win, name='vas_cont',
-        startValue=50, size=(1.0, 0.1), pos=(0, -0.1), units=win.units,
+        startValue=None, size=(1.0, 0.1), pos=(0, -0.1), units=win.units,
         labels=("Kein Schmerz", "Sehr starke Schmerzen"), ticks=(0, 100), granularity=0.0,
         style='rating', styleTweaks=('triangleMarker',), opacity=None,
         labelColor='LightGray', markerColor='Red', lineColor='White', colorSpace='rgb',
@@ -456,15 +458,15 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         size=(0.1, 0.1),
         ori=0.0, pos=(0, 0), anchor='center',
         lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor='white',
-        opacity=None, depth=-1.0, interpolate=True)
+        opacity=None, depth=-2.0, interpolate=True)
     key_resp = keyboard.Keyboard()
     trial_end_text = visual.TextStim(win=win, name='trial_end_text',
-        text='Dieser Block ist geschafft.\n\nNun wechseln wir die Haustelle am Arm.\n\n(Leertaste zum Fortfahren)',
+        text="Dieser Block ist geschafft.\n\nNun wechseln wir die Haustelle am Arm.\n\n(Leertaste zum Fortfahren)" if this_trial != n_trials -1 else "Das Experiment ist vorbei.",
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
-        depth=-3.0);
+        depth=-4.0);
     
     # --- Initialize components for Routine "trial_next" ---
     trial_next_approve = keyboard.Keyboard()
@@ -744,8 +746,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             mouse_action.check(vas_pos_y*factor_to_hit_VAS_slider)
             # Run 'Each Frame' code from rating_prep
             # Cheap workaround to get the last rating of the prep slider
-            if prep_duration - 0.1 < stimuli_clock.getTime():
-                prep_vas_rating = vas_cont_prep.getRating()
+            if prep_duration - 1 < stimuli_clock.getTime():
+                prep_vas_rating = vas_cont_prep.getMarkerPos()
             
             # *vas_cont_prep* updates
             
@@ -806,8 +808,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             if hasattr(thisComponent, "setAutoDraw"):
                 thisComponent.setAutoDraw(False)
         thisExp.addData('trial_prep.stopped', globalClock.getTime())
-        # Run 'End Routine' code from mouse_for_prep
-        mouse_action.release()
         loop_trials.addData('vas_cont_prep.response', vas_cont_prep.getRating())
         loop_trials.addData('vas_cont_prep.rt', vas_cont_prep.getRT())
         # the Routine "trial_prep" was not non-slip safe, so reset the non-slip timer
@@ -821,11 +821,12 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         # After we have reached the starting temperature for the ctc.
         luigi.exec_ctc()
         # Run 'Begin Routine' code from mouse
+        # Everything stays the same from the prep scale
         vas_pos_y = pixel_pos_y(
-            component_pos = vas_cont.pos,
-            win_size = win.size, 
-            win_pos = win.pos)
-        mouse_action.hold()
+           component_pos = vas_cont.pos,
+           win_size = win.size, 
+           win_pos = win.pos)
+        # mouse_action.hold()
         # Run 'Begin Routine' code from imotions_event
         """ Send discrete marker for stimuli beginning """
         # TODO: add imotions marker for stimuli start and end
@@ -834,8 +835,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         stimuli_clock.reset()
         # Run 'Begin Routine' code from rating
         # Set the starting VAS value of the slider accordingly to the prep slider
+        # This has to be done after the slider initialization
         vas_cont.startValue = prep_vas_rating
-        
         vas_cont.reset()
         # keep track of which components have finished
         trial_vas_continuousComponents = [vas_cont, text_vas_cont]
@@ -982,6 +983,9 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         # Sometimes the Theroino takes some time to set the temperature back to baseline
         # Here, we force this with a loop for each frame.
         success = False
+        # Run 'Begin Routine' code from this_trial
+        # Store the trial number for conditional text box
+        this_trial = loop_trials.thisN
         key_resp.keys = []
         key_resp.rt = []
         _key_resp_allKeys = []
@@ -1428,7 +1432,7 @@ def quit(thisExp, win=None, inputs=None, thisSession=None):
         win.close()
     if inputs is not None:
         if 'eyetracker' in inputs and inputs['eyetracker'] is not None:
-            eyetracker.setConnectionState(False)
+            inputs['eyetracker'].setConnectionState(False)
     logging.flush()
     if thisSession is not None:
         thisSession.stop()

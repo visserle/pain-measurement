@@ -1,8 +1,8 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 11, 2023, at 17:46
+This experiment was created using PsychoPy3 Experiment Builder (v2023.2.2),
+    on September 15, 2023, at 12:59
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -32,22 +32,6 @@ import sys  # to get file system encoding
 
 import psychopy.iohub as io
 from psychopy.hardware import keyboard
-
-# --- Setup global variables (available in all functions) ---
-# Ensure that relative paths start from the same directory as this script
-_thisDir = os.path.dirname(os.path.abspath(__file__))
-# Store info about the experiment session
-psychopyVersion = '2023.2.1'
-expName = 'calibration_exp'  # from the Builder filename that created this script
-expInfo = {
-    'participant': f"{randint(0, 999999):06.0f}",
-    'session': '001',
-    'age': '0',
-    'gender': '### Female or Male ###',
-    'date': data.getDateStr(),  # add a simple timestamp
-    'expName': expName,
-    'psychopyVersion': psychopyVersion,
-}
 
 # Run 'Before Experiment' code from all_variables
 from src.experiments.logger import setup_logger, close_logger
@@ -92,6 +76,22 @@ estimator_vas0 = BayesianEstimatorVAS(
 # instantiating here does not make sense because we need the values from the VAS 0 esitmator first
 # Run 'Before Experiment' code from save_participant_data
 from src.experiments.participant_data import add_participant
+# --- Setup global variables (available in all functions) ---
+# Ensure that relative paths start from the same directory as this script
+_thisDir = os.path.dirname(os.path.abspath(__file__))
+# Store info about the experiment session
+psychopyVersion = '2023.2.2'
+expName = 'calibration_exp'  # from the Builder filename that created this script
+expInfo = {
+    'participant': f"{randint(0, 999999):06.0f}",
+    'session': '001',
+    'age': '0',
+    'gender': '### Female or Male ###',
+    'date': data.getDateStr(),  # add a simple timestamp
+    'expName': expName,
+    'psychopyVersion': psychopyVersion,
+}
+
 
 def showExpInfoDlg(expInfo):
     """
@@ -176,10 +176,11 @@ def setupLogging(filename):
     psychopy.logging.LogFile
         Text stream to receive inputs from the logging system.
     """
+    # this outputs to the screen, not a file
+    logging.console.setLevel(logging.EXP)
     # save a log file for detail verbose info
     logFile = logging.LogFile(filename+'.log', level=logging.EXP)
-    logging.console.setLevel(logging.WARNING)  # this outputs to the screen, not a file
-    # return log file
+    
     return logFile
 
 
@@ -368,6 +369,24 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     luigi.connect()
     luigi.trigger()
     
+    text_welcome = visual.TextStim(win=win, name='text_welcome',
+        text='Willkommen zur Studie!\n\nDie Studie besteht aus zwei Teilen:\n1. einer Schmerz-Kalibrierung und\n2. einem Hauptexperiment.\n\nWir beginnen mit dem ersten Teil, der Schmerz-Kalibrierung.\n\n(Leertaste drücken, um fortzufahren)',
+        font='Open Sans',
+        pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=-2.0);
+    key_welcome = keyboard.Keyboard()
+    
+    # --- Initialize components for Routine "explanation_preexposure" ---
+    text_explanation_preexposure = visual.TextStim(win=win, name='text_explanation_preexposure',
+        text='Die Schmerz-Kalibrierung besteht aus 3 Teilen:\n\n1. Aufwärmung der Hautstelle,\n2. Bestimmung, ab wann Sie Schmerz spüren,\n3. Bestimmung, ab wann Sie starken Schmerz spüren.\n\nWir beginnen mit dem Aufwärmen der Hautstelle.\nHierbei müssen Sie nichts weiter tun.\n\n(Leertaste drücken, um fortzufahren)',
+        font='Open Sans',
+        pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=0.0);
+    key_explanation_preexposure = keyboard.Keyboard()
     
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
@@ -394,6 +413,16 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         languageStyle='LTR',
         depth=0.0);
     response_preexposure = keyboard.Keyboard()
+    
+    # --- Initialize components for Routine "explanation_vas0" ---
+    text_explanation_vas0 = visual.TextStim(win=win, name='text_explanation_vas0',
+        text='Wunderbar!\n\n\nEs beginnt nun der zweite Teil der Schmerzkalibrierung.\n\nDabei möchten wir die Schwelle bestimmen, ab wann Sie Schmerzen spüren.\n\n(Leertaste drücken, um fortzufahren)',
+        font='Open Sans',
+        pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=0.0);
+    key_explanation_vas0 = keyboard.Keyboard()
     
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
@@ -431,14 +460,16 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         depth=0.0);
     
     # --- Initialize components for Routine "transition_vas0_to_vas70" ---
-    vas70_explanation = visual.TextStim(win=win, name='vas70_explanation',
+    text_explanation_vas70 = visual.TextStim(win=win, name='text_explanation_vas70',
         text='Als nächstes erhalten Sie einen starken Schmerzreiz.\nAuf einer Skala von 1 bis 10 soll er eine 7 darstellen.\n\n1: kein Schmerz,                           \n10: unerträglicher Schmerz,\n7: schwerer Schmerz .                   \n\n(Bild einfügen)\n\n\n--- Leertaste zum Forfahren ---',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-1.0);
-    vas70_explanation_ok = keyboard.Keyboard()
+    key_explanation_vas70 = keyboard.Keyboard()
+    
+    # --- Initialize components for Routine "explanation_vas70" ---
     
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
@@ -475,8 +506,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         languageStyle='LTR',
         depth=0.0);
     
-    # --- Initialize components for Routine "goodbye" ---
-    bye = visual.TextStim(win=win, name='bye',
+    # --- Initialize components for Routine "bye" ---
+    text_bye = visual.TextStim(win=win, name='text_bye',
         text='Thanks!',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
@@ -499,8 +530,11 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     continueRoutine = True
     # update component parameters for each repeat
     thisExp.addData('welcome.started', globalClock.getTime())
+    key_welcome.keys = []
+    key_welcome.rt = []
+    _key_welcome_allKeys = []
     # keep track of which components have finished
-    welcomeComponents = []
+    welcomeComponents = [text_welcome, key_welcome]
     for thisComponent in welcomeComponents:
         thisComponent.tStart = None
         thisComponent.tStop = None
@@ -522,6 +556,54 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         tThisFlipGlobal = win.getFutureFlipTime(clock=None)
         frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
         # update/draw components on each frame
+        
+        # *text_welcome* updates
+        
+        # if text_welcome is starting this frame...
+        if text_welcome.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            text_welcome.frameNStart = frameN  # exact frame index
+            text_welcome.tStart = t  # local t and not account for scr refresh
+            text_welcome.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(text_welcome, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'text_welcome.started')
+            # update status
+            text_welcome.status = STARTED
+            text_welcome.setAutoDraw(True)
+        
+        # if text_welcome is active this frame...
+        if text_welcome.status == STARTED:
+            # update params
+            pass
+        
+        # *key_welcome* updates
+        waitOnFlip = False
+        
+        # if key_welcome is starting this frame...
+        if key_welcome.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            key_welcome.frameNStart = frameN  # exact frame index
+            key_welcome.tStart = t  # local t and not account for scr refresh
+            key_welcome.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(key_welcome, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'key_welcome.started')
+            # update status
+            key_welcome.status = STARTED
+            # keyboard checking is just starting
+            waitOnFlip = True
+            win.callOnFlip(key_welcome.clock.reset)  # t=0 on next screen flip
+            win.callOnFlip(key_welcome.clearEvents, eventType='keyboard')  # clear events on next screen flip
+        if key_welcome.status == STARTED and not waitOnFlip:
+            theseKeys = key_welcome.getKeys(keyList=['space'], ignoreKeys=["escape"], waitRelease=False)
+            _key_welcome_allKeys.extend(theseKeys)
+            if len(_key_welcome_allKeys):
+                key_welcome.keys = _key_welcome_allKeys[-1].name  # just the last key pressed
+                key_welcome.rt = _key_welcome_allKeys[-1].rt
+                key_welcome.duration = _key_welcome_allKeys[-1].duration
+                # a response ends the routine
+                continueRoutine = False
         
         # check for quit (typically the Esc key)
         if defaultKeyboard.getKeys(keyList=["escape"]):
@@ -549,7 +631,131 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         if hasattr(thisComponent, "setAutoDraw"):
             thisComponent.setAutoDraw(False)
     thisExp.addData('welcome.stopped', globalClock.getTime())
+    # check responses
+    if key_welcome.keys in ['', [], None]:  # No response was made
+        key_welcome.keys = None
+    thisExp.addData('key_welcome.keys',key_welcome.keys)
+    if key_welcome.keys != None:  # we had a response
+        thisExp.addData('key_welcome.rt', key_welcome.rt)
+        thisExp.addData('key_welcome.duration', key_welcome.duration)
+    thisExp.nextEntry()
     # the Routine "welcome" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
+    
+    # --- Prepare to start Routine "explanation_preexposure" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('explanation_preexposure.started', globalClock.getTime())
+    key_explanation_preexposure.keys = []
+    key_explanation_preexposure.rt = []
+    _key_explanation_preexposure_allKeys = []
+    # keep track of which components have finished
+    explanation_preexposureComponents = [text_explanation_preexposure, key_explanation_preexposure]
+    for thisComponent in explanation_preexposureComponents:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "explanation_preexposure" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # *text_explanation_preexposure* updates
+        
+        # if text_explanation_preexposure is starting this frame...
+        if text_explanation_preexposure.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            text_explanation_preexposure.frameNStart = frameN  # exact frame index
+            text_explanation_preexposure.tStart = t  # local t and not account for scr refresh
+            text_explanation_preexposure.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(text_explanation_preexposure, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'text_explanation_preexposure.started')
+            # update status
+            text_explanation_preexposure.status = STARTED
+            text_explanation_preexposure.setAutoDraw(True)
+        
+        # if text_explanation_preexposure is active this frame...
+        if text_explanation_preexposure.status == STARTED:
+            # update params
+            pass
+        
+        # *key_explanation_preexposure* updates
+        waitOnFlip = False
+        
+        # if key_explanation_preexposure is starting this frame...
+        if key_explanation_preexposure.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            key_explanation_preexposure.frameNStart = frameN  # exact frame index
+            key_explanation_preexposure.tStart = t  # local t and not account for scr refresh
+            key_explanation_preexposure.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(key_explanation_preexposure, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'key_explanation_preexposure.started')
+            # update status
+            key_explanation_preexposure.status = STARTED
+            # keyboard checking is just starting
+            waitOnFlip = True
+            win.callOnFlip(key_explanation_preexposure.clock.reset)  # t=0 on next screen flip
+            win.callOnFlip(key_explanation_preexposure.clearEvents, eventType='keyboard')  # clear events on next screen flip
+        if key_explanation_preexposure.status == STARTED and not waitOnFlip:
+            theseKeys = key_explanation_preexposure.getKeys(keyList=['space'], ignoreKeys=["escape"], waitRelease=False)
+            _key_explanation_preexposure_allKeys.extend(theseKeys)
+            if len(_key_explanation_preexposure_allKeys):
+                key_explanation_preexposure.keys = _key_explanation_preexposure_allKeys[-1].name  # just the last key pressed
+                key_explanation_preexposure.rt = _key_explanation_preexposure_allKeys[-1].rt
+                key_explanation_preexposure.duration = _key_explanation_preexposure_allKeys[-1].duration
+                # a response ends the routine
+                continueRoutine = False
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in explanation_preexposureComponents:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "explanation_preexposure" ---
+    for thisComponent in explanation_preexposureComponents:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('explanation_preexposure.stopped', globalClock.getTime())
+    # check responses
+    if key_explanation_preexposure.keys in ['', [], None]:  # No response was made
+        key_explanation_preexposure.keys = None
+    thisExp.addData('key_explanation_preexposure.keys',key_explanation_preexposure.keys)
+    if key_explanation_preexposure.keys != None:  # we had a response
+        thisExp.addData('key_explanation_preexposure.rt', key_explanation_preexposure.rt)
+        thisExp.addData('key_explanation_preexposure.duration', key_explanation_preexposure.duration)
+    thisExp.nextEntry()
+    # the Routine "explanation_preexposure" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
@@ -911,6 +1117,135 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             temp_std=temp_std_vas0,
             trials=trials_vas0)
     # the Routine "feedback_preexposure" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
+    
+    # --- Prepare to start Routine "explanation_vas0" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('explanation_vas0.started', globalClock.getTime())
+    key_explanation_vas0.keys = []
+    key_explanation_vas0.rt = []
+    _key_explanation_vas0_allKeys = []
+    # keep track of which components have finished
+    explanation_vas0Components = [text_explanation_vas0, key_explanation_vas0]
+    for thisComponent in explanation_vas0Components:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "explanation_vas0" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # *text_explanation_vas0* updates
+        
+        # if text_explanation_vas0 is starting this frame...
+        if text_explanation_vas0.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            text_explanation_vas0.frameNStart = frameN  # exact frame index
+            text_explanation_vas0.tStart = t  # local t and not account for scr refresh
+            text_explanation_vas0.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(text_explanation_vas0, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'text_explanation_vas0.started')
+            # update status
+            text_explanation_vas0.status = STARTED
+            text_explanation_vas0.setAutoDraw(True)
+        
+        # if text_explanation_vas0 is active this frame...
+        if text_explanation_vas0.status == STARTED:
+            # update params
+            pass
+        
+        # if text_explanation_vas0 is stopping this frame...
+        if text_explanation_vas0.status == STARTED:
+            # is it time to stop? (based on global clock, using actual start)
+            if tThisFlipGlobal > text_explanation_vas0.tStartRefresh + 1.0-frameTolerance:
+                # keep track of stop time/frame for later
+                text_explanation_vas0.tStop = t  # not accounting for scr refresh
+                text_explanation_vas0.frameNStop = frameN  # exact frame index
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'text_explanation_vas0.stopped')
+                # update status
+                text_explanation_vas0.status = FINISHED
+                text_explanation_vas0.setAutoDraw(False)
+        
+        # *key_explanation_vas0* updates
+        waitOnFlip = False
+        
+        # if key_explanation_vas0 is starting this frame...
+        if key_explanation_vas0.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            key_explanation_vas0.frameNStart = frameN  # exact frame index
+            key_explanation_vas0.tStart = t  # local t and not account for scr refresh
+            key_explanation_vas0.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(key_explanation_vas0, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'key_explanation_vas0.started')
+            # update status
+            key_explanation_vas0.status = STARTED
+            # keyboard checking is just starting
+            waitOnFlip = True
+            win.callOnFlip(key_explanation_vas0.clock.reset)  # t=0 on next screen flip
+            win.callOnFlip(key_explanation_vas0.clearEvents, eventType='keyboard')  # clear events on next screen flip
+        if key_explanation_vas0.status == STARTED and not waitOnFlip:
+            theseKeys = key_explanation_vas0.getKeys(keyList=['y','n','left','right','space'], ignoreKeys=["escape"], waitRelease=False)
+            _key_explanation_vas0_allKeys.extend(theseKeys)
+            if len(_key_explanation_vas0_allKeys):
+                key_explanation_vas0.keys = _key_explanation_vas0_allKeys[-1].name  # just the last key pressed
+                key_explanation_vas0.rt = _key_explanation_vas0_allKeys[-1].rt
+                key_explanation_vas0.duration = _key_explanation_vas0_allKeys[-1].duration
+                # a response ends the routine
+                continueRoutine = False
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in explanation_vas0Components:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "explanation_vas0" ---
+    for thisComponent in explanation_vas0Components:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('explanation_vas0.stopped', globalClock.getTime())
+    # check responses
+    if key_explanation_vas0.keys in ['', [], None]:  # No response was made
+        key_explanation_vas0.keys = None
+    thisExp.addData('key_explanation_vas0.keys',key_explanation_vas0.keys)
+    if key_explanation_vas0.keys != None:  # we had a response
+        thisExp.addData('key_explanation_vas0.rt', key_explanation_vas0.rt)
+        thisExp.addData('key_explanation_vas0.duration', key_explanation_vas0.duration)
+    thisExp.nextEntry()
+    # the Routine "explanation_vas0" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
@@ -1381,11 +1716,11 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         temp_start= temp_start_vas70,
         temp_std=temp_std_vas70,
         trials=trials_vas70)
-    vas70_explanation_ok.keys = []
-    vas70_explanation_ok.rt = []
-    _vas70_explanation_ok_allKeys = []
+    key_explanation_vas70.keys = []
+    key_explanation_vas70.rt = []
+    _key_explanation_vas70_allKeys = []
     # keep track of which components have finished
-    transition_vas0_to_vas70Components = [vas70_explanation, vas70_explanation_ok]
+    transition_vas0_to_vas70Components = [text_explanation_vas70, key_explanation_vas70]
     for thisComponent in transition_vas0_to_vas70Components:
         thisComponent.tStart = None
         thisComponent.tStop = None
@@ -1408,51 +1743,51 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
         # update/draw components on each frame
         
-        # *vas70_explanation* updates
+        # *text_explanation_vas70* updates
         
-        # if vas70_explanation is starting this frame...
-        if vas70_explanation.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # if text_explanation_vas70 is starting this frame...
+        if text_explanation_vas70.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
             # keep track of start time/frame for later
-            vas70_explanation.frameNStart = frameN  # exact frame index
-            vas70_explanation.tStart = t  # local t and not account for scr refresh
-            vas70_explanation.tStartRefresh = tThisFlipGlobal  # on global time
-            win.timeOnFlip(vas70_explanation, 'tStartRefresh')  # time at next scr refresh
+            text_explanation_vas70.frameNStart = frameN  # exact frame index
+            text_explanation_vas70.tStart = t  # local t and not account for scr refresh
+            text_explanation_vas70.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(text_explanation_vas70, 'tStartRefresh')  # time at next scr refresh
             # add timestamp to datafile
-            thisExp.timestampOnFlip(win, 'vas70_explanation.started')
+            thisExp.timestampOnFlip(win, 'text_explanation_vas70.started')
             # update status
-            vas70_explanation.status = STARTED
-            vas70_explanation.setAutoDraw(True)
+            text_explanation_vas70.status = STARTED
+            text_explanation_vas70.setAutoDraw(True)
         
-        # if vas70_explanation is active this frame...
-        if vas70_explanation.status == STARTED:
+        # if text_explanation_vas70 is active this frame...
+        if text_explanation_vas70.status == STARTED:
             # update params
             pass
         
-        # *vas70_explanation_ok* updates
+        # *key_explanation_vas70* updates
         waitOnFlip = False
         
-        # if vas70_explanation_ok is starting this frame...
-        if vas70_explanation_ok.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # if key_explanation_vas70 is starting this frame...
+        if key_explanation_vas70.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
             # keep track of start time/frame for later
-            vas70_explanation_ok.frameNStart = frameN  # exact frame index
-            vas70_explanation_ok.tStart = t  # local t and not account for scr refresh
-            vas70_explanation_ok.tStartRefresh = tThisFlipGlobal  # on global time
-            win.timeOnFlip(vas70_explanation_ok, 'tStartRefresh')  # time at next scr refresh
+            key_explanation_vas70.frameNStart = frameN  # exact frame index
+            key_explanation_vas70.tStart = t  # local t and not account for scr refresh
+            key_explanation_vas70.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(key_explanation_vas70, 'tStartRefresh')  # time at next scr refresh
             # add timestamp to datafile
-            thisExp.timestampOnFlip(win, 'vas70_explanation_ok.started')
+            thisExp.timestampOnFlip(win, 'key_explanation_vas70.started')
             # update status
-            vas70_explanation_ok.status = STARTED
+            key_explanation_vas70.status = STARTED
             # keyboard checking is just starting
             waitOnFlip = True
-            win.callOnFlip(vas70_explanation_ok.clock.reset)  # t=0 on next screen flip
-            win.callOnFlip(vas70_explanation_ok.clearEvents, eventType='keyboard')  # clear events on next screen flip
-        if vas70_explanation_ok.status == STARTED and not waitOnFlip:
-            theseKeys = vas70_explanation_ok.getKeys(keyList=['space'], ignoreKeys=["escape"], waitRelease=False)
-            _vas70_explanation_ok_allKeys.extend(theseKeys)
-            if len(_vas70_explanation_ok_allKeys):
-                vas70_explanation_ok.keys = _vas70_explanation_ok_allKeys[-1].name  # just the last key pressed
-                vas70_explanation_ok.rt = _vas70_explanation_ok_allKeys[-1].rt
-                vas70_explanation_ok.duration = _vas70_explanation_ok_allKeys[-1].duration
+            win.callOnFlip(key_explanation_vas70.clock.reset)  # t=0 on next screen flip
+            win.callOnFlip(key_explanation_vas70.clearEvents, eventType='keyboard')  # clear events on next screen flip
+        if key_explanation_vas70.status == STARTED and not waitOnFlip:
+            theseKeys = key_explanation_vas70.getKeys(keyList=['space'], ignoreKeys=["escape"], waitRelease=False)
+            _key_explanation_vas70_allKeys.extend(theseKeys)
+            if len(_key_explanation_vas70_allKeys):
+                key_explanation_vas70.keys = _key_explanation_vas70_allKeys[-1].name  # just the last key pressed
+                key_explanation_vas70.rt = _key_explanation_vas70_allKeys[-1].rt
+                key_explanation_vas70.duration = _key_explanation_vas70_allKeys[-1].duration
                 # a response ends the routine
                 continueRoutine = False
         
@@ -1483,14 +1818,71 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             thisComponent.setAutoDraw(False)
     thisExp.addData('transition_vas0_to_vas70.stopped', globalClock.getTime())
     # check responses
-    if vas70_explanation_ok.keys in ['', [], None]:  # No response was made
-        vas70_explanation_ok.keys = None
-    thisExp.addData('vas70_explanation_ok.keys',vas70_explanation_ok.keys)
-    if vas70_explanation_ok.keys != None:  # we had a response
-        thisExp.addData('vas70_explanation_ok.rt', vas70_explanation_ok.rt)
-        thisExp.addData('vas70_explanation_ok.duration', vas70_explanation_ok.duration)
+    if key_explanation_vas70.keys in ['', [], None]:  # No response was made
+        key_explanation_vas70.keys = None
+    thisExp.addData('key_explanation_vas70.keys',key_explanation_vas70.keys)
+    if key_explanation_vas70.keys != None:  # we had a response
+        thisExp.addData('key_explanation_vas70.rt', key_explanation_vas70.rt)
+        thisExp.addData('key_explanation_vas70.duration', key_explanation_vas70.duration)
     thisExp.nextEntry()
     # the Routine "transition_vas0_to_vas70" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
+    
+    # --- Prepare to start Routine "explanation_vas70" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('explanation_vas70.started', globalClock.getTime())
+    # keep track of which components have finished
+    explanation_vas70Components = []
+    for thisComponent in explanation_vas70Components:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "explanation_vas70" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in explanation_vas70Components:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "explanation_vas70" ---
+    for thisComponent in explanation_vas70Components:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('explanation_vas70.stopped', globalClock.getTime())
+    # the Routine "explanation_vas70" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
@@ -1946,13 +2338,13 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # completed trials_vas70 repeats of 'loop_vas70'
     
     
-    # --- Prepare to start Routine "goodbye" ---
+    # --- Prepare to start Routine "bye" ---
     continueRoutine = True
     # update component parameters for each repeat
-    thisExp.addData('goodbye.started', globalClock.getTime())
+    thisExp.addData('bye.started', globalClock.getTime())
     # keep track of which components have finished
-    goodbyeComponents = [bye]
-    for thisComponent in goodbyeComponents:
+    byeComponents = [text_bye]
+    for thisComponent in byeComponents:
         thisComponent.tStart = None
         thisComponent.tStop = None
         thisComponent.tStartRefresh = None
@@ -1964,7 +2356,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     _timeToFirstFrame = win.getFutureFlipTime(clock="now")
     frameN = -1
     
-    # --- Run Routine "goodbye" ---
+    # --- Run Routine "bye" ---
     routineForceEnded = not continueRoutine
     while continueRoutine and routineTimer.getTime() < 1.0:
         # get current time
@@ -1974,38 +2366,38 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
         # update/draw components on each frame
         
-        # *bye* updates
+        # *text_bye* updates
         
-        # if bye is starting this frame...
-        if bye.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # if text_bye is starting this frame...
+        if text_bye.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
             # keep track of start time/frame for later
-            bye.frameNStart = frameN  # exact frame index
-            bye.tStart = t  # local t and not account for scr refresh
-            bye.tStartRefresh = tThisFlipGlobal  # on global time
-            win.timeOnFlip(bye, 'tStartRefresh')  # time at next scr refresh
+            text_bye.frameNStart = frameN  # exact frame index
+            text_bye.tStart = t  # local t and not account for scr refresh
+            text_bye.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(text_bye, 'tStartRefresh')  # time at next scr refresh
             # add timestamp to datafile
-            thisExp.timestampOnFlip(win, 'bye.started')
+            thisExp.timestampOnFlip(win, 'text_bye.started')
             # update status
-            bye.status = STARTED
-            bye.setAutoDraw(True)
+            text_bye.status = STARTED
+            text_bye.setAutoDraw(True)
         
-        # if bye is active this frame...
-        if bye.status == STARTED:
+        # if text_bye is active this frame...
+        if text_bye.status == STARTED:
             # update params
             pass
         
-        # if bye is stopping this frame...
-        if bye.status == STARTED:
+        # if text_bye is stopping this frame...
+        if text_bye.status == STARTED:
             # is it time to stop? (based on global clock, using actual start)
-            if tThisFlipGlobal > bye.tStartRefresh + 1.0-frameTolerance:
+            if tThisFlipGlobal > text_bye.tStartRefresh + 1.0-frameTolerance:
                 # keep track of stop time/frame for later
-                bye.tStop = t  # not accounting for scr refresh
-                bye.frameNStop = frameN  # exact frame index
+                text_bye.tStop = t  # not accounting for scr refresh
+                text_bye.frameNStop = frameN  # exact frame index
                 # add timestamp to datafile
-                thisExp.timestampOnFlip(win, 'bye.stopped')
+                thisExp.timestampOnFlip(win, 'text_bye.stopped')
                 # update status
-                bye.status = FINISHED
-                bye.setAutoDraw(False)
+                text_bye.status = FINISHED
+                text_bye.setAutoDraw(False)
         
         # check for quit (typically the Esc key)
         if defaultKeyboard.getKeys(keyList=["escape"]):
@@ -2019,7 +2411,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             routineForceEnded = True
             break
         continueRoutine = False  # will revert to True if at least one component still running
-        for thisComponent in goodbyeComponents:
+        for thisComponent in byeComponents:
             if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
                 continueRoutine = True
                 break  # at least one component has not yet finished
@@ -2028,11 +2420,11 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
             win.flip()
     
-    # --- Ending Routine "goodbye" ---
-    for thisComponent in goodbyeComponents:
+    # --- Ending Routine "bye" ---
+    for thisComponent in byeComponents:
         if hasattr(thisComponent, "setAutoDraw"):
             thisComponent.setAutoDraw(False)
-    thisExp.addData('goodbye.stopped', globalClock.getTime())
+    thisExp.addData('bye.stopped', globalClock.getTime())
     # Run 'End Routine' code from save_participant_data
     add_participant(
         expInfo['participant'],
@@ -2123,7 +2515,7 @@ def quit(thisExp, win=None, inputs=None, thisSession=None):
         win.close()
     if inputs is not None:
         if 'eyetracker' in inputs and inputs['eyetracker'] is not None:
-            eyetracker.setConnectionState(False)
+            inputs['eyetracker'].setConnectionState(False)
     logging.flush()
     if thisSession is not None:
         thisSession.stop()
