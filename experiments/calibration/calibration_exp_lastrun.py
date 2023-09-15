@@ -1,8 +1,8 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This experiment was created using PsychoPy3 Experiment Builder (v2023.2.2),
-    on September 15, 2023, at 16:45
+This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
+    on September 15, 2023, at 18:22
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -32,6 +32,22 @@ import sys  # to get file system encoding
 
 import psychopy.iohub as io
 from psychopy.hardware import keyboard
+
+# --- Setup global variables (available in all functions) ---
+# Ensure that relative paths start from the same directory as this script
+_thisDir = os.path.dirname(os.path.abspath(__file__))
+# Store info about the experiment session
+psychopyVersion = '2023.2.1'
+expName = 'calibration_exp'  # from the Builder filename that created this script
+expInfo = {
+    'participant': f"{randint(0, 999999):06.0f}",
+    'session': '001',
+    'age': '20',
+    'gender': 'Female',
+    'date': data.getDateStr(),  # add a simple timestamp
+    'expName': expName,
+    'psychopyVersion': psychopyVersion,
+}
 
 # Run 'Before Experiment' code from all_variables
 from src.experiments.logger import setup_logger, close_logger
@@ -77,22 +93,6 @@ estimator_vas0 = BayesianEstimatorVAS(
 # instantiating here does not make sense because we need the values from the VAS 0 esitmator first
 # Run 'Before Experiment' code from save_participant_data
 from src.experiments.participant_data import add_participant
-# --- Setup global variables (available in all functions) ---
-# Ensure that relative paths start from the same directory as this script
-_thisDir = os.path.dirname(os.path.abspath(__file__))
-# Store info about the experiment session
-psychopyVersion = '2023.2.2'
-expName = 'calibration_exp'  # from the Builder filename that created this script
-expInfo = {
-    'participant': f"{randint(0, 999999):06.0f}",
-    'session': '001',
-    'age': '20',
-    'gender': 'Female',
-    'date': data.getDateStr(),  # add a simple timestamp
-    'expName': expName,
-    'psychopyVersion': psychopyVersion,
-}
-
 
 def showExpInfoDlg(expInfo):
     """
@@ -177,11 +177,10 @@ def setupLogging(filename):
     psychopy.logging.LogFile
         Text stream to receive inputs from the logging system.
     """
-    # this outputs to the screen, not a file
-    logging.console.setLevel(logging.EXP)
     # save a log file for detail verbose info
     logFile = logging.LogFile(filename+'.log', level=logging.EXP)
-    
+    logging.console.setLevel(logging.WARNING)  # this outputs to the screen, not a file
+    # return log file
     return logFile
 
 
@@ -368,8 +367,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         rate_of_rise=rate_of_rise) # has to be the same as in MMS
     
     luigi.connect()
-    luigi.trigger()
-    
     text_welcome = visual.TextStim(win=win, name='text_welcome',
         text='Herzlich willkommen zur Studie!\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
@@ -501,7 +498,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas70" ---
     text_info_vas70 = visual.TextStim(win=win, name='text_info_vas70',
-        text='Dabei orientieren wir uns an einer Schmerz-Skala von 1 bis 10:\n\n\n\n\n\n\n\n\nUnser Ziel ist es herauszufinden, ab wann Sie sehr starke Schmerzen (eine 7 von 10) spüren.\n\n(Leertaste drücken, um fortzufahren)',
+        text='Dabei orientieren wir uns an einer Schmerz-Skala von 1 bis 10:\n\n\n\n\n\n\n\n\nUnser Ziel ist es, herauszufinden, ab wann Sie sehr starke Schmerzen (eine 7 von 10) spüren.\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -554,12 +551,13 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "bye" ---
     text_bye = visual.TextStim(win=win, name='text_bye',
-        text='Thanks!',
+        text='Vielen Dank!\n\nAls Nächstes geht es mit dem Hauptexperiment weiter.\nMelden Sie sich dafür bitte bei der Versuchsleitung.\n\n\n(Leertaste drücken, um Kalibireirung zu beenden)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
-        depth=0.0);
+        depth=-1.0);
+    key_bye = keyboard.Keyboard()
     
     # create some handy timers
     if globalClock is None:
@@ -1164,6 +1162,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         stimuli_clock.reset()
         
         trial = loop_preexposure.thisN
+        luigi.trigger()
         time_for_ramp_up = luigi.set_temp(temps_preexposure[trial])[1]
         # keep track of which components have finished
         preexposureComponents = [corss_pain_preexposure]
@@ -1735,8 +1734,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         checked = False
         stimuli_clock.reset()
         
+        luigi.trigger()
         time_for_ramp_up = luigi.set_temp(estimator_vas0.current_temp)[1]
-        
         # keep track of which components have finished
         trial_vas0Components = [cross_pain_vas0]
         for thisComponent in trial_vas0Components:
@@ -2451,8 +2450,9 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         # Run 'Begin Routine' code from thermoino_vas70
         checked = False
         stimuli_clock.reset()
-        time_for_ramp_up = luigi.set_temp(estimator_vas70.current_temp)[1]
         
+        luigi.trigger()
+        time_for_ramp_up = luigi.set_temp(estimator_vas70.current_temp)[1]
         # keep track of which components have finished
         trial_vas70Components = [cross_pain_vas70]
         for thisComponent in trial_vas70Components:
@@ -2783,8 +2783,11 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     continueRoutine = True
     # update component parameters for each repeat
     thisExp.addData('bye.started', globalClock.getTime())
+    key_bye.keys = []
+    key_bye.rt = []
+    _key_bye_allKeys = []
     # keep track of which components have finished
-    byeComponents = [text_bye]
+    byeComponents = [text_bye, key_bye]
     for thisComponent in byeComponents:
         thisComponent.tStart = None
         thisComponent.tStop = None
@@ -2799,7 +2802,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Run Routine "bye" ---
     routineForceEnded = not continueRoutine
-    while continueRoutine and routineTimer.getTime() < 1.0:
+    while continueRoutine:
         # get current time
         t = routineTimer.getTime()
         tThisFlip = win.getFutureFlipTime(clock=routineTimer)
@@ -2840,6 +2843,34 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                 text_bye.status = FINISHED
                 text_bye.setAutoDraw(False)
         
+        # *key_bye* updates
+        waitOnFlip = False
+        
+        # if key_bye is starting this frame...
+        if key_bye.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            key_bye.frameNStart = frameN  # exact frame index
+            key_bye.tStart = t  # local t and not account for scr refresh
+            key_bye.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(key_bye, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'key_bye.started')
+            # update status
+            key_bye.status = STARTED
+            # keyboard checking is just starting
+            waitOnFlip = True
+            win.callOnFlip(key_bye.clock.reset)  # t=0 on next screen flip
+            win.callOnFlip(key_bye.clearEvents, eventType='keyboard')  # clear events on next screen flip
+        if key_bye.status == STARTED and not waitOnFlip:
+            theseKeys = key_bye.getKeys(keyList=['y','n','left','right','space'], ignoreKeys=["escape"], waitRelease=False)
+            _key_bye_allKeys.extend(theseKeys)
+            if len(_key_bye_allKeys):
+                key_bye.keys = _key_bye_allKeys[-1].name  # just the last key pressed
+                key_bye.rt = _key_bye_allKeys[-1].rt
+                key_bye.duration = _key_bye_allKeys[-1].duration
+                # a response ends the routine
+                continueRoutine = False
+        
         # check for quit (typically the Esc key)
         if defaultKeyboard.getKeys(keyList=["escape"]):
             thisExp.status = FINISHED
@@ -2873,11 +2904,16 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         expInfo['gender'],
         estimator_vas0.get_estimate(),
         estimator_vas70.get_estimate())
-    # using non-slip timing so subtract the expected duration of this Routine (unless ended on request)
-    if routineForceEnded:
-        routineTimer.reset()
-    else:
-        routineTimer.addTime(-1.000000)
+    # check responses
+    if key_bye.keys in ['', [], None]:  # No response was made
+        key_bye.keys = None
+    thisExp.addData('key_bye.keys',key_bye.keys)
+    if key_bye.keys != None:  # we had a response
+        thisExp.addData('key_bye.rt', key_bye.rt)
+        thisExp.addData('key_bye.duration', key_bye.duration)
+    thisExp.nextEntry()
+    # the Routine "bye" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
     # Run 'End Experiment' code from all_variables
     close_logger(logger_for_runner)
     # Run 'End Experiment' code from thermoino
@@ -2956,7 +2992,7 @@ def quit(thisExp, win=None, inputs=None, thisSession=None):
         win.close()
     if inputs is not None:
         if 'eyetracker' in inputs and inputs['eyetracker'] is not None:
-            inputs['eyetracker'].setConnectionState(False)
+            eyetracker.setConnectionState(False)
     logging.flush()
     if thisSession is not None:
         thisSession.stop()

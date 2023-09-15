@@ -1,8 +1,8 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This experiment was created using PsychoPy3 Experiment Builder (v2023.2.2),
-    on September 15, 2023, at 12:58
+This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
+    on September 15, 2023, at 18:19
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -33,6 +33,19 @@ import sys  # to get file system encoding
 import psychopy.iohub as io
 from psychopy.hardware import keyboard
 
+# --- Setup global variables (available in all functions) ---
+# Ensure that relative paths start from the same directory as this script
+_thisDir = os.path.dirname(os.path.abspath(__file__))
+# Store info about the experiment session
+psychopyVersion = '2023.2.1'
+expName = 'mpad1_exp'  # from the Builder filename that created this script
+expInfo = {
+    '': '',
+    'date': data.getDateStr(),  # add a simple timestamp
+    'expName': expName,
+    'psychopyVersion': psychopyVersion,
+}
+
 # Run 'Before Experiment' code from all_variables
 # TODO
 # fix baseline_temp & temp_baseline for all scripts
@@ -44,8 +57,9 @@ from src.experiments.participant_data import read_last_participant
 
 logger_for_runner = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
 
-expInfo['expName'] = "mpad1_exp"
 participant_info = read_last_participant()
+#expInfo = {}
+expInfo['expName'] = "mpad1_exp"
 expInfo['participant'] = participant_info['participant']
 expInfo['age'] = participant_info['age']
 expInfo['gender'] = participant_info['gender']
@@ -102,19 +116,6 @@ from src.experiments.mouse_action import pixel_pos_y
 # Run 'Before Experiment' code from imotions_event
 from src.experiments.imotions import EventRecievingiMotions
 from psychopy import core
-
-# --- Setup global variables (available in all functions) ---
-# Ensure that relative paths start from the same directory as this script
-_thisDir = os.path.dirname(os.path.abspath(__file__))
-# Store info about the experiment session
-psychopyVersion = '2023.2.2'
-expName = 'mpad1_exp'  # from the Builder filename that created this script
-expInfo = {
-    '': '',
-    'date': data.getDateStr(),  # add a simple timestamp
-    'expName': expName,
-    'psychopyVersion': psychopyVersion,
-}
 
 
 def showExpInfoDlg(expInfo):
@@ -200,11 +201,10 @@ def setupLogging(filename):
     psychopy.logging.LogFile
         Text stream to receive inputs from the logging system.
     """
-    # this outputs to the screen, not a file
-    logging.console.setLevel(logging.EXP)
     # save a log file for detail verbose info
     logFile = logging.LogFile(filename+'.log', level=logging.EXP)
-    
+    logging.console.setLevel(logging.WARNING)  # this outputs to the screen, not a file
+    # return log file
     return logFile
 
 
@@ -427,8 +427,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         rate_of_rise=rate_of_rise)
     
     luigi.connect()
-    
-    
     # Run 'Begin Experiment' code from imotions_event
     """ Connect with event recieving API """
     imotions_event = EventRecievingiMotions()
@@ -453,6 +451,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         depth=-5.0);
     
     # --- Initialize components for Routine "trial_end" ---
+    # Run 'Begin Experiment' code from this_trial
+    this_trial = None
     fix_cross = visual.ShapeStim(
         win=win, name='fix_cross', vertices='cross',
         size=(0.1, 0.1),
@@ -819,6 +819,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         thisExp.addData('trial_vas_continuous.started', globalClock.getTime())
         # Run 'Begin Routine' code from thermoino
         # After we have reached the starting temperature for the ctc.
+        luigi.trigger()
         luigi.exec_ctc()
         # Run 'Begin Routine' code from mouse
         # Everything stays the same from the prep scale
@@ -1432,7 +1433,7 @@ def quit(thisExp, win=None, inputs=None, thisSession=None):
         win.close()
     if inputs is not None:
         if 'eyetracker' in inputs and inputs['eyetracker'] is not None:
-            inputs['eyetracker'].setConnectionState(False)
+            eyetracker.setConnectionState(False)
     logging.flush()
     if thisSession is not None:
         thisSession.stop()
