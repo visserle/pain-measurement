@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.2),
-    on September 15, 2023, at 15:32
+    on September 15, 2023, at 16:45
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -391,7 +391,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_3" ---
     text_welcome_3 = visual.TextStim(win=win, name='text_welcome_3',
-        text='Die Schmerz-Kalibrierung besteht aus 3 Teilen:\n\n1. dem Aufwärmen Ihrer Hautstelle am Arm,\n2. dem Bestimmen der Schwelle, ab der Sie erste Schmerzen spüren und\n3. dem Bestimmen der Schwelle, ab der Sie starke Schmerzen spüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Die Schmerz-Kalibrierung besteht aus 3 Phasen:\n\n1. dem Aufwärmen Ihrer Hautstelle am Arm,\n2. dem Bestimmen der Schwellen, an denen Sie \n  a) erste Schmerzen spüren und\n  b) starke Schmerzen spüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -491,7 +491,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "transition_vas0_to_vas70" ---
     text_explanation_vas70 = visual.TextStim(win=win, name='text_explanation_vas70',
-        text='Fantastisch!\n\nAls nächstes möchten wir sehen, wie Sie stärkere Schmerze wahrnehmen.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Fantastisch!\n\nAls nächstes möchten wir sehen, wie Sie stärkere Schmerz-Reize wahrnehmen.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -501,21 +501,21 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas70" ---
     text_info_vas70 = visual.TextStim(win=win, name='text_info_vas70',
-        text='Dabei orientieren wir uns an einer Schmerz-Skala von 1 bis 10.\n\n(Bild einfügen)\n\nUnser Ziel ist es, herauszufinden, ab wann Sie sehr starke Schmerzen (eine 7 von 10) spüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Dabei orientieren wir uns an einer Schmerz-Skala von 1 bis 10:\n\n\n\n\n\n\n\n\nUnser Ziel ist es herauszufinden, ab wann Sie sehr starke Schmerzen (eine 7 von 10) spüren.\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
+    key_info_vas70 = keyboard.Keyboard()
     img_vas = visual.ImageStim(
         win=win,
         name='img_vas', 
         image='visual_analogue_scale_7.png', mask=None, anchor='center',
-        ori=0.0, pos=(0, 0), size=(1, 0.5),
+        ori=0.0, pos=(0, 0.1), size=(1, 0.4),
         color=[1,1,1], colorSpace='rgb', opacity=None,
         flipHoriz=False, flipVert=False,
-        texRes=128.0, interpolate=True, depth=-1.0)
-    key_info_vas70 = keyboard.Keyboard()
+        texRes=128.0, interpolate=True, depth=-2.0)
     
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
@@ -2197,7 +2197,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     key_info_vas70.rt = []
     _key_info_vas70_allKeys = []
     # keep track of which components have finished
-    info_vas70Components = [text_info_vas70, img_vas, key_info_vas70]
+    info_vas70Components = [text_info_vas70, key_info_vas70, img_vas]
     for thisComponent in info_vas70Components:
         thisComponent.tStart = None
         thisComponent.tStop = None
@@ -2240,26 +2240,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # update params
             pass
         
-        # *img_vas* updates
-        
-        # if img_vas is starting this frame...
-        if img_vas.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
-            # keep track of start time/frame for later
-            img_vas.frameNStart = frameN  # exact frame index
-            img_vas.tStart = t  # local t and not account for scr refresh
-            img_vas.tStartRefresh = tThisFlipGlobal  # on global time
-            win.timeOnFlip(img_vas, 'tStartRefresh')  # time at next scr refresh
-            # add timestamp to datafile
-            thisExp.timestampOnFlip(win, 'img_vas.started')
-            # update status
-            img_vas.status = STARTED
-            img_vas.setAutoDraw(True)
-        
-        # if img_vas is active this frame...
-        if img_vas.status == STARTED:
-            # update params
-            pass
-        
         # *key_info_vas70* updates
         waitOnFlip = False
         
@@ -2287,6 +2267,26 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                 key_info_vas70.duration = _key_info_vas70_allKeys[-1].duration
                 # a response ends the routine
                 continueRoutine = False
+        
+        # *img_vas* updates
+        
+        # if img_vas is starting this frame...
+        if img_vas.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            img_vas.frameNStart = frameN  # exact frame index
+            img_vas.tStart = t  # local t and not account for scr refresh
+            img_vas.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(img_vas, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'img_vas.started')
+            # update status
+            img_vas.status = STARTED
+            img_vas.setAutoDraw(True)
+        
+        # if img_vas is active this frame...
+        if img_vas.status == STARTED:
+            # update params
+            pass
         
         # check for quit (typically the Esc key)
         if defaultKeyboard.getKeys(keyList=["escape"]):
