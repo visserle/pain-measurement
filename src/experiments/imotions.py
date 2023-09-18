@@ -158,7 +158,7 @@ class RemoteControliMotions():
         self._send_and_receive(abort_study_query)
         logger.info("iMotions aborted study %s for participant %s.", self.study, self.participant)
 
-    def export_data(self):
+    def export_data(self, path):
         logger.info("iMotions exported data for study %s for participant %s to %s.", self.study, self.participant, path)
         pass
 

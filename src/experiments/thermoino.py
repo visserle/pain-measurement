@@ -14,6 +14,7 @@ import serial.tools.list_ports
 
 
 def setup_default_logger():
+    """Create a default logger with a stream handler for logging to the console."""
     l = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
     l.setLevel(logging.INFO)
     stream_handler = logging.StreamHandler()
@@ -605,7 +606,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             logger.info("Thermoino response to 'EXECCTC' (.exec_ctc): %s.", output)
             logger.info("Thermoino will execute the CTC with a duration of %s s.", self.temp_course_duration)
             self.temp = round(self.temp_course_resampled[-1],2)
-            logger.info("Thermoino will set the temperature to %s °C after the CTC ended.", self.temp)
+            logger.info("Thermoino will set the temperature to %s °C after the CTC ends.", self.temp)
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error for 'EXECCTC' (.exec_ctc): %s.", output)
         return (self, exec_duration)
