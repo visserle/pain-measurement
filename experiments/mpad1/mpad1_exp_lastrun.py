@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 16, 2023, at 15:51
+    on September 18, 2023, at 11:18
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -50,9 +50,8 @@ expInfo = {
 # TODO
 # fix baseline_temp & temp_baseline for all scripts
 # set start_study_mode to NoPrompt
-prep_duration = 1 # just for debugging; to be deleted
 
-# Logger
+# Root logger
 from pathlib import Path
 from datetime import datetime
 from src.experiments.logger import setup_logger, close_logger
@@ -63,7 +62,7 @@ log_filename_str = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
 log_file = log_dir / log_filename_str
 
 psychopy_logger = setup_logger(
-    '', 
+    '',
     level=logging.INFO, 
     log_file=log_file,
     stream_handler=False)
@@ -111,11 +110,19 @@ port = "COM7" # use list_com_ports() beforehand to find out
 temp_baseline = 30 # has to be the same as in MMS (not the same as baseline_temp (sorry for confusing names))
 rate_of_rise = 5 # has to be the same as in MMS
 bin_size_ms = 500
+# Run 'Before Experiment' code from imotions_control
+from src.experiments.imotions import RemoteControliMotions
 # Run 'Before Experiment' code from mouse_instruction
 import src.experiments.mouse_action as mouse_action
 from src.experiments.mouse_action import pixel_pos_y
 # Run 'Before Experiment' code from stimuli_function
 from src.experiments.stimuli_function import StimuliFunction
+# Run 'Before Experiment' code from thermoino
+from src.experiments.thermoino import ThermoinoComplexTimeCourses
+# Run 'Before Experiment' code from imotions_event
+from src.experiments.imotions import EventRecievingiMotions
+from psychopy import core
+
 
 def showExpInfoDlg(expInfo):
     """
@@ -176,7 +183,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='C:\\drive\\PhD\\Code\\mpad-pilot\\experiments\\mpad1\\mpad1_exp_lastrun.py',
+        originPath='G:\\Meine Ablage\\PhD\\Code\\mpad-pilot\\experiments\\mpad1\\mpad1_exp_lastrun.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -383,13 +390,23 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # Start Code - component code to be run after the window creation
     
     # --- Initialize components for Routine "welcome" ---
+    # Run 'Begin Experiment' code from imotions_control
+    imotions_control = RemoteControliMotions(
+        study = expInfo['expName'],
+        participant = expInfo['participant'],
+        age = expInfo['age'],
+        gender = expInfo['gender']
+    )
+    
+    imotions_control.connect()
+    imotions_control.start_study(mode=start_study_mode)
     text_welcome = visual.TextStim(win=win, name='text_welcome',
         text='Willkommen zum Haupt-Experiment!\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
-        depth=-1.0);
+        depth=-2.0);
     key_welcome = keyboard.Keyboard()
     
     # --- Initialize components for Routine "welcome_2" ---
@@ -463,16 +480,31 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         style='rating', styleTweaks=('triangleMarker',), opacity=None,
         labelColor='White', markerColor='Red', lineColor='White', colorSpace='rgb',
         font='Open Sans', labelHeight=0.05,
-        flip=False, ori=0.0, depth=-3, readOnly=False)
+        flip=False, ori=0.0, depth=-4, readOnly=False)
     
     # --- Initialize components for Routine "trial_vas_continuous" ---
+    # Run 'Begin Experiment' code from thermoino
+    luigi = ThermoinoComplexTimeCourses(
+        port=port, 
+        temp_baseline=temp_baseline, 
+        rate_of_rise=rate_of_rise)
+    
+    luigi.connect()
+    # Run 'Begin Experiment' code from imotions_event
+    """ Connect with event recieving API """
+    imotions_event = EventRecievingiMotions()
+    imotions_event.connect()
+    imotions_event.start_study
+    
+    # create a clock
+    stimuli_clock = core.Clock()
     vas_cont = visual.Slider(win=win, name='vas_cont',
         startValue=None, size=(1.0, 0.1), pos=(0, 0), units=win.units,
         labels=vas_labels, ticks=(0, 100), granularity=0.0,
         style='rating', styleTweaks=('triangleMarker',), opacity=None,
         labelColor='White', markerColor='Red', lineColor='White', colorSpace='rgb',
         font='Open Sans', labelHeight=0.05,
-        flip=False, ori=0.0, depth=-2, readOnly=False)
+        flip=False, ori=0.0, depth=-4, readOnly=False)
     
     # --- Initialize components for Routine "trial_end" ---
     # Run 'Begin Experiment' code from this_trial
@@ -483,7 +515,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
-        depth=-1.0);
+        depth=-2.0);
     key_trial_end = keyboard.Keyboard()
     
     # --- Initialize components for Routine "trial_next" ---
@@ -1313,6 +1345,17 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         #    add_at_start=add_at_start, 
         #    add_at_end=add_at_end)
         
+        # Run 'Begin Routine' code from thermoino_prep
+        luigi.flush_ctc()
+        luigi.init_ctc(bin_size_ms=bin_size_ms)
+        luigi.create_ctc(
+            temp_course=stimuli.wave,
+            sample_rate=stimuli.sample_rate,
+            rate_of_rise_option="mms_program")
+        luigi.load_ctc()
+        luigi.trigger()
+        
+        prep_duration = luigi.prep_ctc()[1]
         # Run 'Begin Routine' code from mouse_prep
         vas_pos_y = pixel_pos_y(
             component_pos = vas_cont.pos,
@@ -1421,6 +1464,15 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         continueRoutine = True
         # update component parameters for each repeat
         thisExp.addData('trial_vas_continuous.started', globalClock.getTime())
+        # Run 'Begin Routine' code from thermoino
+        # After we have reached the starting temperature for the ctc.
+        luigi.exec_ctc()
+        # Run 'Begin Routine' code from imotions_event
+        """ Send discrete marker for stimuli beginning """
+        # TODO: add imotions marker for stimuli start and end
+        imotions_event.send_marker("stimuli", "Stimuli begins")
+        # Start the clock
+        stimuli_clock.reset()
         # Run 'Begin Routine' code from mouse
         # Everything stays the same from the prep scale
         # Run 'Begin Routine' code from rating
@@ -1451,6 +1503,14 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             tThisFlipGlobal = win.getFutureFlipTime(clock=None)
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
+            # Run 'Each Frame' code from imotions_event
+            """ Stream data for pain rating """
+            imotions_event.send_ratings(
+                vas_cont.getMarkerPos())
+            
+            idx_stimuli = int(stimuli_clock.getTime()*stimuli.sample_rate)
+            if idx_stimuli < len(stimuli.wave):
+                imotions_event.send_temperatures(stimuli.wave[idx_stimuli])
             # Run 'Each Frame' code from mouse
             mouse_action.check(vas_pos_y)
             
@@ -1513,6 +1573,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             if hasattr(thisComponent, "setAutoDraw"):
                 thisComponent.setAutoDraw(False)
         thisExp.addData('trial_vas_continuous.stopped', globalClock.getTime())
+        # Run 'End Routine' code from imotions_event
+        """ Send discrete marker for stimuli ending """
+        imotions_event.send_marker("stimuli", "Stimuli ends")
+        
         # Run 'End Routine' code from mouse
         mouse_action.release()
         loop_trials.addData('vas_cont.response', vas_cont.getRating())
@@ -1524,6 +1588,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         continueRoutine = True
         # update component parameters for each repeat
         thisExp.addData('trial_end.started', globalClock.getTime())
+        # Run 'Begin Routine' code from reset_temp
+        # Sometimes the Theroino takes some time to set the temperature back to baseline
+        # Here, we force this with a loop for each frame.
+        success = False
         # Run 'Begin Routine' code from this_trial
         # Store the trial number for conditional text box
         this_trial = loop_trials.thisN
@@ -1554,6 +1622,9 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             tThisFlipGlobal = win.getFutureFlipTime(clock=None)
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
+            # Run 'Each Frame' code from reset_temp
+            if not success and frameN % 20 == 0:
+                success = luigi.set_temp(temp_baseline)[2]
             
             # *text_trial_end* updates
             
@@ -1764,6 +1835,15 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # Run 'End Experiment' code from all_variables
     close_logger(psychopy_logger)
+    # Run 'End Experiment' code from imotions_control
+    imotions_control.end_study()
+    imotions_control.close()
+    # Run 'End Experiment' code from thermoino
+    luigi.close()
+    # Run 'End Experiment' code from imotions_event
+    """ Close event recieving API connection """
+    imotions_event.end_study()
+    imotions_event.close()
     
     # mark experiment as finished
     endExperiment(thisExp, win=win, inputs=inputs)

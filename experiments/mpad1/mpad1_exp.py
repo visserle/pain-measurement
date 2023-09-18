@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 18, 2023, at 08:59
+    on September 18, 2023, at 11:18
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -51,7 +51,7 @@ expInfo = {
 # fix baseline_temp & temp_baseline for all scripts
 # set start_study_mode to NoPrompt
 
-# Logger
+# Root logger
 from pathlib import Path
 from datetime import datetime
 from src.experiments.logger import setup_logger, close_logger
@@ -62,7 +62,7 @@ log_filename_str = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
 log_file = log_dir / log_filename_str
 
 psychopy_logger = setup_logger(
-    '', # this only works because psychopy has it's own logging system
+    '',
     level=logging.INFO, 
     log_file=log_file,
     stream_handler=False)
@@ -183,7 +183,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='C:\\drive\\PhD\\Code\\mpad-pilot\\experiments\\mpad1\\mpad1_exp.py',
+        originPath='G:\\Meine Ablage\\PhD\\Code\\mpad-pilot\\experiments\\mpad1\\mpad1_exp.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )

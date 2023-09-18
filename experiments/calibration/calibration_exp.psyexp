@@ -95,7 +95,7 @@
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
-        <Param val="close_logger(psychopy_runner)" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="close_logger(psychopy_logger)" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
         <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
@@ -140,7 +140,7 @@
         <Param val="time (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Herzlich willkommen zur Studie!&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
+        <Param val="Herzlich willkommen zur Studie!&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um zu starten)" valType="str" updates="constant" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
@@ -262,7 +262,7 @@
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Die Schmerz-Kalibrierung besteht aus 3 Phasen:&amp;#10;&amp;#10;1. dem Aufwärmen Ihrer Hautstelle am Arm,&amp;#10;2. dem Bestimmen der Schwellen, an denen Sie &amp;#10;  a) erste Schmerzen spüren und&amp;#10;  b) starke Schmerzen spüren.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
+        <Param val="Die Schmerz-Kalibrierung besteht aus 3 Phasen:&amp;#10;&amp;#10;1. dem Aufwärmen Ihrer Hautstelle am Arm,&amp;#10;2. dem Bestimmen der Schwelle, wo Sie &amp;#10;a) erste Schmerzen spüren und&amp;#10;b) starke Schmerzen spüren.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
@@ -542,7 +542,7 @@
         <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
         <Param val="/* Syntax Error: Fix Python code */" valType="extendedCode" updates="constant" name="End JS Routine"/>
-        <Param val="# If response was yes&amp;#10;logger_for_runner.info(&quot;Preexposure painful? Answer: %s&quot;, response_preexposure.keys)&amp;#10;&amp;#10;if response_preexposure.keys == &quot;y&quot;:&amp;#10;    # Decrease starting temperature&amp;#10;    global temp_start_vas0 # psychopy has to be able to find it in the spaghetti&amp;#10;    temp_start_vas0 -= 2&amp;#10;    # Reinitialize estimator for VAS 0 with different temp_start&amp;#10;    global estimator_vas0 &amp;#10;    estimator_vas0 = BayesianEstimatorVAS(&amp;#10;        vas_value=0,&amp;#10;        temp_start=temp_start_vas0,&amp;#10;        temp_std=temp_std_vas0,&amp;#10;        trials=trials_vas0)" valType="extendedCode" updates="constant" name="End Routine"/>
+        <Param val="# If response was yes&amp;#10;psychopy_logger.info(&quot;Preexposure painful? Answer: %s&quot;, response_preexposure.keys)&amp;#10;&amp;#10;if response_preexposure.keys == &quot;y&quot;:&amp;#10;    # Decrease starting temperature&amp;#10;    global temp_start_vas0 # psychopy has to be able to find it in the spaghetti&amp;#10;    temp_start_vas0 -= 2&amp;#10;    # Reinitialize estimator for VAS 0 with different temp_start&amp;#10;    global estimator_vas0 &amp;#10;    estimator_vas0 = BayesianEstimatorVAS(&amp;#10;        vas_value=0,&amp;#10;        temp_start=temp_start_vas0,&amp;#10;        temp_std=temp_std_vas0,&amp;#10;        trials=trials_vas0)" valType="extendedCode" updates="constant" name="End Routine"/>
         <Param val="False" valType="bool" updates="None" name="disabled"/>
         <Param val="transition_preexposure_to_vas0" valType="code" updates="None" name="name"/>
       </CodeComponent>

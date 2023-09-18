@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 15, 2023, at 18:22
+    on September 18, 2023, at 10:50
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -50,8 +50,21 @@ expInfo = {
 }
 
 # Run 'Before Experiment' code from all_variables
+# Logger
+from pathlib import Path
+from datetime import datetime
 from src.experiments.logger import setup_logger, close_logger
-logger_for_runner = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
+
+log_dir = Path('log')
+log_dir.mkdir(parents=True, exist_ok=True)
+log_filename_str = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
+log_file = log_dir / log_filename_str
+
+psychopy_logger = setup_logger(
+    '', # this only works because psychopy has it's own logging system
+    level=logging.INFO, 
+    log_file=log_file,
+    stream_handler=False)
 
 # Thermoino
 port = "COM7" # COM7 for top usb port on the front, use list_com_ports() to find out
@@ -388,7 +401,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_3" ---
     text_welcome_3 = visual.TextStim(win=win, name='text_welcome_3',
-        text='Die Schmerz-Kalibrierung besteht aus 3 Phasen:\n\n1. dem Aufwärmen Ihrer Hautstelle am Arm,\n2. dem Bestimmen der Schwellen, an denen Sie \n  a) erste Schmerzen spüren und\n  b) starke Schmerzen spüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Die Schmerz-Kalibrierung besteht aus 3 Phasen:\n\n1. dem Aufwärmen Ihrer Hautstelle am Arm,\n2. dem Bestimmen der Schwelle, wo Sie \na) erste Schmerzen spüren und\nb) starke Schmerzen spüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -508,7 +521,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     img_vas = visual.ImageStim(
         win=win,
         name='img_vas', 
-        image='visual_analogue_scale_7.png', mask=None, anchor='center',
+        image='vas_7.png', mask=None, anchor='center',
         ori=0.0, pos=(0, 0.1), size=(1, 0.4),
         color=[1,1,1], colorSpace='rgb', opacity=None,
         flipHoriz=False, flipVert=False,
@@ -551,7 +564,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "bye" ---
     text_bye = visual.TextStim(win=win, name='text_bye',
-        text='Vielen Dank!\n\nAls Nächstes geht es mit dem Hauptexperiment weiter.\nMelden Sie sich dafür bitte bei der Versuchsleitung.\n\n\n(Leertaste drücken, um Kalibireirung zu beenden)',
+        text='Vielen Dank!\n\nAls Nächstes geht es mit dem Hauptexperiment weiter.\nMelden Sie sich bitte bei der Versuchsleitung.\n\n\n(Leertaste drücken, um Kalibrierung zu beenden)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -1157,7 +1170,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         continueRoutine = True
         # update component parameters for each repeat
         thisExp.addData('preexposure.started', globalClock.getTime())
-        # Run 'Begin Routine' code from prexposure
+        # Run 'Begin Routine' code from thermoino_prexposure
         checked = False
         stimuli_clock.reset()
         
@@ -1187,14 +1200,13 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             tThisFlipGlobal = win.getFutureFlipTime(clock=None)
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
-            # Run 'Each Frame' code from prexposure
+            # Run 'Each Frame' code from thermoino_prexposure
             routine_duration = time_for_ramp_up + stimuli_clock.getTime() 
             
             if not checked:
                 if routine_duration > stimuli_duration:
                     luigi.set_temp(temp_baseline)
                     checked = True
-            
             
             # *corss_pain_preexposure* updates
             
@@ -1472,7 +1484,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     thisExp.addData('count_in_preexposure.stopped', globalClock.getTime())
     # Run 'End Routine' code from transition_preexposure_to_vas0
     # If response was yes
-    logger_for_runner.info("Preexposure painful? Answer: %s", response_preexposure.keys)
+    psychopy_logger.info("Preexposure painful? Answer: %s", response_preexposure.keys)
     
     if response_preexposure.keys == "y":
         # Decrease starting temperature
@@ -2830,19 +2842,6 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # update params
             pass
         
-        # if text_bye is stopping this frame...
-        if text_bye.status == STARTED:
-            # is it time to stop? (based on global clock, using actual start)
-            if tThisFlipGlobal > text_bye.tStartRefresh + 1.0-frameTolerance:
-                # keep track of stop time/frame for later
-                text_bye.tStop = t  # not accounting for scr refresh
-                text_bye.frameNStop = frameN  # exact frame index
-                # add timestamp to datafile
-                thisExp.timestampOnFlip(win, 'text_bye.stopped')
-                # update status
-                text_bye.status = FINISHED
-                text_bye.setAutoDraw(False)
-        
         # *key_bye* updates
         waitOnFlip = False
         
@@ -2915,7 +2914,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # the Routine "bye" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     # Run 'End Experiment' code from all_variables
-    close_logger(logger_for_runner)
+    close_logger(psychopy_runner)
     # Run 'End Experiment' code from thermoino
     luigi.close()
     
