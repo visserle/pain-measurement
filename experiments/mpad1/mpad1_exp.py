@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 18, 2023, at 11:18
+    on September 18, 2023, at 11:22
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -507,7 +507,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         flip=False, ori=0.0, depth=-4, readOnly=False)
     
     # --- Initialize components for Routine "trial_end" ---
-    # Run 'Begin Experiment' code from this_trial
+    # Run 'Begin Experiment' code from trial_end
     this_trial = None
     text_trial_end = visual.TextStim(win=win, name='text_trial_end',
         text='',
@@ -1592,9 +1592,9 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         # Sometimes the Theroino takes some time to set the temperature back to baseline
         # Here, we force this with a loop for each frame.
         success = False
-        # Run 'Begin Routine' code from this_trial
+        # Run 'Begin Routine' code from trial_end
         # Store the trial number for conditional text box
-        this_trial = loop_trials.thisN
+        this_trial = loop_trials.thisN    
         text_trial_end.setText("Dieser Block ist geschafft.\n\nNun wechseln wir die Haustelle am Arm.\nBitte melden Sie sich bei der Versuchsleitung.\n\n\n(Leertaste drücken, um fortzufahren)" if this_trial != n_trials -1 else "Das Experiment ist vorbei.\n\n\nVielen Dank für Ihre Teilnahme!")
         key_trial_end.keys = []
         key_trial_end.rt = []
@@ -1834,7 +1834,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # completed n_trials repeats of 'loop_trials'
     
     # Run 'End Experiment' code from all_variables
-    close_logger(psychopy_logger)
+    # Moved to trial_end component so that it gets called later on
+    # close_logger(psychopy_logger)
     # Run 'End Experiment' code from imotions_control
     imotions_control.end_study()
     imotions_control.close()
@@ -1844,6 +1845,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     """ Close event recieving API connection """
     imotions_event.end_study()
     imotions_event.close()
+    # Run 'End Experiment' code from trial_end
+    close_logger(psychopy_logger)
     
     # mark experiment as finished
     endExperiment(thisExp, win=win, inputs=inputs)
