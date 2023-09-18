@@ -95,7 +95,7 @@
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
-        <Param val="close_logger(psychopy_logger)" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="# Moved close_logger(psychopy_logger) to bye" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
         <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
@@ -1187,7 +1187,7 @@
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="close_logger(psychopy_logger)" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
         <Param val="add_participant(&amp;#10;    expInfo['participant'],&amp;#10;    expInfo['age'],&amp;#10;    expInfo['gender'],&amp;#10;    estimator_vas0.get_estimate(),&amp;#10;    estimator_vas70.get_estimate())" valType="extendedCode" updates="constant" name="End Routine"/>
