@@ -3,8 +3,11 @@
 # excluded for now
 /runs
 /experiments/mpad1/data
+/experiments/mpad1/log
 /experiments/mpad2/data
+/experiments/mpad2/log
 /experiments/calibration/data
+/experiments/calibration/log
 notebooks/_stuff.ipynb
 experiments/README.md
 
