@@ -81,10 +81,10 @@ class Thermoino:
         Serial object for communication with the Thermoino.
     temp : `int`
         Current (calculated) temperature [°C]. Starts at the baseline temperature.
-    temp_baseline : `int`
+    mms_baseline : `int`
         Baseline temperature [°C]. 
         It has to be the same as in the MMS program.
-    rate_of_rise : `int`
+    mms_rate_of_rise : `int`
         Rate of rise of temperature [°C/s]. It has to be the same as in the MMS program.
         For Pathways 10 is standard. For TAS 2 it is 13. For CHEPS something over 50 (ask Björn).
         For normal temperature plateaus a higher rate of rise is recommended (faster);
@@ -121,8 +121,8 @@ class Thermoino:
 
     luigi = Thermoino(
         port=port,
-        temp_baseline=32,  # has to be the same as in MMS
-        rate_of_rise=5  # has to be the same as in MMS
+        mms_baseline=32,  # has to be the same as in MMS
+        mms_rate_of_rise=5  # has to be the same as in MMS
     )
 
     # Use luigi to set temperatures:
@@ -150,7 +150,7 @@ class Thermoino:
 
     BAUD_RATE = 115200
 
-    def __init__(self, port, temp_baseline, rate_of_rise):
+    def __init__(self, port, mms_baseline, mms_rate_of_rise):
         """
         Constructs a Thermoino object.
         
@@ -158,18 +158,18 @@ class Thermoino:
         ----------
         port : `str`
             The serial port to which the Thermoino device is connected.
-        temp_baseline : `int`, optional
+        mms_baseline : `int`, optional
             Baseline temperature in °C. It has to be the same as in the MMS program.
-        rate_of_rise : `int`
+        mms_rate_of_rise : `int`
             Rate of rise of temperature in °C/s. It has to be the same as in the MMS program.
             For Pathways 10 is standard. For TAS 2 it is 13. For CHEPS something over 50 (ask Björn).
             It can be changed class-wide by calucalting an adjusted rate of rise in the create_ctc method.
         """
         self.PORT = port
         self.ser = None # will be set to the serial object in connect()
-        self.temp_baseline = temp_baseline
-        self.temp = temp_baseline # will get continuous class-internal updates to match the temperature of the Thermode
-        self.rate_of_rise = rate_of_rise
+        self.mms_baseline = mms_baseline
+        self.temp = mms_baseline # will get continuous class-internal updates to match the temperature of the Thermode
+        self.mms_rate_of_rise = mms_rate_of_rise
 
         self.connected = False # will be set to True in connect()
 
@@ -275,7 +275,7 @@ class Thermoino:
         tuple
             (self, float) - self for chaining, float for the duration in seconds for the temperature change.
         """
-        move_time_us = round(((temp_target - self.temp) / self.rate_of_rise) * 1e6)
+        move_time_us = round(((temp_target - self.temp) / self.mms_rate_of_rise) * 1e6)
         move_time_s = move_time_us / 1e6  # Convert to seconds
         output = self._send_command(f'MOVE;{move_time_us}\n')
         if output in OkCodes.__members__:
@@ -325,8 +325,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
     ser : `serial.Serial`
         Serial object for communication with the Thermoino.
     temp : `int`
-        Current (calculated) temperature [°C]. Starts at the baseline temperature.
-    temp_baseline : `int`
+        Current (calculated) temperature [°C]. Starts at the MMS baseline temperature.
+    mms_baseline : `int`
         Baseline temperature [°C]. 
         It has to be the same as in the MMS program.
     temp_course_duration : `int`
@@ -335,7 +335,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         Resampled temperature course (based on bin_size_ms) used to calculate the CTC.
     ctc : `numpy.array`
         The resampled, differentiated, binned temperature course to be loaded into the Thermoino.
-    rate_of_rise : `int`
+    mms_rate_of_rise : `int`
         Rate of rise of temperature [°C/s]. It has to be the same as in the MMS program.
         For Pathways 10 is standard. For TAS 2 it is 13. For CHEPS something over 50 (ask Björn).
         For normal temperature plateaus a higher rate of rise is recommended (faster);
@@ -389,8 +389,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
     port = None  # e.g. "COM12"
     luigi = ThermoinoComplexTimeCourses(
         port=port,
-        temp_baseline=32,  # has to be the same as in MMS
-        rate_of_rise=5  # has to be the same as in MMS
+        mms_baseline=32,  # has to be the same as in MMS
+        mms_rate_of_rise=5  # has to be the same as in MMS
     )
 
     # Use luigi for complex temperature courses:
@@ -425,8 +425,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
     - Fix query function
     """
 
-    def __init__(self, port, temp_baseline, rate_of_rise):
-        super().__init__(port, temp_baseline, rate_of_rise)
+    def __init__(self, port, mms_baseline, mms_rate_of_rise):
+        super().__init__(port, mms_baseline, mms_rate_of_rise)
         logger.info("Thermoino for complex time courses initialized.")
         self.bin_size_ms = None
         self.temp_course = None
@@ -512,14 +512,14 @@ class ThermoinoComplexTimeCourses(Thermoino):
             rate_of_rise_adjusted = max(temp_course_resampled_diff * (1000 / self.bin_size_ms))
             rate_of_rise_adjusted = np.ceil(rate_of_rise_adjusted * 10) / 10  # round up to .1°C precision
             # Update the rate of rise
-            self.rate_of_rise = rate_of_rise_adjusted
+            self.mms_rate_of_rise = rate_of_rise_adjusted
         else:
             if rate_of_rise_option != "mms_program":
                 raise ValueError("Thermoino rate of raise value has to be either mms_program or adjusted")
 
-        rate_of_rise_ms = self.rate_of_rise / 1e3
-        # scale to rate_of_rise (in milliseconds)
-        temp_course_resampled_diff_binned = temp_course_resampled_diff / rate_of_rise_ms
+        mms_rate_of_rise_ms = self.mms_rate_of_rise / 1e3
+        # scale to mms_rate_of_rise (in milliseconds)
+        temp_course_resampled_diff_binned = temp_course_resampled_diff / mms_rate_of_rise_ms
         # Thermoino only accepts integers
         temp_course_resampled_diff_binned = np.round(temp_course_resampled_diff_binned).astype(int)
         self.ctc = temp_course_resampled_diff_binned
@@ -582,7 +582,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         This is seperate from exec_ctc to be able to use exec_ctc in a psychopy routine and control the exact length of the stimulation.
         """
         if not self.temp == self.temp_course_resampled[0]:
-            prep_duration = round(abs(self.temp - self.temp_course_resampled[0]) / self.rate_of_rise,1)
+            prep_duration = round(abs(self.temp - self.temp_course_resampled[0]) / self.mms_rate_of_rise,1)
             prep_duration += 0.5 # add 0.5 s to be sure
             self.set_temp(self.temp_course_resampled[0])
             logger.info("Thermoino prepares the CTC for execution by setting the starting temperature at %s °C", self.temp)

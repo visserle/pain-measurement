@@ -486,8 +486,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # Run 'Begin Experiment' code from thermoino
     luigi = ThermoinoComplexTimeCourses(
         port=port, 
-        temp_baseline=temp_baseline, 
-        rate_of_rise=rate_of_rise)
+        mms_temp_baseline=temp_baseline, 
+        mms_rate_of_rise=rate_of_rise)
     
     luigi.connect()
     # Run 'Begin Experiment' code from imotions_event

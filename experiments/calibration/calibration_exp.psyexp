@@ -86,7 +86,7 @@
         <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
       </RoutineSettingsComponent>
       <CodeComponent name="all_variables" plugin="None">
-        <Param val="# Logger&amp;#10;from pathlib import Path&amp;#10;from datetime import datetime&amp;#10;from src.experiments.logger import setup_logger, close_logger&amp;#10;&amp;#10;log_dir = Path('log')&amp;#10;log_dir.mkdir(parents=True, exist_ok=True)&amp;#10;log_filename_str = datetime.now().strftime(&quot;%Y_%m_%d__%H_%M_%S&quot;) + &quot;.log&quot;&amp;#10;log_file = log_dir / log_filename_str&amp;#10;&amp;#10;psychopy_logger = setup_logger(&amp;#10;    '', # this only works because psychopy has it's own logging system&amp;#10;    level=logging.INFO, &amp;#10;    log_file=log_file,&amp;#10;    stream_handler=False)&amp;#10;&amp;#10;# Thermoino&amp;#10;port = &quot;COM7&quot; # COM7 for top usb port on the front, use list_com_ports() to find out&amp;#10;temp_baseline = 30 # has to be the same as in MMS&amp;#10;rate_of_rise = 5 # has to be the same as in MMS&amp;#10;&amp;#10;# Stimuli&amp;#10;stimuli_clock = core.Clock()&amp;#10;stimuli_duration = 0.2 # 8&amp;#10;iti_duration = 0.2 # 8  + np.random.randint(0, 5)&amp;#10;cross_size = (0.06, 0.06)&amp;#10;&amp;#10;# Pre-exposure&amp;#10;temps_preexposure = [35, 36, 37]&amp;#10;&amp;#10;# Estimator&amp;#10;trials_vas0 = 7 # is the same as nReps in psychopy loop&amp;#10;temp_start_vas0 = 39.&amp;#10;temp_std_vas0 = 3.5&amp;#10;&amp;#10;trials_vas70 = 5 # is the same as nReps in psychopy loop&amp;#10;temp_start_vas70 = None #  will be set after VAS 0 estimate&amp;#10;temp_start_vas70_plus = 3 # VAS 0 estimate plus int&amp;#10;temp_std_vas70 = 1.5 # smaller std for higher temperatures&amp;#10;" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="# Logger&amp;#10;from pathlib import Path&amp;#10;from datetime import datetime&amp;#10;from src.experiments.logger import setup_logger, close_logger&amp;#10;&amp;#10;log_dir = Path('log')&amp;#10;log_dir.mkdir(parents=True, exist_ok=True)&amp;#10;log_filename_str = datetime.now().strftime(&quot;%Y_%m_%d__%H_%M_%S&quot;) + &quot;.log&quot;&amp;#10;log_file = log_dir / log_filename_str&amp;#10;&amp;#10;psychopy_logger = setup_logger(&amp;#10;    '', # this only works because psychopy has it's own logging system&amp;#10;    level=logging.INFO, &amp;#10;    log_file=log_file,&amp;#10;    stream_handler=False)&amp;#10;&amp;#10;# Thermoino&amp;#10;port = &quot;COM7&quot; # COM7 for top usb port on the front, use list_com_ports() to find out&amp;#10;mms_baseline = 30 # has to be the same as in MMS&amp;#10;mms_rate_of_rise = 5 # has to be the same as in MMS&amp;#10;&amp;#10;# Stimuli&amp;#10;stimuli_clock = core.Clock()&amp;#10;stimuli_duration = 0.2 # 8&amp;#10;iti_duration = 0.2 # 8  + np.random.randint(0, 5)&amp;#10;cross_size = (0.06, 0.06)&amp;#10;&amp;#10;# Pre-exposure&amp;#10;temps_preexposure = [35, 36, 37]&amp;#10;&amp;#10;# Estimator&amp;#10;trials_vas0 = 7 # is the same as nReps in psychopy loop&amp;#10;temp_start_vas0 = 39.&amp;#10;temp_std_vas0 = 3.5&amp;#10;&amp;#10;trials_vas70 = 5 # is the same as nReps in psychopy loop&amp;#10;temp_start_vas70 = None #  will be set after VAS 0 estimate&amp;#10;temp_start_vas70_plus = 3 # VAS 0 estimate plus int&amp;#10;temp_std_vas70 = 1.5 # smaller std for higher temperatures&amp;#10;" valType="extendedCode" updates="constant" name="Before Experiment"/>
         <Param val="ibi_duration = 8;&amp;#10;" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
@@ -95,7 +95,7 @@
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
-        <Param val="# Moved close_logger(psychopy_logger) to bye" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="close_logger(psychopy_logger)" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
         <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
@@ -105,7 +105,7 @@
       <CodeComponent name="thermoino" plugin="None">
         <Param val="from src.experiments.thermoino import Thermoino" valType="extendedCode" updates="constant" name="Before Experiment"/>
         <Param val="import {ThermoinoComplexTimeCourses} from 'src/experiments/thermoino';&amp;#10;" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
-        <Param val="luigi = Thermoino(&amp;#10;    port=port,&amp;#10;    temp_baseline=temp_baseline, # has to be the same as in MMS&amp;#10;    rate_of_rise=rate_of_rise) # has to be the same as in MMS&amp;#10;&amp;#10;luigi.connect()" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="luigi = Thermoino(&amp;#10;    port=port,&amp;#10;    mms_baseline=mms_baseline, # has to be the same as in MMS&amp;#10;    mms_rate_of_rise=mms_rate_of_rise) # has to be the same as in MMS&amp;#10;&amp;#10;luigi.connect()" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="port = &quot;COM13&quot;;&amp;#10;luigi = new ThermoinoComplexTimeCourses({&quot;port&quot;: port, &quot;temp_baseline&quot;: 32, &quot;rate_of_rise&quot;: 5});&amp;#10;luigi.connect();&amp;#10;luigi.init_ctc({&quot;bin_size_ms&quot;: 500});&amp;#10;luigi.create_ctc({&quot;temp_course&quot;: stimuli.wave, &quot;sample_rate&quot;: stimuli.sample_rate, &quot;rate_of_rise_option&quot;: &quot;mms_program&quot;});&amp;#10;luigi.load_ctc();&amp;#10;luigi.trigger();&amp;#10;luigi.prep_ctc();&amp;#10;" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin Routine"/>
@@ -262,7 +262,7 @@
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Die Schmerz-Kalibrierung besteht aus 3 Phasen:&amp;#10;&amp;#10;1. dem Aufwärmen Ihrer Hautstelle am Arm,&amp;#10;2. dem Bestimmen der Schwelle, wo Sie &amp;#10;a) erste Schmerzen spüren und&amp;#10;b) starke Schmerzen spüren.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
+        <Param val="Die Schmerz-Kalibrierung besteht aus 3 Phasen:&amp;#10;&amp;#10;1. dem Aufwärmen Ihrer Hautstelle am Arm,&amp;#10;2. dem Bestimmen der Schwelle, ab der Sie &amp;#10;a) erste Schmerzen spüren und&amp;#10;b) starke Schmerzen spüren.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
@@ -415,7 +415,7 @@
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
         <Param val="checked = False&amp;#10;stimuli_clock.reset()&amp;#10;&amp;#10;trial = loop_preexposure.thisN&amp;#10;luigi.trigger()&amp;#10;time_for_ramp_up = luigi.set_temp(temps_preexposure[trial])[1]" valType="extendedCode" updates="constant" name="Begin Routine"/>
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
-        <Param val="routine_duration = time_for_ramp_up + stimuli_clock.getTime() &amp;#10;&amp;#10;if not checked:&amp;#10;    if routine_duration &gt; stimuli_duration:&amp;#10;        luigi.set_temp(temp_baseline)&amp;#10;        checked = True" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="routine_duration = time_for_ramp_up + stimuli_clock.getTime() &amp;#10;&amp;#10;if not checked:&amp;#10;    if routine_duration &gt; stimuli_duration:&amp;#10;        luigi.set_temp(mms_baseline)&amp;#10;        checked = True" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
@@ -657,7 +657,7 @@
         <Param val="luigi.set_temp(42);&amp;#10;luigi.wait(4);&amp;#10;luigi.set_temp(32);&amp;#10;luigi.close();&amp;#10;" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
         <Param val="checked = False&amp;#10;stimuli_clock.reset()&amp;#10;&amp;#10;luigi.trigger()&amp;#10;time_for_ramp_up = luigi.set_temp(estimator_vas0.current_temp)[1]" valType="extendedCode" updates="constant" name="Begin Routine"/>
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
-        <Param val="routine_duration = time_for_ramp_up + stimuli_clock.getTime() &amp;#10;&amp;#10;if not checked:&amp;#10;    if routine_duration &gt; stimuli_duration:&amp;#10;        luigi.set_temp(temp_baseline)&amp;#10;        checked = True&amp;#10;" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="routine_duration = time_for_ramp_up + stimuli_clock.getTime() &amp;#10;&amp;#10;if not checked:&amp;#10;    if routine_duration &gt; stimuli_duration:&amp;#10;        luigi.set_temp(mms_baseline)&amp;#10;        checked = True&amp;#10;" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
@@ -1004,7 +1004,7 @@
         <Param val="luigi.set_temp(42);&amp;#10;luigi.wait(4);&amp;#10;luigi.set_temp(32);&amp;#10;luigi.close();&amp;#10;" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
         <Param val="checked = False&amp;#10;stimuli_clock.reset()&amp;#10;&amp;#10;luigi.trigger()&amp;#10;time_for_ramp_up = luigi.set_temp(estimator_vas70.current_temp)[1]" valType="extendedCode" updates="constant" name="Begin Routine"/>
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
-        <Param val="routine_duration = time_for_ramp_up + stimuli_clock.getTime()&amp;#10;&amp;#10;if not checked:&amp;#10;    if routine_duration &gt; stimuli_duration:&amp;#10;        luigi.set_temp(temp_baseline)&amp;#10;        checked = True&amp;#10;" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="routine_duration = time_for_ramp_up + stimuli_clock.getTime()&amp;#10;&amp;#10;if not checked:&amp;#10;    if routine_duration &gt; stimuli_duration:&amp;#10;        luigi.set_temp(mms_baseline)&amp;#10;        checked = True&amp;#10;" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
@@ -1187,7 +1187,7 @@
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
-        <Param val="close_logger(psychopy_logger)" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
         <Param val="add_participant(&amp;#10;    expInfo['participant'],&amp;#10;    expInfo['age'],&amp;#10;    expInfo['gender'],&amp;#10;    estimator_vas0.get_estimate(),&amp;#10;    estimator_vas70.get_estimate())" valType="extendedCode" updates="constant" name="End Routine"/>

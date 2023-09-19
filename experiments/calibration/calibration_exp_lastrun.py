@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 18, 2023, at 10:50
+    on September 19, 2023, at 14:12
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -68,8 +68,8 @@ psychopy_logger = setup_logger(
 
 # Thermoino
 port = "COM7" # COM7 for top usb port on the front, use list_com_ports() to find out
-temp_baseline = 30 # has to be the same as in MMS
-rate_of_rise = 5 # has to be the same as in MMS
+mms_baseline = 30 # has to be the same as in MMS
+mms_rate_of_rise = 5 # has to be the same as in MMS
 
 # Stimuli
 stimuli_clock = core.Clock()
@@ -376,12 +376,12 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # Run 'Begin Experiment' code from thermoino
     luigi = Thermoino(
         port=port,
-        temp_baseline=temp_baseline, # has to be the same as in MMS
-        rate_of_rise=rate_of_rise) # has to be the same as in MMS
+        mms_baseline=mms_baseline, # has to be the same as in MMS
+        mms_rate_of_rise=mms_rate_of_rise) # has to be the same as in MMS
     
     luigi.connect()
     text_welcome = visual.TextStim(win=win, name='text_welcome',
-        text='Herzlich willkommen zur Studie!\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Herzlich willkommen zur Studie!\n\n\n(Leertaste drücken, um zu starten)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -401,7 +401,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_3" ---
     text_welcome_3 = visual.TextStim(win=win, name='text_welcome_3',
-        text='Die Schmerz-Kalibrierung besteht aus 3 Phasen:\n\n1. dem Aufwärmen Ihrer Hautstelle am Arm,\n2. dem Bestimmen der Schwelle, wo Sie \na) erste Schmerzen spüren und\nb) starke Schmerzen spüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Die Schmerz-Kalibrierung besteht aus 3 Phasen:\n\n1. dem Aufwärmen Ihrer Hautstelle am Arm,\n2. dem Bestimmen der Schwelle, ab der Sie \na) erste Schmerzen spüren und\nb) starke Schmerzen spüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -1205,7 +1205,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             
             if not checked:
                 if routine_duration > stimuli_duration:
-                    luigi.set_temp(temp_baseline)
+                    luigi.set_temp(mms_baseline)
                     checked = True
             
             # *corss_pain_preexposure* updates
@@ -1776,7 +1776,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             
             if not checked:
                 if routine_duration > stimuli_duration:
-                    luigi.set_temp(temp_baseline)
+                    luigi.set_temp(mms_baseline)
                     checked = True
             
             
@@ -2493,7 +2493,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             
             if not checked:
                 if routine_duration > stimuli_duration:
-                    luigi.set_temp(temp_baseline)
+                    luigi.set_temp(mms_baseline)
                     checked = True
             
             
@@ -2914,7 +2914,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # the Routine "bye" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     # Run 'End Experiment' code from all_variables
-    close_logger(psychopy_runner)
+    close_logger(psychopy_logger)
     # Run 'End Experiment' code from thermoino
     luigi.close()
     
