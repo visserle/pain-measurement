@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 18, 2023, at 11:22
+    on September 19, 2023, at 14:34
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -107,8 +107,8 @@ vas_labels = ("Keine\nSchmerzen", "Sehr starke Schmerzen")
 
 # Thermoino
 port = "COM7" # use list_com_ports() beforehand to find out
-temp_baseline = 30 # has to be the same as in MMS (not the same as baseline_temp (sorry for confusing names))
-rate_of_rise = 5 # has to be the same as in MMS
+mms_baseline = 30 # has to be the same as in MMS (not the same as baseline_temp (sorry for confusing names))
+mms_rate_of_rise = 5 # has to be the same as in MMS
 bin_size_ms = 500
 # Run 'Before Experiment' code from imotions_control
 from src.experiments.imotions import RemoteControliMotions
@@ -401,7 +401,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     imotions_control.connect()
     imotions_control.start_study(mode=start_study_mode)
     text_welcome = visual.TextStim(win=win, name='text_welcome',
-        text='Willkommen zum Haupt-Experiment!\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Willkommen zum Haupt-Experiment!\n\n\n(Leertaste drücken, um zu starten)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -411,7 +411,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_2" ---
     text_welcome_2 = visual.TextStim(win=win, name='text_welcome_2',
-        text='Mit diesem Experiment möchten wir Schmerz objektiv messbar machen.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Mit diesem Experiment möchten wir Schmerzen objektiv messbar machen.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -448,7 +448,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "instruction_2" ---
     text_instruction_2 = visual.TextStim(win=win, name='text_instruction_2',
-        text='Die Beschriftungen "Keine Schmerzen" und "Sehr starke Schmerzen" entsprechen dabei Ihren Werten aus der Kalibrierung. Nutzen Sie die gesamte Breite der Skala!\n\n\n\n\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Die Beschriftungen "Keine Schmerzen" und "Sehr starke Schmerzen" entsprechen dabei Ihren Werten aus der Kalibrierung. Nutzen Sie die gesamte Breite der Skala!\n\n\n\n\n\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -486,8 +486,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # Run 'Begin Experiment' code from thermoino
     luigi = ThermoinoComplexTimeCourses(
         port=port, 
-        mms_temp_baseline=temp_baseline, 
-        mms_rate_of_rise=rate_of_rise)
+        mms_baseline=mms_baseline, 
+        mms_rate_of_rise=mms_rate_of_rise)
     
     luigi.connect()
     # Run 'Begin Experiment' code from imotions_event
@@ -1624,7 +1624,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # update/draw components on each frame
             # Run 'Each Frame' code from reset_temp
             if not success and frameN % 20 == 0:
-                success = luigi.set_temp(temp_baseline)[2]
+                success = luigi.set_temp(mms_baseline)[2]
             
             # *text_trial_end* updates
             
@@ -1834,8 +1834,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # completed n_trials repeats of 'loop_trials'
     
     # Run 'End Experiment' code from all_variables
-    # Moved to trial_end component so that it gets called later on
-    # close_logger(psychopy_logger)
+    # Moved close_logger(psychopy_logger) to trial_end component
     # Run 'End Experiment' code from imotions_control
     imotions_control.end_study()
     imotions_control.close()
