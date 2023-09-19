@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 19, 2023, at 14:12
+    on September 19, 2023, at 15:15
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -69,12 +69,12 @@ psychopy_logger = setup_logger(
 # Thermoino
 port = "COM7" # COM7 for top usb port on the front, use list_com_ports() to find out
 mms_baseline = 30 # has to be the same as in MMS
-mms_rate_of_rise = 5 # has to be the same as in MMS
+mms_rate_of_rise = 10 # has to be the same as in MMS
 
 # Stimuli
 stimuli_clock = core.Clock()
-stimuli_duration = 0.2 # 8
-iti_duration = 0.2 # 8  + np.random.randint(0, 5)
+stimuli_duration = 8
+iti_duration = 8  + np.random.randint(0, 5)
 cross_size = (0.06, 0.06)
 
 # Pre-exposure
@@ -216,7 +216,7 @@ def setupWindow(expInfo=None, win=None):
     if win is None:
         # if not given a window to setup, make one
         win = visual.Window(
-            size=[1920, 1200], fullscr=True, screen=0,
+            size=[920, 1200], fullscr=False, screen=0,
             winType='pyglet', allowStencil=False,
             monitor='testMonitor', color=[0,0,0], colorSpace='rgb',
             backgroundImage='', backgroundFit='none',
@@ -233,7 +233,7 @@ def setupWindow(expInfo=None, win=None):
         win.backgroundImage = ''
         win.backgroundFit = 'none'
         win.units = 'height'
-    win.mouseVisible = False
+    win.mouseVisible = True
     win.hideMessage()
     return win
 
@@ -1201,10 +1201,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
             # Run 'Each Frame' code from thermoino_prexposure
-            routine_duration = time_for_ramp_up + stimuli_clock.getTime() 
-            
             if not checked:
-                if routine_duration > stimuli_duration:
+                if stimuli_clock.getTime() > (time_for_ramp_up + stimuli_duration):
                     luigi.set_temp(mms_baseline)
                     checked = True
             
@@ -1772,13 +1770,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
             # Run 'Each Frame' code from thermoino_vas0
-            routine_duration = time_for_ramp_up + stimuli_clock.getTime() 
-            
             if not checked:
-                if routine_duration > stimuli_duration:
+                if stimuli_clock.getTime() > (time_for_ramp_up + stimuli_duration):
                     luigi.set_temp(mms_baseline)
                     checked = True
-            
             
             # *cross_pain_vas0* updates
             
@@ -2489,13 +2484,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
             # Run 'Each Frame' code from thermoino_vas70
-            routine_duration = time_for_ramp_up + stimuli_clock.getTime()
-            
             if not checked:
-                if routine_duration > stimuli_duration:
+                if stimuli_clock.getTime() > (time_for_ramp_up + stimuli_duration):
                     luigi.set_temp(mms_baseline)
                     checked = True
-            
             
             # *cross_pain_vas70* updates
             
