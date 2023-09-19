@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 19, 2023, at 14:16
+    on September 19, 2023, at 16:07
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -83,7 +83,7 @@ seeds = [463]#, 320]#, 43, 999, 242, 32, 1, 98, 478, 48, 435]
 n_trials = len(seeds)
 this_trial = None # just initializing
 
-minimal_desired_duration = 2 # in seconds
+minimal_desired_duration = 200 # in seconds
 periods = [67, 20] # [0] is the baseline and [1] the modulation; in seconds
 frequencies = 1./np.array(periods)
 # calculate amplitudes based on VAS 70 - VAS 0
@@ -108,7 +108,7 @@ vas_labels = ("Keine\nSchmerzen", "Sehr starke Schmerzen")
 # Thermoino
 port = "COM7" # use list_com_ports() beforehand to find out
 mms_baseline = 30 # has to be the same as in MMS (not the same as baseline_temp (sorry for confusing names))
-mms_rate_of_rise = 5 # has to be the same as in MMS
+mms_rate_of_rise = 10 # has to be the same as in MMS
 bin_size_ms = 500
 # Run 'Before Experiment' code from imotions_control
 from src.experiments.imotions import RemoteControliMotions
