@@ -1,0 +1,2 @@
+This folder contains all scripts that are necessary for psychopy and iMotions to run the experiments.
+Note that the psychopy experiments themselves are saved in `main/experiments` and not in `main/src/experiments`.
