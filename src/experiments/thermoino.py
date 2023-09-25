@@ -1,8 +1,7 @@
 # work in progress
 
 # TODO
-# - try out what happens if you load several CTCs without flushing in between
-# - do they get flushed automatically when you load a new one? or are they appended?
+# - Fix query function 
 
 import logging
 import time
@@ -12,24 +11,8 @@ import numpy as np
 import serial
 import serial.tools.list_ports
 
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
-def setup_default_logger():
-    """Create a default logger with a stream handler for logging to the console."""
-    l = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
-    l.setLevel(logging.INFO)
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.INFO)
-    stream_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
-    l.addHandler(stream_handler)
-    return l
-
-try:
-    from .logger import setup_logger
-    logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
-except ModuleNotFoundError:
-    logger = setup_default_logger()
-    logger.info("Could not import logger from src.experiments.logger. \
-                Using default logger.")
 
 def list_com_ports():
     """List all serial ports"""
@@ -133,19 +116,6 @@ class Thermoino:
     luigi.set_temp(32)
     luigi.close()
     ```
-
-    TODO
-    ----
-    - Add option to connect() that checks if the Thermoino is already connected by a try-except block
-        and account for manually removed Thermoino (e.g. by checking if the port is still available)
-        -> best solution is a context manager of course, find out if this works with Thermoino code
-    - Add count down to trigger for time out (defined in MMS program) -> maybe with threading? would require heartbeat mechanism...
-    - Add option to connect that checks if a Thermoino device is available or if you want to proceed without it by asking with input()
-        -> very handy for psychopy testing, where you don't want to have the Thermoino connected all the time
-    - Add timeout to serial communication?
-    - Fix query function
-	- Add real documentation (e.g. Sphinx, ...)
-    - etc.
     """
 
     BAUD_RATE = 115200
@@ -418,11 +388,6 @@ class ThermoinoComplexTimeCourses(Thermoino):
     luigi.set_temp(32)
     luigi.close()
     ````
-    
-    TODO
-    ----
-    - Fix usage of units in the docstrings (some small inaccuracies)
-    - Fix query function
     """
 
     def __init__(self, port, mms_baseline, mms_rate_of_rise):

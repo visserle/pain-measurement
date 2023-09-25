@@ -15,10 +15,7 @@ import logging
 import time
 from datetime import datetime
 
-from .logger import setup_logger #, close_logger
-
-logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
-
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 class RemoteControliMotions():
     """    

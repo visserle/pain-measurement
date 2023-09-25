@@ -25,8 +25,7 @@ except ImportError:
         print(f"Failed to install and import 'openpyxl': {exc}")
         raise exc
 
-from .logger import setup_logger
-logger = setup_logger(__name__.rsplit(".", maxsplit=1)[-1], level=logging.INFO)
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 # Set the path to the Excel file
 exp_dirs = "calibration", "mpad1", "mpad2"
@@ -118,13 +117,3 @@ def read_last_participant():
     logger.info(f"Participant data from {participant_info['participant']} ({participant_info['time_stamp']}) loaded.")
 
     return participant_info
-
-# main() does not work with logging
-# def main():
-#     init_excel_file()
-#     add_participant('John', 22, 'm', 3.5, 4.0)
-#     add_participant('Jane', 25, 'f', 2.5, 3.8)
-#     read_last_participant()
-
-# if __name__ == '__main__':
-#     main()
