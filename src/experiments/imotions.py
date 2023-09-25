@@ -1,7 +1,6 @@
 # work in progress
 
 # TODO
-# - close logger, maybe just put it into psychopy script 
 # - add export data function, p. 34 onwards for experiment2
 # - Add option to connect that checks if imotions is avaiable or if you want to proceed without it by asking with input()
 #    -> could come in handy for psychopy testing, where you don't want to have imotions connected all the time
