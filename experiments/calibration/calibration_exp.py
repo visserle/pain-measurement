@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 18, 2023, at 09:01
+    on September 22, 2023, at 23:20
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -53,28 +53,25 @@ expInfo = {
 # Logger
 from pathlib import Path
 from datetime import datetime
-from src.experiments.logger import setup_logger, close_logger
+from src.experiments.log_config import configure_logging, close_root_logging
 
+# Configure logging
 log_dir = Path('log')
 log_dir.mkdir(parents=True, exist_ok=True)
 log_filename_str = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
 log_file = log_dir / log_filename_str
 
-psychopy_logger = setup_logger(
-    '', # this only works because psychopy has it's own logging system
-    level=logging.INFO, 
-    log_file=log_file,
-    stream_handler=False)
+log_config.configure_logging(log_file=log_file)
 
 # Thermoino
 port = "COM7" # COM7 for top usb port on the front, use list_com_ports() to find out
-temp_baseline = 30 # has to be the same as in MMS
-rate_of_rise = 5 # has to be the same as in MMS
+mms_baseline = 30 # has to be the same as in MMS
+mms_rate_of_rise = 10 # has to be the same as in MMS
 
 # Stimuli
 stimuli_clock = core.Clock()
-stimuli_duration = 0.2 # 8
-iti_duration = 0.2 # 8  + np.random.randint(0, 5)
+stimuli_duration = 8
+iti_duration = 8  + np.random.randint(0, 5)
 cross_size = (0.06, 0.06)
 
 # Pre-exposure
@@ -216,12 +213,12 @@ def setupWindow(expInfo=None, win=None):
     if win is None:
         # if not given a window to setup, make one
         win = visual.Window(
-            size=[1920, 1200], fullscr=True, screen=0,
+            size=[600, 600], fullscr=False, screen=0,
             winType='pyglet', allowStencil=False,
             monitor='testMonitor', color=[0,0,0], colorSpace='rgb',
             backgroundImage='', backgroundFit='none',
             blendMode='avg', useFBO=True,
-            units='height'
+            units='norm'
         )
         if expInfo is not None:
             # store frame rate of monitor if we can measure it
@@ -232,8 +229,8 @@ def setupWindow(expInfo=None, win=None):
         win.colorSpace = 'rgb'
         win.backgroundImage = ''
         win.backgroundFit = 'none'
-        win.units = 'height'
-    win.mouseVisible = False
+        win.units = 'norm'
+    win.mouseVisible = True
     win.hideMessage()
     return win
 
@@ -376,12 +373,12 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # Run 'Begin Experiment' code from thermoino
     luigi = Thermoino(
         port=port,
-        temp_baseline=temp_baseline, # has to be the same as in MMS
-        rate_of_rise=rate_of_rise) # has to be the same as in MMS
+        mms_baseline=mms_baseline, # has to be the same as in MMS
+        mms_rate_of_rise=mms_rate_of_rise) # has to be the same as in MMS
     
     luigi.connect()
     text_welcome = visual.TextStim(win=win, name='text_welcome',
-        text='Herzlich willkommen zur Studie!\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Herzlich willkommen zur Studie!\n\n\n(Leertaste drücken, um zu starten)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -401,7 +398,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_3" ---
     text_welcome_3 = visual.TextStim(win=win, name='text_welcome_3',
-        text='Die Schmerz-Kalibrierung besteht aus 3 Phasen:\n\n1. dem Aufwärmen Ihrer Hautstelle am Arm,\n2. dem Bestimmen der Schwellen, an denen Sie \n  a) erste Schmerzen spüren und\n  b) starke Schmerzen spüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Die Schmerz-Kalibrierung besteht aus 3 Phasen:\n\n1. dem Aufwärmen Ihrer Hautstelle am Arm,\n2. dem Bestimmen der Schwelle, ab der Sie \na) erste Schmerzen spüren und\nb) starke Schmerzen spüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -1201,11 +1198,9 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
             # Run 'Each Frame' code from thermoino_prexposure
-            routine_duration = time_for_ramp_up + stimuli_clock.getTime() 
-            
             if not checked:
-                if routine_duration > stimuli_duration:
-                    luigi.set_temp(temp_baseline)
+                if stimuli_clock.getTime() > (time_for_ramp_up + stimuli_duration):
+                    luigi.set_temp(mms_baseline)
                     checked = True
             
             # *corss_pain_preexposure* updates
@@ -1484,7 +1479,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     thisExp.addData('count_in_preexposure.stopped', globalClock.getTime())
     # Run 'End Routine' code from transition_preexposure_to_vas0
     # If response was yes
-    logger_for_runner.info("Preexposure painful? Answer: %s", response_preexposure.keys)
+    psychopy_logger.info("Preexposure painful? Answer: %s", response_preexposure.keys)
     
     if response_preexposure.keys == "y":
         # Decrease starting temperature
@@ -1772,13 +1767,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
             # Run 'Each Frame' code from thermoino_vas0
-            routine_duration = time_for_ramp_up + stimuli_clock.getTime() 
-            
             if not checked:
-                if routine_duration > stimuli_duration:
-                    luigi.set_temp(temp_baseline)
+                if stimuli_clock.getTime() > (time_for_ramp_up + stimuli_duration):
+                    luigi.set_temp(mms_baseline)
                     checked = True
-            
             
             # *cross_pain_vas0* updates
             
@@ -2489,13 +2481,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
             # update/draw components on each frame
             # Run 'Each Frame' code from thermoino_vas70
-            routine_duration = time_for_ramp_up + stimuli_clock.getTime()
-            
             if not checked:
-                if routine_duration > stimuli_duration:
-                    luigi.set_temp(temp_baseline)
+                if stimuli_clock.getTime() > (time_for_ramp_up + stimuli_duration):
+                    luigi.set_temp(mms_baseline)
                     checked = True
-            
             
             # *cross_pain_vas70* updates
             
@@ -2914,7 +2903,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # the Routine "bye" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     # Run 'End Experiment' code from all_variables
-    close_logger(psychopy_runner)
+    close_root_logging()
     # Run 'End Experiment' code from thermoino
     luigi.close()
     

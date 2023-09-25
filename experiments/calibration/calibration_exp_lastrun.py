@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 19, 2023, at 16:03
+    on September 23, 2023, at 19:14
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -53,18 +53,15 @@ expInfo = {
 # Logger
 from pathlib import Path
 from datetime import datetime
-from src.experiments.logger import setup_logger, close_logger
+from src.experiments.log_config import configure_logging, close_root_logging
 
+# Configure logging
 log_dir = Path('log')
 log_dir.mkdir(parents=True, exist_ok=True)
 log_filename_str = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
 log_file = log_dir / log_filename_str
 
-psychopy_logger = setup_logger(
-    '', # this only works because psychopy has it's own logging system
-    level=logging.INFO, 
-    log_file=log_file,
-    stream_handler=False)
+configure_logging(log_file=log_file)
 
 # Thermoino
 port = "COM7" # COM7 for top usb port on the front, use list_com_ports() to find out
@@ -1482,7 +1479,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     thisExp.addData('count_in_preexposure.stopped', globalClock.getTime())
     # Run 'End Routine' code from transition_preexposure_to_vas0
     # If response was yes
-    psychopy_logger.info("Preexposure painful? Answer: %s", response_preexposure.keys)
+    logging.info("Preexposure painful? Answer: %s", response_preexposure.keys)
     
     if response_preexposure.keys == "y":
         # Decrease starting temperature
@@ -2906,7 +2903,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # the Routine "bye" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     # Run 'End Experiment' code from all_variables
-    close_logger(psychopy_logger)
+    close_root_logging()
     # Run 'End Experiment' code from thermoino
     luigi.close()
     

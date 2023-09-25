@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 19, 2023, at 16:07
+    on September 20, 2023, at 11:07
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -79,7 +79,7 @@ expInfo['gender'] = participant_info['gender']
 start_study_mode = "NormalPrompt"
 
 # Stimuli
-seeds = [463]#, 320]#, 43, 999, 242, 32, 1, 98, 478, 48, 435]
+seeds = [320, 43, 999, 242, 32, 1, 98, 478, 48, 435, 54]
 n_trials = len(seeds)
 this_trial = None # just initializing
 
@@ -102,7 +102,7 @@ add_at_end = True
 
 # Time
 stimuli_clock = core.Clock()
-iti_duration = 2 # 8  + np.random.randint(0, 5)
+iti_duration = 8  + np.random.randint(0, 5)
 vas_labels = ("Keine\nSchmerzen", "Sehr starke Schmerzen")
 
 # Thermoino
@@ -1339,11 +1339,11 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             seed=seeds[trial]
         ).add_baseline_temp(
             baseline_temp=baseline_temp
-        )#.add_plateaus(
-        #    plateau_duration=plateau_duration, 
-        #    n_plateaus=n_plateaus, 
-        #    add_at_start=add_at_start, 
-        #    add_at_end=add_at_end)
+        ).add_plateaus(
+            plateau_duration=plateau_duration, 
+            n_plateaus=n_plateaus, 
+            add_at_start=add_at_start, 
+            add_at_end=add_at_end)
         
         # Run 'Begin Routine' code from thermoino_prep
         luigi.flush_ctc()
