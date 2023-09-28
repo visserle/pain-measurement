@@ -1,3 +1,7 @@
+# work in progress
+
+"""Stimuli generation for the thermal pain experiment, plus some extra functions for plotting and labeling."""
+
 import math
 import random
 import numpy as np
@@ -75,14 +79,14 @@ class StimuliFunction():
     baseline_temp = 39.2 # @ VAS 35
 
     stimuli = StimuliFunction(
-        minimal_desired_duration,
-        frequencies,
-        amplitudes,
-        sample_rate,
+        minimal_desired_duration=minimal_desired_duration,
+        frequencies=frequencies,
+        amplitudes=amplitudes,
+        sample_rate=sample_rate,
         random_periods=True,
         seed=seed
     ).add_baseline_temp(
-        baseline_temp
+        baseline_temp=baseline_temp
     ).add_plateaus(
         plateau_duration=20, 
         n_plateaus=4, 
@@ -151,14 +155,11 @@ class StimuliFunction():
         self.periods = 1/self.frequencies
         self.amplitudes = np.array(amplitudes)
 
-        # Duration and sampling (without add_ methods)
-        self.minimal_desired_duration = minimal_desired_duration
-        # the "true" minimal duration is a multiple of the period of the modulation
-        self.minimal_duration = math.ceil(self.minimal_desired_duration / self.periods[1]) * self.periods[1]
+        # Sampling rate and actual duration (without add_ methods)
         self.sample_rate = sample_rate
+        self.minimal_desired_duration = minimal_desired_duration
+        self._calculate_minimal_duration()
 
-        # Additional variables
-        self.modulation_n_periods = int(self.minimal_duration / self.periods[1])
         # if True, the periods of the modulation are randomized
         self.random_periods = random_periods
 
@@ -173,11 +174,22 @@ class StimuliFunction():
         self._troughs = self.troughs
 
 
+    def _calculate_minimal_duration(self):
+        """Calculates the true minimal duration ensuring it's a multiple of the period of the modulation
+        and the wave always ends with a trough.
+        
+        Note: The "true" minimal duration is a multiple of the period of the modulation where the wave always ends with a ramp off (even number)."""
+        modulation_period = self.periods[1]
+        self.modulation_n_periods = math.ceil(self.minimal_desired_duration / modulation_period)
+        self.modulation_n_periods += self.modulation_n_periods % 2  # Ensure it's even
+        self.minimal_duration = self.modulation_n_periods * modulation_period
+        
+
     def _create_baseline(self):
         """Creates the baseline sinusoidal wave"""
         time = np.arange(0, self.minimal_duration, 1/self.sample_rate)
         self.baseline = \
-            self.amplitudes[0] * np.sin(time * 2 * np.pi * self.frequencies[0])
+            self.amplitudes[0] * -np.cos(time * 2 * np.pi * self.frequencies[0])
 
     def _create_modulation(self):
         """
@@ -216,10 +228,10 @@ class StimuliFunction():
             # wave_ has to be inverted every second period to get a sinosoidal wave
             if i % 2 == 0:
                 wave_ = \
-                    self.amplitudes[1] * np.sin(np.pi * frequency * time_)
+                    self.amplitudes[1] * -np.cos(np.pi * frequency * time_)
             else:
                 wave_ = \
-                    self.amplitudes[1] * np.sin(np.pi * frequency * time_) * -1
+                    self.amplitudes[1] * -np.cos(np.pi * frequency * time_) * -1
             self.modulation.extend(wave_)
         self.modulation = np.array(self.modulation)
 
@@ -330,12 +342,13 @@ class StimuliFunction():
 
         def _to_bool(x):
             """If x is "random", it's converted to a random boolean."""
-            return bool(self.rng.randint(0, 1)) if x == "random" else x
+            return bool(self.rng.randint(0, 1)) if str(x).lower() == "random" else x
 
         for arg in [add_at_start, add_at_end]:
-            if not isinstance(arg, (bool, str)) or (isinstance(arg, str) and arg != "random"):
+            if not isinstance(arg, (bool, str)) or (isinstance(arg, str) and str(arg).lower() != "random"):
                 raise ValueError("add_at_start and add_at_end should be a boolean or 'random'.")
         add_at_start, add_at_end = _to_bool(add_at_start), _to_bool(add_at_end)
+
 
         # get indices where the temperature is rising and between the 25th and 75th percentile
         q25, q75 = np.percentile(self.wave, 25), np.percentile(self.wave, 75)
