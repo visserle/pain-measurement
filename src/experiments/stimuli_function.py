@@ -1,5 +1,9 @@
 # work in progress
 
+# TODO
+# _loc_minima only works when add_at_end=False in add_plateaus, otherwise the last index is not a local minimum
+
+
 """Stimuli generation for the thermal pain experiment, plus some extra functions for plotting and labeling."""
 
 import math
@@ -255,7 +259,6 @@ class StimuliFunction():
     def loc_minima(self):
         found_loc_minima, _ = scipy.signal.find_peaks(-self.wave, prominence=0.5)
         self._loc_minima = np.append(found_loc_minima, self.wave.shape[0]-1) # add the last index to the loc_minima
-        # TODO: only works when add_at_end=False in add_plateaus, otherwise the last index is not a local minimum
         return self._loc_minima
 
     def add_baseline_temp(self, baseline_temp):
@@ -390,6 +393,45 @@ class StimuliFunction():
             wave_new.append(i)
             if idx in idx_plateaus:
                 wave_new.extend(_generate_plateau(i))
+        self.wave = np.array(wave_new)
+        return self
+
+
+    def generalize_big_decreases(self, temp_criteria, duration):
+        """"""
+        duration *= self.sample_rate
+        # Create a new list to hold the modified wave
+        wave_new = []
+
+        loc_maxima_temps = self.wave[self.loc_maxima]
+        loc_minima_temps = self.wave[self.loc_minima]
+        temp_diffs = loc_maxima_temps - loc_minima_temps
+
+        idx_big_decreases = np.where(((loc_maxima_temps - loc_minima_temps) > temp_criteria) == 1)[0]
+        # Initialize the starting index for the iteration over the original wave
+        idx_original = 0
+
+        for j in idx_big_decreases:
+            idx_start = self.loc_maxima[j]
+            idx_end = self.loc_minima[j]
+            
+            # Append the original wave values before the segment to replace
+            wave_new.extend(self.wave[idx_original:idx_start])
+
+            # from these two points we want to span a new wave that is exactly dur s long
+            x = np.linspace(0, np.pi, duration)
+            y = np.cos(x) * temp_diffs[j]/2 + self.wave[idx_start] - temp_diffs[j]/2  # Compute the corresponding y values
+
+            # Insert the new wave segment
+            wave_new.extend(y)
+
+            # Update the starting index for the next iteration
+            idx_original = idx_end
+
+        # Append the remaining original wave values after the last segment
+        wave_new.extend(self.wave[idx_original:])
+
+        # Convert the modified wave list to a numpy array
         self.wave = np.array(wave_new)
         return self
     
