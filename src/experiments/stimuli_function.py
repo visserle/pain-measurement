@@ -47,10 +47,10 @@ class StimuliFunction():
         the stimuli function, calculated as the sum of the baseline and the modulation.
     wave_dot (@property): numpy.array
         the derivative of the stimuli function with respect to time (dx in seconds).
-    peaks (@property): list
-        a list of peak temperatures (local maxima) in the stimuli function (i.e. self.wave).
-    troughs (@property): list
-        a list of troughs (local minima) in the stimuli function (a trough is the opposite of a peak).
+    loc_maxima (@property): list
+        a list of peak temperatures (local maximas) in the stimuli function (i.e. self.wave).
+    loc_minima (@property): list
+        a list of local minima in the stimuli function (opposite of a peak).
 
     Methods
     -------
@@ -61,8 +61,8 @@ class StimuliFunction():
     add_baseline_temp(baseline_temp):
         Adds a baseline temperature to the stimuli function. Should be around VAS = 35. 
         (handled in a seperate function to be able to reuse the same seed for different baseline temperatures)
-    add_prolonged_peaks(time_to_be_added_per_peak, percetage_of_peaks):
-        Adds prolonged peaks to the stimuli function. Not used for now.
+    add_prolonged_extrema(time_to_be_added, percentage_of_extrema, prolong_type='loc_min'):
+        Adds prolonged extrema (either loc_maxima or loc_minima) to the stimuli function.    
     add_plateaus(plateau_duration, n_plateaus, add_at_start="random", add_at_end=True):
         Adds plateaus to the stimuli function. 
 
@@ -170,18 +170,18 @@ class StimuliFunction():
         self.baseline_temp = None
         self._duration = self.duration
         self._wave_dot = self.wave_dot
-        self._peaks = self.peaks
-        self._troughs = self.troughs
+        self._loc_maxima = self.loc_maxima
+        self._loc_minima = self.loc_minima
 
 
     def _calculate_minimal_duration(self):
         """Calculates the true minimal duration ensuring it's a multiple of the period of the modulation
-        and the wave always ends with a trough.
+        and the vanilla wave always ends with a local minimum.
         
         Note: The "true" minimal duration is a multiple of the period of the modulation where the wave always ends with a ramp off (even number)."""
         modulation_period = self.periods[1]
         self.modulation_n_periods = math.ceil(self.minimal_desired_duration / modulation_period)
-        self.modulation_n_periods += self.modulation_n_periods % 2  # Ensure it's even
+        self.modulation_n_periods += self.modulation_n_periods % 2  # ensure it's even
         self.minimal_duration = self.modulation_n_periods * modulation_period
         
 
@@ -209,7 +209,7 @@ class StimuliFunction():
             # double the noise with inverted values to exactly sum to 0
             noise = np.concatenate((noise, -noise))
             # add 0 if length of n is odd
-            if n % 2 == 1:
+            if n % 2:
                 noise = np.append(noise, 0)
             self.rng.shuffle(noise)
             return np.round(noise)
@@ -224,7 +224,7 @@ class StimuliFunction():
             period = self.periods[1] + modulation_random_factor[i]
             frequency = 1/period
             num_steps = int(period * self.sample_rate)
-            time_ = np.linspace(0, period, num_steps) # do not use arange here
+            time_ = np.linspace(0, period, num_steps) # do not use arange here, floating point errors
             # wave_ has to be inverted every second period to get a sinosoidal wave
             if i % 2 == 0:
                 wave_ = \
@@ -237,6 +237,7 @@ class StimuliFunction():
 
     @property
     def duration(self):
+        """ The duration of the wave in seconds."""
         self._duration = self.wave.shape[0] / self.sample_rate 
         return self._duration
 
@@ -246,14 +247,16 @@ class StimuliFunction():
         return self._wave_dot
 
     @property
-    def peaks(self):
-        self._peaks, _ = scipy.signal.find_peaks(self.wave, prominence=0.5)
-        return self._peaks
+    def loc_maxima(self):
+        self._loc_maxima, _ = scipy.signal.find_peaks(self.wave, prominence=0.5)
+        return self._loc_maxima
 
     @property
-    def troughs(self):
-        self._troughs, _ = scipy.signal.find_peaks(-self.wave, prominence=0.5)
-        return self._troughs
+    def loc_minima(self):
+        found_loc_minima, _ = scipy.signal.find_peaks(-self.wave, prominence=0.5)
+        self._loc_minima = np.append(found_loc_minima, self.wave.shape[0]-1) # add the last index to the loc_minima
+        # TODO: only works when add_at_end=False in add_plateaus, otherwise the last index is not a local minimum
+        return self._loc_minima
 
     def add_baseline_temp(self, baseline_temp):
         """
@@ -273,9 +276,9 @@ class StimuliFunction():
         self.wave += self.baseline_temp
         return self
     
-    def add_prolonged_extrema(self, time_to_be_added, percentage_of_extrema, prolong_type='trough'):
+    def add_prolonged_extrema(self, time_to_be_added, percentage_of_extrema, prolong_type='loc_minima'):
         """
-        Adds prolonged extrema (either peaks or troughs) to the wave.
+        Adds prolonged extrema (either loc_maxima or loc_minima) to the wave.
 
         Parameters
         ----------
@@ -284,7 +287,7 @@ class StimuliFunction():
         percentage_of_extrema : float
             The percentage of extrema to be prolonged.
         prolong_type : str
-            The type of extremum to prolong ('peak' or 'trough').
+            The type of extremum to prolong ('loc_maxima' or 'loc_minima').
 
         Returns
         -------
@@ -292,10 +295,10 @@ class StimuliFunction():
             The StimuliFunction object with the added prolonged extrema.
         """
 
-        if prolong_type not in ['peak', 'trough']:
-            raise ValueError("Invalid prolong_type. Choose either 'peak' or 'trough'.")
+        if prolong_type not in ['loc_maxima', 'loc_minima']:
+            raise ValueError("Invalid prolong_type. Choose either 'loc_maxima' or 'loc_minima'.")
 
-        extrema = self.peaks if prolong_type == 'peak' else self.troughs
+        extrema = self.loc_maxima if prolong_type == 'loc_maxima' else self.loc_minima
         extrema_chosen = self.rng_numpy.choice(extrema, int(len(extrema) * percentage_of_extrema), replace=False)
 
         wave_new = []
