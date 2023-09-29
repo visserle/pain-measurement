@@ -135,10 +135,10 @@ class StimuliFunction():
     """
 
     def __init__(
-            self, 
-            minimal_desired_duration, 
-            frequencies, 
-            amplitudes, 
+            self,
+            minimal_desired_duration,
+            frequencies,
+            range,
             sample_rate,
             random_periods=True,
             defined_decreases=False,
@@ -173,6 +173,11 @@ class StimuliFunction():
         # Sinusoidal waves where [0] is the baseline and [1] the modulation which gets added on top
         self.frequencies = np.array(frequencies)
         self.periods = 1/self.frequencies
+        
+        # Calculate the amplitudes for the sinusoidal waves based on the given temperature range
+        self.range = range
+        self.amplitude_weights = [0.375, 0.625] # weights for the amplitudes of the baseline and modulation
+        amplitudes = [self.amplitude_weights[0] * self.range/2, self.amplitude_weights[1] * self.range/2]
         self.amplitudes = np.array(amplitudes)
 
         # Sampling rate and actual duration (without add_ methods)
@@ -210,10 +215,10 @@ class StimuliFunction():
         """Calculates the true minimal duration ensuring it's a multiple of the period of the modulation
         and the vanilla wave always ends with a local minimum.
         
-        Note: The "true" minimal duration is a multiple of the period of the modulation where the wave always ends with a ramp off (even number)."""
+        Note: The "true" minimal duration is a multiple of the period of the modulation where the wave always ends with a ramp on (odd number)."""
         modulation_period = self.periods[1]
         self.modulation_n_periods = math.ceil(self.minimal_desired_duration / modulation_period)
-        self.modulation_n_periods += self.modulation_n_periods % 2  # ensure it's even
+        self.modulation_n_periods += 1 - self.modulation_n_periods % 2  # ensure it's odd
         self.minimal_duration = self.modulation_n_periods * modulation_period
         
 
@@ -285,8 +290,8 @@ class StimuliFunction():
 
     @property
     def loc_minima(self):
-        found_loc_minima, _ = scipy.signal.find_peaks(-self.wave, prominence=0.5)
-        self._loc_minima = np.append(found_loc_minima, self.wave.shape[0]-1) # add the last index to the loc_minima
+        self._loc_minima, _ = scipy.signal.find_peaks(-self.wave, prominence=0.5)
+        # self._loc_minima = np.append(found_loc_minima, self.wave.shape[0]-1) # add the last index to the loc_minima
         return self._loc_minima
 
     def add_baseline_temp(self, baseline_temp):
@@ -425,8 +430,8 @@ class StimuliFunction():
         return self
 
     def check_decreases(self, temp_criteria):
-        """"""
-
+        """
+        """
         loc_maxima_temps = self.wave[self.loc_maxima]
         loc_minima_temps = self.wave[self.loc_minima]
         loc_extrema_temps_diff = loc_maxima_temps - loc_minima_temps
@@ -437,7 +442,8 @@ class StimuliFunction():
         return idx_decreases, loc_extrema_temps_diff
        
     def generalize_big_decreases(self, temp_criteria, duration):
-        """"""
+        """
+        """
         duration *= self.sample_rate
         
         idx_decreases, temp_diffs = self.check_decreases(temp_criteria)
