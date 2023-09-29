@@ -69,6 +69,10 @@ class StimuliFunction():
         Adds prolonged extrema (either loc_maxima or loc_minima) to the stimuli function.    
     add_plateaus(plateau_duration, n_plateaus, add_at_start="random", add_at_end=True):
         Adds plateaus to the stimuli function. 
+    check_decreases(temp_criteria):
+        Checks for decreases in the stimuli function.
+    generalize_big_decreases(temp_criteria, duration):
+        Generalizes big decreases in the stimuli function.
 
     Example
     -------
@@ -396,18 +400,29 @@ class StimuliFunction():
         self.wave = np.array(wave_new)
         return self
 
-
-    def generalize_big_decreases(self, temp_criteria, duration):
+    def check_decreases(self, temp_criteria):
         """"""
-        duration *= self.sample_rate
-        # Create a new list to hold the modified wave
-        wave_new = []
 
         loc_maxima_temps = self.wave[self.loc_maxima]
         loc_minima_temps = self.wave[self.loc_minima]
-        temp_diffs = loc_maxima_temps - loc_minima_temps
+        loc_extrema_temps_diff = loc_maxima_temps - loc_minima_temps
+        
+        idx_decreases = {}
+        idx_decreases["big"] = np.where(((loc_extrema_temps_diff) > temp_criteria) == 1)[0]
+        idx_decreases["small"] = np.where((loc_extrema_temps_diff > temp_criteria) == 0)[0]
+        return idx_decreases, loc_extrema_temps_diff
+    
+    def generalize_big_decreases(self, temp_criteria, duration):
+        """"""
+        duration *= self.sample_rate
+        
+        idx_decreases, temp_diffs = self.check_decreases(temp_criteria)
+        idx_big_decreases = idx_decreases["big"]
+        if len(idx_big_decreases) == 0:
+            ValueError("No big decreases found. Try a lower temp_criteria.")            
 
-        idx_big_decreases = np.where(((loc_maxima_temps - loc_minima_temps) > temp_criteria) == 1)[0]
+        # Create a new list to hold the modified wave
+        wave_new = []        
         # Initialize the starting index for the iteration over the original wave
         idx_original = 0
 
@@ -418,9 +433,9 @@ class StimuliFunction():
             # Append the original wave values before the segment to replace
             wave_new.extend(self.wave[idx_original:idx_start])
 
-            # from these two points we want to span a new wave that is exactly dur s long
+            # from these two points we want to span a new wave that is exactly duration s long
             x = np.linspace(0, np.pi, duration)
-            y = np.cos(x) * temp_diffs[j]/2 + self.wave[idx_start] - temp_diffs[j]/2  # Compute the corresponding y values
+            y = np.cos(x) * temp_diffs[j]/2 + self.wave[idx_start] - temp_diffs[j]/2  # Compute the corresponding y values and shift them to the correct baseline
 
             # Insert the new wave segment
             wave_new.extend(y)
