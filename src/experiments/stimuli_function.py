@@ -2,6 +2,12 @@
 
 # TODO
 # _loc_minima only works when add_at_end=False in add_plateaus, otherwise the last index is not a local minimum
+# -> remove them completely?
+# find best ratio of ampliudes and adapt code to temperature range
+# define optimal number of big decreases and small decreases
+# maybe add min temp to qualify as a big decrease
+# via stimuli.wave[stimuli.loc_maxima[stimuli.check_decreases(3)[0]["big"]]] you can get the temperatures of the big decreases
+# add temp_criteria to init?
 
 
 """Stimuli generation for the thermal pain experiment, plus some extra functions for plotting and labeling."""
@@ -128,9 +134,15 @@ class StimuliFunction():
     - (for highly effective conditioning, test trials, weakly effective conditioning and pain stimulation, respectively)."
     """
 
-    def __init__(self, minimal_desired_duration, 
-                 frequencies, amplitudes, sample_rate,
-                 random_periods=True, seed=None):
+    def __init__(
+            self, 
+            minimal_desired_duration, 
+            frequencies, 
+            amplitudes, 
+            sample_rate,
+            random_periods=True,
+            defined_decreases=False,
+            seed=None):
         """
         The constructor for StimuliFunction class.
 
@@ -172,15 +184,27 @@ class StimuliFunction():
         self.random_periods = random_periods
 
         # Summing self.baseline and self.modulation create the stimuli function self.wave
-        self._create_baseline()
-        self._create_modulation()
-        self.wave = self.baseline + self.modulation
+        counter = 0
+        while True: # make sure we exactly have 3 big decreases
+            counter += 1
+            if counter > 1000:
+                raise ValueError(
+                    "Unable to create a stimuli function with exactly 3 big decreases.\n"
+                )
+            self._create_baseline()
+            self._create_modulation()
+            self.wave = self.baseline + self.modulation
+            self._loc_maxima = self.loc_maxima
+            self._loc_minima = self.loc_minima
+            if defined_decreases:
+                number_of_big_decreases = self.check_decreases(temp_criteria=3)[0]["big"].size
+                if number_of_big_decreases == 3:
+                    break
+            else:
+                break        
         self.baseline_temp = None
         self._duration = self.duration
         self._wave_dot = self.wave_dot
-        self._loc_maxima = self.loc_maxima
-        self._loc_minima = self.loc_minima
-
 
     def _calculate_minimal_duration(self):
         """Calculates the true minimal duration ensuring it's a multiple of the period of the modulation
@@ -319,7 +343,7 @@ class StimuliFunction():
         return self
 
     def add_plateaus(self, plateau_duration, n_plateaus,
-                     add_at_start="random", add_at_end=True):
+                     add_at_start="random", add_at_end=False):
         """
         Adds plateaus to the wave at random positions, but only when the temperature is rising 
         and the temperature is between the 25th and 75th percentile. The distance between the 
@@ -362,14 +386,14 @@ class StimuliFunction():
 
         # get indices where the temperature is rising and between the 25th and 75th percentile
         q25, q75 = np.percentile(self.wave, 25), np.percentile(self.wave, 75)
-        idx_iqr_values = np.where((self.wave > q25) & (self.wave < q75) & (self.wave_dot > 0.07))[0] # [0] to get the indices
+        idx_iqr_values = np.where((self.wave > q25) & (self.wave < q75) & (self.wave_dot > 0.07))[0]
 
-        # if add_at_start is False, remove indices that are within the first 10 seconds
+        # if add_at_start is False, remove indices that are within the first 3 seconds
         if not add_at_start:
-            idx_iqr_values = idx_iqr_values[idx_iqr_values > 10 * self.sample_rate]
-        # if add_at_end is False, remove indices that are within the last 10 seconds
+            idx_iqr_values = idx_iqr_values[idx_iqr_values > 3 * self.sample_rate]
+        # if add_at_end is False, remove indices that are within the last 3 seconds
         if not add_at_end:
-            idx_iqr_values = idx_iqr_values[idx_iqr_values < len(self.wave) - 10 * self.sample_rate]
+            idx_iqr_values = idx_iqr_values[idx_iqr_values < len(self.wave) - 3 * self.sample_rate]
 
         # find indices for the random plateaus
         n_random_plateaus = n_plateaus - int(add_at_start) - int(add_at_end) 
@@ -411,7 +435,7 @@ class StimuliFunction():
         idx_decreases["big"] = np.where(((loc_extrema_temps_diff) > temp_criteria) == 1)[0]
         idx_decreases["small"] = np.where((loc_extrema_temps_diff > temp_criteria) == 0)[0]
         return idx_decreases, loc_extrema_temps_diff
-    
+       
     def generalize_big_decreases(self, temp_criteria, duration):
         """"""
         duration *= self.sample_rate
