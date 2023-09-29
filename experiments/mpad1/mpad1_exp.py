@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on September 19, 2023, at 14:34
+    on September 29, 2023, at 13:13
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -51,21 +51,19 @@ expInfo = {
 # fix baseline_temp & temp_baseline for all scripts
 # set start_study_mode to NoPrompt
 
-# Root logger
+
+# Logger
 from pathlib import Path
 from datetime import datetime
-from src.experiments.logger import setup_logger, close_logger
+from src.experiments.log_config import configure_logging, close_root_logging
 
+# Configure logging
 log_dir = Path('log')
 log_dir.mkdir(parents=True, exist_ok=True)
 log_filename_str = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
 log_file = log_dir / log_filename_str
 
-psychopy_logger = setup_logger(
-    '',
-    level=logging.INFO, 
-    log_file=log_file,
-    stream_handler=False)
+configure_logging(log_file=log_file)
 
 # Info
 from src.experiments.participant_data import read_last_participant
@@ -79,11 +77,11 @@ expInfo['gender'] = participant_info['gender']
 start_study_mode = "NormalPrompt"
 
 # Stimuli
-seeds = [463]#, 320]#, 43, 999, 242, 32, 1, 98, 478, 48, 435]
+seeds = [320, 43, 999, 242, 32, 1, 98, 478, 48, 435, 54]
 n_trials = len(seeds)
 this_trial = None # just initializing
 
-minimal_desired_duration = 2 # in seconds
+minimal_desired_duration = 200 # in seconds
 periods = [67, 20] # [0] is the baseline and [1] the modulation; in seconds
 frequencies = 1./np.array(periods)
 # calculate amplitudes based on VAS 70 - VAS 0
@@ -102,13 +100,13 @@ add_at_end = True
 
 # Time
 stimuli_clock = core.Clock()
-iti_duration = 2 # 8  + np.random.randint(0, 5)
+iti_duration = 8  + np.random.randint(0, 5)
 vas_labels = ("Keine\nSchmerzen", "Sehr starke Schmerzen")
 
 # Thermoino
 port = "COM7" # use list_com_ports() beforehand to find out
 mms_baseline = 30 # has to be the same as in MMS (not the same as baseline_temp (sorry for confusing names))
-mms_rate_of_rise = 5 # has to be the same as in MMS
+mms_rate_of_rise = 10 # has to be the same as in MMS
 bin_size_ms = 500
 # Run 'Before Experiment' code from imotions_control
 from src.experiments.imotions import RemoteControliMotions
@@ -183,7 +181,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='G:\\Meine Ablage\\PhD\\Code\\mpad-pilot\\experiments\\mpad1\\mpad1_exp.py',
+        originPath='C:\\drive\\PhD\\Code\\mpad-pilot\\experiments\\mpad1\\mpad1_exp.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -1339,11 +1337,11 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             seed=seeds[trial]
         ).add_baseline_temp(
             baseline_temp=baseline_temp
-        )#.add_plateaus(
-        #    plateau_duration=plateau_duration, 
-        #    n_plateaus=n_plateaus, 
-        #    add_at_start=add_at_start, 
-        #    add_at_end=add_at_end)
+        ).add_plateaus(
+            plateau_duration=plateau_duration, 
+            n_plateaus=n_plateaus, 
+            add_at_start=add_at_start, 
+            add_at_end=add_at_end)
         
         # Run 'Begin Routine' code from thermoino_prep
         luigi.flush_ctc()
@@ -1834,7 +1832,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # completed n_trials repeats of 'loop_trials'
     
     # Run 'End Experiment' code from all_variables
-    # Moved close_logger(psychopy_logger) to trial_end component
+    # Moved close_root_logging() to trial_end component
     # Run 'End Experiment' code from imotions_control
     imotions_control.end_study()
     imotions_control.close()
@@ -1845,7 +1843,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     imotions_event.end_study()
     imotions_event.close()
     # Run 'End Experiment' code from trial_end
-    close_logger(psychopy_logger)
+    close_root_logging
     
     # mark experiment as finished
     endExperiment(thisExp, win=win, inputs=inputs)
