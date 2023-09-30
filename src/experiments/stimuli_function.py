@@ -1,16 +1,17 @@
 # work in progress
 
 # TODO
-# _loc_minima only works when add_at_end=False in add_plateaus, otherwise the last index is not a local minimum
-# -> remove them completely?
 # find best ratio of ampliudes and adapt code to temperature range
 # define optimal number of big decreases and small decreases
 # maybe add min temp to qualify as a big decrease
 # via stimuli.wave[stimuli.loc_maxima[stimuli.check_decreases(3)[0]["big"]]] you can get the temperatures of the big decreases
 # add temp_criteria to init?
+# update doc strings
+# change criteria in add plateaus to absolute values based on the temperature range
+# maybe refactor into two classes with wave & sitmuli function
 
 
-"""Stimuli generation for the thermal pain experiment, plus some extra functions for plotting and labeling."""
+"""Stimuli generation for the thermal pain experiment, plus a extra function for plotting and labeling."""
 
 import math
 import random
@@ -87,7 +88,7 @@ class StimuliFunction():
     minimal_desired_duration = 200 # in seconds
     periods = [67, 20] # [0] is the baseline and [1] the modulation; in seconds
     frequencies = 1./np.array(periods)
-    amplitudes = [1, 1.5] # temp range is 2 * sum(amplitudes): max @ VAS 70, min @ VAS 0
+    temp_range = 3 # in °C, from VAS 0 to VAS 70
     sample_rate = 60
     seed = 463 # use None for random seed
     baseline_temp = 39.2 # @ VAS 35
@@ -95,7 +96,7 @@ class StimuliFunction():
     stimuli = StimuliFunction(
         minimal_desired_duration=minimal_desired_duration,
         frequencies=frequencies,
-        amplitudes=amplitudes,
+        temp_range=temp_range,
         sample_rate=sample_rate,
         random_periods=True,
         seed=seed
@@ -138,10 +139,10 @@ class StimuliFunction():
             self,
             minimal_desired_duration,
             frequencies,
-            range,
+            temp_range,
             sample_rate,
             random_periods=True,
-            defined_decreases=False,
+            checked_decreases=False,
             seed=None):
         """
         The constructor for StimuliFunction class.
@@ -173,12 +174,12 @@ class StimuliFunction():
         # Sinusoidal waves where [0] is the baseline and [1] the modulation which gets added on top
         self.frequencies = np.array(frequencies)
         self.periods = 1/self.frequencies
-        
+
         # Calculate the amplitudes for the sinusoidal waves based on the given temperature range
-        self.range = range
-        self.amplitude_weights = [0.375, 0.625] # weights for the amplitudes of the baseline and modulation
-        amplitudes = [self.amplitude_weights[0] * self.range/2, self.amplitude_weights[1] * self.range/2]
-        self.amplitudes = np.array(amplitudes)
+        self.temp_range = temp_range
+        self._amplitude_proportion = 0.375 # value based on empirical testing, see notebook
+        self.amplitudes = self._calculate_amplitudes()
+        self.temp_criteria = self.temp_range * 0.8 # critical temperature difference for big decreases
 
         # Sampling rate and actual duration (without add_ methods)
         self.sample_rate = sample_rate
@@ -187,7 +188,36 @@ class StimuliFunction():
 
         # if True, the periods of the modulation are randomized
         self.random_periods = random_periods
+        self.checked_decreases = checked_decreases
 
+        self._create_wave()  
+        self.baseline_temp = 0
+        self._duration = self.duration
+        self._wave_dot = self.wave_dot
+
+    @property
+    def amplitude_proportion(self):
+        """The weights for the amplitudes of the baseline and modulation."""
+        return self._amplitude_proportion
+
+    @amplitude_proportion.setter
+    def amplitude_proportion(self, value):
+        """Setter for amplitude_proportion
+        This is needed for the setter to work with the sliders in the GUI of the bokeh app in the notebook.
+        """
+        if not (0 <= value <= 1):  # Ensure the value is within an acceptable range
+            raise ValueError("Amplitude proportion must be between 0 and 1.")
+        self._amplitude_proportion = value
+        self.amplitudes = self._calculate_amplitudes()  # Recalculate the amplitudes
+        self._create_wave()
+
+    def _calculate_amplitudes(self):
+        """Method to calculate amplitudes based on amplitude_weights"""
+        return np.array(
+            [self._amplitude_proportion * self.temp_range / 2,
+             (1 - self._amplitude_proportion) * self.temp_range / 2])
+
+    def _create_wave(self):
         # Summing self.baseline and self.modulation create the stimuli function self.wave
         counter = 0
         while True: # make sure we exactly have 3 big decreases
@@ -201,26 +231,21 @@ class StimuliFunction():
             self.wave = self.baseline + self.modulation
             self._loc_maxima = self.loc_maxima
             self._loc_minima = self.loc_minima
-            if defined_decreases:
-                number_of_big_decreases = self.check_decreases(temp_criteria=3)[0]["big"].size
-                if number_of_big_decreases == 3:
+            if self.checked_decreases:
+                if self.check_decreases()[0]["big"].size == 3:
                     break
             else:
-                break        
-        self.baseline_temp = None
-        self._duration = self.duration
-        self._wave_dot = self.wave_dot
+                break       
 
     def _calculate_minimal_duration(self):
         """Calculates the true minimal duration ensuring it's a multiple of the period of the modulation
         and the vanilla wave always ends with a local minimum.
-        
+
         Note: The "true" minimal duration is a multiple of the period of the modulation where the wave always ends with a ramp on (odd number)."""
         modulation_period = self.periods[1]
         self.modulation_n_periods = math.ceil(self.minimal_desired_duration / modulation_period)
         self.modulation_n_periods += 1 - self.modulation_n_periods % 2  # ensure it's odd
         self.minimal_duration = self.modulation_n_periods * modulation_period
-        
 
     def _create_baseline(self):
         """Creates the baseline sinusoidal wave"""
@@ -291,7 +316,6 @@ class StimuliFunction():
     @property
     def loc_minima(self):
         self._loc_minima, _ = scipy.signal.find_peaks(-self.wave, prominence=0.5)
-        # self._loc_minima = np.append(found_loc_minima, self.wave.shape[0]-1) # add the last index to the loc_minima
         return self._loc_minima
 
     def add_baseline_temp(self, baseline_temp):
@@ -347,8 +371,7 @@ class StimuliFunction():
         self.wave = np.array(wave_new)
         return self
 
-    def add_plateaus(self, plateau_duration, n_plateaus,
-                     add_at_start="random", add_at_end=False):
+    def add_plateaus(self, plateau_duration, n_plateaus):
         """
         Adds plateaus to the wave at random positions, but only when the temperature is rising 
         and the temperature is between the 25th and 75th percentile. The distance between the 
@@ -360,11 +383,6 @@ class StimuliFunction():
             The duration of the plateaus.
         n_plateaus : int
             The number of plateaus to be added.
-        add_at_start : bool or str, optional
-            If True, a plateau is added at the start of the wave. 
-            If "random", it's randomly decided whether to add at the start (default is "random").
-        add_at_end : bool or str, optional
-            If True, a plateau is added at the end of the wave (default is True).
 
         Returns
         -------
@@ -373,35 +391,17 @@ class StimuliFunction():
 
         Examples
         --------
-        >>> stimuli.add_plateaus(plateau_duration=20, n_plateaus=4, add_at_start="random", add_at_end=True)
+        >>> stimuli.add_plateaus(plateau_duration=20, n_plateaus=4)
         """
         def _generate_plateau(start_value):
             """Generate a plateau with the given start value in °C."""
             return np.full(plateau_duration * self.sample_rate, start_value)
 
-        def _to_bool(x):
-            """If x is "random", it's converted to a random boolean."""
-            return bool(self.rng.randint(0, 1)) if str(x).lower() == "random" else x
-
-        for arg in [add_at_start, add_at_end]:
-            if not isinstance(arg, (bool, str)) or (isinstance(arg, str) and str(arg).lower() != "random"):
-                raise ValueError("add_at_start and add_at_end should be a boolean or 'random'.")
-        add_at_start, add_at_end = _to_bool(add_at_start), _to_bool(add_at_end)
-
-
         # get indices where the temperature is rising and between the 25th and 75th percentile
         q25, q75 = np.percentile(self.wave, 25), np.percentile(self.wave, 75)
         idx_iqr_values = np.where((self.wave > q25) & (self.wave < q75) & (self.wave_dot > 0.07))[0]
 
-        # if add_at_start is False, remove indices that are within the first 3 seconds
-        if not add_at_start:
-            idx_iqr_values = idx_iqr_values[idx_iqr_values > 3 * self.sample_rate]
-        # if add_at_end is False, remove indices that are within the last 3 seconds
-        if not add_at_end:
-            idx_iqr_values = idx_iqr_values[idx_iqr_values < len(self.wave) - 3 * self.sample_rate]
-
         # find indices for the random plateaus
-        n_random_plateaus = n_plateaus - int(add_at_start) - int(add_at_end) 
         counter = 0
         while True:
             counter += 1
@@ -411,11 +411,7 @@ class StimuliFunction():
                     "This issue usually arises when the number and/or duration of plateaus is too high "
                     "relative to the length of the wave.\n"
                     "Try again with a different seed or change the parameters of the add_plateaus method.")
-            idx_plateaus = self.rng_numpy.choice(idx_iqr_values, n_random_plateaus, replace=False)
-            if add_at_start:
-                idx_plateaus = np.concatenate(([0], idx_plateaus))
-            if add_at_end:
-                idx_plateaus = np.concatenate((idx_plateaus, [len(self.wave)-1])) # -1 because of zero-indexing
+            idx_plateaus = self.rng_numpy.choice(idx_iqr_values, n_plateaus, replace=False)
             idx_plateaus = np.sort(idx_plateaus)
             # the distance between the plateaus should be at least 1.5 plateau_duration
             if np.all(np.diff(idx_plateaus) > 1.5 * plateau_duration * self.sample_rate):
@@ -429,24 +425,24 @@ class StimuliFunction():
         self.wave = np.array(wave_new)
         return self
 
-    def check_decreases(self, temp_criteria):
+    def check_decreases(self):
         """
         """
         loc_maxima_temps = self.wave[self.loc_maxima]
         loc_minima_temps = self.wave[self.loc_minima]
         loc_extrema_temps_diff = loc_maxima_temps - loc_minima_temps
-        
+
         idx_decreases = {}
-        idx_decreases["big"] = np.where(((loc_extrema_temps_diff) > temp_criteria) == 1)[0]
-        idx_decreases["small"] = np.where((loc_extrema_temps_diff > temp_criteria) == 0)[0]
+        idx_decreases["big"] = np.where(((loc_extrema_temps_diff) > self.temp_criteria) == 1)[0]
+        idx_decreases["small"] = np.where((loc_extrema_temps_diff > self.temp_criteria) == 0)[0]
         return idx_decreases, loc_extrema_temps_diff
-       
-    def generalize_big_decreases(self, temp_criteria, duration):
+
+    def generalize_big_decreases(self, duration):
         """
         """
         duration *= self.sample_rate
-        
-        idx_decreases, temp_diffs = self.check_decreases(temp_criteria)
+
+        idx_decreases, temp_diffs = self.check_decreases()
         idx_big_decreases = idx_decreases["big"]
         if len(idx_big_decreases) == 0:
             ValueError("No big decreases found. Try a lower temp_criteria.")            
@@ -459,23 +455,18 @@ class StimuliFunction():
         for j in idx_big_decreases:
             idx_start = self.loc_maxima[j]
             idx_end = self.loc_minima[j]
-            
             # Append the original wave values before the segment to replace
             wave_new.extend(self.wave[idx_original:idx_start])
-
             # from these two points we want to span a new wave that is exactly duration s long
             x = np.linspace(0, np.pi, duration)
             y = np.cos(x) * temp_diffs[j]/2 + self.wave[idx_start] - temp_diffs[j]/2  # Compute the corresponding y values and shift them to the correct baseline
-
             # Insert the new wave segment
             wave_new.extend(y)
-
             # Update the starting index for the next iteration
             idx_original = idx_end
 
         # Append the remaining original wave values after the last segment
         wave_new.extend(self.wave[idx_original:])
-
         # Convert the modified wave list to a numpy array
         self.wave = np.array(wave_new)
         return self
