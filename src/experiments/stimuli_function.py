@@ -37,6 +37,10 @@ class StimuliFunction():
         an array of frequencies for the sinusoidal waves, where [0] is the baseline and [1] the modulation.
     periods : numpy.array
         an array of periods of the sinusoidal waves, calculated as 1/frequency.
+    temp_range : float
+        the temperature range for the stimuli function, from VAS 0 to VAS 70.
+    amplitude_proportion : float
+        the proportion of the amplitudes of the baseline and modulation.
     amplitudes : numpy.array
         an array of amplitudes for the sinusoidal waves
     baseline_temp : float
@@ -74,7 +78,7 @@ class StimuliFunction():
         (handled in a seperate function to be able to reuse the same seed for different baseline temperatures)
     add_prolonged_extrema(time_to_be_added, percentage_of_extrema, prolong_type='loc_min'):
         Adds prolonged extrema (either loc_maxima or loc_minima) to the stimuli function.    
-    add_plateaus(plateau_duration, n_plateaus, add_at_start="random", add_at_end=True):
+    add_plateaus(plateau_duration, n_plateaus):
         Adds plateaus to the stimuli function. 
     check_decreases(temp_criteria):
         Checks for decreases in the stimuli function.
@@ -104,9 +108,10 @@ class StimuliFunction():
         baseline_temp=baseline_temp
     ).add_plateaus(
         plateau_duration=20, 
-        n_plateaus=4, 
-        add_at_start="random", 
-        add_at_end=True)
+        n_plateaus=4
+    ).generalize_big_decreases(
+        duration=20
+    )
     ```
 	For more information on the resulting stimuli wave use:
 	>>> from stimuli_function import stimuli_extra
@@ -153,12 +158,14 @@ class StimuliFunction():
             The minimal desired duration of the wave.
         frequencies : list
             The frequencies of the sinusoidal waves, where [0] is the baseline and [1] the modulation.
-        amplitudes : list
-            The amplitudes of the sinusoidal waves, where [0] is the baseline and [1] the modulation.
+        temp_range : float
+            The temperature range for the stimuli function, from VAS 0 to VAS 70.
         sample_rate : int, optional
             The sample rate of the wave.
         random_periods : bool, optional
             If True, the periods of the modulation are randomized (default is True).
+        checked_decreases : bool, optional
+            If True, the stimuli function is checked for the right number of big decreases (default is False).
         seed : int, optional
             The seed for the random number generator instances (default is None, which generates a random seed).
         """
@@ -427,6 +434,20 @@ class StimuliFunction():
 
     def check_decreases(self):
         """
+        Identifies the locations of big and small decreases in temperature 
+        between the local maxima and minima of the wave.
+        
+        Returns
+        -------
+        idx_decreases : dict
+            A dictionary with keys 'big' and 'small' containing the indices of 
+            large and small decreases respectively.
+        loc_extrema_temps_diff : np.ndarray
+            The differences in temperature between local maxima and minima.
+            
+        Example
+        -------
+        >>> idx_decreases, loc_extrema_temps_diff = stimuli.check_decreases()
         """
         loc_maxima_temps = self.wave[self.loc_maxima]
         loc_minima_temps = self.wave[self.loc_minima]
@@ -436,9 +457,30 @@ class StimuliFunction():
         idx_decreases["big"] = np.where(((loc_extrema_temps_diff) > self.temp_criteria) == 1)[0]
         idx_decreases["small"] = np.where((loc_extrema_temps_diff > self.temp_criteria) == 0)[0]
         return idx_decreases, loc_extrema_temps_diff
-
+    
     def generalize_big_decreases(self, duration):
         """
+        Modifies the wave to generalize the sections of big decreases by 
+        replacing them with cosine wave segments of specified duration.
+        
+        Parameters
+        ----------
+        duration : int
+            The duration in seconds for which the big decreases should be generalized.
+
+        Returns
+        -------
+        self : StimuliFunction
+            The StimuliFunction object with generalized big decreases in the wave.
+            
+        Raises
+        ------
+        ValueError
+            If no big decreases are found in the wave.
+        
+        Example
+        -------
+        >>> stimuli.generalize_big_decreases(duration=2)
         """
         duration *= self.sample_rate
 
