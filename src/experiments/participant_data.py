@@ -45,6 +45,8 @@ def init_excel_file():
 
 def add_participant(participant, age, gender, vas0, vas70):
     """
+    Adds a participant to the participants.xlsx file.
+
     Example for usage in psychopy:
     -------
     ```python
@@ -84,7 +86,7 @@ def add_participant(participant, age, gender, vas0, vas70):
 
 def read_last_participant():
     """
-    Returns important information about the last participant.
+    Returns information about the last participant from the participants.xlsx file.
 
     Example for usage in psychopy:
     -------

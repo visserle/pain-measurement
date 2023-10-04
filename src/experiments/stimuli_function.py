@@ -4,7 +4,7 @@
 # find best ratio of ampliudes and adapt code to temperature range
 # define optimal number of big decreases and small decreases
 # maybe add min temp to qualify as a big decrease
-# via stimuli.wave[stimuli.loc_maxima[stimuli.check_decreases(3)[0]["big"]]] you can get the temperatures of the big decreases
+# via stimuli.wave[stimuli.loc_maxima[stimuli._check_decreases(3)[0]["big"]]] you can get the temperatures of the big decreases
 # add temp_criteria to init?
 # update doc strings
 # change criteria in add plateaus to absolute values based on the temperature range
@@ -26,8 +26,8 @@ class StimuliFunction():
     
     Its main attribute, `wave`, is a numpy array that is computed by adding a low-frequency baseline wave and 
     a high-frequency modulation wave (optionally with varying periods) together. The resulting `wave` can be 
-    modified using different methods in the class, like adding flat regions (plateaus) or adjusting the
-    baseline temperature.
+    modified using different methods in the class, like adding flat regions (plateaus), adjusting the
+    baseline temperature, or generalizing the big decreases in temperature to a cosine wave segment.
 
     Attributes
     ----------
@@ -65,14 +65,10 @@ class StimuliFunction():
     loc_maxima (@property): list
         a list of peak temperatures (local maximas) in the stimuli function (i.e. self.wave).
     loc_minima (@property): list
-        a list of local minima in the stimuli function (opposite of a peak).
+        a list of local minima in the stimuli function.
 
     Methods
     -------
-    _create_baseline():
-        Creates the baseline sinusoidal wave.
-    _create_modulation():
-        Creates the modulation sinusoidal wave (with varying periods if random_periods=True).
     add_baseline_temp(baseline_temp):
         Adds a baseline temperature to the stimuli function. Should be around VAS = 35. 
         (handled in a seperate function to be able to reuse the same seed for different baseline temperatures)
@@ -80,8 +76,6 @@ class StimuliFunction():
         Adds prolonged extrema (either loc_maxima or loc_minima) to the stimuli function.    
     add_plateaus(plateau_duration, n_plateaus):
         Adds plateaus to the stimuli function. 
-    check_decreases(temp_criteria):
-        Checks for decreases in the stimuli function.
     generalize_big_decreases(temp_criteria, duration):
         Generalizes big decreases in the stimuli function.
 
@@ -165,7 +159,7 @@ class StimuliFunction():
         random_periods : bool, optional
             If True, the periods of the modulation are randomized (default is True).
         checked_decreases : bool, optional
-            If True, the stimuli function is checked for the right number of big decreases (default is False).
+            If True, the stimuli function is checked for the right number of big decreases (default is False (for testing)).
         seed : int, optional
             The seed for the random number generator instances (default is None, which generates a random seed).
         """
@@ -209,7 +203,8 @@ class StimuliFunction():
 
     @amplitude_proportion.setter
     def amplitude_proportion(self, value):
-        """Setter for amplitude_proportion
+        """
+        Setter for amplitude_proportion.
         This is needed for the setter to work with the sliders in the GUI of the bokeh app in the notebook.
         """
         if not (0 <= value <= 1):  # Ensure the value is within an acceptable range
@@ -239,7 +234,7 @@ class StimuliFunction():
             self._loc_maxima = self.loc_maxima
             self._loc_minima = self.loc_minima
             if self.checked_decreases:
-                if self.check_decreases()[0]["big"].size == 3:
+                if self._check_decreases()[0]["big"].size == 3:
                     break
             else:
                 break       
@@ -325,19 +320,32 @@ class StimuliFunction():
         self._loc_minima, _ = scipy.signal.find_peaks(-self.wave, prominence=0.5)
         return self._loc_minima
 
-    def add_baseline_temp(self, baseline_temp):
+    def _check_decreases(self):
         """
-        Adds a baseline temperature to the wave. Should be around VAS = 35.
-
-        Parameters
-        ----------
-        baseline_temp : float
-            The baseline temperature to be added to the wave.
-
+        Identifies the locations of big and small decreases in temperature 
+        between the local maxima and minima of the wave.
+        
         Returns
         -------
-        self : StimuliFunction
-            The StimuliFunction object with the added baseline temperature.
+        idx_decreases : dict
+            A dictionary with keys 'big' and 'small' containing the indices of 
+            large and small decreases respectively.
+        loc_extrema_temps_diff : np.ndarray
+            The differences in temperature between local maxima and minima.
+        """
+        loc_maxima_temps = self.wave[self.loc_maxima]
+        loc_minima_temps = self.wave[self.loc_minima]
+        loc_extrema_temps_diff = loc_maxima_temps - loc_minima_temps
+
+        idx_decreases = {}
+        idx_decreases["big"] = np.where(((loc_extrema_temps_diff) > self.temp_criteria) == 1)[0]
+        idx_decreases["small"] = np.where((loc_extrema_temps_diff > self.temp_criteria) == 0)[0]
+        return idx_decreases, loc_extrema_temps_diff
+    
+
+    def add_baseline_temp(self, baseline_temp):
+        """
+        Adds a baseline temperature to the wave. It dhould be around VAS = 35.
         """
         self.baseline_temp = baseline_temp
         self.wave += self.baseline_temp
@@ -355,11 +363,6 @@ class StimuliFunction():
             The percentage of extrema to be prolonged.
         prolong_type : str
             The type of extremum to prolong ('loc_maxima' or 'loc_minima').
-
-        Returns
-        -------
-        self : StimuliFunction
-            The StimuliFunction object with the added prolonged extrema.
         """
 
         if prolong_type not in ['loc_maxima', 'loc_minima']:
@@ -374,7 +377,7 @@ class StimuliFunction():
             if idx in extrema_chosen:
                 wave_new.extend(
                     [i] * time_to_be_added * self.sample_rate)
-                
+
         self.wave = np.array(wave_new)
         return self
 
@@ -382,23 +385,7 @@ class StimuliFunction():
         """
         Adds plateaus to the wave at random positions, but only when the temperature is rising 
         and the temperature is between the 25th and 75th percentile. The distance between the 
-        plateaus is at least 1.5 times the plateau_duration.
-
-        Parameters
-        ----------
-        plateau_duration : int
-            The duration of the plateaus.
-        n_plateaus : int
-            The number of plateaus to be added.
-
-        Returns
-        -------
-        self : StimuliFunction
-            The StimuliFunction object with the added plateaus.
-
-        Examples
-        --------
-        >>> stimuli.add_plateaus(plateau_duration=20, n_plateaus=4)
+        plateaus is at least 1.5 times the plateau_duration [s].
         """
         def _generate_plateau(start_value):
             """Generate a plateau with the given start value in °C."""
@@ -431,60 +418,15 @@ class StimuliFunction():
                 wave_new.extend(_generate_plateau(i))
         self.wave = np.array(wave_new)
         return self
-
-    def check_decreases(self):
-        """
-        Identifies the locations of big and small decreases in temperature 
-        between the local maxima and minima of the wave.
-        
-        Returns
-        -------
-        idx_decreases : dict
-            A dictionary with keys 'big' and 'small' containing the indices of 
-            large and small decreases respectively.
-        loc_extrema_temps_diff : np.ndarray
-            The differences in temperature between local maxima and minima.
-            
-        Example
-        -------
-        >>> idx_decreases, loc_extrema_temps_diff = stimuli.check_decreases()
-        """
-        loc_maxima_temps = self.wave[self.loc_maxima]
-        loc_minima_temps = self.wave[self.loc_minima]
-        loc_extrema_temps_diff = loc_maxima_temps - loc_minima_temps
-
-        idx_decreases = {}
-        idx_decreases["big"] = np.where(((loc_extrema_temps_diff) > self.temp_criteria) == 1)[0]
-        idx_decreases["small"] = np.where((loc_extrema_temps_diff > self.temp_criteria) == 0)[0]
-        return idx_decreases, loc_extrema_temps_diff
     
     def generalize_big_decreases(self, duration):
         """
-        Modifies the wave to generalize the sections of big decreases by 
-        replacing them with cosine wave segments of specified duration.
-        
-        Parameters
-        ----------
-        duration : int
-            The duration in seconds for which the big decreases should be generalized.
-
-        Returns
-        -------
-        self : StimuliFunction
-            The StimuliFunction object with generalized big decreases in the wave.
-            
-        Raises
-        ------
-        ValueError
-            If no big decreases are found in the wave.
-        
-        Example
-        -------
-        >>> stimuli.generalize_big_decreases(duration=2)
+        Modifies the wave to generalize the sections of big decreases (found via _check_decreases) by 
+        replacing them with cosine wave segments of specified duration in seconds.
         """
         duration *= self.sample_rate
 
-        idx_decreases, temp_diffs = self.check_decreases()
+        idx_decreases, temp_diffs = self._check_decreases()
         idx_big_decreases = idx_decreases["big"]
         if len(idx_big_decreases) == 0:
             ValueError("No big decreases found. Try a lower temp_criteria.")            

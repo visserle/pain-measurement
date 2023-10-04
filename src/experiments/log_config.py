@@ -9,7 +9,7 @@ import logging
 def configure_logging(log_file=None, stream_handler=True, level=logging.INFO):
     """
     Configures the root logger for logging messages to the console
-    and optionally to a specified log file.
+    and optionally to a specified log file. For usage in main scripts only (e.g. a psychopy experiment)
 
     This function sets up a logger with custom formatting and adds handlers as needed:
     1. StreamHandler for console output, if enabled.

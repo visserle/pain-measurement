@@ -22,11 +22,6 @@ class RemoteControliMotions():
     
     The class is designed to be integrated within a PsychoPy experiment, allowing for the initiation of studies, sending of commands, and receiving responses from the iMotions software.
     
-    Attributes:
-    -----------
-    - HOST: The host address for the iMotions software, typically "localhost".
-    - PORT: The port number used for communication, default is 8087.
-    
     Methods:
     --------
     - __init__(self, study, participant): Initializes the class with study and participant details.
@@ -179,11 +174,6 @@ class EventRecievingiMotions():
     
     Two message types are supported: 'E' for Sensor Event and 'M' for Discrete Marker.
 
-    Attributes:
-    -----------
-    - HOST: The host address for the iMotions software, typically "localhost".
-    - PORT: The port number used for communication, default is 8089.
-    
     Methods:
     --------
     - __init__(self): Initializes the class and sets up the socket connection.

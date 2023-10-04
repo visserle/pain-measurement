@@ -61,9 +61,7 @@ user32.SetProcessDPIAware()
 
 def hold():
     """
-    Holds down the left mouse button.
-
-    Uses the 'mouse' library to simulate the holding down of the left mouse button.
+    Simulates holding down the left mouse button.
     """
     mouse.hold(button="left")
 
@@ -95,9 +93,7 @@ def check(pixel_y):
 
 def release():
     """
-    Releases the left mouse button.
-
-    Uses the 'mouse' library to simulate the release of the left mouse button.
+    Simulates the release of the left mouse button.
     """
     mouse.release(button="left")
 
@@ -132,7 +128,7 @@ def pixel_pos_y(component_pos, win_size, win_pos):
     float
         The y-coordinate in the pixel coordinate system. This is the distance from the top of the screen.
 
-    Examples
+    Example for PsychoPy Slider Component
     --------
     >>> pixel_pos_y(slider.pos, win.size, win.pos)
     450.0

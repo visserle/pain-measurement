@@ -403,20 +403,10 @@ class ThermoinoComplexTimeCourses(Thermoino):
     def init_ctc(self, bin_size_ms):
         """
         Initialize a complex temperature course (CTC) on the Thermoino device
-        by firstly defining the bin size. This has to be done before loading the CTC 
+        by firstly defining the bin size in milliseconds. This has to be done before loading the CTC 
         into the Thermoino (load_ctc).
 
         This function also reset all ctc information stored on the Thermoino device.
-                
-        Parameters
-        ----------
-        bin_size_ms : `int`
-            The bin size in milliseconds for the CTC.
-
-        Returns
-        -------
-        `int`
-            The bin size in milliseconds for the CTC.
         """
         output = self._send_command(f'INITCTC;{bin_size_ms}\n')
         if output in OkCodes.__members__:
