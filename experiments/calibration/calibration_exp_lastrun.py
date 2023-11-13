@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on Oktober 02, 2023, at 15:52
+    on November 13, 2023, at 17:25
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -64,22 +64,24 @@ log_file = log_dir / log_filename_str
 configure_logging(log_file=log_file)
 
 # Thermoino
-port = "COM7" # COM7 for top usb port on the front, use list_com_ports() to find out
+port = "COM3"
+# COM7 for top usb port on the front, use list_com_ports() to find out
 mms_baseline = 30 # has to be the same as in MMS
 mms_rate_of_rise = 10 # has to be the same as in MMS
 
 # Stimuli
 stimuli_clock = core.Clock()
 stimuli_duration = 8 - 7
-iti_duration = 8  + np.random.randint(0, 5) -7
+iti_duration = 8  + np.random.randint(0, 2) -7
 cross_size = (0.06, 0.06)
 
 # Pre-exposure
 temps_preexposure = [35, 36, 37]
+correction_after_preexposure = 2 # we substract from temp_start_vas70
 
 # Estimator
 trials_vas70 = 7 # is the same as nReps in psychopy loop
-temp_start_vas70 = 39.
+temp_start_vas70 = 42
 temp_std_vas70 = 3.5
 
 trials_vas0 = 5 # is the same as nReps in psychopy loop
@@ -163,7 +165,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='G:\\Meine Ablage\\PhD\\Code\\mpad-pilot\\experiments\\calibration\\calibration_exp_lastrun.py',
+        originPath='C:\\drive\\PhD\\Code\\mpad-pilot\\experiments\\calibration\\calibration_exp_lastrun.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -378,7 +380,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     luigi.connect()
     text_welcome = visual.TextStim(win=win, name='text_welcome',
-        text='Herzlich willkommen zur Studie!\n\n\n(Leertaste drücken, um zu starten)',
+        text='Herzlich willkommen zum Experiment!\n\n\nBitte drücken Sie die Leertaste.',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -388,7 +390,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_2" ---
     text_welcome_2 = visual.TextStim(win=win, name='text_welcome_2',
-        text='Als Erstes möchten wir Ihre Schmerz-Wahrnehmung über eine Schmerz-Kalibrierung erkunden, bevor wir mit dem Haupt-Experiment beginnen.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Wir beginnen das Experiment mit einer Schmerz-Kalibrierung.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -398,7 +400,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_3" ---
     text_welcome_3 = visual.TextStim(win=win, name='text_welcome_3',
-        text='Die Schmerz-Kalibrierung besteht aus 3 Phasen:\n\n1. dem Aufwärmen Ihrer Hautstelle am Arm,\n2. dem Bestimmen der Schwelle, ab der Sie \na) starke Schmerzen spüren und\nb) überhaupt erste Schmerzen spüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Hierbei wärmen wir Ihre Hautstellte am Arm zuerst kurz auf und bestimmen anschließend, wann Sie leichte und wann Sie starke Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -408,7 +410,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_preexposure" ---
     text_info_preexposure = visual.TextStim(win=win, name='text_info_preexposure',
-        text='Wir beginnen nun mit dem Aufwärmen der Hautstelle.\nHierbei müssen Sie nichts weiter tun.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Wir beginnen mit dem Aufwärmen der Hautstelle.\nHierbei müssen Sie nichts weiter tun.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -453,7 +455,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas70" ---
     text_info_vas70 = visual.TextStim(win=win, name='text_info_vas70',
-        text='Als nächstes möchten wir sehen, wie Sie stärkere Schmerz-Reize wahrnehmen.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Als nächstes möchten wir herausfinden, ab wann Sie starke Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -463,7 +465,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas70_2" ---
     text_info_vas70_2 = visual.TextStim(win=win, name='text_info_vas70_2',
-        text='Dabei orientieren wir uns an einer Schmerz-Skala von 1 bis 10:\n\n\n\n\n\n\n\n\nUnser Ziel ist es, herauszufinden, ab wann Sie sehr starke Schmerzen (eine 7 von 10) spüren.\n\n(Leertaste drücken, um fortzufahren)',
+        text='Dabei orientieren wir uns an einer Schmerz-Skala von 1 bis 10:\n\n\n\n\n\n\n\n\nUnser Ziel ist es, herauszufinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -478,6 +480,16 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         color=[1,1,1], colorSpace='rgb', opacity=None,
         flipHoriz=False, flipVert=False,
         texRes=128.0, interpolate=True, depth=-2.0)
+    
+    # --- Initialize components for Routine "info_vas_70_3" ---
+    text_info_vas70_3 = visual.TextStim(win=win, name='text_info_vas70_3',
+        text='Dank dem Capsaicin ist Ihre Schmerzschwelle dabei nach unten verlagert.\n\nDas bedeutet, Sie verspüren schneller starken Schmerz.\nAber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.\n\n\n(Leertaste drücken, um fortzufahren)',
+        font='Open Sans',
+        pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=0.0);
+    key_vas_70_3 = keyboard.Keyboard()
     
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
@@ -514,24 +526,14 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         languageStyle='LTR',
         depth=-1.0);
     
-    # --- Initialize components for Routine "transition_vas70_to_vas0" ---
-    text_explanation_vas0 = visual.TextStim(win=win, name='text_explanation_vas0',
-        text='Fantastisch!\n\nAls letztes möchten wir genauer bestimmen, ab welcher Temperatur Sie überhaupt erste Schmerzen spüren.\n\n\n(Leertaste drücken, um fortzufahren)\n\n\n(Leertaste drücken, um fortzufahren)',
+    # --- Initialize components for Routine "info_vas0_transition" ---
+    text_info_vas0 = visual.TextStim(win=win, name='text_info_vas0',
+        text='Wunderbar!\n\n\nAls letztes möchten wir bestimmen, wo Ihre Schmerzwelle liegt - also ab wann Sie erste Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-1.0);
-    key_explanation_vas0 = keyboard.Keyboard()
-    
-    # --- Initialize components for Routine "info_vas0" ---
-    text_info_vas0 = visual.TextStim(win=win, name='text_info_vas0',
-        text='Wunderbar!\n\n\nAls letztes möchten wir genauer bestimmen, ab welcher Temperatur Sie überhaupt erste Schmerzen spüren.\n\n\n(Leertaste drücken, um fortzufahren)',
-        font='Open Sans',
-        pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
-        languageStyle='LTR',
-        depth=0.0);
     key_info_vas0 = keyboard.Keyboard()
     
     # --- Initialize components for Routine "iti" ---
@@ -558,7 +560,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         color='white', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
-    response_vas00 = keyboard.Keyboard()
+    response_vas0 = keyboard.Keyboard()
     
     # --- Initialize components for Routine "estimate_vas0" ---
     answer_vas0 = visual.TextStim(win=win, name='answer_vas0',
@@ -1494,7 +1496,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     if response_preexposure.keys == "y":
         # Decrease starting temperature
         global temp_start_vas70 # psychopy has to be able to find it in the spaghetti
-        temp_start_vas70 -= 2
+        temp_start_vas70 -= correction_after_preexposure
         # Reinitialize estimator for VAS 70 with different temp_start
         global estimator_vas70
         estimator_vas70 = BayesianEstimatorVAS(
@@ -1758,6 +1760,122 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         thisExp.addData('key_info_vas70_2.duration', key_info_vas70_2.duration)
     thisExp.nextEntry()
     # the Routine "info_vas70_2" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
+    
+    # --- Prepare to start Routine "info_vas_70_3" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('info_vas_70_3.started', globalClock.getTime())
+    key_vas_70_3.keys = []
+    key_vas_70_3.rt = []
+    _key_vas_70_3_allKeys = []
+    # keep track of which components have finished
+    info_vas_70_3Components = [text_info_vas70_3, key_vas_70_3]
+    for thisComponent in info_vas_70_3Components:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "info_vas_70_3" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # *text_info_vas70_3* updates
+        
+        # if text_info_vas70_3 is starting this frame...
+        if text_info_vas70_3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            text_info_vas70_3.frameNStart = frameN  # exact frame index
+            text_info_vas70_3.tStart = t  # local t and not account for scr refresh
+            text_info_vas70_3.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(text_info_vas70_3, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'text_info_vas70_3.started')
+            # update status
+            text_info_vas70_3.status = STARTED
+            text_info_vas70_3.setAutoDraw(True)
+        
+        # if text_info_vas70_3 is active this frame...
+        if text_info_vas70_3.status == STARTED:
+            # update params
+            pass
+        
+        # *key_vas_70_3* updates
+        waitOnFlip = False
+        
+        # if key_vas_70_3 is starting this frame...
+        if key_vas_70_3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            key_vas_70_3.frameNStart = frameN  # exact frame index
+            key_vas_70_3.tStart = t  # local t and not account for scr refresh
+            key_vas_70_3.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(key_vas_70_3, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'key_vas_70_3.started')
+            # update status
+            key_vas_70_3.status = STARTED
+            # keyboard checking is just starting
+            waitOnFlip = True
+            win.callOnFlip(key_vas_70_3.clock.reset)  # t=0 on next screen flip
+            win.callOnFlip(key_vas_70_3.clearEvents, eventType='keyboard')  # clear events on next screen flip
+        if key_vas_70_3.status == STARTED and not waitOnFlip:
+            theseKeys = key_vas_70_3.getKeys(keyList=['y','n','left','right','space'], ignoreKeys=["escape"], waitRelease=False)
+            _key_vas_70_3_allKeys.extend(theseKeys)
+            if len(_key_vas_70_3_allKeys):
+                key_vas_70_3.keys = _key_vas_70_3_allKeys[-1].name  # just the last key pressed
+                key_vas_70_3.rt = _key_vas_70_3_allKeys[-1].rt
+                key_vas_70_3.duration = _key_vas_70_3_allKeys[-1].duration
+                # a response ends the routine
+                continueRoutine = False
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in info_vas_70_3Components:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "info_vas_70_3" ---
+    for thisComponent in info_vas_70_3Components:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('info_vas_70_3.stopped', globalClock.getTime())
+    # check responses
+    if key_vas_70_3.keys in ['', [], None]:  # No response was made
+        key_vas_70_3.keys = None
+    thisExp.addData('key_vas_70_3.keys',key_vas_70_3.keys)
+    if key_vas_70_3.keys != None:  # we had a response
+        thisExp.addData('key_vas_70_3.rt', key_vas_70_3.rt)
+        thisExp.addData('key_vas_70_3.duration', key_vas_70_3.duration)
+    thisExp.nextEntry()
+    # the Routine "info_vas_70_3" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
@@ -2212,10 +2330,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # completed trials_vas70 repeats of 'loop_vas70'
     
     
-    # --- Prepare to start Routine "transition_vas70_to_vas0" ---
+    # --- Prepare to start Routine "info_vas0_transition" ---
     continueRoutine = True
     # update component parameters for each repeat
-    thisExp.addData('transition_vas70_to_vas0.started', globalClock.getTime())
+    thisExp.addData('info_vas0_transition.started', globalClock.getTime())
     # Run 'Begin Routine' code from init_estimator_vas0
     # Preparing estimator for VAS 0
     # slight overshoot to showcase the full range of possible temperatures
@@ -2226,128 +2344,12 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         temp_start= temp_start_vas0,
         temp_std=temp_std_vas0,
         trials=trials_vas0)
-    key_explanation_vas0.keys = []
-    key_explanation_vas0.rt = []
-    _key_explanation_vas0_allKeys = []
-    # keep track of which components have finished
-    transition_vas70_to_vas0Components = [text_explanation_vas0, key_explanation_vas0]
-    for thisComponent in transition_vas70_to_vas0Components:
-        thisComponent.tStart = None
-        thisComponent.tStop = None
-        thisComponent.tStartRefresh = None
-        thisComponent.tStopRefresh = None
-        if hasattr(thisComponent, 'status'):
-            thisComponent.status = NOT_STARTED
-    # reset timers
-    t = 0
-    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
-    frameN = -1
-    
-    # --- Run Routine "transition_vas70_to_vas0" ---
-    routineForceEnded = not continueRoutine
-    while continueRoutine:
-        # get current time
-        t = routineTimer.getTime()
-        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
-        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
-        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
-        # update/draw components on each frame
-        
-        # *text_explanation_vas0* updates
-        
-        # if text_explanation_vas0 is starting this frame...
-        if text_explanation_vas0.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
-            # keep track of start time/frame for later
-            text_explanation_vas0.frameNStart = frameN  # exact frame index
-            text_explanation_vas0.tStart = t  # local t and not account for scr refresh
-            text_explanation_vas0.tStartRefresh = tThisFlipGlobal  # on global time
-            win.timeOnFlip(text_explanation_vas0, 'tStartRefresh')  # time at next scr refresh
-            # add timestamp to datafile
-            thisExp.timestampOnFlip(win, 'text_explanation_vas0.started')
-            # update status
-            text_explanation_vas0.status = STARTED
-            text_explanation_vas0.setAutoDraw(True)
-        
-        # if text_explanation_vas0 is active this frame...
-        if text_explanation_vas0.status == STARTED:
-            # update params
-            pass
-        
-        # *key_explanation_vas0* updates
-        waitOnFlip = False
-        
-        # if key_explanation_vas0 is starting this frame...
-        if key_explanation_vas0.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
-            # keep track of start time/frame for later
-            key_explanation_vas0.frameNStart = frameN  # exact frame index
-            key_explanation_vas0.tStart = t  # local t and not account for scr refresh
-            key_explanation_vas0.tStartRefresh = tThisFlipGlobal  # on global time
-            win.timeOnFlip(key_explanation_vas0, 'tStartRefresh')  # time at next scr refresh
-            # add timestamp to datafile
-            thisExp.timestampOnFlip(win, 'key_explanation_vas0.started')
-            # update status
-            key_explanation_vas0.status = STARTED
-            # keyboard checking is just starting
-            waitOnFlip = True
-            win.callOnFlip(key_explanation_vas0.clock.reset)  # t=0 on next screen flip
-            win.callOnFlip(key_explanation_vas0.clearEvents, eventType='keyboard')  # clear events on next screen flip
-        if key_explanation_vas0.status == STARTED and not waitOnFlip:
-            theseKeys = key_explanation_vas0.getKeys(keyList=['space'], ignoreKeys=["escape"], waitRelease=False)
-            _key_explanation_vas0_allKeys.extend(theseKeys)
-            if len(_key_explanation_vas0_allKeys):
-                key_explanation_vas0.keys = _key_explanation_vas0_allKeys[-1].name  # just the last key pressed
-                key_explanation_vas0.rt = _key_explanation_vas0_allKeys[-1].rt
-                key_explanation_vas0.duration = _key_explanation_vas0_allKeys[-1].duration
-                # a response ends the routine
-                continueRoutine = False
-        
-        # check for quit (typically the Esc key)
-        if defaultKeyboard.getKeys(keyList=["escape"]):
-            thisExp.status = FINISHED
-        if thisExp.status == FINISHED or endExpNow:
-            endExperiment(thisExp, inputs=inputs, win=win)
-            return
-        
-        # check if all components have finished
-        if not continueRoutine:  # a component has requested a forced-end of Routine
-            routineForceEnded = True
-            break
-        continueRoutine = False  # will revert to True if at least one component still running
-        for thisComponent in transition_vas70_to_vas0Components:
-            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
-                continueRoutine = True
-                break  # at least one component has not yet finished
-        
-        # refresh the screen
-        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
-            win.flip()
-    
-    # --- Ending Routine "transition_vas70_to_vas0" ---
-    for thisComponent in transition_vas70_to_vas0Components:
-        if hasattr(thisComponent, "setAutoDraw"):
-            thisComponent.setAutoDraw(False)
-    thisExp.addData('transition_vas70_to_vas0.stopped', globalClock.getTime())
-    # check responses
-    if key_explanation_vas0.keys in ['', [], None]:  # No response was made
-        key_explanation_vas0.keys = None
-    thisExp.addData('key_explanation_vas0.keys',key_explanation_vas0.keys)
-    if key_explanation_vas0.keys != None:  # we had a response
-        thisExp.addData('key_explanation_vas0.rt', key_explanation_vas0.rt)
-        thisExp.addData('key_explanation_vas0.duration', key_explanation_vas0.duration)
-    thisExp.nextEntry()
-    # the Routine "transition_vas70_to_vas0" was not non-slip safe, so reset the non-slip timer
-    routineTimer.reset()
-    
-    # --- Prepare to start Routine "info_vas0" ---
-    continueRoutine = True
-    # update component parameters for each repeat
-    thisExp.addData('info_vas0.started', globalClock.getTime())
     key_info_vas0.keys = []
     key_info_vas0.rt = []
     _key_info_vas0_allKeys = []
     # keep track of which components have finished
-    info_vas0Components = [text_info_vas0, key_info_vas0]
-    for thisComponent in info_vas0Components:
+    info_vas0_transitionComponents = [text_info_vas0, key_info_vas0]
+    for thisComponent in info_vas0_transitionComponents:
         thisComponent.tStart = None
         thisComponent.tStop = None
         thisComponent.tStartRefresh = None
@@ -2359,7 +2361,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     _timeToFirstFrame = win.getFutureFlipTime(clock="now")
     frameN = -1
     
-    # --- Run Routine "info_vas0" ---
+    # --- Run Routine "info_vas0_transition" ---
     routineForceEnded = not continueRoutine
     while continueRoutine:
         # get current time
@@ -2408,7 +2410,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             win.callOnFlip(key_info_vas0.clock.reset)  # t=0 on next screen flip
             win.callOnFlip(key_info_vas0.clearEvents, eventType='keyboard')  # clear events on next screen flip
         if key_info_vas0.status == STARTED and not waitOnFlip:
-            theseKeys = key_info_vas0.getKeys(keyList=['y','n','left','right','space'], ignoreKeys=["escape"], waitRelease=False)
+            theseKeys = key_info_vas0.getKeys(keyList=['space'], ignoreKeys=["escape"], waitRelease=False)
             _key_info_vas0_allKeys.extend(theseKeys)
             if len(_key_info_vas0_allKeys):
                 key_info_vas0.keys = _key_info_vas0_allKeys[-1].name  # just the last key pressed
@@ -2429,7 +2431,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             routineForceEnded = True
             break
         continueRoutine = False  # will revert to True if at least one component still running
-        for thisComponent in info_vas0Components:
+        for thisComponent in info_vas0_transitionComponents:
             if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
                 continueRoutine = True
                 break  # at least one component has not yet finished
@@ -2438,11 +2440,11 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
             win.flip()
     
-    # --- Ending Routine "info_vas0" ---
-    for thisComponent in info_vas0Components:
+    # --- Ending Routine "info_vas0_transition" ---
+    for thisComponent in info_vas0_transitionComponents:
         if hasattr(thisComponent, "setAutoDraw"):
             thisComponent.setAutoDraw(False)
-    thisExp.addData('info_vas0.stopped', globalClock.getTime())
+    thisExp.addData('info_vas0_transition.stopped', globalClock.getTime())
     # check responses
     if key_info_vas0.keys in ['', [], None]:  # No response was made
         key_info_vas0.keys = None
@@ -2451,7 +2453,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         thisExp.addData('key_info_vas0.rt', key_info_vas0.rt)
         thisExp.addData('key_info_vas0.duration', key_info_vas0.duration)
     thisExp.nextEntry()
-    # the Routine "info_vas0" was not non-slip safe, so reset the non-slip timer
+    # the Routine "info_vas0_transition" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
@@ -2678,11 +2680,11 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         continueRoutine = True
         # update component parameters for each repeat
         thisExp.addData('feedback_vas0.started', globalClock.getTime())
-        response_vas00.keys = []
-        response_vas00.rt = []
-        _response_vas00_allKeys = []
+        response_vas0.keys = []
+        response_vas0.rt = []
+        _response_vas0_allKeys = []
         # keep track of which components have finished
-        feedback_vas0Components = [question_vas0, response_vas00]
+        feedback_vas0Components = [question_vas0, response_vas0]
         for thisComponent in feedback_vas0Components:
             thisComponent.tStart = None
             thisComponent.tStop = None
@@ -2737,31 +2739,31 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                     question_vas0.status = FINISHED
                     question_vas0.setAutoDraw(False)
             
-            # *response_vas00* updates
+            # *response_vas0* updates
             waitOnFlip = False
             
-            # if response_vas00 is starting this frame...
-            if response_vas00.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # if response_vas0 is starting this frame...
+            if response_vas0.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                 # keep track of start time/frame for later
-                response_vas00.frameNStart = frameN  # exact frame index
-                response_vas00.tStart = t  # local t and not account for scr refresh
-                response_vas00.tStartRefresh = tThisFlipGlobal  # on global time
-                win.timeOnFlip(response_vas00, 'tStartRefresh')  # time at next scr refresh
+                response_vas0.frameNStart = frameN  # exact frame index
+                response_vas0.tStart = t  # local t and not account for scr refresh
+                response_vas0.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(response_vas0, 'tStartRefresh')  # time at next scr refresh
                 # add timestamp to datafile
-                thisExp.timestampOnFlip(win, 'response_vas00.started')
+                thisExp.timestampOnFlip(win, 'response_vas0.started')
                 # update status
-                response_vas00.status = STARTED
+                response_vas0.status = STARTED
                 # keyboard checking is just starting
                 waitOnFlip = True
-                win.callOnFlip(response_vas00.clock.reset)  # t=0 on next screen flip
-                win.callOnFlip(response_vas00.clearEvents, eventType='keyboard')  # clear events on next screen flip
-            if response_vas00.status == STARTED and not waitOnFlip:
-                theseKeys = response_vas00.getKeys(keyList=['y','n'], ignoreKeys=["escape"], waitRelease=True)
-                _response_vas00_allKeys.extend(theseKeys)
-                if len(_response_vas00_allKeys):
-                    response_vas00.keys = _response_vas00_allKeys[-1].name  # just the last key pressed
-                    response_vas00.rt = _response_vas00_allKeys[-1].rt
-                    response_vas00.duration = _response_vas00_allKeys[-1].duration
+                win.callOnFlip(response_vas0.clock.reset)  # t=0 on next screen flip
+                win.callOnFlip(response_vas0.clearEvents, eventType='keyboard')  # clear events on next screen flip
+            if response_vas0.status == STARTED and not waitOnFlip:
+                theseKeys = response_vas0.getKeys(keyList=['y','n'], ignoreKeys=["escape"], waitRelease=True)
+                _response_vas0_allKeys.extend(theseKeys)
+                if len(_response_vas0_allKeys):
+                    response_vas0.keys = _response_vas0_allKeys[-1].name  # just the last key pressed
+                    response_vas0.rt = _response_vas0_allKeys[-1].rt
+                    response_vas0.duration = _response_vas0_allKeys[-1].duration
                     # a response ends the routine
                     continueRoutine = False
             
@@ -2792,12 +2794,12 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                 thisComponent.setAutoDraw(False)
         thisExp.addData('feedback_vas0.stopped', globalClock.getTime())
         # check responses
-        if response_vas00.keys in ['', [], None]:  # No response was made
-            response_vas00.keys = None
-        loop_vas0.addData('response_vas00.keys',response_vas00.keys)
-        if response_vas00.keys != None:  # we had a response
-            loop_vas0.addData('response_vas00.rt', response_vas00.rt)
-            loop_vas0.addData('response_vas00.duration', response_vas00.duration)
+        if response_vas0.keys in ['', [], None]:  # No response was made
+            response_vas0.keys = None
+        loop_vas0.addData('response_vas0.keys',response_vas0.keys)
+        if response_vas0.keys != None:  # we had a response
+            loop_vas0.addData('response_vas0.rt', response_vas0.rt)
+            loop_vas0.addData('response_vas0.duration', response_vas0.duration)
         # the Routine "feedback_vas0" was not non-slip safe, so reset the non-slip timer
         routineTimer.reset()
         

@@ -86,7 +86,7 @@
         <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
       </RoutineSettingsComponent>
       <CodeComponent name="all_variables" plugin="None">
-        <Param val="# Logger&amp;#10;from pathlib import Path&amp;#10;from datetime import datetime&amp;#10;from src.experiments.log_config import configure_logging, close_root_logging&amp;#10;&amp;#10;# Configure logging&amp;#10;log_dir = Path('log')&amp;#10;log_dir.mkdir(parents=True, exist_ok=True)&amp;#10;log_filename_str = datetime.now().strftime(&quot;%Y_%m_%d__%H_%M_%S&quot;) + &quot;.log&quot;&amp;#10;log_file = log_dir / log_filename_str&amp;#10;&amp;#10;configure_logging(log_file=log_file)&amp;#10;&amp;#10;# Thermoino&amp;#10;port = &quot;COM7&quot; # COM7 for top usb port on the front, use list_com_ports() to find out&amp;#10;mms_baseline = 30 # has to be the same as in MMS&amp;#10;mms_rate_of_rise = 10 # has to be the same as in MMS&amp;#10;&amp;#10;# Stimuli&amp;#10;stimuli_clock = core.Clock()&amp;#10;stimuli_duration = 8 - 7&amp;#10;iti_duration = 8  + np.random.randint(0, 5) -7&amp;#10;cross_size = (0.06, 0.06)&amp;#10;&amp;#10;# Pre-exposure&amp;#10;temps_preexposure = [35, 36, 37]&amp;#10;correction_after_preexposure = 2 # we substract from temp_start_vas70&amp;#10;&amp;#10;# Estimator&amp;#10;trials_vas70 = 7 # is the same as nReps in psychopy loop&amp;#10;temp_start_vas70 = 42&amp;#10;temp_std_vas70 = 3.5&amp;#10;&amp;#10;trials_vas0 = 5 # is the same as nReps in psychopy loop&amp;#10;temp_start_vas0 = None #  will be set after VAS 0 estimate&amp;#10;temp_start_vas0_minus = 3 # VAS 0 estimate plus int&amp;#10;temp_std_vas0 = 1.5 # smaller std for higher temperatures&amp;#10;" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="# Logger&amp;#10;from pathlib import Path&amp;#10;from datetime import datetime&amp;#10;from src.experiments.log_config import configure_logging, close_root_logging&amp;#10;&amp;#10;# Configure logging&amp;#10;log_dir = Path('log')&amp;#10;log_dir.mkdir(parents=True, exist_ok=True)&amp;#10;log_filename_str = datetime.now().strftime(&quot;%Y_%m_%d__%H_%M_%S&quot;) + &quot;.log&quot;&amp;#10;log_file = log_dir / log_filename_str&amp;#10;&amp;#10;configure_logging(log_file=log_file)&amp;#10;&amp;#10;# Thermoino&amp;#10;port = &quot;COM3&quot;&amp;#10;# COM7 for top usb port on the front, use list_com_ports() to find out&amp;#10;mms_baseline = 30 # has to be the same as in MMS&amp;#10;mms_rate_of_rise = 10 # has to be the same as in MMS&amp;#10;&amp;#10;# Stimuli&amp;#10;stimuli_clock = core.Clock()&amp;#10;stimuli_duration = 8 - 7&amp;#10;iti_duration = 8  + np.random.randint(0, 2) -7&amp;#10;cross_size = (0.06, 0.06)&amp;#10;&amp;#10;# Pre-exposure&amp;#10;temps_preexposure = [35, 36, 37]&amp;#10;correction_after_preexposure = 2 # we substract from temp_start_vas70&amp;#10;&amp;#10;# Estimator&amp;#10;trials_vas70 = 7 # is the same as nReps in psychopy loop&amp;#10;temp_start_vas70 = 42&amp;#10;temp_std_vas70 = 3.5&amp;#10;&amp;#10;trials_vas0 = 5 # is the same as nReps in psychopy loop&amp;#10;temp_start_vas0 = None #  will be set after VAS 0 estimate&amp;#10;temp_start_vas0_minus = 3 # VAS 0 estimate plus int&amp;#10;temp_std_vas0 = 1.5 # smaller std for higher temperatures&amp;#10;" valType="extendedCode" updates="constant" name="Before Experiment"/>
         <Param val="ibi_duration = 8;&amp;#10;" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
@@ -140,7 +140,7 @@
         <Param val="time (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Herzlich willkommen zur Studie!&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um zu starten)" valType="str" updates="constant" name="text"/>
+        <Param val="Herzlich willkommen zum Experiment!&amp;#10;&amp;#10;&amp;#10;Bitte drücken Sie die Leertaste." valType="str" updates="constant" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
@@ -201,7 +201,7 @@
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Als Erstes möchten wir Ihre Schmerz-Wahrnehmung über eine Schmerz-Kalibrierung erkunden, bevor wir mit dem Haupt-Experiment beginnen.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
+        <Param val="Wir beginnen das Experiment mit einer Schmerz-Kalibrierung.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
@@ -262,7 +262,7 @@
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Die Schmerz-Kalibrierung besteht aus 3 Phasen:&amp;#10;&amp;#10;1. dem Aufwärmen Ihrer Hautstelle am Arm,&amp;#10;2. dem Bestimmen der Schwelle, ab der Sie &amp;#10;a) starke Schmerzen spüren und&amp;#10;b) überhaupt erste Schmerzen spüren.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
+        <Param val="Hierbei wärmen wir Ihre Hautstellte am Arm zuerst kurz auf und bestimmen anschließend, wann Sie leichte und wann Sie starke Schmerzen verspüren.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
@@ -323,7 +323,7 @@
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Wir beginnen nun mit dem Aufwärmen der Hautstelle.&amp;#10;Hierbei müssen Sie nichts weiter tun.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
+        <Param val="Wir beginnen mit dem Aufwärmen der Hautstelle.&amp;#10;Hierbei müssen Sie nichts weiter tun.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
@@ -609,7 +609,7 @@
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Als nächstes möchten wir sehen, wie Sie stärkere Schmerz-Reize wahrnehmen.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
+        <Param val="Als Nächstes möchten wir herausfinden, ab wann Sie starke Schmerzen verspüren.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
@@ -670,7 +670,7 @@
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Dabei orientieren wir uns an einer Schmerz-Skala von 1 bis 10:&amp;#10;&amp;#10;&amp;#10;&amp;#10;&amp;#10;&amp;#10;&amp;#10;&amp;#10;&amp;#10;Unser Ziel ist es, herauszufinden, ab wann Sie sehr starke Schmerzen (eine 7 von 10) spüren.&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
+        <Param val="Dabei orientieren wir uns an einer Schmerz-Skala von 1 bis 10:&amp;#10;&amp;#10;&amp;#10;&amp;#10;&amp;#10;&amp;#10;&amp;#10;&amp;#10;&amp;#10;Unser Ziel ist es, herauszufinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
@@ -1215,7 +1215,7 @@
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Wunderbar!&amp;#10;&amp;#10;&amp;#10;Als letztes möchten wir genauer bestimmen, ab welcher Temperatur Sie überhaupt erste Schmerzen spüren.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
+        <Param val="Wunderbar!&amp;#10;&amp;#10;&amp;#10;Als Nächstes möchten wir bestimmen, wo Ihre Schmerzwelle liegt - also ab wann Sie erste Schmerzen verspüren.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
@@ -1227,6 +1227,67 @@
         <Param val="" valType="code" updates="None" name="durationEstim"/>
         <Param val="True" valType="bool" updates="constant" name="forceEndRoutine"/>
         <Param val="key_info_vas0" valType="code" updates="None" name="name"/>
+        <Param val="press" valType="str" updates="constant" name="registerOn"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="last key" valType="str" updates="constant" name="store"/>
+        <Param val="False" valType="bool" updates="constant" name="storeCorrect"/>
+        <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
+      </KeyboardComponent>
+    </Routine>
+    <Routine name="info_vas_70_3">
+      <RoutineSettingsComponent name="info_vas_70_3" plugin="None">
+        <Param val="none" valType="str" updates="None" name="backgroundFit"/>
+        <Param val="" valType="str" updates="None" name="backgroundImg"/>
+        <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
+        <Param val="rgb" valType="str" updates="None" name="colorSpace"/>
+        <Param val="" valType="str" updates="constant" name="desc"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="info_vas_70_3" valType="code" updates="None" name="name"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="constant" name="skipIf"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
+      </RoutineSettingsComponent>
+      <TextComponent name="text_info_vas70_3" plugin="None">
+        <Param val="white" valType="color" updates="constant" name="color"/>
+        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
+        <Param val="1" valType="num" updates="constant" name="contrast"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="None" valType="str" updates="constant" name="flip"/>
+        <Param val="Open Sans" valType="str" updates="constant" name="font"/>
+        <Param val="LTR" valType="str" updates="None" name="languageStyle"/>
+        <Param val="0.05" valType="num" updates="constant" name="letterHeight"/>
+        <Param val="text_info_vas70_3" valType="code" updates="None" name="name"/>
+        <Param val="" valType="num" updates="constant" name="opacity"/>
+        <Param val="0" valType="num" updates="constant" name="ori"/>
+        <Param val="(0, 0)" valType="list" updates="constant" name="pos"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
+        <Param val="Dank dem Capsaicin ist Ihre Schmerzschwelle dabei nach unten verlagert.&amp;#10;&amp;#10;Das bedeutet, Sie verspüren schneller starken Schmerz.&amp;#10;Aber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.&amp;#10;&amp;#10;&amp;#10;(Leertaste drücken, um fortzufahren)" valType="str" updates="constant" name="text"/>
+        <Param val="from exp settings" valType="str" updates="None" name="units"/>
+        <Param val="" valType="num" updates="constant" name="wrapWidth"/>
+      </TextComponent>
+      <KeyboardComponent name="key_vas_70_3" plugin="None">
+        <Param val="'y','n','left','right','space'" valType="list" updates="constant" name="allowedKeys"/>
+        <Param val="" valType="str" updates="constant" name="correctAns"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="True" valType="bool" updates="constant" name="discard previous"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="True" valType="bool" updates="constant" name="forceEndRoutine"/>
+        <Param val="key_vas_70_3" valType="code" updates="None" name="name"/>
         <Param val="press" valType="str" updates="constant" name="registerOn"/>
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="None" name="startEstim"/>
@@ -1263,6 +1324,7 @@
     <Routine name="count_in_preexposure"/>
     <Routine name="info_vas70"/>
     <Routine name="info_vas70_2"/>
+    <Routine name="info_vas_70_3"/>
     <LoopInitiator loopType="TrialHandler" name="loop_vas70">
       <Param name="Selected rows" updates="None" val="" valType="str"/>
       <Param name="conditions" updates="None" val="None" valType="str"/>
