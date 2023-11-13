@@ -64,12 +64,12 @@ def add_participant(participant, age, gender, vas0, vas70):
     new_data = pd.DataFrame([{
         'time_stamp': time_stamp,
         'participant': participant,
-        'age': age,
-        'gender': gender,
-        'vas0': vas0,
-        'vas70': vas70,
+        'age': int(age),
+        'gender': str(gender),
+        'vas0': int(vas0),
+        'vas70': int(vas70),
         'baseline_temp': round((vas0 + vas70) / 2, 1),
-        'temp_range': vas70 - vas0
+        'temp_range': round(vas70 - vas0, 1)
     }])
     df = pd.read_excel(FILE_DIR)
     if df.empty or df.isna().all().all():
