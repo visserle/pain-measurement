@@ -6,34 +6,46 @@
 # documentation:
 # this will be run from psychopy, so we need to make sure that the path is correct
 
-
 import os
 from datetime import datetime
 from pathlib import Path
 import logging
 import pandas as pd
 
+try:
+    import openpyxl
+except ImportError:
+    try:  
+        import subprocess
+        import sys
+        process = subprocess.run([sys.executable, "-m", "pip", "install", "openpyxl"], check=False)
+        if process.returncode != 0:
+            raise Exception("pip installation failed")
+    except Exception as exc:
+        print(f"Failed to install and import 'openpyxl': {exc}")
+        raise exc
+
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
-# Set the path to the CSV file
+# Set the path to the Excel file
 exp_dirs = "calibration", "mpad1", "mpad2"
 X_DIR = Path.cwd()
 if X_DIR.stem in exp_dirs: # when running from psychopy runner
-    FILE_DIR = X_DIR.parent / 'participants.csv'
+    FILE_DIR = X_DIR.parent / 'participants.xlsx'
 else: # when running from project root
     EXP_DIR = X_DIR / 'experiments'
-    FILE_DIR = EXP_DIR / 'participants.csv'
+    FILE_DIR = EXP_DIR / 'participants.xlsx'
 
 
-def init_csv_file():
+def init_excel_file():
     headers = ['time_stamp', 'participant', 'age', 'gender', 'vas0', 'vas70', 'baseline_temp', 'temp_range']
     if not FILE_DIR.exists():
         df = pd.DataFrame(columns=headers)
-        df.to_csv(FILE_DIR, index=False)
+        df.to_excel(FILE_DIR, index=False)
 
 def add_participant(participant, age, gender, vas0, vas70):
     """
-    Adds a participant to the participants.csv file.
+    Adds a participant to the participants.xlsx file.
 
     Example for usage in psychopy:
     -------
@@ -59,7 +71,7 @@ def add_participant(participant, age, gender, vas0, vas70):
         'baseline_temp': round((vas0 + vas70) / 2, 1),
         'temp_range': vas70 - vas0
     }])
-    df = pd.read_csv(FILE_DIR)
+    df = pd.read_excel(FILE_DIR)
     if df.empty or df.isna().all().all():
         df = new_data
     else:
@@ -69,12 +81,12 @@ def add_participant(participant, age, gender, vas0, vas70):
             logger.critical(f"Participant {participant} already exists as the last entry.")
         df = pd.concat([df, new_data], ignore_index=True)
     
-    df.to_csv(FILE_DIR, index=False)
+    df.to_excel(FILE_DIR, index=False)
     logger.info(f"Added participant {participant} to {FILE_DIR}")
 
 def read_last_participant():
     """
-    Returns information about the last participant from the participants.csv file.
+    Returns information about the last participant from the participants.xlsx file.
 
     Example for usage in psychopy:
     -------
@@ -83,8 +95,8 @@ def read_last_participant():
     participant_info = read_last_participant()
     ```
     """
-    # Read the CSV file into a DataFrame
-    df = pd.read_csv(FILE_DIR)
+    # Read the Excel file into a DataFrame
+    df = pd.read_excel(FILE_DIR)
 
     # Get the last row of the DataFrame
     last_row = df.iloc[-1]
@@ -107,11 +119,3 @@ def read_last_participant():
     logger.info(f"Participant data from {participant_info['participant']} ({participant_info['time_stamp']}) loaded.")
 
     return participant_info
-
-def main():
-    init_csv_file()
-    add_participant('test', 20, 'm', 38, 40)
-    read_last_participant()
-
-if __name__ == "__main__":
-    main()
