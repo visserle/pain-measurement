@@ -240,13 +240,18 @@ class Thermoino:
         temp_target : `int`
             The target temperature in degree Celsius.
 
+        Notes
+        _____
+        The command MOVE does ramp up (positive numbers) or down (negative numbers) for x microseconds (move_time_us).
+
         Returns
         -------
         tuple
             (self, float) - self for chaining, float for the duration in seconds for the temperature change.
         """
+
         move_time_us = round(((temp_target - self.temp) / self.mms_rate_of_rise) * 1e6)
-        move_time_s = move_time_us / 1e6  # Convert to seconds
+        move_time_s = abs(move_time_us / 1e6)  # Convert to seconds as a measure of duration
         output = self._send_command(f'MOVE;{move_time_us}\n')
         if output in OkCodes.__members__:
             logger.info("Thermoino response to 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
@@ -259,6 +264,8 @@ class Thermoino:
     
     def wait(self, duration):
         """
+        - NOT RECOMMENDED FOR PSYCHOPY EXPERIMENTS -
+
         Wait for a given duration in seconds.
         This function delays the execution in Python for a given number of seconds.
 
