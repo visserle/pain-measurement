@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on November 13, 2023, at 17:25
+    on Tue Nov 14 17:06:39 2023
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -50,6 +50,8 @@ expInfo = {
 }
 
 # Run 'Before Experiment' code from all_variables
+from src.experiments.thermoino_dummy import Thermoino
+
 # Logger
 from pathlib import Path
 from datetime import datetime
@@ -71,8 +73,9 @@ mms_rate_of_rise = 10 # has to be the same as in MMS
 
 # Stimuli
 stimuli_clock = core.Clock()
-stimuli_duration = 8 - 7
-iti_duration = 8  + np.random.randint(0, 2) -7
+stimuli_duration = 8
+iti_duration = 8  + np.random.randint(2, 4)
+iti_duration_short = 2
 cross_size = (0.06, 0.06)
 
 # Pre-exposure
@@ -89,8 +92,6 @@ temp_start_vas0 = None #  will be set after VAS 0 estimate
 temp_start_vas0_minus = 3 # VAS 0 estimate plus int
 temp_std_vas0 = 1.5 # smaller std for higher temperatures
 
-# Run 'Before Experiment' code from thermoino
-from src.experiments.thermoino import Thermoino
 # Run 'Before Experiment' code from estimator_vas70
 from src.experiments.calibration import BayesianEstimatorVAS
 
@@ -165,7 +166,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='C:\\drive\\PhD\\Code\\mpad-pilot\\experiments\\calibration\\calibration_exp_lastrun.py',
+        originPath='/Users/visser/drive/PhD/Code/mpad-pilot/experiments/calibration/calibration_exp_lastrun.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -400,7 +401,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_3" ---
     text_welcome_3 = visual.TextStim(win=win, name='text_welcome_3',
-        text='Hierbei wärmen wir Ihre Hautstellte am Arm zuerst kurz auf und bestimmen anschließend, wann Sie leichte und wann Sie starke Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Hierzu wärmen wir die Hautstellte an Ihrem Arm zuerst kurz auf.\n\nAnschließend bestimmen wir, wann Sie leichte und starke Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -417,6 +418,14 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         languageStyle='LTR',
         depth=0.0);
     key_info_preexposure = keyboard.Keyboard()
+    
+    # --- Initialize components for Routine "iti_short" ---
+    cross_neutral_short = visual.ShapeStim(
+        win=win, name='cross_neutral_short', vertices='cross',
+        size=cross_size,
+        ori=0.0, pos=(0, 0), anchor='center',
+        lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor='white',
+        opacity=None, depth=0.0, interpolate=True)
     
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
@@ -455,7 +464,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas70" ---
     text_info_vas70 = visual.TextStim(win=win, name='text_info_vas70',
-        text='Als nächstes möchten wir herausfinden, ab wann Sie starke Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Als Nächstes möchten wir herausfinden, ab wann Sie starke Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -528,7 +537,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas0_transition" ---
     text_info_vas0 = visual.TextStim(win=win, name='text_info_vas0',
-        text='Wunderbar!\n\n\nAls letztes möchten wir bestimmen, wo Ihre Schmerzwelle liegt - also ab wann Sie erste Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Wunderbar!\n\n\nAls Nächstes möchten wir bestimmen, wo Ihre Schmerzwelle liegt - also ab wann Sie erste Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color='white', colorSpace='rgb', opacity=None, 
@@ -1056,6 +1065,96 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # the Routine "info_preexposure" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
+    # --- Prepare to start Routine "iti_short" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('iti_short.started', globalClock.getTime())
+    # keep track of which components have finished
+    iti_shortComponents = [cross_neutral_short]
+    for thisComponent in iti_shortComponents:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "iti_short" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # *cross_neutral_short* updates
+        
+        # if cross_neutral_short is starting this frame...
+        if cross_neutral_short.status == NOT_STARTED and tThisFlip >= 0-frameTolerance:
+            # keep track of start time/frame for later
+            cross_neutral_short.frameNStart = frameN  # exact frame index
+            cross_neutral_short.tStart = t  # local t and not account for scr refresh
+            cross_neutral_short.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(cross_neutral_short, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'cross_neutral_short.started')
+            # update status
+            cross_neutral_short.status = STARTED
+            cross_neutral_short.setAutoDraw(True)
+        
+        # if cross_neutral_short is active this frame...
+        if cross_neutral_short.status == STARTED:
+            # update params
+            pass
+        
+        # if cross_neutral_short is stopping this frame...
+        if cross_neutral_short.status == STARTED:
+            # is it time to stop? (based on global clock, using actual start)
+            if tThisFlipGlobal > cross_neutral_short.tStartRefresh + iti_duration_short-frameTolerance:
+                # keep track of stop time/frame for later
+                cross_neutral_short.tStop = t  # not accounting for scr refresh
+                cross_neutral_short.frameNStop = frameN  # exact frame index
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'cross_neutral_short.stopped')
+                # update status
+                cross_neutral_short.status = FINISHED
+                cross_neutral_short.setAutoDraw(False)
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in iti_shortComponents:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "iti_short" ---
+    for thisComponent in iti_shortComponents:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('iti_short.stopped', globalClock.getTime())
+    # the Routine "iti_short" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
+    
     # set up handler to look after randomisation of conditions etc
     loop_preexposure = data.TrialHandler(nReps=len(temps_preexposure), method='random', 
         extraInfo=expInfo, originPath=-1,
@@ -1089,6 +1188,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         continueRoutine = True
         # update component parameters for each repeat
         thisExp.addData('iti.started', globalClock.getTime())
+        # skip this Routine if its 'Skip if' condition is True
+        continueRoutine = continueRoutine and not (loop_preexposure.thisN == 0)
         # keep track of which components have finished
         itiComponents = [cross_neutral]
         for thisComponent in itiComponents:
@@ -1911,6 +2012,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         continueRoutine = True
         # update component parameters for each repeat
         thisExp.addData('iti.started', globalClock.getTime())
+        # skip this Routine if its 'Skip if' condition is True
+        continueRoutine = continueRoutine and not (loop_preexposure.thisN == 0)
         # keep track of which components have finished
         itiComponents = [cross_neutral]
         for thisComponent in itiComponents:
@@ -2489,6 +2592,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         continueRoutine = True
         # update component parameters for each repeat
         thisExp.addData('iti.started', globalClock.getTime())
+        # skip this Routine if its 'Skip if' condition is True
+        continueRoutine = continueRoutine and not (loop_preexposure.thisN == 0)
         # keep track of which components have finished
         itiComponents = [cross_neutral]
         for thisComponent in itiComponents:
