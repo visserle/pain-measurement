@@ -3,8 +3,9 @@
 # TODO
 # - find out what happens when the experiment gets aborted - logs still get written? closed?
 
-
 import logging
+from pathlib import Path
+from datetime import datetime
 
 def configure_logging(log_file=None, stream_handler=True, level=logging.INFO):
     """
@@ -52,3 +53,11 @@ def close_root_logging():
     for handler in root_logger.handlers[:]:
         handler.close()
         root_logger.removeHandler(handler)
+
+def psychopy_log():
+    """Returns a Path object for a log file in the log directory with a timestamped filename for the psychopy experiment"""
+    log_dir = Path('log')
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_filename_str = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
+    log_file = log_dir / log_filename_str
+    return log_file
