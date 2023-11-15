@@ -38,7 +38,7 @@ class ErrorCodes(Enum):
     ERR_DEBUG_RANGE = -11
 
 class OkCodes(Enum):
-    """OK codes as defined in the Thermoino code"""
+    """OK codes as defined in the Thermoino code (Thermode_PWM.ino)"""
     OK_NULL = 0
     OK = 1
     OK_READY = 2
@@ -220,7 +220,7 @@ class Thermoino:
 
     def trigger(self):
         """
-        Trigger MMS to get ready for action. Wait for 50 ms to avoid errors.
+        Trigger MMS to get ready for action.
         """
         output = self._send_command('START\n')
         if output in OkCodes.__members__:
@@ -548,10 +548,10 @@ class ThermoinoComplexTimeCourses(Thermoino):
             prep_duration += 0.5 # add 0.5 s to be sure
             self.set_temp(self.temp_course_resampled[0])
             logger.info("Thermoino prepares the CTC for execution by setting the starting temperature at %s °C", self.temp)
-            logger.info("Thermoino is waiting for %s s to reach the starting temperature of the CTC.", prep_duration)
+            logger.info("Thermoino is taking %s s to reach the starting temperature of the CTC.", prep_duration)
         else:
             prep_duration = 0
-            logger.info("Thermoino is ready for CTC execution.")
+            logger.info("Thermoino is ready to execute the CTC.")
         return (self, prep_duration)
 
     def exec_ctc(self):
