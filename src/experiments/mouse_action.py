@@ -28,33 +28,11 @@ It works on both Windows and Linux. More details about the library can be found 
 
 This script also adjusts the DPI awareness of the application using ctypes to ensure that the correct screen resolution is retrieved 
 even when DPI scaling is in use. This method is safe to use with all types of monitors, whether they use DPI scaling or not.
-
-If the 'mouse' library is not found, the script attempts to install it using pip.
-
-Note: This script requires the 'ctypes' and 'subprocess' libraries, which are included in standard Python distributions.
-
-Raises
-------
-Exception
-    If the 'mouse' library fails to import and install, an exception is raised.
-    Note: If you are running this script for the first time in psychopy, it will throw an error. Simply run it again and it should work.
 """
 
 import ctypes
-
-try:
-    import mouse
-except ImportError:
-    try:  # try to install mouse using pip in a subprocess
-        import subprocess
-        import sys
-        process = subprocess.run([sys.executable, "-m", "pip", "install", "mouse"], check=False)
-        if process.returncode != 0:
-            raise Exception("pip installation failed")
-    except Exception as exc:
-        print(f"Failed to install and import 'mouse': {exc}")
-        raise exc # raise the exception to stop the script
-
+from .psychopy_utils import psychopy_import
+mouse = psychopy_import("mouse")
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware()
 
