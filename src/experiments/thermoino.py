@@ -13,14 +13,16 @@ import serial.tools.list_ports
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
-
 def list_com_ports():
     """List all serial ports"""
     ports = serial.tools.list_ports.comports()
+    output = []
     if len(ports) == 0:
-        print("No serial ports found.")
+        output.append("No serial ports found.")
     for port, desc, hwid in sorted(ports):
-        print(f"{port}: {desc} [{hwid}]")
+        output.append(f"{port}: {desc} [{hwid}]")
+    return '\n'.join(output)
+
 
 class ErrorCodes(Enum):
     """Error codes as defined in the Thermoino code (Thermode_PWM.ino)"""
@@ -154,10 +156,16 @@ class Thermoino:
         `serial.Serial`
             The serial object for communication with the device.
         """
-        self.ser = serial.Serial(self.PORT, self.BAUD_RATE)
-        self.connected = True
-        logger.info("Thermoino connection established @ %s.", self.PORT)
-        time.sleep(1)
+        try:
+            self.ser = serial.Serial(self.PORT, self.BAUD_RATE)
+            self.connected = True
+            logger.info("Thermoino connection established @ %s.", self.PORT)
+            time.sleep(1)
+        except serial.SerialException:
+            logger.error("Thermoino connection failed @ %s.", self.PORT)
+            ports_info = list_com_ports()
+            logger.info(f"Available serial ports are:\n{ports_info}")
+            raise
         return self
 
     def close(self):
@@ -247,7 +255,7 @@ class Thermoino:
         Returns
         -------
         tuple
-            (self, float) - self for chaining, float for the duration in seconds for the temperature change.
+            (self, float, bool) - self for chaining, float for the duration in seconds for the temperature change, bool for success
         """
 
         move_time_us = round(((temp_target - self.temp) / self.mms_rate_of_rise) * 1e6)
