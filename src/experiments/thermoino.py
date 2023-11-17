@@ -248,14 +248,20 @@ class Thermoino:
         temp_target : `int`
             The target temperature in degree Celsius.
 
+        Warning
+        -------
+        As of 2023.11.17 the success of the MOVE command is not reliable. If we encounter a ERR_BUSY error and try again, it will say OK_MOVE_PREC but the actual temperature of the Thermode will not change.
+        
         Notes
-        _____
+        -----
         The command MOVE does ramp up (positive numbers) or down (negative numbers) for x microseconds (move_time_us).
 
         Returns
         -------
         tuple
             (self, float, bool) - self for chaining, float for the duration in seconds for the temperature change, bool for success
+
+        
         """
 
         move_time_us = round(((temp_target - self.temp) / self.mms_rate_of_rise) * 1e6)
