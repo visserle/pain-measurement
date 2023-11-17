@@ -10,7 +10,6 @@
 # change criteria in add plateaus to absolute values based on the temperature range
 # maybe refactor into two classes with wave & sitmuli function
 
-
 """Stimuli generation for the thermal pain experiment, plus a extra function for plotting and labeling."""
 
 import math
@@ -83,28 +82,34 @@ class StimuliFunction():
     -------
     ```python
     import numpy as np
+
     minimal_desired_duration = 200 # in seconds
     periods = [67, 20] # [0] is the baseline and [1] the modulation; in seconds
     frequencies = 1./np.array(periods)
-    temp_range = 3 # in °C, from VAS 0 to VAS 70
+    temp_range = 3 # VAS 70 - VAS 0
     sample_rate = 60
-    seed = 463 # use None for random seed
-    baseline_temp = 39.2 # @ VAS 35
+    random_periods = True
+    baseline_temp = 40 # @ VAS 35
+
+    plateau_duration = 20
+    n_plateaus = 3
+
+    duration_big_decreases = 20
 
     stimuli = StimuliFunction(
         minimal_desired_duration=minimal_desired_duration,
         frequencies=frequencies,
         temp_range=temp_range,
         sample_rate=sample_rate,
-        random_periods=True,
+        random_periods=random_periods,
         seed=seed
     ).add_baseline_temp(
         baseline_temp=baseline_temp
     ).add_plateaus(
-        plateau_duration=20, 
-        n_plateaus=4
+        plateau_duration=plateau_duration, 
+        n_plateaus=n_plateaus
     ).generalize_big_decreases(
-        duration=20
+        duration=duration_big_decreases
     )
     ```
 	For more information on the resulting stimuli wave use:
@@ -191,7 +196,8 @@ class StimuliFunction():
         self.random_periods = random_periods
         self.checked_decreases = checked_decreases
 
-        self._create_wave()  
+        self._create_wave()
+        self._wave = self.wave
         self.baseline_temp = 0
         self._duration = self.duration
         self._wave_dot = self.wave_dot
@@ -319,6 +325,24 @@ class StimuliFunction():
     def loc_minima(self):
         self._loc_minima, _ = scipy.signal.find_peaks(-self.wave, prominence=0.5)
         return self._loc_minima
+    
+    @property
+    def wave(self):
+        return self._wave
+
+    @wave.setter
+    def wave(self, new_wave):
+        """Always make sure that the wave has the duration of a full second by padding it with the last value."""
+        new_wave = np.array(new_wave)
+        wave_length = new_wave.size
+
+        # Calculate the required length to reach the next full second
+        if wave_length % self.sample_rate != 0:
+            required_length = wave_length + (self.sample_rate - (wave_length % self.sample_rate))
+            padding_value = new_wave[-1]
+            new_wave = np.pad(new_wave, (0, required_length - wave_length), 'constant', constant_values=(padding_value,))
+        self._wave = new_wave
+    
 
     def _check_decreases(self):
         """
@@ -381,7 +405,7 @@ class StimuliFunction():
         self.wave = np.array(wave_new)
         return self
 
-    def add_plateaus(self, plateau_duration, n_plateaus):
+    def add_plateaus(self, plateau_duration: int, n_plateaus: int):
         """
         Adds plateaus to the wave at random positions, but only when the temperature is rising 
         and the temperature is between the 25th and 75th percentile. The distance between the 
@@ -419,7 +443,7 @@ class StimuliFunction():
         self.wave = np.array(wave_new)
         return self
     
-    def generalize_big_decreases(self, duration):
+    def generalize_big_decreases(self, duration: int):
         """
         Modifies the wave to generalize the sections of big decreases (found via _check_decreases) by 
         replacing them with cosine wave segments of specified duration in seconds.
