@@ -198,9 +198,10 @@ class StimuliFunction():
 
         self._create_wave()
         self._wave = self.wave
-        self.baseline_temp = 0
         self._duration = self.duration
         self._wave_dot = self.wave_dot
+        self.baseline_temp = 0
+
 
     @property
     def amplitude_proportion(self):
@@ -243,7 +244,7 @@ class StimuliFunction():
                 if self._check_decreases()[0]["big"].size == 3:
                     break
             else:
-                break       
+                break
 
     def _calculate_minimal_duration(self):
         """Calculates the true minimal duration ensuring it's a multiple of the period of the modulation
@@ -369,7 +370,7 @@ class StimuliFunction():
 
     def add_baseline_temp(self, baseline_temp):
         """
-        Adds a baseline temperature to the wave. It dhould be around VAS = 35.
+        Adds a baseline temperature to the wave. It should be around VAS = 35.
         """
         self.baseline_temp = baseline_temp
         self.wave += self.baseline_temp
@@ -442,21 +443,38 @@ class StimuliFunction():
                 wave_new.extend(_generate_plateau(i))
         self.wave = np.array(wave_new)
         return self
-    
-    def generalize_big_decreases(self, duration: int):
+
+    def generalize_big_decreases(self, duration=None):
         """
         Modifies the wave to generalize the sections of big decreases (found via _check_decreases) by 
-        replacing them with cosine wave segments of specified duration in seconds.
-        """
-        duration *= self.sample_rate
+        replacing them with cosine wave segments. If a duration is specified, use that duration in seconds.
+        If duration is None, use the mean duration of the big decreases.
 
+        Parameters
+        ----------
+        duration : int or None
+            Duration in seconds for each cosine wave segment. If None, the mean duration of big decreases
+            is used.
+
+        Note: This function changes the length of the wave if a specific duration is provided.
+            It aims to maintain the original length of the wave if duration is None.
+        """
         idx_decreases, temp_diffs = self._check_decreases()
         idx_big_decreases = idx_decreases["big"]
         if len(idx_big_decreases) == 0:
-            ValueError("No big decreases found. Try a lower temp_criteria.")            
+            raise ValueError("No big decreases found. Try a lower temp_criteria.")
+
+        if duration is None:
+            # Calculate the mean duration of big decreases
+            durations = self.loc_minima[idx_big_decreases] - self.loc_maxima[idx_big_decreases]
+            mean_duration = int(np.mean(durations))
+        else:
+            mean_duration = duration * self.sample_rate
+
+        self.duration_big_decreases = mean_duration / self.sample_rate
 
         # Create a new list to hold the modified wave
-        wave_new = []        
+        wave_new = []
         # Initialize the starting index for the iteration over the original wave
         idx_original = 0
 
@@ -465,9 +483,9 @@ class StimuliFunction():
             idx_end = self.loc_minima[j]
             # Append the original wave values before the segment to replace
             wave_new.extend(self.wave[idx_original:idx_start])
-            # from these two points we want to span a new wave that is exactly duration s long
-            x = np.linspace(0, np.pi, duration)
-            y = np.cos(x) * temp_diffs[j]/2 + self.wave[idx_start] - temp_diffs[j]/2  # Compute the corresponding y values and shift them to the correct baseline
+            # Generate the cosine wave segment
+            x = np.linspace(0, np.pi, mean_duration)
+            y = np.cos(x) * temp_diffs[j]/2 + self.wave[idx_start] - temp_diffs[j]/2
             # Insert the new wave segment
             wave_new.extend(y)
             # Update the starting index for the next iteration
@@ -478,7 +496,8 @@ class StimuliFunction():
         # Convert the modified wave list to a numpy array
         self.wave = np.array(wave_new)
         return self
-    
+
+
 
 def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
     """
