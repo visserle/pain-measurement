@@ -333,7 +333,8 @@ class StimuliFunction():
 
     @wave.setter
     def wave(self, new_wave):
-        """Always make sure that the wave has the duration of a full second by padding it with the last value."""
+        """Always make sure that the wave has the duration of a full second by padding it with the last value.
+        Also round all values to 3 decimals."""
         new_wave = np.array(new_wave)
         wave_length = new_wave.size
 
@@ -343,7 +344,8 @@ class StimuliFunction():
             padding_value = new_wave[-1]
             new_wave = np.pad(new_wave, (0, required_length - wave_length), 'constant', constant_values=(padding_value,))
         self._wave = new_wave
-    
+        # Round all values to 3 decimals
+        self._wave = np.round(self._wave, 3)
 
     def _check_decreases(self):
         """
