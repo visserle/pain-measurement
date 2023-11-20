@@ -1,39 +1,50 @@
 # work in proqress
 
-
 import logging
 from pathlib import Path
 from datetime import datetime
 
-def configure_logging(log_file=None, stream_handler=True, level=logging.INFO):
+
+def configure_logging(log_file=None, stream_handler=True, stream_level=logging.INFO, file_level=logging.DEBUG):
     """
-    Configures the root logger for logging messages to the console
-    and optionally to a specified log file. For usage in main scripts only (e.g. a psychopy experiment)
+    Configures the root logger for logging messages to the console and optionally to a specified log file.
+    Allows separate log levels for stream and file handlers.
+    For usage in main scripts only (e.g., a psychopy experiment)
 
     This function sets up a logger with custom formatting and adds handlers as needed:
-    1. StreamHandler for console output, if enabled.
-    2. FileHandler for logging to a file, if log_file is specified.
+    1. StreamHandler for console output, if enabled, with stream_level.
+    2. FileHandler for logging to a file, if log_file is specified, with file_level.
     """
     handlers = []
-    
+
     if stream_handler:
         # StreamHandler for console logging
         stream_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] - %(message)s', datefmt='%H:%M:%S')
         stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(stream_level)
         stream_handler.setFormatter(stream_formatter)
         handlers.append(stream_handler)
-        
+
     if log_file:
+        # FileHandler for logging to a file
         file_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s')
         file_handler = logging.FileHandler(log_file, mode='a')
+        file_handler.setLevel(file_level)
         file_handler.setFormatter(file_formatter)
+        file_handler.addFilter(ignore_pil_logs)
         handlers.append(file_handler)
-        
+
     # Clear any previously added handlers from the root logger
     logging.getLogger().handlers = []
-    
+
     # Set up the root logger configuration with the created handlers
-    logging.basicConfig(level=level, handlers=handlers)
+    logging.basicConfig(level=min(stream_level, file_level), handlers=handlers)
+
+
+def ignore_pil_logs(record):
+    """Filter function for ignoring debug PIL logs which are not relevant to the experiment"""
+    return not record.name.startswith('PIL')
+
 
 def close_root_logging():
     """
