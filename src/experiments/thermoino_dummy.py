@@ -4,19 +4,6 @@ import time
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-class DummySerial:
-    """
-    A dummy serial class to simulate communication with the Thermoino device
-    """
-    def write(self, command):
-        return
-
-    def readline(self):
-        return b'OK'
-
-    def close(self):
-        return
-
 
 class Thermoino:
     """
@@ -31,7 +18,6 @@ class Thermoino:
         self.mms_baseline = mms_baseline
         self.temp = mms_baseline
         self.mms_rate_of_rise = mms_rate_of_rise
-        self.ser = DummySerial()
         self.connected = False
 
         logger.warning("+++ Thermoino running in dummy mode +++")
@@ -43,14 +29,9 @@ class Thermoino:
 
     def close(self):
         self.connected = False
-        self.ser.close()
         logger.info("Thermoino (dummy) closed")
 
-    def _send_command(self, command, get_response=True):
-        self.ser.write(command)
-        if get_response:
-            response = self.ser.readline()
-            return response.decode('ascii').strip()
+    def _send_command(self):
         return None
 
     def diag(self):
