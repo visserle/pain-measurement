@@ -263,8 +263,8 @@ class Thermoino:
         output = self._send_command(f'MOVE;{move_time_us}\n')
         if output in OkCodes.__members__:
             logger.info("Thermoino response to 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
-            success = True
             self.temp = temp_target
+            success = True
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error for 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
             success = False
@@ -426,9 +426,9 @@ class ThermoinoComplexTimeCourses(Thermoino):
         output = self._send_command(f'INITCTC;{bin_size_ms}\n')
         if output in OkCodes.__members__:
             logger.info("Thermoino response to 'INITCTC' (.init_ctc): %s.", output)
+            self.bin_size_ms = bin_size_ms
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error to 'INITCTC' (.init_ctc): %s.", output)
-        self.bin_size_ms = bin_size_ms
         return self
 
     def create_ctc(self, temp_course, sample_rate, rate_of_rise_option = "mms_program"):
@@ -593,4 +593,3 @@ class ThermoinoComplexTimeCourses(Thermoino):
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error for 'FLUSHCTC' (.flush_ctc): %s.", output)
         return self
-    

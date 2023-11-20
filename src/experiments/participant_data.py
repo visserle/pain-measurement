@@ -12,18 +12,8 @@ from pathlib import Path
 import logging
 import pandas as pd
 
-try:
-    import openpyxl
-except ImportError:
-    try:  
-        import subprocess
-        import sys
-        process = subprocess.run([sys.executable, "-m", "pip", "install", "openpyxl"], check=False)
-        if process.returncode != 0:
-            raise Exception("pip installation failed")
-    except Exception as exc:
-        print(f"Failed to install and import 'openpyxl': {exc}")
-        raise exc
+from .psychopy_utils import psychopy_import
+psychopy_import("openpyxl")
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -95,13 +85,9 @@ def read_last_participant():
     participant_info = read_last_participant()
     ```
     """
-    # Read the Excel file into a DataFrame
     df = pd.read_excel(FILE_DIR)
-
-    # Get the last row of the DataFrame
     last_row = df.iloc[-1]
 
-    # Extract relevant information
     participant_info = {
         'time_stamp': last_row['time_stamp'],
         'participant': last_row['participant'],

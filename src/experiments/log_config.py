@@ -1,7 +1,5 @@
 # work in proqress
 
-# TODO
-# - find out what happens when the experiment gets aborted - logs still get written? closed?
 
 import logging
 from pathlib import Path
@@ -19,14 +17,13 @@ def configure_logging(log_file=None, stream_handler=True, level=logging.INFO):
     handlers = []
     
     if stream_handler:
-        # Create and configure StreamHandler for console logging
+        # StreamHandler for console logging
         stream_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] - %(message)s', datefmt='%H:%M:%S')
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(stream_formatter)
         handlers.append(stream_handler)
         
     if log_file:
-        # Create and configure FileHandler for file logging
         file_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s')
         file_handler = logging.FileHandler(log_file, mode='a')
         file_handler.setFormatter(file_formatter)

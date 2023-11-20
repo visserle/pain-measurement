@@ -1,25 +1,5 @@
 # work in progress
 
-# TODO:
-# - add support for multiple monitors, maybe using the screeninfo library? and how does mouse behave?
-# -> good news, y-coordinates are the same for all monitors, so we don't need to worry about that
-# -> although we need to find out from which monitor the y-coordinate is taken in psychopy TODO
-# -> should be window-dependent
-# from win32api import GetSystemMetrics
-# width = user32.GetSystemMetrics(0)
-# height = user32.GetSystemMetrics(1)
-# # in a multi-monitor setup, you can use the screeninfo library, for instance
-# # >>> from screeninfo import get_monitors
-# # >>> for m in get_monitors():
-# # >>>    print(str(m))
-# # this prints out the resolution (width and height), position (x, y), and 
-# other information for each monitor 
-# print(width, height)
-
-# https://www.phind.com/search?cache=b7ba5b4f-e9d5-4e1f-8bb1-bed231f1c5a9
-# How can I use the python `mouse` (https://pypi.org/project/mouse/) package with multiple monitors?
-
-
 """
 This script uses the 'mouse' library to manipulate the mouse state.
 
