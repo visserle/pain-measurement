@@ -88,9 +88,6 @@ mms_baseline = config['thermoino']['mms_baseline'] # has to be the same as in MM
 mms_rate_of_rise = config['thermoino']['mms_rate_of_rise'] # has to be the same as in MMS
 bin_size_ms = config['thermoino']['bin_size_ms']
 
-
-print(f"Experiment: {expInfo['expName']}", participant_info, expInfo)
-
 # iMotions
 start_study_mode = config['imotions']['start_study_mode']
 
