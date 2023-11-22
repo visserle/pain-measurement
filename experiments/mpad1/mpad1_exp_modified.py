@@ -5,11 +5,11 @@ This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
     on November 22, 2023, at 10:46
 
 Further modifications were made:
-    - A confirmation window before window creation to start the experiment
+    - A confirmation window before window creation to confirm the start of the experiment
+        -> This is needed to stop psychopy going into fullscreen mode before iMotions did the calibration (which is also in fullscreen mode)
     - Global variables:
         - win and inputs are created in the run function
         - expInfo, thisExp and logFile are created in the main function
-
 
 """
 
@@ -25,28 +25,37 @@ from psychopy.tools import environmenttools
 from psychopy.constants import (NOT_STARTED, STARTED, PLAYING, PAUSED,
                                 STOPPED, FINISHED, PRESSED, RELEASED, FOREVER, priority)
 
-import numpy as np  # whole numpy lib is available, prepend 'np.'
+import numpy as np
 from numpy import (sin, cos, tan, log, log10, pi, average,
                    sqrt, std, deg2rad, rad2deg, linspace, asarray)
 from numpy.random import random, randint, normal, shuffle, choice as randchoice
-import os  # handy system and path functions
-import sys  # to get file system encoding
+import os
+import sys
 
 import psychopy.iohub as io
 from psychopy.hardware import keyboard
 
 from src.experiments.psychopy_utils import ask_for_confirmation
 
+import json
+
+# Logger
+from src.experiments.log_config import configure_logging, close_root_logging, psychopy_log
+configure_logging(log_file=psychopy_log())
 
 # --- Setup global variables (available in all functions) ---
 # Ensure that relative paths start from the same directory as this script
 _thisDir = os.path.dirname(os.path.abspath(__file__))
+
+config_path = os.path.join(_thisDir, 'config.json')
+with open(config_path, 'r') as file:
+    config = json.load(file)
+
 # Store info about the experiment session
 psychopyVersion = '2023.2.1'
 expName = 'mpad1_exp'  # from the Builder filename that created this script
 expInfo = {
-    'dummy': [False, True],
-    'date': data.getDateStr(),  # add a simple timestamp
+    'date': data.getDateStr(), 
     'expName': expName,
     'psychopyVersion': psychopyVersion,
 }
@@ -55,61 +64,52 @@ expInfo = {
 # TODO
 # set start_study_mode to NoPrompt
 
-
-expInfo['expName'] = "mpad1_exp"
-expInfo["dummy"] = True
+# Get all variables from config.json
+expInfo['expName'] = config['experiment']['name']
+expInfo["dummy"] = config['experiment']['dummy']
 
 # Import dummy scripts for debugging if specified
 if expInfo["dummy"] is True:
-    from src.experiments.imotions_dummy import RemoteControliMotions
-    from src.experiments.imotions_dummy import EventRecievingiMotions
+    from src.experiments.imotions_dummy import RemoteControliMotions, EventRecievingiMotions
     from src.experiments.thermoino_dummy import ThermoinoComplexTimeCourses
-    expInfo['participant'] = "dummy"
-    expInfo['age'] = 20
-    expInfo['gender'] = "Female"
+    expInfo.update(config['experiment']['dummy_participant'])
     participant_info = {}
-    participant_info['temp_range'] = 3
-    participant_info['baseline_temp'] = 40
+    participant_info.update(config['experiment']['dummy_participant'])
     
 elif expInfo["dummy"] is False:
-    from src.experiments.imotions import RemoteControliMotions
-    from src.experiments.imotions import EventRecievingiMotions
+    from src.experiments.imotions import RemoteControliMotions, EventRecievingiMotions
     from src.experiments.thermoino import ThermoinoComplexTimeCourses
     from src.experiments.participant_data import read_last_participant
     participant_info = read_last_participant()
-    expInfo['participant'] = participant_info['participant']
-    expInfo['age'] = participant_info['age']
-    expInfo['gender'] = participant_info['gender']
+    expInfo.update(participant_info)
         
-port = "COM7" # use list_com_ports() to find out, or look in the error loggings
-mms_baseline = 30 # has to be the same as in MMS (not the same as baseline_temp)
-mms_rate_of_rise = 10 # has to be the same as in MMS
-bin_size_ms = 500
+port = config['thermoino']['port']
+mms_baseline = config['thermoino']['mms_baseline'] # has to be the same as in MMS (not the same as baseline_temp)
+mms_rate_of_rise = config['thermoino']['mms_rate_of_rise'] # has to be the same as in MMS
+bin_size_ms = config['thermoino']['bin_size_ms']
 
-# Logger
-from src.experiments.log_config import configure_logging, close_root_logging, psychopy_log
-configure_logging(log_file=psychopy_log())
+
+print(f"Experiment: {expInfo['expName']}", participant_info, expInfo)
 
 # iMotions
-start_study_mode = "NormalPrompt"
+start_study_mode = config['imotions']['start_study_mode']
 
 # Stimuli
-seeds = [320, 43, 999, 242, 32, 1, 98, 478]
+seeds = config['stimuli']['seeds']
 n_trials = len(seeds)
 this_trial = None # only for initializing
-
-minimal_desired_duration = 200 # in seconds
-periods = [67, 20] # [0] is the baseline and [1] the modulation; in seconds
+minimal_desired_duration = config['stimuli']['minimal_desired_duration'] # in seconds
+periods = config['stimuli']['periods'] # [0] is the baseline and [1] the modulation; in seconds
 frequencies = 1./np.array(periods)
-temp_range = participant_info['temp_range'] # VAS 70 - VAS 0
-sample_rate = 60
-random_periods = True
+sample_rate = config['stimuli']['sample_rate']
+random_periods = config['stimuli']['random_periods']
+duration_big_decreases = config['stimuli']['duration_big_decreases']
+plateau_duration = config['stimuli']['plateau_duration']
+n_plateaus = config['stimuli']['n_plateaus']
+
 baseline_temp = participant_info['baseline_temp'] # @ VAS 35
+temp_range = participant_info['temp_range'] # VAS 70 - VAS 0
 
-duration_big_decreases = 20
-
-plateau_duration = 20
-n_plateaus = 3
 
 # Time
 stimuli_clock = core.Clock()
@@ -2076,7 +2076,7 @@ def main():
     global thisExp
     global logFile
 
-    expInfo = showExpInfoDlg(expInfo=expInfo)
+    # expInfo = showExpInfoDlg(expInfo=expInfo) # we do not ask for subject info -> its all in the config file
     thisExp = setupData(expInfo=expInfo)
 
     logFile = setupLogging(filename=thisExp.dataFileName)

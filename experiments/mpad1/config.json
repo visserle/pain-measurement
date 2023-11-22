@@ -1,0 +1,35 @@
+{
+    "experiment": {
+        "name": "mpad1_exp",
+        "psychopyVersion": "2023.2.1",
+        "dummy": true,
+        "dummy_participant": {
+            "time_stamp": "2023-01-01 15:00:00",
+            "participant": "dummy",	
+            "age": 20,
+            "gender": "Female",
+            "temp_range": 3,
+            "baseline_temp": 40
+        }
+    },
+    "thermoino": {
+        "port": "COM7",
+        "mms_baseline": 30,
+        "mms_rate_of_rise": 10,
+        "bin_size_ms": 500,
+        "COMMENT": " +++ Values have to be the same as in MMS. +++"
+    },
+    "stimuli": {
+        "seeds": [320, 43, 999, 242, 32, 1, 98, 478],
+        "minimal_desired_duration": 200,
+        "periods": [67, 20],
+        "sample_rate": 60,
+        "random_periods": true,
+        "duration_big_decreases": 20,
+        "plateau_duration": 20,
+        "n_plateaus": 3
+    },
+    "imotions": {
+        "start_study_mode": "NormalPrompt"
+    }
+}
