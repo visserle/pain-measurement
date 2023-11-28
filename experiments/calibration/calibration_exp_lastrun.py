@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on Tue Nov 14 17:06:39 2023
+    on Sun Nov 19 11:07:48 2023
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -43,38 +43,30 @@ expInfo = {
     'participant': f"{randint(0, 999999):06.0f}",
     'session': '001',
     'age': '20',
-    'gender': 'Female',
+    'gender': ["Female","Male"],
     'date': data.getDateStr(),  # add a simple timestamp
     'expName': expName,
     'psychopyVersion': psychopyVersion,
 }
 
 # Run 'Before Experiment' code from all_variables
-from src.experiments.thermoino_dummy import Thermoino
+# Import thermoino script (thermoino_dummy for debugging)
+from src.experiments.thermoino import Thermoino
 
 # Logger
-from pathlib import Path
-from datetime import datetime
-from src.experiments.log_config import configure_logging, close_root_logging
-
-# Configure logging
-log_dir = Path('log')
-log_dir.mkdir(parents=True, exist_ok=True)
-log_filename_str = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
-log_file = log_dir / log_filename_str
-
-configure_logging(log_file=log_file)
+from src.experiments.log_config import configure_logging, close_root_logging, psychopy_log
+configure_logging(log_file=psychopy_log())
 
 # Thermoino
-port = "COM3"
-# COM7 for top usb port on the front, use list_com_ports() to find out
+port = "COM7"
+# COM7 for top usb port on the front (use list_com_ports() to find out)
 mms_baseline = 30 # has to be the same as in MMS
 mms_rate_of_rise = 10 # has to be the same as in MMS
 
 # Stimuli
 stimuli_clock = core.Clock()
 stimuli_duration = 8
-iti_duration = 8  + np.random.randint(2, 4)
+iti_duration = 8  + np.random.randint(0, 3)
 iti_duration_short = 2
 cross_size = (0.06, 0.06)
 

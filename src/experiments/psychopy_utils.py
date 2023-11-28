@@ -35,7 +35,7 @@ screeninfo = psychopy_import("screeninfo")
 
 
 def ask_for_confirmation(second_monitor=False):
-    """Confirmation dialog to check if everything is ready to start the experiment."""
+    """Confirmation dialog window to check if everything is ready to start the experiment."""
     root = tk.Tk()
     root.withdraw()
     # Get screen dimensions and set the root window to specified monitor
