@@ -10,7 +10,7 @@ Further modifications were made:
     - Global variables:
         - win and inputs are created in the run function
         - expInfo, thisExp and logFile are created in the main function
-
+    
 """
 
 # --- Import packages ---
@@ -18,9 +18,9 @@ from psychopy import locale_setup
 from psychopy import prefs
 from psychopy import plugins
 plugins.activatePlugins()
-prefs.hardware['audioLib'] = 'ptb'
-prefs.hardware['audioLatencyMode'] = '3'
-from psychopy import sound, gui, visual, core, data, event, logging, clock, colors, layout
+# prefs.hardware['audioLib'] = 'ptb'
+# prefs.hardware['audioLatencyMode'] = '3'
+from psychopy import gui, visual, core, data, event, logging, clock, colors, layout #, sound
 from psychopy.tools import environmenttools
 from psychopy.constants import (NOT_STARTED, STARTED, PLAYING, PAUSED,
                                 STOPPED, FINISHED, PRESSED, RELEASED, FOREVER, priority)
@@ -31,11 +31,12 @@ from numpy import (sin, cos, tan, log, log10, pi, average,
 from numpy.random import random, randint, normal, shuffle, choice as randchoice
 import os
 import sys
+import platform
 
 import psychopy.iohub as io
 from psychopy.hardware import keyboard
 
-from src.experiments.psychopy_utils import ask_for_confirmation
+from src.experiments.psychopy_utils import ask_for_confirmation, rgb255_to_rgb_psychopy
 
 import json
 
@@ -63,6 +64,10 @@ expInfo = {
 # Run 'Before Experiment' code from all_variables
 # TODO
 # set start_study_mode to NoPrompt
+
+# Colors
+element_color = rgb255_to_rgb_psychopy((128,64,192))
+marker_color = rgb255_to_rgb_psychopy((192,64,128))
 
 # Get all variables from config.json
 expInfo['expName'] = config['experiment']['name']
@@ -376,9 +381,10 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     imotions_control.connect()
     imotions_control.start_study(mode=start_study_mode)
 
-    response = ask_for_confirmation()
-    if not response:
-        quit(thisExp)
+    if platform.system() != 'Darwin':
+        response = ask_for_confirmation()
+        if not response:
+            quit(thisExp)
 
     # Window creation
     global win
@@ -416,7 +422,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         text='Willkommen zum Haupt-Experiment!\n\n\nBitte drücken Sie die Leertaste.',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color=element_color, colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-2.0);
     key_welcome = keyboard.Keyboard()
@@ -426,7 +432,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         text='Mit diesem Experiment möchten mit Hilfe Ihrer Daten Schmerzen objektiv messbar machen.\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color=element_color, colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     key_welcome_2 = keyboard.Keyboard()
@@ -436,7 +442,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         text='Dazu erhalten Sie im Folgenden Schmerzen mit schwankender Intensität über insgesamt 12 Blöcke á 4 Minuten.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color=element_color, colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     key_welcome_3 = keyboard.Keyboard()
@@ -446,7 +452,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         text='Ihre Aufgabe ist es, Ihren Schmerz durchgehend zu bewerten.\n\nDies geschieht über eine Skala, die Sie auf der folgenden Seite sehen.\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color=element_color, colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     key_instruction = keyboard.Keyboard()
@@ -456,7 +462,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         text='Bitte bewegen Sie Ihren Mauszeiger auf der Skala hin und her!\n\n\n\n\n\n\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color=element_color, colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-1.0);
     key_instruction_2 = keyboard.Keyboard()
@@ -464,7 +470,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         startValue=50, size=(1.0, 0.1), pos=(0, 0), units=win.units,
         labels=vas_labels, ticks=(0, 100), granularity=0.0,
         style='rating', styleTweaks=('triangleMarker',), opacity=None,
-        labelColor='White', markerColor='Red', lineColor='White', colorSpace='rgb',
+        labelColor=element_color, markerColor=marker_color, lineColor=element_color, colorSpace='rgb',
         font='Open Sans', labelHeight=0.05,
         flip=False, ori=0.0, depth=-3, readOnly=False)
     
@@ -473,7 +479,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         text='Die Beschriftungen "Keine Schmerzen" und "Sehr starke Schmerzen" entsprechen dabei Ihren Werten aus der Kalibrierung. Nutzen Sie die gesamte Breite der Skala!\n\n\n\n\n\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color=element_color, colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-1.0);
     key_instruction_3 = keyboard.Keyboard()
@@ -481,7 +487,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         startValue=50, size=(1.0, 0.1), pos=(0, 0), units=win.units,
         labels=vas_labels, ticks=(0, 100), granularity=0.0,
         style='rating', styleTweaks=('triangleMarker',), opacity=None,
-        labelColor='White', markerColor='Red', lineColor='White', colorSpace='rgb',
+        labelColor=element_color, markerColor=marker_color, lineColor=element_color, colorSpace='rgb',
         font='Open Sans', labelHeight=0.05,
         flip=False, ori=0.0, depth=-3, readOnly=False)
     
@@ -490,7 +496,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         text='Als Nächstes startet das Experiment.\n\nSollten Sie noch Fragen haben, richten Sie sich bitte jetzt an die Versuchsleitung.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color=element_color, colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     key_ready = keyboard.Keyboard()
@@ -500,7 +506,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         startValue=50, size=(1.0, 0.1), pos=(0, 0), units=win.units,
         labels=vas_labels, ticks=(0, 100), granularity=0.0,
         style='rating', styleTweaks=('triangleMarker',), opacity=None,
-        labelColor='White', markerColor='Red', lineColor='White', colorSpace='rgb',
+        labelColor=element_color, markerColor=marker_color, lineColor=element_color, colorSpace='rgb',
         font='Open Sans', labelHeight=0.05,
         flip=False, ori=0.0, depth=-4, readOnly=False)
     
@@ -524,7 +530,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         startValue=None, size=(1.0, 0.1), pos=(0, 0), units=win.units,
         labels=vas_labels, ticks=(0, 100), granularity=0.0,
         style='rating', styleTweaks=('triangleMarker',), opacity=None,
-        labelColor='White', markerColor='Red', lineColor='White', colorSpace='rgb',
+        labelColor=element_color, markerColor=marker_color, lineColor=element_color, colorSpace='rgb',
         font='Open Sans', labelHeight=0.05,
         flip=False, ori=0.0, depth=-4, readOnly=False)
     
@@ -535,7 +541,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         text='',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color=element_color, colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-2.0);
     key_trial_end = keyboard.Keyboard()
@@ -546,7 +552,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         text='(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color=element_color, colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-1.0);
     
