@@ -1,7 +1,7 @@
 # work in progress
 
 """
-This script uses the 'mouse' library to manipulate the mouse state.
+This script uses the 'mouse' library to manipulate the mouse state and position for Linux and Windows.
 
 The 'mouse' library is written in pure Python library with no dependencies and provides functions to simulate mouse interactions.
 It works on both Windows and Linux. More details about the library can be found here: https://pypi.org/project/mouse/
@@ -10,20 +10,35 @@ This script also adjusts the DPI awareness of the application using ctypes to en
 even when DPI scaling is in use. This method is safe to use with all types of monitors, whether they use DPI scaling or not.
 """
 
+
 import ctypes
+import platform
+from functools import wraps
 from .psychopy_utils import psychopy_import
-mouse = psychopy_import("mouse")
-user32 = ctypes.windll.user32
-user32.SetProcessDPIAware()
 
+# Initialize the module only if the platform is not Darwin
+if platform.system() != 'Darwin':
+    mouse = psychopy_import("mouse")
+    user32 = ctypes.windll.user32
+    user32.SetProcessDPIAware()
 
+def non_darwin_only(func):
+    """Decorator to skip the decorated function if the platform is Darwin."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if platform.system() == 'Darwin':
+            return
+        return func(*args, **kwargs)
+    return wrapper
+
+@non_darwin_only
 def hold():
     """
     Simulates holding down the left mouse button.
     """
     mouse.hold(button="left")
 
-
+@non_darwin_only
 def check(pixel_y):
     """
     Checks if the mouse is pressed and moves it to the pixel y-coordinate if necessary.
@@ -49,13 +64,14 @@ def check(pixel_y):
     if not (pixel_y*0.9 < mouse.get_position()[1] < pixel_y*1.1): # get y-coordinate
         mouse.move(mouse.get_position()[0], pixel_y, absolute=True, duration=0) # move to slider position
 
+@non_darwin_only
 def release():
     """
     Simulates the release of the left mouse button.
     """
     mouse.release(button="left")
 
-
+@non_darwin_only
 def pixel_pos_y(component_pos, win_size, win_pos):
     """
     Converts PsychoPy coordinates of a component to the pixel y-coordinate.
