@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on Tue Nov 14 16:47:55 2023
+    on Dezember 14, 2023, at 14:08
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -40,39 +40,49 @@ _thisDir = os.path.dirname(os.path.abspath(__file__))
 psychopyVersion = '2023.2.1'
 expName = 'calibration_exp'  # from the Builder filename that created this script
 expInfo = {
-    'participant': f"{randint(0, 999999):06.0f}",
-    'session': '001',
+    'participant': '',
     'age': '20',
-    'gender': 'Female',
+    'gender': ["Female","Male"],
+    'session': '01',
+    'dummy': False,
     'date': data.getDateStr(),  # add a simple timestamp
     'expName': expName,
     'psychopyVersion': psychopyVersion,
 }
 
 # Run 'Before Experiment' code from all_variables
+# Config
+import json
+config_path = os.path.join(_thisDir, 'config.json')
+with open(config_path, 'r') as file:
+    config = json.load(file)
+
+
+port = "COM7" # use list_com_ports() to find out, or look in the error loggings
+mms_baseline = 30 # has to be the same as in MMS (not the same as baseline_temp)
+mms_rate_of_rise = 10 # has to be the same as in MMS
+bin_size_ms = 500
+
+from src.experiments.psychopy_utils import rgb255_to_rgb_psychopy
+element_color = rgb255_to_rgb_psychopy(config['experiment']['element_color'])
+cross_pain_color = rgb255_to_rgb_psychopy(config['experiment']['cross_pain_color'])
+
+
 # Logger
-from pathlib import Path
-from datetime import datetime
-from src.experiments.log_config import configure_logging, close_root_logging
-
-# Configure logging
-log_dir = Path('log')
-log_dir.mkdir(parents=True, exist_ok=True)
-log_filename_str = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
-log_file = log_dir / log_filename_str
-
-configure_logging(log_file=log_file)
+from src.experiments.log_config import configure_logging, close_root_logging, psychopy_log
+configure_logging(log_file=psychopy_log())
 
 # Thermoino
-port = "COM3"
-# COM7 for top usb port on the front, use list_com_ports() to find out
+port = "COM7"
+# COM7 for top usb port on the front (use list_com_ports() to find out)
 mms_baseline = 30 # has to be the same as in MMS
 mms_rate_of_rise = 10 # has to be the same as in MMS
 
 # Stimuli
 stimuli_clock = core.Clock()
 stimuli_duration = 8
-iti_duration = 8  + np.random.randint(2, 4)
+iti_duration = 8  + np.random.randint(0, 3)
+iti_duration_short = 2
 cross_size = (0.06, 0.06)
 
 # Pre-exposure
@@ -89,8 +99,6 @@ temp_start_vas0 = None #  will be set after VAS 0 estimate
 temp_start_vas0_minus = 3 # VAS 0 estimate plus int
 temp_std_vas0 = 1.5 # smaller std for higher temperatures
 
-# Run 'Before Experiment' code from thermoino
-from src.experiments.thermoino_dummy import Thermoino
 # Run 'Before Experiment' code from estimator_vas70
 from src.experiments.calibration import BayesianEstimatorVAS
 
@@ -165,7 +173,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='/Users/visser/drive/PhD/Code/mpad-pilot/experiments/calibration/calibration_exp.py',
+        originPath='C:\\drive\\PhD\\Code\\mpad-pilot\\experiments\\calibration\\calibration_exp.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -372,6 +380,13 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # Start Code - component code to be run after the window creation
     
     # --- Initialize components for Routine "welcome" ---
+    # Run 'Begin Experiment' code from all_variables
+    # Import dummy scripts for debugging if specified
+    if expInfo["dummy"] is True:
+        from src.experiments.thermoino_dummy import Thermoino
+        expInfo["participant"] = "dummy"
+    else:
+        from src.experiments.thermoino import Thermoino
     # Run 'Begin Experiment' code from thermoino
     luigi = Thermoino(
         port=port,
@@ -383,7 +398,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='Herzlich willkommen zum Experiment!\n\n\nBitte drücken Sie die Leertaste.',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-2.0);
     key_welcome = keyboard.Keyboard()
@@ -393,7 +408,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='Wir beginnen das Experiment mit einer Schmerz-Kalibrierung.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     key_welcome_2 = keyboard.Keyboard()
@@ -403,7 +418,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='Hierzu wärmen wir die Hautstellte an Ihrem Arm zuerst kurz auf.\n\nAnschließend bestimmen wir, wann Sie leichte und starke Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     key_welcome_3 = keyboard.Keyboard()
@@ -413,25 +428,33 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='Wir beginnen mit dem Aufwärmen der Hautstelle.\nHierbei müssen Sie nichts weiter tun.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     key_info_preexposure = keyboard.Keyboard()
+    
+    # --- Initialize components for Routine "iti_short" ---
+    cross_neutral_short = visual.ShapeStim(
+        win=win, name='cross_neutral_short', vertices='cross',
+        size=cross_size,
+        ori=0.0, pos=(0, 0), anchor='center',
+        lineWidth=1.0,     colorSpace='rgb',  lineColor='element_color', fillColor='element_color',
+        opacity=None, depth=0.0, interpolate=True)
     
     # --- Initialize components for Routine "iti" ---
     cross_neutral = visual.ShapeStim(
         win=win, name='cross_neutral', vertices='cross',
         size=cross_size,
         ori=0.0, pos=(0, 0), anchor='center',
-        lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor='white',
+        lineWidth=1.0,     colorSpace='rgb',  lineColor='element_color', fillColor='element_color',
         opacity=None, depth=0.0, interpolate=True)
     
     # --- Initialize components for Routine "preexposure" ---
-    corss_pain_preexposure = visual.ShapeStim(
-        win=win, name='corss_pain_preexposure', vertices='cross',
+    cross_pain_preexposure = visual.ShapeStim(
+        win=win, name='cross_pain_preexposure', vertices='cross',
         size=cross_size,
         ori=0.0, pos=(0, 0), anchor='center',
-        lineWidth=1.0,     colorSpace='rgb',  lineColor='red', fillColor='red',
+        lineWidth=1.0,     colorSpace='rgb',  lineColor='cross_pain_color', fillColor='cross_pain_color',
         opacity=None, depth=-1.0, interpolate=True)
     
     # --- Initialize components for Routine "feedback_preexposure" ---
@@ -439,7 +462,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='War einer dieser Reize für Sie schmerzhaft?\n\n(Drücken Sie "y" für Ja oder "n" für Nein.)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     response_preexposure = keyboard.Keyboard()
@@ -449,7 +472,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-1.0);
     
@@ -458,7 +481,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='Als Nächstes möchten wir herausfinden, ab wann Sie starke Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     key_info_vas70 = keyboard.Keyboard()
@@ -468,7 +491,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='Dabei orientieren wir uns an einer Schmerz-Skala von 1 bis 10:\n\n\n\n\n\n\n\n\nUnser Ziel ist es, herauszufinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     key_info_vas70_2 = keyboard.Keyboard()
@@ -483,10 +506,10 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas_70_3" ---
     text_info_vas70_3 = visual.TextStim(win=win, name='text_info_vas70_3',
-        text='Dank dem Capsaicin ist Ihre Schmerzschwelle dabei nach unten verlagert.\n\nDas bedeutet, Sie verspüren schneller starken Schmerz.\nAber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Aufgrund der Capsaicin-Creme ist Ihre Schmerzschwelle nach unten verlagert. Dadruch verspüren Sie schneller starken Schmerz.\n\nAber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     key_vas_70_3 = keyboard.Keyboard()
@@ -496,7 +519,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         win=win, name='cross_neutral', vertices='cross',
         size=cross_size,
         ori=0.0, pos=(0, 0), anchor='center',
-        lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor='white',
+        lineWidth=1.0,     colorSpace='rgb',  lineColor='element_color', fillColor='element_color',
         opacity=None, depth=0.0, interpolate=True)
     
     # --- Initialize components for Routine "trial_vas70" ---
@@ -504,7 +527,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         win=win, name='cross_pain_vas70', vertices='cross',
         size=cross_size,
         ori=0.0, pos=(0, 0), anchor='center',
-        lineWidth=1.0,     colorSpace='rgb',  lineColor='red', fillColor='red',
+        lineWidth=1.0,     colorSpace='rgb',  lineColor='cross_pain_color', fillColor='cross_pain_color',
         opacity=None, depth=-1.0, interpolate=True)
     
     # --- Initialize components for Routine "feedback_vas70" ---
@@ -512,7 +535,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='War dieser Reiz mindestens eine 7 von 10 (starker / sehr starker Schmerz)?\n\n(y/n)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     response_vas70 = keyboard.Keyboard()
@@ -522,7 +545,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-1.0);
     
@@ -531,7 +554,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='Wunderbar!\n\n\nAls Nächstes möchten wir bestimmen, wo Ihre Schmerzwelle liegt - also ab wann Sie erste Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-1.0);
     key_info_vas0 = keyboard.Keyboard()
@@ -541,7 +564,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         win=win, name='cross_neutral', vertices='cross',
         size=cross_size,
         ori=0.0, pos=(0, 0), anchor='center',
-        lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor='white',
+        lineWidth=1.0,     colorSpace='rgb',  lineColor='element_color', fillColor='element_color',
         opacity=None, depth=0.0, interpolate=True)
     
     # --- Initialize components for Routine "trial_vas0" ---
@@ -549,7 +572,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         win=win, name='cross_pain_vas0', vertices='cross',
         size=cross_size,
         ori=0.0, pos=(0, 0), anchor='center',
-        lineWidth=1.0,     colorSpace='rgb',  lineColor='red', fillColor='red',
+        lineWidth=1.0,     colorSpace='rgb',  lineColor='cross_pain_color', fillColor='cross_pain_color',
         opacity=None, depth=-1.0, interpolate=True)
     
     # --- Initialize components for Routine "feedback_vas0" ---
@@ -557,7 +580,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='War dieser Reiz für Sie schmerzhaft?\n\n(y/n)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     response_vas0 = keyboard.Keyboard()
@@ -567,7 +590,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-1.0);
     
@@ -576,7 +599,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         text='Vielen Dank!\n\nAls Nächstes geht es mit dem Hauptexperiment weiter.\nMelden Sie sich bitte bei der Versuchsleitung.\n\n\n(Leertaste drücken, um Kalibrierung zu beenden)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='element_color', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=-1.0);
     key_bye = keyboard.Keyboard()
@@ -1056,6 +1079,96 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # the Routine "info_preexposure" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
+    # --- Prepare to start Routine "iti_short" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('iti_short.started', globalClock.getTime())
+    # keep track of which components have finished
+    iti_shortComponents = [cross_neutral_short]
+    for thisComponent in iti_shortComponents:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
+    # --- Run Routine "iti_short" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        
+        # *cross_neutral_short* updates
+        
+        # if cross_neutral_short is starting this frame...
+        if cross_neutral_short.status == NOT_STARTED and tThisFlip >= 0-frameTolerance:
+            # keep track of start time/frame for later
+            cross_neutral_short.frameNStart = frameN  # exact frame index
+            cross_neutral_short.tStart = t  # local t and not account for scr refresh
+            cross_neutral_short.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(cross_neutral_short, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'cross_neutral_short.started')
+            # update status
+            cross_neutral_short.status = STARTED
+            cross_neutral_short.setAutoDraw(True)
+        
+        # if cross_neutral_short is active this frame...
+        if cross_neutral_short.status == STARTED:
+            # update params
+            pass
+        
+        # if cross_neutral_short is stopping this frame...
+        if cross_neutral_short.status == STARTED:
+            # is it time to stop? (based on global clock, using actual start)
+            if tThisFlipGlobal > cross_neutral_short.tStartRefresh + iti_duration_short-frameTolerance:
+                # keep track of stop time/frame for later
+                cross_neutral_short.tStop = t  # not accounting for scr refresh
+                cross_neutral_short.frameNStop = frameN  # exact frame index
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'cross_neutral_short.stopped')
+                # update status
+                cross_neutral_short.status = FINISHED
+                cross_neutral_short.setAutoDraw(False)
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in iti_shortComponents:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+    
+    # --- Ending Routine "iti_short" ---
+    for thisComponent in iti_shortComponents:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('iti_short.stopped', globalClock.getTime())
+    # the Routine "iti_short" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
+    
     # set up handler to look after randomisation of conditions etc
     loop_preexposure = data.TrialHandler(nReps=len(temps_preexposure), method='random', 
         extraInfo=expInfo, originPath=-1,
@@ -1089,6 +1202,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         continueRoutine = True
         # update component parameters for each repeat
         thisExp.addData('iti.started', globalClock.getTime())
+        # skip this Routine if its 'Skip if' condition is True
+        continueRoutine = continueRoutine and not (loop_preexposure.thisN == 0)
         # keep track of which components have finished
         itiComponents = [cross_neutral]
         for thisComponent in itiComponents:
@@ -1136,7 +1251,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # if cross_neutral is stopping this frame...
             if cross_neutral.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > cross_neutral.tStartRefresh + iti_duration if not loop_preexposure.thisN == 0 else 2-frameTolerance:
+                if tThisFlipGlobal > cross_neutral.tStartRefresh + iti_duration-frameTolerance:
                     # keep track of stop time/frame for later
                     cross_neutral.tStop = t  # not accounting for scr refresh
                     cross_neutral.frameNStop = frameN  # exact frame index
@@ -1187,7 +1302,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         luigi.trigger()
         time_for_ramp_up = luigi.set_temp(temps_preexposure[trial])[1]
         # keep track of which components have finished
-        preexposureComponents = [corss_pain_preexposure]
+        preexposureComponents = [cross_pain_preexposure]
         for thisComponent in preexposureComponents:
             thisComponent.tStart = None
             thisComponent.tStop = None
@@ -1215,38 +1330,38 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
                     luigi.set_temp(mms_baseline)
                     checked = True
             
-            # *corss_pain_preexposure* updates
+            # *cross_pain_preexposure* updates
             
-            # if corss_pain_preexposure is starting this frame...
-            if corss_pain_preexposure.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # if cross_pain_preexposure is starting this frame...
+            if cross_pain_preexposure.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                 # keep track of start time/frame for later
-                corss_pain_preexposure.frameNStart = frameN  # exact frame index
-                corss_pain_preexposure.tStart = t  # local t and not account for scr refresh
-                corss_pain_preexposure.tStartRefresh = tThisFlipGlobal  # on global time
-                win.timeOnFlip(corss_pain_preexposure, 'tStartRefresh')  # time at next scr refresh
+                cross_pain_preexposure.frameNStart = frameN  # exact frame index
+                cross_pain_preexposure.tStart = t  # local t and not account for scr refresh
+                cross_pain_preexposure.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(cross_pain_preexposure, 'tStartRefresh')  # time at next scr refresh
                 # add timestamp to datafile
-                thisExp.timestampOnFlip(win, 'corss_pain_preexposure.started')
+                thisExp.timestampOnFlip(win, 'cross_pain_preexposure.started')
                 # update status
-                corss_pain_preexposure.status = STARTED
-                corss_pain_preexposure.setAutoDraw(True)
+                cross_pain_preexposure.status = STARTED
+                cross_pain_preexposure.setAutoDraw(True)
             
-            # if corss_pain_preexposure is active this frame...
-            if corss_pain_preexposure.status == STARTED:
+            # if cross_pain_preexposure is active this frame...
+            if cross_pain_preexposure.status == STARTED:
                 # update params
                 pass
             
-            # if corss_pain_preexposure is stopping this frame...
-            if corss_pain_preexposure.status == STARTED:
+            # if cross_pain_preexposure is stopping this frame...
+            if cross_pain_preexposure.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > corss_pain_preexposure.tStartRefresh + stimuli_duration + 2-frameTolerance:
+                if tThisFlipGlobal > cross_pain_preexposure.tStartRefresh + stimuli_duration + 2-frameTolerance:
                     # keep track of stop time/frame for later
-                    corss_pain_preexposure.tStop = t  # not accounting for scr refresh
-                    corss_pain_preexposure.frameNStop = frameN  # exact frame index
+                    cross_pain_preexposure.tStop = t  # not accounting for scr refresh
+                    cross_pain_preexposure.frameNStop = frameN  # exact frame index
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'corss_pain_preexposure.stopped')
+                    thisExp.timestampOnFlip(win, 'cross_pain_preexposure.stopped')
                     # update status
-                    corss_pain_preexposure.status = FINISHED
-                    corss_pain_preexposure.setAutoDraw(False)
+                    cross_pain_preexposure.status = FINISHED
+                    cross_pain_preexposure.setAutoDraw(False)
             
             # check for quit (typically the Esc key)
             if defaultKeyboard.getKeys(keyList=["escape"]):
@@ -1911,6 +2026,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         continueRoutine = True
         # update component parameters for each repeat
         thisExp.addData('iti.started', globalClock.getTime())
+        # skip this Routine if its 'Skip if' condition is True
+        continueRoutine = continueRoutine and not (loop_preexposure.thisN == 0)
         # keep track of which components have finished
         itiComponents = [cross_neutral]
         for thisComponent in itiComponents:
@@ -1958,7 +2075,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # if cross_neutral is stopping this frame...
             if cross_neutral.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > cross_neutral.tStartRefresh + iti_duration if not loop_preexposure.thisN == 0 else 2-frameTolerance:
+                if tThisFlipGlobal > cross_neutral.tStartRefresh + iti_duration-frameTolerance:
                     # keep track of stop time/frame for later
                     cross_neutral.tStop = t  # not accounting for scr refresh
                     cross_neutral.frameNStop = frameN  # exact frame index
@@ -2489,6 +2606,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         continueRoutine = True
         # update component parameters for each repeat
         thisExp.addData('iti.started', globalClock.getTime())
+        # skip this Routine if its 'Skip if' condition is True
+        continueRoutine = continueRoutine and not (loop_preexposure.thisN == 0)
         # keep track of which components have finished
         itiComponents = [cross_neutral]
         for thisComponent in itiComponents:
@@ -2536,7 +2655,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
             # if cross_neutral is stopping this frame...
             if cross_neutral.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > cross_neutral.tStartRefresh + iti_duration if not loop_preexposure.thisN == 0 else 2-frameTolerance:
+                if tThisFlipGlobal > cross_neutral.tStartRefresh + iti_duration-frameTolerance:
                     # keep track of stop time/frame for later
                     cross_neutral.tStop = t  # not accounting for scr refresh
                     cross_neutral.frameNStop = frameN  # exact frame index

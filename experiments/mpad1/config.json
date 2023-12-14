@@ -1,5 +1,5 @@
 {
-    "experiment": {
+    "psychopy": {
         "name": "mpad1_exp",
         "psychopyVersion": "2023.2.1",
         "dummy": true,
@@ -10,7 +10,9 @@
             "gender": "Female",
             "temp_range": 3,
             "baseline_temp": 40
-        }
+        },
+		"element_color": [128,64,192],
+		"marker_color": [192,64,128]
     },
     "thermoino": {
         "port": "COM7",

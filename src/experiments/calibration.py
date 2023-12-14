@@ -43,7 +43,7 @@ class BayesianEstimatorVAS:
         temp_std=3.5,
         trials=trials)
 
-    for trial in range(estimator_vas0.trials):
+    for trial in range(estimator_vas50.trials):
         response = input(f'Is this stimulus painful? (y/n) ') 
         estimator_vas50.conduct_trial(response,trial=trial)
 
@@ -124,10 +124,10 @@ class BayesianEstimatorVAS:
         self.trials = trials
 
         # Define the range of temperatures to consider
-        min_temp = self.temp_start - math.ceil(self.temp_std * 1.5)
-        max_temp = self.temp_start + math.ceil(self.temp_std * 1.5)
-        num = int((max_temp - min_temp) / 0.1) + 1
-        self.range_temp = np.linspace(min_temp, max_temp, num)
+        self.min_temp = self.temp_start - math.ceil(self.temp_std * 1.5)
+        self.max_temp = self.temp_start + math.ceil(self.temp_std * 1.5)
+        num = int((self.max_temp - self.min_temp) / 0.1) + 1
+        self.range_temp = np.linspace(self.min_temp, self.max_temp, num)
         
         self.prior = stats.norm.pdf(self.range_temp, loc=self.temp_start, scale=self.temp_std)
         self.prior /= np.sum(self.prior)  # normalize

@@ -47,7 +47,7 @@ def ask_for_confirmation(second_monitor=False):
 
 def rgb255_to_rgb_psychopy(rgb255):
     """
-    Convert an RGB color from 0-255 scale to 0-1 scale.
+    Convert an RGB color from 0-255 scale to [-1,1] scale.
 
     Args:
     color_255 (tuple): A tuple of three integers representing the RGB color in 0-255 scale.

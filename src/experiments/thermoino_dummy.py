@@ -4,7 +4,6 @@ import time
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-
 class Thermoino:
     """
     A dummy version of the Thermoino class for testing and debugging.
@@ -31,7 +30,7 @@ class Thermoino:
         self.connected = False
         logger.info("Thermoino (dummy) closed")
 
-    def _send_command(self):
+    def _send_command(self, *args):
         return None
 
     def diag(self):
@@ -69,7 +68,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         self.bin_size_ms = bin_size_ms
         return self._send_command(f'INITCTC;{bin_size_ms}\n')
 
-    def create_ctc(self, temp_course, sample_rate, rate_of_rise_option="mms_program"):
+    def create_ctc(self, *args, **kwargs):
         # Implement the logic for creating CTC based on temp_course and sample_rate
         # For dummy purposes, simply set self.ctc to a simulated value
         self.ctc = [40] * 100  # Example simulated CTC

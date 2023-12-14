@@ -10,7 +10,8 @@ Further modifications were made:
     - Global variables:
         - win and inputs are created in the run function
         - expInfo, thisExp and logFile are created in the main function
-    
+
+Note: These are minimal modifications to the auto-generated experiment, so there might be a better way to do this.
 """
 
 # --- Import packages ---
@@ -18,9 +19,7 @@ from psychopy import locale_setup
 from psychopy import prefs
 from psychopy import plugins
 plugins.activatePlugins()
-# prefs.hardware['audioLib'] = 'ptb'
-# prefs.hardware['audioLatencyMode'] = '3'
-from psychopy import gui, visual, core, data, event, logging, clock, colors, layout #, sound
+from psychopy import gui, visual, core, data, event, logging, clock, colors, layout
 from psychopy.tools import environmenttools
 from psychopy.constants import (NOT_STARTED, STARTED, PLAYING, PAUSED,
                                 STOPPED, FINISHED, PRESSED, RELEASED, FOREVER, priority)
@@ -66,20 +65,20 @@ expInfo = {
 # set start_study_mode to NoPrompt
 
 # Colors
-element_color = rgb255_to_rgb_psychopy((128,64,192))
-marker_color = rgb255_to_rgb_psychopy((192,64,128))
+element_color = rgb255_to_rgb_psychopy(config['psychopy']['element_color'])
+marker_color = rgb255_to_rgb_psychopy(config['psychopy']['marker_color'])
 
 # Get all variables from config.json
-expInfo['expName'] = config['experiment']['name']
-expInfo["dummy"] = config['experiment']['dummy']
+expInfo['expName'] = config['psychopy']['name']
+expInfo["dummy"] = config['psychopy']['dummy']
 
 # Import dummy scripts for debugging if specified
 if expInfo["dummy"] is True:
     from src.experiments.imotions_dummy import RemoteControliMotions, EventRecievingiMotions
     from src.experiments.thermoino_dummy import ThermoinoComplexTimeCourses
-    expInfo.update(config['experiment']['dummy_participant'])
+    expInfo.update(config['psychopy']['dummy_participant'])
     participant_info = {}
-    participant_info.update(config['experiment']['dummy_participant'])
+    participant_info.update(config['psychopy']['dummy_participant'])
     
 elif expInfo["dummy"] is False:
     from src.experiments.imotions import RemoteControliMotions, EventRecievingiMotions
@@ -456,6 +455,23 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         languageStyle='LTR',
         depth=0.0);
     key_instruction = keyboard.Keyboard()
+
+    # --- Initialize components for Routine "instruction_1" ---
+    text_instruction_1 = visual.TextStim(win=win, name='text_instruction_1',
+        text='\n\n\n\n\n\n\n\n\n\n(Leertaste drücken, um fortzufahren)',
+        font='Open Sans',
+        pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
+        color=element_color, colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=-1.0);
+    key_instruction_1 = keyboard.Keyboard()
+    vas_cont_instruction_1 = visual.Slider(win=win, name='vas_cont_instruction_1',
+        startValue=50, size=(1.0, 0.1), pos=(0, 0), units=win.units,
+        labels=vas_labels, ticks=(0, 100), granularity=0.0,
+        style='rating', styleTweaks=('triangleMarker',), opacity=None,
+        labelColor=element_color, markerColor=marker_color, lineColor=element_color, colorSpace='rgb',
+        font='Open Sans', labelHeight=0.05,
+        flip=False, ori=0.0, depth=-3, readOnly=False)
     
     # --- Initialize components for Routine "instruction_2" ---
     text_instruction_2 = visual.TextStim(win=win, name='text_instruction_2',
@@ -466,7 +482,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         languageStyle='LTR',
         depth=-1.0);
     key_instruction_2 = keyboard.Keyboard()
-    vas_cont_instruction = visual.Slider(win=win, name='vas_cont_instruction',
+    vas_cont_instruction_2 = visual.Slider(win=win, name='vas_cont_instruction_2',
         startValue=50, size=(1.0, 0.1), pos=(0, 0), units=win.units,
         labels=vas_labels, ticks=(0, 100), granularity=0.0,
         style='rating', styleTweaks=('triangleMarker',), opacity=None,
@@ -1031,6 +1047,176 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     # the Routine "instruction" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
+    # --- Prepare to start Routine "instruction_1" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('instruction_1.started', globalClock.getTime())
+    # Run 'Begin Routine' code from mouse_instruction
+    vas_pos_y = pixel_pos_y(
+        component_pos = vas_cont.pos,
+        win_size = win.size, 
+        win_pos = win.pos)
+        
+    mouse_action.hold()
+    key_instruction_1.keys = []
+    key_instruction_1.rt = []
+    _key_instruction_1_allKeys = []
+    vas_cont_instruction_1.reset()
+    # keep track of which components have finished
+    instruction_1Components = [text_instruction_1, key_instruction_1, vas_cont_instruction_1]
+    for thisComponent in instruction_1Components:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+
+    # --- Run Routine "instruction_1" ---
+    routineForceEnded = not continueRoutine
+    while continueRoutine:
+        # get current time
+        t = routineTimer.getTime()
+        tThisFlip = win.getFutureFlipTime(clock=routineTimer)
+        tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+        frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+        # update/draw components on each frame
+        # Run 'Each Frame' code from mouse_instruction
+        mouse_action.check(vas_pos_y)
+        
+        # *text_instruction_1* updates
+        
+        # if text_instruction_1 is starting this frame...
+        if text_instruction_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            text_instruction_1.frameNStart = frameN  # exact frame index
+            text_instruction_1.tStart = t  # local t and not account for scr refresh
+            text_instruction_1.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(text_instruction_1, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'text_instruction_1.started')
+            # update status
+            text_instruction_1.status = STARTED
+            text_instruction_1.setAutoDraw(True)
+        
+        # if text_instruction_1 is active this frame...
+        if text_instruction_1.status == STARTED:
+            # update params
+            pass
+        
+        # *key_instruction_1* updates
+        waitOnFlip = False
+        
+        # if key_instruction_1 is starting this frame...
+        if key_instruction_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            key_instruction_1.frameNStart = frameN  # exact frame index
+            key_instruction_1.tStart = t  # local t and not account for scr refresh
+            key_instruction_1.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(key_instruction_1, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'key_instruction_1.started')
+            # update status
+            key_instruction_1.status = STARTED
+            # keyboard checking is just starting
+            waitOnFlip = True
+            win.callOnFlip(key_instruction_1.clock.reset)  # t=0 on next screen flip
+            win.callOnFlip(key_instruction_1.clearEvents, eventType='keyboard')  # clear events on next screen flip
+        if key_instruction_1.status == STARTED and not waitOnFlip:
+            theseKeys = key_instruction_1.getKeys(keyList=['y','n','left','right','space'], ignoreKeys=["escape"], waitRelease=False)
+            _key_instruction_1_allKeys.extend(theseKeys)
+            if len(_key_instruction_1_allKeys):
+                key_instruction_1.keys = _key_instruction_1_allKeys[-1].name  # just the last key pressed
+                key_instruction_1.rt = _key_instruction_1_allKeys[-1].rt
+                key_instruction_1.duration = _key_instruction_1_allKeys[-1].duration
+                # a response ends the routine
+                continueRoutine = False
+        
+        # *vas_cont_instruction_1* updates
+        
+        # if vas_cont_instruction_1 is starting this frame...
+        if vas_cont_instruction_1.status == NOT_STARTED and tThisFlip >= 0-frameTolerance:
+            # keep track of start time/frame for later
+            vas_cont_instruction_1.frameNStart = frameN  # exact frame index
+            vas_cont_instruction_1.tStart = t  # local t and not account for scr refresh
+            vas_cont_instruction_1.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(vas_cont_instruction_1, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'vas_cont_instruction_1.started')
+            # update status
+            vas_cont_instruction_1.status = STARTED
+            vas_cont_instruction_1.setAutoDraw(True)
+        
+        # if vas_cont_instruction_1 is active this frame...
+        if vas_cont_instruction_1.status == STARTED:
+            # update params
+            pass
+        
+        # check for quit (typically the Esc key)
+        if defaultKeyboard.getKeys(keyList=["escape"]):
+            thisExp.status = FINISHED
+        if thisExp.status == FINISHED or endExpNow:
+            endExperiment(thisExp, inputs=inputs, win=win)
+            return
+        
+        # check if all components have finished
+        if not continueRoutine:  # a component has requested a forced-end of Routine
+            routineForceEnded = True
+            break
+        continueRoutine = False  # will revert to True if at least one component still running
+        for thisComponent in instruction_1Components:
+            if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                continueRoutine = True
+                break  # at least one component has not yet finished
+        
+        # refresh the screen
+        if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+            win.flip()
+
+    # --- Ending Routine "instruction_1" ---
+    for thisComponent in instruction_1Components:
+        if hasattr(thisComponent, "setAutoDraw"):
+            thisComponent.setAutoDraw(False)
+    thisExp.addData('instruction_1.stopped', globalClock.getTime())
+    # check responses
+    if key_instruction_1.keys in ['', [], None]:  # No response was made
+        key_instruction_1.keys = None
+    thisExp.addData('key_instruction_1.keys',key_instruction_1.keys)
+    if key_instruction_1.keys != None:  # we had a response
+        thisExp.addData('key_instruction_1.rt', key_instruction_1.rt)
+        thisExp.addData('key_instruction_1.duration', key_instruction_1.duration)
+    thisExp.nextEntry()
+    thisExp.addData('vas_cont_instruction_1.response', vas_cont_instruction_1.getRating())
+    thisExp.addData('vas_cont_instruction_1.rt', vas_cont_instruction_1.getRT())
+    # the Routine "instruction_1" was not non-slip safe, so reset the non-slip timer
+    routineTimer.reset()
+
+    # --- Prepare to start Routine "instruction_3" ---
+    continueRoutine = True
+    # update component parameters for each repeat
+    thisExp.addData('instruction_3.started', globalClock.getTime())
+    key_instruction_3.keys = []
+    key_instruction_3.rt = []
+    _key_instruction_3_allKeys = []
+    vas_cont_instruction_3.reset()
+    # keep track of which components have finished
+    instruction_3Components = [text_instruction_3, key_instruction_3, vas_cont_instruction_3]
+    for thisComponent in instruction_3Components:
+        thisComponent.tStart = None
+        thisComponent.tStop = None
+        thisComponent.tStartRefresh = None
+        thisComponent.tStopRefresh = None
+        if hasattr(thisComponent, 'status'):
+            thisComponent.status = NOT_STARTED
+    # reset timers
+    t = 0
+    _timeToFirstFrame = win.getFutureFlipTime(clock="now")
+    frameN = -1
+    
     # --- Prepare to start Routine "instruction_2" ---
     continueRoutine = True
     # update component parameters for each repeat
@@ -1045,9 +1231,9 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     key_instruction_2.keys = []
     key_instruction_2.rt = []
     _key_instruction_2_allKeys = []
-    vas_cont_instruction.reset()
+    vas_cont_instruction_2.reset()
     # keep track of which components have finished
-    instruction_2Components = [text_instruction_2, key_instruction_2, vas_cont_instruction]
+    instruction_2Components = [text_instruction_2, key_instruction_2, vas_cont_instruction_2]
     for thisComponent in instruction_2Components:
         thisComponent.tStart = None
         thisComponent.tStop = None
@@ -1120,23 +1306,23 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
                 # a response ends the routine
                 continueRoutine = False
         
-        # *vas_cont_instruction* updates
+        # *vas_cont_instruction_2* updates
         
-        # if vas_cont_instruction is starting this frame...
-        if vas_cont_instruction.status == NOT_STARTED and tThisFlip >= 0-frameTolerance:
+        # if vas_cont_instruction_2 is starting this frame...
+        if vas_cont_instruction_2.status == NOT_STARTED and tThisFlip >= 0-frameTolerance:
             # keep track of start time/frame for later
-            vas_cont_instruction.frameNStart = frameN  # exact frame index
-            vas_cont_instruction.tStart = t  # local t and not account for scr refresh
-            vas_cont_instruction.tStartRefresh = tThisFlipGlobal  # on global time
-            win.timeOnFlip(vas_cont_instruction, 'tStartRefresh')  # time at next scr refresh
+            vas_cont_instruction_2.frameNStart = frameN  # exact frame index
+            vas_cont_instruction_2.tStart = t  # local t and not account for scr refresh
+            vas_cont_instruction_2.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(vas_cont_instruction_2, 'tStartRefresh')  # time at next scr refresh
             # add timestamp to datafile
-            thisExp.timestampOnFlip(win, 'vas_cont_instruction.started')
+            thisExp.timestampOnFlip(win, 'vas_cont_instruction_2.started')
             # update status
-            vas_cont_instruction.status = STARTED
-            vas_cont_instruction.setAutoDraw(True)
+            vas_cont_instruction_2.status = STARTED
+            vas_cont_instruction_2.setAutoDraw(True)
         
-        # if vas_cont_instruction is active this frame...
-        if vas_cont_instruction.status == STARTED:
+        # if vas_cont_instruction_2 is active this frame...
+        if vas_cont_instruction_2.status == STARTED:
             # update params
             pass
         
@@ -1174,8 +1360,8 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         thisExp.addData('key_instruction_2.rt', key_instruction_2.rt)
         thisExp.addData('key_instruction_2.duration', key_instruction_2.duration)
     thisExp.nextEntry()
-    thisExp.addData('vas_cont_instruction.response', vas_cont_instruction.getRating())
-    thisExp.addData('vas_cont_instruction.rt', vas_cont_instruction.getRT())
+    thisExp.addData('vas_cont_instruction_2.response', vas_cont_instruction_2.getRating())
+    thisExp.addData('vas_cont_instruction_2.rt', vas_cont_instruction_2.getRT())
     # the Routine "instruction_2" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset()
     
