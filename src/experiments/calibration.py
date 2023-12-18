@@ -75,7 +75,7 @@ class BayesianEstimatorVAS:
     
     MAX_TEMP = 48.
 
-    def __init__(self, vas_value, temp_start=38, temp_std=3.5, trials=7, likelihood_std=1, reduction_factor=0.95):
+    def __init__(self, vas_value, temp_start, temp_std=3.5, trials=7, likelihood_std=1, reduction_factor=0.95):
         """
         Initialize the VAS_Estimator object for recursive Bayesian estimation of temperature based on VAS values.
 

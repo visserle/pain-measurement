@@ -21,18 +21,13 @@ Note: These are minimal modifications to the auto-generated experiment, so there
 # --- Import packages ---
 from psychopy import locale_setup
 from psychopy import prefs
-from psychopy import plugins
-plugins.activatePlugins()
 import psychopy
-from psychopy import gui, visual, core, data, event, clock, colors, layout
+from psychopy import gui, visual, core, data, event, clock
 from psychopy.tools import environmenttools
 from psychopy.constants import (NOT_STARTED, STARTED, PLAYING, PAUSED,
                                 STOPPED, FINISHED, PRESSED, RELEASED, FOREVER, priority)
 
 import numpy as np
-from numpy import (sin, cos, tan, log, log10, pi, average,
-                   sqrt, std, deg2rad, rad2deg, linspace, asarray)
-from numpy.random import random, randint, normal, shuffle, choice as randchoice
 import os
 import sys
 import platform
@@ -67,8 +62,6 @@ expInfo = {
 }
 
 # Run 'Before Experiment' code from all_variables
-# TODO
-# set start_study_mode to NoPrompt
 
 # Colors
 element_color = rgb255_to_rgb_psychopy(config['psychopy']['element_color'])
@@ -98,7 +91,7 @@ mms_baseline = config['thermoino']['mms_baseline'] # has to be the same as in MM
 mms_rate_of_rise = config['thermoino']['mms_rate_of_rise'] # has to be the same as in MMS
 bin_size_ms = config['thermoino']['bin_size_ms']
 
-# iMotions
+# iMotions # TODO: set start_study_mode to NoPrompt?
 start_study_mode = config['imotions']['start_study_mode']
 
 # Stimuli
@@ -405,8 +398,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
 
     # mark experiment as started
     thisExp.status = STARTED
-    # make sure variables created by exec are available globally
-    exec = environmenttools.setExecEnvironment(globals())
+
 
     # make sure we're running in the directory for this experiment
     os.chdir(_thisDir)
@@ -2268,7 +2260,6 @@ def quit(thisExp, win=None, inputs=None, thisSession=None):
 
 
 def main():
-    # call all functions in order
     global expInfo
     global thisExp
     global logFile

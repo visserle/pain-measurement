@@ -344,6 +344,7 @@ class StimuliFunction():
             padding_value = new_wave[-1]
             new_wave = np.pad(new_wave, (0, required_length - wave_length), 'constant', constant_values=(padding_value,))
         self._wave = new_wave
+        
         # Round all values to 3 decimals
         self._wave = np.round(self._wave, 3)
 

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on Dezember 14, 2023, at 16:15
+    on Dezember 18, 2023, at 13:29
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -42,7 +42,7 @@ expName = 'calibration_exp'  # from the Builder filename that created this scrip
 expInfo = {
     'participant': '',
     'age': '20',
-    'gender': ["Female","Male"],
+    'gender': ["","Female","Male"],
     'session': '01',
     'dummy': False,
     'date': data.getDateStr(),  # add a simple timestamp
@@ -58,8 +58,9 @@ with open(config_path, 'r') as file:
     config = json.load(file)
 
 # Logger
-from src.experiments.log_config import configure_logging, close_root_logging, psychopy_log
-configure_logging(log_file=psychopy_log())
+from src.experiments.psychopy_utils import log_file_path
+from src.experiments.log_config import configure_logging, close_root_logging
+configure_logging(file_path=log_file_path())
 
 # Psychopy
 from src.experiments.psychopy_utils import rgb255_to_rgb_psychopy
@@ -223,7 +224,7 @@ def setupWindow(expInfo=None, win=None):
             monitor='testMonitor', color=[0,0,0], colorSpace='rgb',
             backgroundImage='', backgroundFit='none',
             blendMode='avg', useFBO=True,
-            units='norm'
+            units='height'
         )
         if expInfo is not None:
             # store frame rate of monitor if we can measure it
@@ -234,7 +235,7 @@ def setupWindow(expInfo=None, win=None):
         win.colorSpace = 'rgb'
         win.backgroundImage = ''
         win.backgroundFit = 'none'
-        win.units = 'norm'
+        win.units = 'height'
     win.mouseVisible = False
     win.hideMessage()
     return win
@@ -382,6 +383,8 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
         expInfo["participant"] = "dummy"
     else:
         from src.experiments.thermoino import Thermoino
+    
+    
     # Run 'Begin Experiment' code from thermoino
     luigi = Thermoino(
         port=port,
@@ -410,7 +413,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_3" ---
     text_welcome_3 = visual.TextStim(win=win, name='text_welcome_3',
-        text='Hierzu wärmen wir die Hautstellte an Ihrem Arm zuerst kurz auf.\n\nAnschließend bestimmen wir, wann Sie leichte und starke Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Hierzu wärmen wir die Hautstelle an Ihrem Arm zuerst kurz auf.\n\nAnschließend bestimmen wir, ab wann Sie leichte und starke Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -614,6 +617,9 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     continueRoutine = True
     # update component parameters for each repeat
     thisExp.addData('welcome.started', globalClock.getTime())
+    # Run 'Begin Routine' code from all_variables
+    # "remind" psychopy to hide the mouse
+    win.mouseVisible = False
     key_welcome.keys = []
     key_welcome.rt = []
     _key_welcome_allKeys = []

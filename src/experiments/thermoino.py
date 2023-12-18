@@ -87,8 +87,8 @@ class Thermoino:
         Trigger MMS to get ready for action.
     set_temp(temp_target):
         Set a target temperature on the Thermoino.
-    wait(duration):
-        Wait for a given duration in seconds.
+    sleep(duration):
+        sleep for a given duration in seconds.
 
     New stuff
     -----------
@@ -270,11 +270,11 @@ class Thermoino:
             success = False
         return (self, move_time_s, success)
     
-    def wait(self, duration):
+    def sleep(self, duration):
         """
         - NOT RECOMMENDED FOR PSYCHOPY EXPERIMENTS -
 
-        Wait for a given duration in seconds.
+        Sleep for a given duration in seconds.
         This function delays the execution in Python for a given number of seconds.
 
         It should not be used in a Psychopy experiment (e.g. for continuous ratings) as this function blocks the execution
@@ -283,10 +283,10 @@ class Thermoino:
         Parameters
         ----------
         duration : float
-            The duration to wait in seconds.
+            The duration to sleep in seconds.
         """
 
-        logger.info("Thermoino waits for %s s using time.sleep.", duration)
+        logger.info("Thermoino sleeps for %s s using time.sleep.", duration)
         time.sleep(duration)
         return self
 
@@ -340,8 +340,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
         Trigger MMS to get ready for action.
     set_temp(temp_target):
         Set a target temperature on the Thermoino.
-    wait(duration):
-        Wait for a given duration in seconds (using time.sleep).
+    sleep(duration):
+        sleep for a given duration in seconds (using time.sleep).
     init_ctc(bin_size_ms):
         Initialize a complex temperature course (CTC) on the Thermoino by sending the bin size only.
     create_ctc(temp_course, sample_rate, rate_of_rise_option = "mms_program"):
@@ -399,7 +399,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     luigi.connect()
     luigi.trigger()
     luigi.set_temp(42)
-    luigi.wait(4)
+    luigi.sleep(4)
     luigi.set_temp(32)
     luigi.close()
     ````

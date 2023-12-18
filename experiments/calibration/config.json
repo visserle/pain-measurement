@@ -4,7 +4,7 @@
         "psychopyVersion": "2023.2.1",
 		"element_color": [128,64,192],
 		"cross_pain_color": [192,64,128],
-        "cross_size": [0.06, 0.1]
+        "cross_size": [0.06, 0.06]
     },
     "thermoino": {
         "port": "COM7",
@@ -20,18 +20,18 @@
         "iti_duration_short": 2,
         "_comment": " +++ In psychopy, we still need to add np.random.randint(0, 3) to the iti_duration +++",
         "temps_preexposure": [35, 36, 37],
-        "correction_after_preexposure": 2,
+        "correction_after_preexposure": 2.0,
         "_comment1": " +++ We substract the correction if preexposure was painful to get a better vas70 estimate. +++"
     },
     "estimator": {
         "trials_vas70": 7,
         "_comment1": " +++ trials_vas70 is the same as nReps in psychopy loop +++",
-        "temp_start_vas70": 42,
+        "temp_start_vas70": 42.0,
         "temp_std_vas70": 3.5,
         "_comment2": " +++ temp_start_vas0 will be set after VAS 70 estimate +++",
         "trials_vas0": 5,
         "temp_start_vas0": null,
-        "temp_start_vas0_minus": 3,
+        "temp_start_vas0_minus": 3.0,
         "temp_std_vas0": 1.5,
         "_comment3": " +++ temp_start_vas0 will be based on vas70 estimation +++"
     }

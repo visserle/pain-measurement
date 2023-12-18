@@ -2,6 +2,8 @@
     "psychopy": {
         "name": "mpad1_exp",
         "psychopyVersion": "2023.2.1",
+        "element_color": [128,64,192],
+		"marker_color": [192,64,128],
         "dummy": true,
         "dummy_participant": {
             "time_stamp": "2023-01-01 15:00:00",
@@ -10,9 +12,7 @@
             "gender": "Female",
             "temp_range": 3,
             "baseline_temp": 40
-        },
-		"element_color": [128,64,192],
-		"marker_color": [192,64,128]
+        }
     },
     "thermoino": {
         "port": "COM7",
