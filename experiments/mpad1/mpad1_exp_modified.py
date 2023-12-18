@@ -10,6 +10,10 @@ Further modifications were made:
     - Global variables:
         - win and inputs are created in the run function
         - expInfo, thisExp and logFile are created in the main function
+    - Logging:
+        - Import the psychopy logging module not as logging but as psychopy.logging
+    - Mouse:
+        - Remind psychopy to hide the mouse in the run function
 
 Note: These are minimal modifications to the auto-generated experiment, so there might be a better way to do this.
 """
@@ -19,7 +23,8 @@ from psychopy import locale_setup
 from psychopy import prefs
 from psychopy import plugins
 plugins.activatePlugins()
-from psychopy import gui, visual, core, data, event, logging, clock, colors, layout
+import psychopy
+from psychopy import gui, visual, core, data, event, clock, colors, layout
 from psychopy.tools import environmenttools
 from psychopy.constants import (NOT_STARTED, STARTED, PLAYING, PAUSED,
                                 STOPPED, FINISHED, PRESSED, RELEASED, FOREVER, priority)
@@ -35,13 +40,14 @@ import platform
 import psychopy.iohub as io
 from psychopy.hardware import keyboard
 
-from src.experiments.psychopy_utils import ask_for_confirmation, rgb255_to_rgb_psychopy
+from src.experiments.psychopy_utils import ask_for_confirmation, rgb255_to_rgb_psychopy, log_file_path
 
 import json
 
-# Logger
-from src.experiments.log_config import configure_logging, close_root_logging, psychopy_log
-configure_logging(log_file=psychopy_log())
+# Logging
+import logging
+from src.experiments.log_config import configure_logging, close_root_logging
+configure_logging(file_path=log_file_path(), stream_level=logging.INFO, file_level=logging.DEBUG, ignore_libs=['PIL'])
 
 # --- Setup global variables (available in all functions) ---
 # Ensure that relative paths start from the same directory as this script
@@ -209,8 +215,8 @@ def setupLogging(filename):
         Text stream to receive inputs from the logging system.
     """
     # save a log file for detail verbose info
-    logFile = logging.LogFile(filename+'.log', level=logging.EXP)
-    logging.console.setLevel(logging.WARNING)  # this outputs to the screen, not a file
+    logFile = psychopy.logging.LogFile(filename+'.log', level=psychopy.logging.EXP)
+    psychopy.logging.console.setLevel(psychopy.logging.WARNING)  # this outputs to the screen, not a file
     # return log file
     return logFile
 
@@ -428,7 +434,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_2" ---
     text_welcome_2 = visual.TextStim(win=win, name='text_welcome_2',
-        text='Mit diesem Experiment möchten mit Hilfe Ihrer Daten Schmerzen objektiv messbar machen.\n\n(Leertaste drücken, um fortzufahren)',
+        text='Mit diesem Experiment möchten mit Hilfe Ihrer Daten Schmerzen objektiv messbar machen.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -448,7 +454,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "instruction" ---
     text_instruction = visual.TextStim(win=win, name='text_instruction',
-        text='Ihre Aufgabe ist es, Ihren Schmerz durchgehend zu bewerten.\n\nDies geschieht über eine Skala, die Sie auf der folgenden Seite sehen.\n\n(Leertaste drücken, um fortzufahren)',
+        text='Ihre Aufgabe ist es, Ihren Schmerz durchgehend zu bewerten.\n\nDies geschieht über eine Skala, die Sie auf der folgenden Seite sehen.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -458,7 +464,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
 
     # --- Initialize components for Routine "instruction_1" ---
     text_instruction_1 = visual.TextStim(win=win, name='text_instruction_1',
-        text='\n\n\n\n\n\n\n\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='\n\n\n\n\n\n\n\n\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -475,7 +481,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "instruction_2" ---
     text_instruction_2 = visual.TextStim(win=win, name='text_instruction_2',
-        text='Bitte bewegen Sie Ihren Mauszeiger auf der Skala hin und her!\n\n\n\n\n\n\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Bitte bewegen Sie Ihren Mauszeiger auf der Skala hin und her!\n\n\n\n\n\n\n\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -577,9 +583,10 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         globalClock = core.Clock()  # to track the time since experiment started
     if ioServer is not None:
         ioServer.syncClock(globalClock)
-    logging.setDefaultClock(globalClock)
+    psychopy.logging.setDefaultClock(globalClock)
     routineTimer = core.Clock()  # to track time remaining of each (possibly non-slip) routine
     win.flip()  # flip window to reset last flip timer
+    win.mouseVisible = False # "remind" psychopy to hide the mouse
     # store the exact time the global clock started
     expInfo['expStart'] = data.getDateStr(format='%Y-%m-%d %Hh%M.%S.%f %z', fractionalSecondDigits=6)
     
@@ -1637,6 +1644,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
             globals()[paramName] = thisLoop_trial[paramName]
     
     for thisLoop_trial in loop_trials:
+        logging.info('Starting trial number {}'.format(loop_trials.thisN + 1)) # TODO: add seed to log
         currentLoop = loop_trials
         thisExp.timestampOnFlip(win, 'thisRow.t')
         # pause experiment here if requested
@@ -2226,7 +2234,7 @@ def endExperiment(thisExp, inputs=None, win=None):
     if inputs is not None:
         if 'eyetracker' in inputs and inputs['eyetracker'] is not None:
             inputs['eyetracker'].setConnectionState(False)
-    logging.flush()
+    psychopy.logging.flush()
 
 
 def quit(thisExp, win=None, inputs=None, thisSession=None):
@@ -2252,7 +2260,7 @@ def quit(thisExp, win=None, inputs=None, thisSession=None):
     if inputs is not None:
         if 'eyetracker' in inputs and inputs['eyetracker'] is not None:
             eyetracker.setConnectionState(False)
-    logging.flush()
+    psychopy.logging.flush()
     if thisSession is not None:
         thisSession.stop()
     # terminate Python process
