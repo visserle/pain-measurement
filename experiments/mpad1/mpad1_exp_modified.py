@@ -42,15 +42,18 @@ import json
 # Logging
 import logging
 from src.experiments.log_config import configure_logging, close_root_logging
-configure_logging(file_path=log_file_path(), stream_level=logging.INFO, file_level=logging.DEBUG, ignore_libs=['PIL'])
+
 
 # --- Setup global variables (available in all functions) ---
 # Ensure that relative paths start from the same directory as this script
 _thisDir = os.path.dirname(os.path.abspath(__file__))
 
+configure_logging(file_path=log_file_path(_thisDir), ignore_libs=['PIL'])
+
 config_path = os.path.join(_thisDir, 'config.json')
 with open(config_path, 'r') as file:
     config = json.load(file)
+
 
 # Store info about the experiment session
 psychopyVersion = '2023.2.1'
@@ -102,8 +105,8 @@ minimal_desired_duration = config['stimuli']['minimal_desired_duration'] # in se
 periods = config['stimuli']['periods'] # [0] is the baseline and [1] the modulation; in seconds
 frequencies = 1./np.array(periods)
 sample_rate = config['stimuli']['sample_rate']
+big_decreases = config['stimuli']['big_decreases']
 random_periods = config['stimuli']['random_periods']
-duration_big_decreases = config['stimuli']['duration_big_decreases']
 plateau_duration = config['stimuli']['plateau_duration']
 n_plateaus = config['stimuli']['n_plateaus']
 
@@ -426,7 +429,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "welcome_2" ---
     text_welcome_2 = visual.TextStim(win=win, name='text_welcome_2',
-        text='Mit diesem Experiment möchten mit Hilfe Ihrer Daten Schmerzen objektiv messbar machen.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Mit diesem Experiment möchten wir mit Hilfe Ihrer Daten Schmerzen objektiv messbar machen.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -1665,6 +1668,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
             frequencies=frequencies,
             temp_range=temp_range,
             sample_rate=sample_rate,
+            big_decreases=big_decreases,
             random_periods=random_periods,
             seed=seeds[trial]
         ).add_baseline_temp(
@@ -1672,9 +1676,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         ).add_plateaus(
             plateau_duration=plateau_duration, 
             n_plateaus=n_plateaus
-        ).generalize_big_decreases(
-            duration=duration_big_decreases
-        )
+        ).generalize_big_decreases()
         
         # Run 'Begin Routine' code from thermoino_prep
         luigi.flush_ctc()
