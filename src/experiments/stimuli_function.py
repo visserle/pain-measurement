@@ -1,16 +1,11 @@
 # work in progress
 
 # TODO
-# find best ratio of ampliudes and adapt code to temperature range
 # define optimal number of big decreases and small decreases
 # maybe add min temp to qualify as a big decrease
-# via stimuli.wave[stimuli.loc_maxima[stimuli._check_number_of_decreases(3)[0]["big"]]] you can get the temperatures of the big decreases
-# add temp_criteria to init?
 # update doc strings
 # change criteria in add plateaus to absolute values based on the temperature range
 # maybe refactor into two classes with wave & sitmuli function
-
-# - update doc strings for new check methods
 
 """Stimuli generation for the thermal pain experiment, plus a extra function for plotting and labeling."""
 
@@ -240,8 +235,8 @@ class StimuliFunction():
             if counter > 1000:
                 raise ValueError(
                     "Unable to create a stimuli function with the exact number and length of big decreases within the given wave length.\n"
-                    "Take a look at the unmodified wave (without add_ methods) to get a better idea."
-                    "Remember that we want to modify the wave *without* changing its duration so we can't just add more big decreases or make them too long.\n"
+                    "Take a look at the unmodified wave (without add_ methods) to get a better idea of what you want to achieve.\n"
+                    "Remember that we want to modify the wave without changing its duration so we can't just add more big decreases or prolong them indefinitely.\n"
                 )
             self._create_baseline()
             self._create_modulation()
@@ -357,36 +352,24 @@ class StimuliFunction():
         self._wave = np.round(self._wave, 3)
 
     def _check_big_decreases(self):
-        """ FIXME: doc string
+        """
         Identifies the locations of big and small decreases in temperature 
-        between the local maxima and minima of the wave.
-        
-        Returns
-        -------
-        idx_decreases : dict
-            A dictionary with keys 'big' and 'small' containing the indices of 
-            large and small decreases respectively.
-        loc_extrema_temps_diff : np.ndarray
-            The differences in temperature between local maxima and minima.
+        between the local maxima and minima of the wave and checks if the number and length of big decreases
+        is as specified.
         """
         loc_maxima_temps = self.wave[self.loc_maxima]
         loc_minima_temps = self.wave[self.loc_minima]
-        self.loc_extrema_temps_diff = loc_maxima_temps - loc_minima_temps
+        loc_extrema_temps_diff = loc_maxima_temps - loc_minima_temps
 
-        self.idx_decreases = {}
-        self.idx_decreases["big"] = np.where(((self.loc_extrema_temps_diff) > self.temp_criteria) == 1)[0]
-        self.idx_decreases["small"] = np.where((self.loc_extrema_temps_diff > self.temp_criteria) == 0)[0]
+        idx_decreases = {}
+        idx_decreases["big"] = np.where(((loc_extrema_temps_diff) > self.temp_criteria) == 1)[0]
+        idx_decreases["small"] = np.where((loc_extrema_temps_diff > self.temp_criteria) == 0)[0]
         
-        idx_big_decreases = self.idx_decreases["big"]
+        idx_big_decreases = idx_decreases["big"]
 
         if self.number_of_big_decreases is not None:
             if len(idx_big_decreases) != self.number_of_big_decreases:
-                check_number = False
-                return check_number
-            else:
-                check_number = True
-        else:
-            check_number = True
+                return False
 
         # Continue with the length of big decreases
         lengths = self.loc_minima[idx_big_decreases] - self.loc_maxima[idx_big_decreases]
@@ -400,14 +383,12 @@ class StimuliFunction():
 
         if self.length_of_big_decreases is not None:
             if mean_length != self.length_of_big_decreases:
-                check_length = False
-                return check_length
-            else:
-                check_length = True
-        else:
-            check_length = True
+                return False
 
-        return (check_number and check_length)
+        self.loc_extrema_temps_diff = loc_extrema_temps_diff
+        self.idx_decreases = idx_decreases
+        
+        return True
 
     def add_baseline_temp(self, baseline_temp):
         """
@@ -465,10 +446,10 @@ class StimuliFunction():
         counter = 0
         while True:
             counter += 1
-            if counter > 1000:
+            if counter > 2000:
                 raise ValueError(
                     "Unable to add the specified number of plateaus within the given wave.\n"
-                    "This issue usually arises when the number and/or duration of plateaus is too high "
+                    "This issue usually arises when the number and/or duration of plateaus is too high.\n"
                     "relative to the plateau_duration of the wave.\n"
                     "Try again with a different seed or change the parameters of the add_plateaus method.")
             idx_plateaus = self.rng_numpy.choice(idx_iqr_values, n_plateaus, replace=False)
