@@ -1,49 +1,57 @@
 # work in proqress
 
 import logging
-from pathlib import Path
-from datetime import datetime
 
 
-def configure_logging(log_file=None, stream_handler=True, stream_level=logging.INFO, file_level=logging.DEBUG):
+def configure_logging(
+        stream_level=logging.INFO, stream=True,
+        file_level=logging.DEBUG, file_path=None,
+        ignore_libs=None):
     """
-    Configures the root logger for logging messages to the console and optionally to a specified log file.
-    Allows separate log levels for stream and file handlers.
-    For usage in main scripts only (e.g., a psychopy experiment)
+    Configures the root logger for logging messages to the console and optionally to a file.
+    Supports ignoring logs from specified libraries.
 
-    This function sets up a logger with custom formatting and adds handlers as needed:
-    1. StreamHandler for console output, if enabled, with stream_level.
-    2. FileHandler for logging to a file, if log_file is specified, with file_level.
+    Parameters:
+    - stream_level: The logging level for the stream handler.
+    - stream: Whether to enable the stream handler for console logging.
+    - file_level: The logging level for the file handler.
+    - file_path: The path to the debug log file for the file handler, logs are only saved to a file if this is provided.
+    - ignore_libs: A list of library names whose logs should be ignored.
     """
     handlers = []
 
-    if stream_handler:
-        # StreamHandler for console logging
-        stream_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] - %(message)s', datefmt='%H:%M:%S')
+    # StreamHandler for console logging
+    if stream:
+        stream_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s', datefmt='%H:%M:%S')
         stream_handler = logging.StreamHandler()
         stream_handler.setLevel(stream_level)
         stream_handler.setFormatter(stream_formatter)
         handlers.append(stream_handler)
 
-    if log_file:
-        # FileHandler for logging to a file
+    # FileHandler for file logging, added only if file path is provided
+    if file_path:
         file_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s')
-        file_handler = logging.FileHandler(log_file, mode='a')
+        file_handler = logging.FileHandler(file_path)
         file_handler.setLevel(file_level)
         file_handler.setFormatter(file_formatter)
-        file_handler.addFilter(ignore_pil_logs)
         handlers.append(file_handler)
+
+    # Create filter for ignoring logs from specified libraries
+    def create_filter(ignored_libs):
+        def ignore_logs(record):
+            return not any(record.name.startswith(lib) for lib in ignored_libs)
+        return ignore_logs
+
+    if ignore_libs:
+        ignore_filter = create_filter(ignore_libs)
+        for handler in handlers:
+            handler.addFilter(ignore_filter)
 
     # Clear any previously added handlers from the root logger
     logging.getLogger().handlers = []
 
-    # Set up the root logger configuration with the created handlers
-    logging.basicConfig(level=min(stream_level, file_level), handlers=handlers)
-
-
-def ignore_pil_logs(record):
-    """Filter function for ignoring debug PIL logs which are not relevant to the experiment"""
-    return not record.name.startswith('PIL')
+    # Set up the root logger configuration with the specified handlers
+    logging.basicConfig(level=min(stream_level, logging.DEBUG), handlers=handlers)
 
 
 def close_root_logging():
@@ -61,11 +69,3 @@ def close_root_logging():
     for handler in root_logger.handlers[:]:
         handler.close()
         root_logger.removeHandler(handler)
-
-def psychopy_log():
-    """Returns a Path object for a log file in the log directory with a timestamped filename for the psychopy experiment"""
-    log_dir = Path('log')
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_filename_str = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
-    log_file = log_dir / log_filename_str
-    return log_file
