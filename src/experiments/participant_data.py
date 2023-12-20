@@ -12,8 +12,8 @@ from pathlib import Path
 import logging
 import pandas as pd
 
-from .psychopy_utils import psychopy_import
-psychopy_import("openpyxl")
+from src.experiments.psychopy_import import psychopy_import
+psychopy_import("openpyxl") # for pandas to_excel function
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -56,8 +56,8 @@ def add_participant(participant, age, gender, vas0, vas70):
         'participant': participant,
         'age': int(age),
         'gender': str(gender),
-        'vas0': int(vas0),
-        'vas70': int(vas70),
+        'vas0': float(vas0),
+        'vas70': float(vas70),
         'baseline_temp': round((vas0 + vas70) / 2, 1),
         'temp_range': round(vas70 - vas0, 1)
     }])
