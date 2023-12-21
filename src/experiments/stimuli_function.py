@@ -85,7 +85,7 @@ class StimuliFunction():
     frequencies = 1./np.array(periods)
     temp_range = 3 # VAS 70 - VAS 0
     sample_rate = 60
-    big_decreases = [3,20] # [0] is the number of decreases and [1] the length in s of each decrease
+    big_decreases = [3,20] # [0] is the number of decreases and [1] the average length in s these decreases
     random_periods = True
     baseline_temp = 40 # @ VAS 35
 
@@ -160,8 +160,8 @@ class StimuliFunction():
         random_periods : bool, optional
             If True, the periods of the modulation are randomized (default is True).
         big_decreases : list, optional
-            Checks the number [0] and length [1] of *big* decreases in temperature (default is None).
-            Use `None` in the list to ignore either the number or length of big decreases.
+            Checks the number [0] and average length [1] of big decreases in temperature (default is None).
+            Use `None` in the list to ignore either the number or average length of big decreases.
         seed : int, optional
             The seed for the random number generator instances (default is None, which generates a random seed).
         """
@@ -193,8 +193,8 @@ class StimuliFunction():
         self.random_periods = random_periods
         self.check_decreases_flag = bool(big_decreases)
         if self.check_decreases_flag:
-            self.number_of_big_decreases = int(big_decreases[0])
-            self.length_of_big_decreases = int(big_decreases[1])
+            self.number_of_big_decreases = big_decreases[0]
+            self.avg_length_of_big_decreases = big_decreases[1]
 
         # Create wave
         self._create_wave()
@@ -204,60 +204,27 @@ class StimuliFunction():
         self.baseline_temp = 0
 
 
-    @property
-    def amplitude_proportion(self):
-        """The weights for the amplitudes of the baseline and modulation."""
-        return self._amplitude_proportion
-
-    @amplitude_proportion.setter
-    def amplitude_proportion(self, value):
-        """
-        Setter for amplitude_proportion.
-        This is needed for the setter to work with the sliders in the GUI of the bokeh app in the notebook.
-        """
-        if not (0 <= value <= 1):  # Ensure the value is within an acceptable range
-            raise ValueError("Amplitude proportion must be between 0 and 1.")
-        self._amplitude_proportion = value
-        self.amplitudes = self._calculate_amplitudes()  # Recalculate the amplitudes
-        self._create_wave()
-
-    def _calculate_amplitudes(self):
-        """Method to calculate amplitudes based on amplitude_weights"""
-        return np.array(
-            [self._amplitude_proportion * self.temp_range / 2,
-             (1 - self._amplitude_proportion) * self.temp_range / 2])
-
     def _create_wave(self):
-        # Summing self.baseline and self.modulation create the stimuli function self.wave
+        # Summing self.baseline and self.modulation to create the stimuli function self.wave
         counter = 0
-        while True: # make sure we exactly have 3 big decreases
-            counter += 1
-            if counter > 1000:
-                raise ValueError(
-                    "Unable to create a stimuli function with the exact number and length of big decreases within the given wave length.\n"
-                    "Take a look at the unmodified wave (without add_ methods) to get a feeling on what's possible.\n"
-                    "Remember that we want to modify the wave without changing its duration so we can't just add more big decreases or prolong them indefinitely.\n"
-                )
+        while True:
             self._create_baseline()
             self._create_modulation()
             self.wave = self.baseline + self.modulation
             self._loc_maxima = self.loc_maxima
             self._loc_minima = self.loc_minima
-            if self.check_decreases_flag:
+            if self.check_decreases_flag: # check if the number and length of big decreases is as specified
                 if self._check_big_decreases():
                     break
+                counter += 1
+                if counter > 1000:
+                    raise ValueError(
+                        "Unable to create a stimuli function with the exact number and average length of big decreases within the given wave.\n"
+                        "Take a look at the unmodified wave (without add_ methods, etc.) to get a feeling on what's possible.\n"
+                        "Remember that we want to modify the wave without changing its duration so we can't just search for any number of big decreases or any average length.\n"
+                    )
             else:
                 break
-
-    def _calculate_minimal_duration(self):
-        """Calculates the true minimal duration ensuring it's a multiple of the period of the modulation
-        and the vanilla wave always ends with a local minimum. FIXME?
-
-        Note: The "true" minimal duration is a multiple of the period of the modulation where the wave always ends with a ramp on (odd number)."""
-        modulation_period = self.periods[1]
-        self.modulation_n_periods = math.ceil(self.minimal_desired_duration / modulation_period)
-        self.modulation_n_periods += 1 - self.modulation_n_periods % 2  # ensure it's odd
-        self.minimal_duration = self.modulation_n_periods * modulation_period
 
     def _create_baseline(self):
         """Creates the baseline sinusoidal wave"""
@@ -308,6 +275,39 @@ class StimuliFunction():
                     self.amplitudes[1] * -np.cos(np.pi * frequency * time_) * -1
             self.modulation.extend(wave_)
         self.modulation = np.array(self.modulation)
+
+    @property
+    def amplitude_proportion(self):
+        """The weights for the amplitudes of the baseline and modulation."""
+        return self._amplitude_proportion
+
+    @amplitude_proportion.setter
+    def amplitude_proportion(self, value):
+        """
+        Setter for amplitude_proportion.
+        This is needed for the setter to work with the sliders in the GUI of the bokeh app in the notebook.
+        """
+        if not (0 <= value <= 1):  # Ensure the value is within an acceptable range
+            raise ValueError("Amplitude proportion must be between 0 and 1.")
+        self._amplitude_proportion = value
+        self.amplitudes = self._calculate_amplitudes()  # Recalculate the amplitudes
+        self._create_wave()
+
+    def _calculate_amplitudes(self):
+        """Method to calculate amplitudes based on amplitude_weights"""
+        return np.array(
+            [self._amplitude_proportion * self.temp_range / 2,
+             (1 - self._amplitude_proportion) * self.temp_range / 2])
+
+    def _calculate_minimal_duration(self):
+        """Calculates the true minimal duration ensuring it's a multiple of the period of the modulation
+        and the vanilla wave always ends with a local minimum. FIXME?
+
+        Note: The "true" minimal duration is a multiple of the period of the modulation where the wave always ends with a ramp on (odd number)."""
+        modulation_period = self.periods[1]
+        self.modulation_n_periods = math.ceil(self.minimal_desired_duration / modulation_period)
+        self.modulation_n_periods += 1 - self.modulation_n_periods % 2  # ensure it's odd
+        self.minimal_duration = self.modulation_n_periods * modulation_period
 
     @property
     def duration(self):
@@ -368,7 +368,7 @@ class StimuliFunction():
 
         # Continue with the length of big decreases
         lengths = self.loc_minima[idx_big_decreases] - self.loc_maxima[idx_big_decreases]
-        mean_length = int(np.mean(lengths))
+        mean_length = np.mean(lengths)
         mean_length //= self.sample_rate if len(lengths) > 0 else 0
         # TODO: there's a more accurate way of rounding here
         # if we take the number of big decreases an their decimals into account
@@ -376,8 +376,8 @@ class StimuliFunction():
         # also keep in mind that we do padding in the setter to get to a full second
         # where we always prolong, but never shorten the wave
 
-        if self.length_of_big_decreases is not None:
-            if mean_length != self.length_of_big_decreases:
+        if self.avg_length_of_big_decreases is not None:
+            if mean_length != self.avg_length_of_big_decreases:
                 return False
 
         # If we get here, the number and length of big decreases is as specified
@@ -488,7 +488,7 @@ class StimuliFunction():
         else:
             mean_length = length * self.sample_rate
 
-        self.length_of_big_decreases = mean_length / self.sample_rate
+        self.avg_length_of_big_decreases = mean_length / self.sample_rate
 
         # Create the modified wave
         wave_new = []
