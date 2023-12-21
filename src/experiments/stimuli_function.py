@@ -235,7 +235,7 @@ class StimuliFunction():
             if counter > 1000:
                 raise ValueError(
                     "Unable to create a stimuli function with the exact number and length of big decreases within the given wave length.\n"
-                    "Take a look at the unmodified wave (without add_ methods) to get a better idea of what you want to achieve.\n"
+                    "Take a look at the unmodified wave (without add_ methods) to get a feeling on what's possible.\n"
                     "Remember that we want to modify the wave without changing its duration so we can't just add more big decreases or prolong them indefinitely.\n"
                 )
             self._create_baseline()
@@ -251,7 +251,7 @@ class StimuliFunction():
 
     def _calculate_minimal_duration(self):
         """Calculates the true minimal duration ensuring it's a multiple of the period of the modulation
-        and the vanilla wave always ends with a local minimum.
+        and the vanilla wave always ends with a local minimum. FIXME?
 
         Note: The "true" minimal duration is a multiple of the period of the modulation where the wave always ends with a ramp on (odd number)."""
         modulation_period = self.periods[1]
@@ -360,12 +360,7 @@ class StimuliFunction():
         loc_maxima_temps = self.wave[self.loc_maxima]
         loc_minima_temps = self.wave[self.loc_minima]
         loc_extrema_temps_diff = loc_maxima_temps - loc_minima_temps
-
-        idx_decreases = {}
-        idx_decreases["big"] = np.where(((loc_extrema_temps_diff) > self.temp_criteria) == 1)[0]
-        idx_decreases["small"] = np.where((loc_extrema_temps_diff > self.temp_criteria) == 0)[0]
-        
-        idx_big_decreases = idx_decreases["big"]
+        idx_big_decreases = np.where(((loc_extrema_temps_diff) > self.temp_criteria) == 1)[0]
 
         if self.number_of_big_decreases is not None:
             if len(idx_big_decreases) != self.number_of_big_decreases:
@@ -385,9 +380,12 @@ class StimuliFunction():
             if mean_length != self.length_of_big_decreases:
                 return False
 
+        # If we get here, the number and length of big decreases is as specified
+        self.idx_decreases = {}
+        self.idx_decreases["small"] = np.where((loc_extrema_temps_diff > self.temp_criteria) == 0)[0]
+        self.idx_decreases["big"] = idx_big_decreases
         self.loc_extrema_temps_diff = loc_extrema_temps_diff
-        self.idx_decreases = idx_decreases
-        
+
         return True
 
     def add_baseline_temp(self, baseline_temp):
