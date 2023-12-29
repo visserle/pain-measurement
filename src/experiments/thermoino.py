@@ -177,7 +177,7 @@ class Thermoino:
         """
         self.ser.close()
         self.connected = False
-        logger.info("Thermoino connection closed @ %s.", self.PORT)
+        logger.debug("Thermoino connection closed @ %s.", self.PORT)
         time.sleep(1)
 
     def _send_command(self, command, get_response=True):
@@ -232,7 +232,7 @@ class Thermoino:
         """
         output = self._send_command('START\n')
         if output in OkCodes.__members__:
-            logger.info("Thermoino response to 'START' (.trigger): %s.", output)
+            logger.debug("Thermoino response to 'START' (.trigger): %s.", output)
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error for 'START' (.trigger): %s.", output)        
         return self
@@ -425,7 +425,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         """
         output = self._send_command(f'INITCTC;{bin_size_ms}\n')
         if output in OkCodes.__members__:
-            logger.info("Thermoino response to 'INITCTC' (.init_ctc): %s.", output)
+            logger.debug("Thermoino response to 'INITCTC' (.init_ctc): %s.", output)
             self.bin_size_ms = bin_size_ms
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error to 'INITCTC' (.init_ctc): %s.", output)
@@ -507,7 +507,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         debug : `bool`, optional
             If True, debug information for every bin. Default is False for performance.
         """
-        logger.info("Thermoino is receiving the CTC in single bins ...")
+        logger.debug("Thermoino is receiving the CTC in single bins ...")
         for idx, i in enumerate(self.ctc):
             output = self._send_command(f'LOADCTC;{i}\n')
 
@@ -515,7 +515,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
                 logger.error("Thermoino error for 'LOADCTC' (.load_ctc), bin %s of %s: %s.", idx + 1, len(self.ctc), output)
                 raise ValueError(f"Error while loading bin {idx + 1} of {len(self.ctc)}. Error code: {output}")
             elif debug:
-                logger.info("Thermoino response to 'LOADCTC' (.load_ctc), bin %s of %s: %s.", idx + 1, len(self.ctc), output)
+                logger.debug("Thermoino response to 'LOADCTC' (.load_ctc), bin %s of %s: %s.", idx + 1, len(self.ctc), output)
 
         logger.info("Thermoino received the whole CTC.")
         return self
@@ -573,7 +573,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         exec_duration = self.temp_course_duration
         output = self._send_command('EXECCTC\n')
         if output in OkCodes.__members__:
-            logger.info("Thermoino response to 'EXECCTC' (.exec_ctc): %s.", output)
+            logger.debug("Thermoino response to 'EXECCTC' (.exec_ctc): %s.", output)
             logger.info("Thermoino will execute the CTC with a duration of %s s.", self.temp_course_duration)
             self.temp = round(self.temp_course_resampled[-1],2)
             logger.info("Thermoino will set the temperature to %s °C after the CTC ends.", self.temp)

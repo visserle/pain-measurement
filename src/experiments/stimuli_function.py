@@ -1,19 +1,20 @@
 # work in progress
 
 # TODO
-# define optimal number of big decreases and small decreases
-# maybe add min temp to qualify as a big decrease
 # update doc strings
 # change criteria in add plateaus to absolute values based on the temperature range
 # maybe refactor into two classes with wave & sitmuli function
 
-"""Stimuli generation for the thermal pain experiment, plus a extra function for plotting and labeling."""
+"""Stimuli generation for the thermal pain experiment"""
 
+import logging
 import math
 import random
 import numpy as np
 import pandas as pd
 import scipy.signal
+
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 class StimuliFunction():
@@ -202,6 +203,9 @@ class StimuliFunction():
         self._duration = self.duration
         self._wave_dot = self.wave_dot
         self.baseline_temp = 0
+        logger.debug(f"Succesfully created stimuli function with seed {self.seed} and duration {self.duration}.")
+        if big_decreases:
+            logger.debug(f"Number of big decreases: {self.number_of_big_decreases}, average length: {self.avg_length_of_big_decreases}.")
 
 
     def _create_wave(self):
@@ -213,9 +217,8 @@ class StimuliFunction():
             self.wave = self.baseline + self.modulation
             self._loc_maxima = self.loc_maxima
             self._loc_minima = self.loc_minima
-            if self.check_decreases_flag: # check if the number and length of big decreases is as specified
-                if self._check_big_decreases():
-                    break
+            # Check if the number and length of big decreases is as specified
+            if self.check_decreases_flag:
                 counter += 1
                 if counter > 1000:
                     raise ValueError(
@@ -223,6 +226,8 @@ class StimuliFunction():
                         "Take a look at the unmodified wave (without add_ methods, etc.) to get a feeling on what's possible.\n"
                         "Remember that we want to modify the wave without changing its duration so we can't just search for any number of big decreases or any average length.\n"
                     )
+                if self._check_big_decreases():
+                    break
             else:
                 break
 
@@ -301,7 +306,7 @@ class StimuliFunction():
 
     def _calculate_minimal_duration(self):
         """Calculates the true minimal duration ensuring it's a multiple of the period of the modulation
-        and the vanilla wave always ends with a local minimum. FIXME?
+        and the vanilla wave always ends with a local minimum. FIXME TODO
 
         Note: The "true" minimal duration is a multiple of the period of the modulation where the wave always ends with a ramp on (odd number)."""
         modulation_period = self.periods[1]
@@ -351,6 +356,14 @@ class StimuliFunction():
         # Round all values to 3 decimals
         self._wave = np.round(self._wave, 3)
 
+    def add_baseline_temp(self, baseline_temp):
+        """
+        Adds a baseline temperature to the wave. It should be around VAS = 35 from the calibration data.
+        """
+        self.baseline_temp = baseline_temp
+        self.wave += self.baseline_temp
+        return self
+
     def _check_big_decreases(self):
         """
         Identifies the locations of big and small decreases in temperature 
@@ -370,7 +383,7 @@ class StimuliFunction():
         lengths = self.loc_minima[idx_big_decreases] - self.loc_maxima[idx_big_decreases]
         mean_length = np.mean(lengths)
         mean_length //= self.sample_rate if len(lengths) > 0 else 0
-        # TODO: there's a more accurate way of rounding here
+        # TODO: there might be a more accurate way of rounding here
         # if we take the number of big decreases an their decimals into account
         # we could than floor or ceil the mean length to get the desired length
         # also keep in mind that we do padding in the setter to get to a full second
@@ -385,15 +398,56 @@ class StimuliFunction():
         self.idx_decreases["small"] = np.where((loc_extrema_temps_diff > self.temp_criteria) == 0)[0]
         self.idx_decreases["big"] = idx_big_decreases
         self.loc_extrema_temps_diff = loc_extrema_temps_diff
-
         return True
-
-    def add_baseline_temp(self, baseline_temp):
+    
+    def generalize_big_decreases(self, length=None):
         """
-        Adds a baseline temperature to the wave. It should be around VAS = 35.
+        Modifies the wave to generalize the sections of big decreases (found via _check_number_of_decreases) by 
+        replacing them with cosine wave segments. 
+    
+        Parameters
+        ----------
+        length : int or None
+            Length in seconds for each cosine wave segment. If None, the mean length of big decreases
+            is used which does not change the duration of the wave and is therefore the default.
         """
-        self.baseline_temp = baseline_temp
-        self.wave += self.baseline_temp
+        if self.check_decreases_flag is False:
+            raise ValueError("Please specify the number and length of big decreases in the constructor.")
+        
+        idx_big_decreases = self.idx_decreases["big"]
+        temp_diffs = self.loc_extrema_temps_diff
+    
+        if length is None:
+            # Calculate the mean duration of big decreases
+            lengths = self.loc_minima[idx_big_decreases] - self.loc_maxima[idx_big_decreases]
+            mean_length = int(np.mean(lengths))
+        else:
+            mean_length = length * self.sample_rate
+            logger.warning(f"Using a fixed length of {length} seconds for the cosine wave segments can change the duration of the wave.")
+    
+        self.avg_length_of_big_decreases = mean_length / self.sample_rate
+    
+        # Create the modified wave
+        wave_new = []
+        idx_original = 0
+    
+        for j in idx_big_decreases:
+            idx_start = self.loc_maxima[j]
+            idx_end = self.loc_minima[j]
+            # Append the original wave values before the segment to replace
+            wave_new.extend(self.wave[idx_original:idx_start])
+            # Generate the cosine wave segment
+            x = np.linspace(0, np.pi, mean_length)
+            y = np.cos(x) * temp_diffs[j]/2 + self.wave[idx_start] - temp_diffs[j]/2
+            # Insert the new wave segment
+            wave_new.extend(y)
+            # Update the starting index for the next iteration
+            idx_original = idx_end
+    
+        # Append the remaining original wave values after the last segment
+        wave_new.extend(self.wave[idx_original:])
+        self.wave = np.array(wave_new)
+        logger.debug(f"Generalized big decreases to have a length of {mean_length/self.sample_rate} seconds.")
         return self
     
     def add_prolonged_extrema(self, time_to_be_added, percentage_of_extrema, prolong_type='loc_minima'):
@@ -461,54 +515,6 @@ class StimuliFunction():
             wave_new.append(i)
             if idx in idx_plateaus:
                 wave_new.extend(_generate_plateau(i))
-        self.wave = np.array(wave_new)
-        return self
-
-    def generalize_big_decreases(self, length=None):
-        """
-        Modifies the wave to generalize the sections of big decreases (found via _check_number_of_decreases) by 
-        replacing them with cosine wave segments. 
-
-        Parameters
-        ----------
-        length : int or None
-            Length in seconds for each cosine wave segment. If None, the mean length of big decreases
-            is used which does not change the duration of the wave and is therefore the default.
-        """
-        if self.check_decreases_flag is False:
-            raise ValueError("Please specify the number and length of big decreases in the constructor.")
-        
-        idx_big_decreases = self.idx_decreases["big"]
-        temp_diffs = self.loc_extrema_temps_diff
-
-        if length is None:
-            # Calculate the mean duration of big decreases
-            lengths = self.loc_minima[idx_big_decreases] - self.loc_maxima[idx_big_decreases]
-            mean_length = int(np.mean(lengths))
-        else:
-            mean_length = length * self.sample_rate
-
-        self.avg_length_of_big_decreases = mean_length / self.sample_rate
-
-        # Create the modified wave
-        wave_new = []
-        idx_original = 0
-
-        for j in idx_big_decreases:
-            idx_start = self.loc_maxima[j]
-            idx_end = self.loc_minima[j]
-            # Append the original wave values before the segment to replace
-            wave_new.extend(self.wave[idx_original:idx_start])
-            # Generate the cosine wave segment
-            x = np.linspace(0, np.pi, mean_length)
-            y = np.cos(x) * temp_diffs[j]/2 + self.wave[idx_start] - temp_diffs[j]/2
-            # Insert the new wave segment
-            wave_new.extend(y)
-            # Update the starting index for the next iteration
-            idx_original = idx_end
-
-        # Append the remaining original wave values after the last segment
-        wave_new.extend(self.wave[idx_original:])
         self.wave = np.array(wave_new)
         return self
 

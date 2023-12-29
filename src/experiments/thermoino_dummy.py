@@ -28,7 +28,7 @@ class Thermoino:
 
     def close(self):
         self.connected = False
-        logger.info("Thermoino (dummy) closed")
+        logger.debug("Thermoino (dummy) closed")
 
     def _send_command(self, *args):
         return None
@@ -76,7 +76,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
 
     def load_ctc(self, debug=False):
         # Simulate loading CTC into the device
-        logger.info("Thermoino (dummy) received the whole CTC.")
+        logger.debug("Thermoino (dummy) received the whole CTC.")
         return self._send_command('LOADCTC\n', debug)
 
     def query_ctc(self, queryLvl, statAbort):
@@ -84,7 +84,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     
     def prep_ctc(self):
         prep_duration = 1
-        logger.info("Thermoino (dummy) is ready to execute the CTC.")
+        logger.debug("Thermoino (dummy) is ready to execute the CTC.")
         return (self, prep_duration)
  
     def exec_ctc(self):
