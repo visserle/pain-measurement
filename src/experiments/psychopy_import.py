@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 def psychopy_import(package_name: str):
     """
-    Helper function to import/install a package in a PsychoPy environment (e.g. PsychoPy Builder).
+    Helper function to import/install a package from the psychopy builder with the default psychopy environment.
 
     If the specified package is not found in the psychopy env, the script attempts to install it using pip.
 

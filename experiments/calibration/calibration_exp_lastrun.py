@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on Dezember 18, 2023, at 13:29
+    on Wed Dec 20 16:39:20 2023
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -60,7 +60,7 @@ with open(config_path, 'r') as file:
 # Logger
 from src.experiments.psychopy_utils import log_file_path
 from src.experiments.log_config import configure_logging, close_root_logging
-configure_logging(file_path=log_file_path())
+configure_logging(file_path=log_file_path(_thisDir), ignore_libs=["PIL"])
 
 # Psychopy
 from src.experiments.psychopy_utils import rgb255_to_rgb_psychopy
@@ -92,8 +92,6 @@ trials_vas0 = config['estimator']['trials_vas0'] # is the same as nReps in psych
 temp_start_vas0 = config['estimator']['temp_start_vas0'] #  will be set after VAS 0 estimate
 temp_start_vas0_minus = config['estimator']['temp_start_vas0_minus']  # VAS 0 estimate plus int
 temp_std_vas0 = config['estimator']['temp_std_vas0']
-
-
 
 # Run 'Before Experiment' code from estimator_vas70
 from src.experiments.calibration import BayesianEstimatorVAS
@@ -169,7 +167,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='C:\\drive\\PhD\\Code\\mpad-pilot\\experiments\\calibration\\calibration_exp_lastrun.py',
+        originPath='/Users/visser/drive/PhD/Code/mpad-pilot/experiments/calibration/calibration_exp_lastrun.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -486,7 +484,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas70_2" ---
     text_info_vas70_2 = visual.TextStim(win=win, name='text_info_vas70_2',
-        text='Dabei orientieren wir uns an einer Schmerz-Skala von 1 bis 10:\n\n\n\n\n\n\n\n\nUnser Ziel ist es, herauszufinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.\n\n(Leertaste drücken, um fortzufahren)',
+        text='Dazu orientieren wir uns an einer Schmerz-Skala von 1 bis 10:\n\n\n\n\n\n\n\n\nUnser Ziel ist es, herauszufinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -504,7 +502,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas_70_3" ---
     text_info_vas70_3 = visual.TextStim(win=win, name='text_info_vas70_3',
-        text='Aufgrund der Capsaicin-Creme ist Ihre Schmerzschwelle nach unten verlagert. Dadruch verspüren Sie schneller starken Schmerz.\n\nAber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Aufgrund der Capsaicin-Creme ist Ihre Schmerzschwelle nach unten verlagert. Dadurch verspüren Sie schneller starken Schmerz.\n\nAber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -549,7 +547,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas0_transition" ---
     text_info_vas0 = visual.TextStim(win=win, name='text_info_vas0',
-        text='Wunderbar!\n\n\nAls Nächstes möchten wir bestimmen, wo Ihre Schmerzwelle liegt - also ab wann Sie erste Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Wunderbar!\n\n\nAls Nächstes möchten wir bestimmen, wo Ihre Schmerzschwelle liegt - also ab wann Sie erste Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -594,7 +592,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "bye" ---
     text_bye = visual.TextStim(win=win, name='text_bye',
-        text='Vielen Dank!\n\nAls Nächstes geht es mit dem Hauptexperiment weiter.\nMelden Sie sich bitte bei der Versuchsleitung.\n\n\n(Leertaste drücken, um Kalibrierung zu beenden)',
+        text='Vielen Dank!\n\nAls Nächstes geht es mit dem Hauptexperiment weiter.\nBitte melden Sie sich bei der Versuchsleitung.\n\n\n(Leertaste drücken, um Kalibrierung zu beenden)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 

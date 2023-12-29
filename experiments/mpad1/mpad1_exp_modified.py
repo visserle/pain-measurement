@@ -1627,7 +1627,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     routineTimer.reset()
     
     # set up handler to look after randomisation of conditions etc
-    loop_trials = data.TrialHandler(nReps=n_trials, method='random', 
+    loop_trials = data.TrialHandler(nReps=n_trials, method='random',
         extraInfo=expInfo, originPath=-1,
         trialList=[None],
         seed=None, name='loop_trials')
@@ -1639,7 +1639,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
             globals()[paramName] = thisLoop_trial[paramName]
     
     for thisLoop_trial in loop_trials:
-        logging.info('Starting trial number {}'.format(loop_trials.thisN + 1)) # TODO: add seed to log
+        logging.info(f"Psychopy starts trial ({loop_trials.thisN + 1}/{n_trials} with seed {seeds[loop_trials.thisN]}") # TODO: might needs a change once the trials randomization is implemented
         currentLoop = loop_trials
         thisExp.timestampOnFlip(win, 'thisRow.t')
         # pause experiment here if requested
@@ -2178,7 +2178,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     imotions_event.end_study()
     imotions_event.close()
     # Run 'End Experiment' code from trial_end
-    close_root_logging
+    close_root_logging()
     
     # mark experiment as finished
     endExperiment(thisExp, win=win, inputs=inputs)
