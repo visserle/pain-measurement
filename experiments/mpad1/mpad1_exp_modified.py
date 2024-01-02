@@ -105,7 +105,7 @@ minimal_desired_duration = config['stimuli']['minimal_desired_duration'] # in se
 periods = config['stimuli']['periods'] # [0] is the baseline and [1] the modulation; in seconds
 frequencies = 1./np.array(periods)
 sample_rate = config['stimuli']['sample_rate']
-big_decreases = config['stimuli']['big_decreases']
+desired_big_decreases = config['stimuli']['desired_big_decreases']
 random_periods = config['stimuli']['random_periods']
 plateau_duration = config['stimuli']['plateau_duration']
 n_plateaus = config['stimuli']['n_plateaus']
@@ -539,7 +539,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     """ Connect with event recieving API """
     imotions_event = EventRecievingiMotions()
     imotions_event.connect()
-    imotions_event.start_study
+    imotions_event.start_study()
     
     # create a clock
     stimuli_clock = core.Clock()
@@ -1639,7 +1639,11 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
             globals()[paramName] = thisLoop_trial[paramName]
     
     for thisLoop_trial in loop_trials:
-        logging.info(f"Psychopy starts trial ({loop_trials.thisN + 1}/{n_trials} with seed {seeds[loop_trials.thisN]}") # TODO: might needs a change once the trials randomization is implemented
+        
+        seed = seeds[loop_trials.thisN]
+        # TODO: might needs a change once the trials randomization is implemented
+        logging.info(f"Psychopy starts trial ({loop_trials.thisN + 1}/{n_trials} with seed {seed}") 
+        
         currentLoop = loop_trials
         thisExp.timestampOnFlip(win, 'thisRow.t')
         # pause experiment here if requested
@@ -1668,9 +1672,9 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
             frequencies=frequencies,
             temp_range=temp_range,
             sample_rate=sample_rate,
-            big_decreases=big_decreases,
+            desired_big_decreases=desired_big_decreases,
             random_periods=random_periods,
-            seed=seeds[trial]
+            seed=seed
         ).add_baseline_temp(
             baseline_temp=baseline_temp
         ).add_plateaus(
@@ -1802,8 +1806,8 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         luigi.exec_ctc()
         # Run 'Begin Routine' code from imotions_event
         """ Send discrete marker for stimuli beginning """
-        # TODO: add imotions marker for stimuli start and end
-        imotions_event.send_marker("stimuli", "Stimuli begins")
+        imotions_event.send_stimulus_markers(seed)
+        
         # Start the clock
         stimuli_clock.reset()
         # Run 'Begin Routine' code from mouse
@@ -1908,7 +1912,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         thisExp.addData('trial_vas_continuous.stopped', globalClock.getTime())
         # Run 'End Routine' code from imotions_event
         """ Send discrete marker for stimuli ending """
-        imotions_event.send_marker("stimuli", "Stimuli ends")
+        imotions_event.send_stimulus_markers(seed)
         
         # Run 'End Routine' code from mouse
         mouse_action.release()

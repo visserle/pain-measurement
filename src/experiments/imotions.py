@@ -7,12 +7,13 @@
 # - find out if age and gender are considered in the analysis in imotions
 # - set to NoPrompt for data acquisition
 # -> find out how errors are logged for that
-
+# - update doc strings
 
 import socket
 import logging
 import time
 from datetime import datetime
+import itertools
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -204,22 +205,26 @@ class EventRecievingiMotions():
     imotions_events = EventRecievingiMotions()
     imotions_events.connect()
     imotions_events.start_study()
-    # ... capture events ...
-    imotions_events.end_study()
+    send_stimulus_markers(seed=9) # sends a start stimulus marker for seed 9
+    send_stimulus_markers(seed=9) # can be called again to send an end stimulus marker for seed 9
     imotions_events.close()
     ```
     """
     
     HOST = "localhost"
     PORT = 8089 # default port for iMotions event recieving
+    seed_cycles = {} # class variable to keep track of seed cycles (start and end stimulus markers)
+    
     
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._time_stamp = self.time_stamp # use self.time_stamp to get the current time stamp
+        
 
 
     @property
     def time_stamp(self):
+        # Use self.time_stamp[11:] to get the time stamp without the date.
         self._time_stamp = datetime.utcnow().isoformat(sep=' ', timespec='milliseconds')
         return self._time_stamp
 
@@ -233,6 +238,26 @@ class EventRecievingiMotions():
 
     def _send_message(self, message):
         self.sock.sendall(message.encode('utf-8'))
+        
+    def send_marker(self, marker_name, value):
+        imotions_marker = f"M;2;;;{marker_name};{value};D;\r\n"
+        self._send_message(imotions_marker)
+        logger.info("iMotions received the marker %s: %s.", marker_name, value)
+             
+    def send_stimulus_markers(self, seed):
+        """
+        Alternates between generating 'start of seed' and 'end of seed' stimulus markers for each unique seed value.
+
+        This function creates and maintains a separate cycling state for each seed, ensuring that each call for a 
+        particular seed alternates between 'start' and 'end' markers. A new cycle is initialized for each new seed.
+
+        """
+        if seed not in self.seed_cycles: # only create a new cycle if it doesn't exist yet
+            self.seed_cycles[seed] = itertools.cycle([
+                f"M;2;;;stimulus;start of seed: {seed};S;\r\n",
+                f"M;2;;;stimulus;end of seed {seed};E;\r\n"])
+        self._send_message(next(self.seed_cycles[seed]))
+        logger.info("iMotions received the marker for seed %s.", seed)
 
     def start_study(self):
         start_study_marker = f"M;2;;;marker_start_study;{self.time_stamp};D;\r\n"
@@ -243,16 +268,6 @@ class EventRecievingiMotions():
         end_study_marker = f"M;2;;;marker_end_study;{self.time_stamp};D;\r\n"
         self._send_message(end_study_marker)
         logger.info("iMotions received the marker for study end @ %s.", self.time_stamp[11:])
-
-    def send_marker(self, marker_name, value):
-        imotions_marker = f"M;2;;;{marker_name};{value};D;\r\n"
-        self._send_message(imotions_marker)
-        logger.info("iMotions received the marker %s: %s.", marker_name, value)
-
-    def send_marker_with_time_stamp(self, marker_name):
-        imotions_marker = f"M;2;;;{marker_name};{self.time_stamp};D;\r\n"
-        self._send_message(imotions_marker)
-        logger.info("iMotions received the marker %s at %s.", marker_name, self.time_stamp[11:])
 
     def send_temperatures(self, temperature):
         """

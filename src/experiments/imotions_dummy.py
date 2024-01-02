@@ -1,4 +1,5 @@
 import logging
+import itertools
 from datetime import datetime
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
@@ -56,7 +57,8 @@ class EventRecievingiMotions:
     A dummy version of the EventRecievingiMotions class for testing and debugging.
     This class mimics the behavior of the EventRecievingiMotions without requiring an actual connection to iMotions.
     """
-
+    seed_cycles = {}
+    
     def __init__(self):
         self.connected = False
         logger.warning("+++ iMotions Event Receiver running in dummy mode +++")
@@ -87,6 +89,21 @@ class EventRecievingiMotions:
     def send_marker_with_time_stamp(self, marker_name):
         if self.connected:
             logger.info("iMotions (dummy) received the marker %s at %s", marker_name, self.time_stamp)
+            
+    def send_stimulus_markers(self, seed):
+        """
+        Alternates between generating 'start of seed' and 'end of seed' stimulus markers for each unique seed value.
+
+        This function creates and maintains a separate cycling state for each seed, ensuring that each call for a 
+        particular seed alternates between 'start' and 'end' markers. A new cycle is initialized for each new seed.
+
+        """
+        if seed not in self.seed_cycles:
+            self.seed_cycles[seed] = itertools.cycle([
+                f"M;2;;;stimulus;start of seed: {seed};S;\r\n",
+                f"M;2;;;stimulus;end of seed {seed};E;\r\n"])
+        string = next(self.seed_cycles[seed])
+        logger.info("iMotions (dummy) received the marker %s", string)
 
     def send_temperatures(self, temperature):
         if self.connected:
