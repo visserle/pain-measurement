@@ -26,7 +26,7 @@
         "minimal_desired_duration": 200,
         "periods": [67, 20],
         "sample_rate": 60,
-        "big_decreases": [3, 20],
+        "desired_big_decreases": [3, 20],
         "random_periods": true,
         "plateau_duration": 20,
         "n_plateaus": 3

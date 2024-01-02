@@ -86,7 +86,7 @@ class StimuliFunction():
     frequencies = 1./np.array(periods)
     temp_range = 3 # VAS 70 - VAS 0
     sample_rate = 60
-    big_decreases = [3,20] # [0] is the number of decreases and [1] the average length in s these decreases
+    desired_big_decreases = [3,20] # [0] is the number of decreases and [1] the average length in s these decreases
     random_periods = True
     baseline_temp = 40 # @ VAS 35
 
@@ -98,7 +98,7 @@ class StimuliFunction():
         frequencies=frequencies,
         temp_range=temp_range,
         sample_rate=sample_rate,
-        big_decreases=big_decreases,
+        desired_big_decreases=desired_big_decreases,
         random_periods=random_periods,
         seed=seed
     ).add_baseline_temp(
@@ -142,7 +142,7 @@ class StimuliFunction():
             frequencies,
             temp_range,
             sample_rate,
-            big_decreases=None,
+            desired_big_decreases=None,
             random_periods=True,
             seed=None):
         """
@@ -160,7 +160,7 @@ class StimuliFunction():
             The sample rate of the wave.
         random_periods : bool, optional
             If True, the periods of the modulation are randomized (default is True).
-        big_decreases : list, optional
+        desired_big_decreases : list, optional
             Checks the number [0] and average length [1] of big decreases in temperature (default is None).
             Use `None` in the list to ignore either the number or average length of big decreases.
         seed : int, optional
@@ -192,10 +192,10 @@ class StimuliFunction():
 
         # Further modifications to the stimuli function
         self.random_periods = random_periods
-        self.check_decreases_flag = bool(big_decreases)
+        self.check_decreases_flag = bool(desired_big_decreases)
         if self.check_decreases_flag:
-            self.number_of_big_decreases = big_decreases[0]
-            self.avg_length_of_big_decreases = big_decreases[1]
+            self.number_of_big_decreases = desired_big_decreases[0]
+            self.avg_length_of_big_decreases = desired_big_decreases[1]
 
         # Create wave
         self._create_wave()
@@ -204,7 +204,7 @@ class StimuliFunction():
         self._wave_dot = self.wave_dot
         self.baseline_temp = 0
         logger.debug(f"Succesfully created stimuli function with seed {self.seed} and duration {self.duration}.")
-        if big_decreases:
+        if desired_big_decreases:
             logger.debug(f"Number of big decreases: {self.number_of_big_decreases}, average length: {self.avg_length_of_big_decreases}.")
 
 
