@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on Wed Jan  3 16:46:35 2024
+    on Wed Jan  3 18:28:15 2024
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -58,9 +58,9 @@ with open(config_path, 'r') as file:
     config = json.load(file)
 
 # Logger
-from src.psychopy.psychopy_utils import psychopy_log_file_path
+from src.psychopy.psychopy_utils import runs_psychopy_path
 from src.psychopy.log_config import configure_logging, close_root_logging
-configure_logging(file_path=psychopy_log_file_path(_thisDir), ignore_libs=["PIL"])
+configure_logging(file_path=runs_psychopy_path(_thisDir, "logs"), ignore_libs=["PIL"])
 
 # Psychopy
 from src.psychopy.psychopy_utils import rgb255_to_rgb_psychopy
@@ -157,7 +157,7 @@ def setupData(expInfo, dataDir=None):
     # data file name stem = absolute path + name; later add .psyexp, .csv, .log, etc
     if dataDir is None:
         dataDir = _thisDir
-    filename = u'data/%s_%s_%s' % (expInfo['participant'], expName, expInfo['date'])
+    filename = u'%s/data/%s_%s_%s' % (runs_psychopy_path(_thisDir,"data"), expInfo['participant'], expName, expInfo['date'])
     # make sure filename is relative to dataDir
     if os.path.isabs(filename):
         dataDir = os.path.commonprefix([dataDir, filename])

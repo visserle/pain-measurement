@@ -35,7 +35,7 @@ import platform
 import psychopy.iohub as io
 from psychopy.hardware import keyboard
 
-from src.psychopy.psychopy_utils import ask_for_confirmation, rgb255_to_rgb_psychopy, psychopy_log_file_path
+from src.psychopy.psychopy_utils import ask_for_confirmation, rgb255_to_rgb_psychopy, runs_psychopy_path
 
 import json
 
@@ -48,7 +48,7 @@ from src.psychopy.log_config import configure_logging, close_root_logging
 # Ensure that relative paths start from the same directory as this script
 _thisDir = os.path.dirname(os.path.abspath(__file__))
 
-configure_logging(file_path=psychopy_log_file_path(_thisDir), ignore_libs=['PIL'])
+configure_logging(file_path=runs_psychopy_path(_thisDir, "logs"), ignore_libs=['PIL'])
 
 config_path = os.path.join(_thisDir, 'config.json')
 with open(config_path, 'r') as file:
@@ -2271,7 +2271,7 @@ def main():
     global logFile
 
     # expInfo = showExpInfoDlg(expInfo=expInfo) # we do not ask for subject info -> its all in the config file
-    thisExp = setupData(expInfo=expInfo)
+    thisExp = setupData(expInfo=expInfo,dataDir=str(runs_psychopy_path(_thisDir, "data")))
 
     logFile = setupLogging(filename=thisExp.dataFileName)
     run(

@@ -12,26 +12,26 @@ from pathlib import Path
 import logging
 import pandas as pd
 
-from src.experiments.psychopy_import import psychopy_import
+from src.psychopy.psychopy_import import psychopy_import
 psychopy_import("openpyxl") # for pandas to_excel function
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 # Set the path to the Excel file
-exp_dirs = "calibration", "mpad1", "mpad2"
+exp_dirs = "calibration", "measurement", "placebo"
 X_DIR = Path.cwd()
 if X_DIR.stem in exp_dirs: # when running from psychopy runner
-    FILE_DIR = X_DIR.parent / 'participants.xlsx'
+    FILE_PATH = X_DIR.parent.parent.parent / "runs" / "psychopy" / "participants.xlsx"
 else: # when running from project root
-    EXP_DIR = X_DIR / 'experiments'
-    FILE_DIR = EXP_DIR / 'participants.xlsx'
-
+    FILE_PATH = X_DIR / "runs" / "psychopy" / 'participants.xlsx'
+    # FIXME: does this really work?!
+    """"""""""""""""""""
 
 def init_excel_file():
     headers = ['time_stamp', 'participant', 'age', 'gender', 'vas0', 'vas70', 'baseline_temp', 'temp_range']
-    if not FILE_DIR.exists():
+    if not FILE_PATH.exists():
         df = pd.DataFrame(columns=headers)
-        df.to_excel(FILE_DIR, index=False)
+        df.to_excel(FILE_PATH, index=False)
 
 def add_participant(participant, age, gender, vas0, vas70):
     """
@@ -61,7 +61,7 @@ def add_participant(participant, age, gender, vas0, vas70):
         'baseline_temp': round((vas0 + vas70) / 2, 1),
         'temp_range': round(vas70 - vas0, 1)
     }])
-    df = pd.read_excel(FILE_DIR)
+    df = pd.read_excel(FILE_PATH)
     if df.empty or df.isna().all().all():
         df = new_data
     else:
@@ -71,8 +71,8 @@ def add_participant(participant, age, gender, vas0, vas70):
             logger.critical(f"Participant {participant} already exists as the last entry.")
         df = pd.concat([df, new_data], ignore_index=True)
     
-    df.to_excel(FILE_DIR, index=False)
-    logger.info(f"Added participant {participant} to {FILE_DIR}")
+    df.to_excel(FILE_PATH, index=False)
+    logger.info(f"Added participant {participant} to {FILE_PATH}")
 
 def read_last_participant():
     """
@@ -85,7 +85,7 @@ def read_last_participant():
     participant_info = read_last_participant()
     ```
     """
-    df = pd.read_excel(FILE_DIR)
+    df = pd.read_excel(FILE_PATH)
     last_row = df.iloc[-1]
 
     participant_info = {

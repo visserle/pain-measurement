@@ -8,26 +8,41 @@ import logging
 import platform
 
 import tkinter as tk
-from tkinter import messagebox
 
-from src.experiments.psychopy_import import psychopy_import
-screeninfo = psychopy_import("screeninfo")
+from src.psychopy.psychopy_import import psychopy_import
+
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-def log_file_path(exp_dir):
-    """Returns a Path object for a log file in the log directory with a timestamped filename for the psychopy experiment."""
+def runs_psychopy_path(exp_dir, sub_dir):
+    """
+    Returns a Path object for a log file in the log directory with a timestamped filename for the psychopy experiment.
+    This is hacky code. It assumes that the experiment is located in the root/src.psychopy directory while the log directory
+    is located in root/runs/psychopy. It also assumes that the experiment directory is named the same as the experiment.
+
+    """
     exp_dir = Path(exp_dir)
-    file_dir = Path('log')
-    file_dir.mkdir(parents=True, exist_ok=True)
-    file_name = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
-    file_path = exp_dir / file_dir / file_name
-    return file_path
+    exp_name = exp_dir.name
+    work_dir = exp_dir.parent.parent.parent
+    # Make sure we are in root directory
+    assert work_dir.name == "pain-measurement" or work_dir.name == "pain-placebo"
+    exp_dir = work_dir / "runs" / "psychopy" / exp_name
+    if sub_dir == "logs":
+        logs_dir = exp_dir / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        log_name = datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".log"
+        log_path = logs_dir / log_name
+        return log_path
+    elif sub_dir == "data":
+        return exp_dir # psychopy takes care of the rest
+    else:
+        raise ValueError(f"Invalid sub_dir {sub_dir} provided. Must be either 'logs' (custom loggings) or 'data' (psychopy loggings).")
 
 
 def ask_for_confirmation(second_monitor=False):
     """Confirmation dialog window to check if everything is ready to start the experiment."""
+    screeninfo = psychopy_import("screeninfo")
     root = tk.Tk()
     root.withdraw()
     # Get screen dimensions and set the root window to specified monitor
@@ -44,7 +59,7 @@ def ask_for_confirmation(second_monitor=False):
     root.lift()
     if platform.system() == "Windows":
         root.attributes('-topmost', True)
-    response = messagebox.askyesno(
+    response = tk.messagebox.askyesno(
         title = "Alles startklar?",
         message = """
         - MMS Programm umgestellt?\n
