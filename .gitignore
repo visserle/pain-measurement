@@ -2,14 +2,7 @@
 
 # excluded for now
 /runs
-/experiments/mpad1/data
-/experiments/mpad1/log
-/experiments/mpad2/data
-/experiments/mpad2/log
-/experiments/calibration/data
-/experiments/calibration/log
 notebooks/_stuff.ipynb
-experiments/README.md
 
 
 # remove once logging is correctly defined
@@ -110,9 +103,3 @@ target/
 references/experiments/devices.md
 references/experiments/SOP.md
 notebooks/10_skorch_doctor.ipynb
-experiments/mpad2/README.md
-experiments/mpad1/old_mpad1_exp.psyexp
-experiments/README.md
-experiments/participants.xlsx
-experiments/+++ DO NOT IMPROVE CODE +++
-experiments/participants.xlsx

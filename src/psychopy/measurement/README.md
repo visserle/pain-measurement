@@ -8,3 +8,6 @@ Before we start this experiment, we have to make sure that in the protocol of Me
 | `stimuli.duration`   | Dauer (s)          |
 
 These values are critical.
+
+
+Note: These are minimal modifications to the auto-generated experiment from the psychopy builder, so there might be a better way to do this.

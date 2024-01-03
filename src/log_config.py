@@ -1,5 +1,3 @@
-# work in proqress
-
 import logging
 
 
@@ -58,7 +56,7 @@ def close_root_logging():
     """
     Safely closes and removes all handlers associated with the root logger.
 
-    This function should be called when you no longer need logging or before re-configuring
+    This function can be called when you no longer need logging or before re-configuring
     logging. It is particularly useful for ensuring that FileHandlers release
     their file resources.
 

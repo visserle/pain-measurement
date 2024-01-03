@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 def runs_psychopy_path(exp_dir, sub_dir):
     """
     Returns a Path object for a log file in the log directory with a timestamped filename for the psychopy experiment.
+    
     This is hacky code. It assumes that the experiment is located in the root/src.psychopy directory while the log directory
     is located in root/runs/psychopy. It also assumes that the experiment directory is named the same as the experiment.
-
     """
     exp_dir = Path(exp_dir)
     exp_name = exp_dir.name

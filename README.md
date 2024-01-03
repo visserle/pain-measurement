@@ -38,8 +38,6 @@ Project Organization (not up-to-date)
     │   │   ├── make_dataset.py
     │   │   └── make_dataset_dummy.py
     │   │
-    │   ├── experiments    <- Scripts to use in the psychopy experiments.
-    │   │
     │   ├── features       <- Scripts to turn raw data into features for modeling
     │   │   ├── build_features.py
     │   │   ├── reshape_features_to_2d.py

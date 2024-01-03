@@ -4,7 +4,7 @@ setup(
     name='src',
     packages=find_packages(),
     version='0.1.0',
-    description='Mobile Pain Assessment Device',
+    description='Objective Measurement of Fluctuating Pain',
     author='L VISSER',
     license='MIT',
 )

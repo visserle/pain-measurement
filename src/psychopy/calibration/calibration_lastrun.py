@@ -58,8 +58,8 @@ with open(config_path, 'r') as file:
     config = json.load(file)
 
 # Logger
+from src.log_config import configure_logging, close_root_logging
 from src.psychopy.psychopy_utils import runs_psychopy_path
-from src.psychopy.log_config import configure_logging, close_root_logging
 configure_logging(file_path=runs_psychopy_path(_thisDir, "logs"), ignore_libs=["PIL"])
 
 # Psychopy

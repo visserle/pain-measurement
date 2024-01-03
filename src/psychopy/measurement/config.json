@@ -7,7 +7,7 @@
         "bin_size_ms": 500
     },
     "psychopy": {
-        "name": "mpad1_exp",
+        "name": "measurement",
         "psychopyVersion": "2023.2.1",
         "element_color": [128,64,192],
 		"marker_color": [192,64,128],

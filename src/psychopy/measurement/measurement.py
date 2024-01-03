@@ -41,7 +41,7 @@ import json
 
 # Logging
 import logging
-from src.psychopy.log_config import configure_logging, close_root_logging
+from src.log_config import configure_logging, close_root_logging
 
 
 # --- Setup global variables (available in all functions) ---
