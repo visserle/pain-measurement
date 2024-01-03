@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# mpad documentation build configuration file, created by
+# pain-measurement documentation build configuration file, created by
 # sphinx-quickstart.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -41,7 +41,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'mpad'
+project = u'pain-measurement'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -164,7 +164,7 @@ html_static_path = ['_static']
 # html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'mpaddoc'
+htmlhelp_basename = 'pain-measurementdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -184,8 +184,8 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
     ('index',
-     'mpad.tex',
-     u'mpad Documentation',
+     'pain-measurement.tex',
+     u'pain-measurement Documentation',
      u"L VISSER", 'manual'),
 ]
 
@@ -215,7 +215,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'mpad', u'mpad Documentation',
+    ('index', 'pain-measurement', u'pain-measurement Documentation',
      [u"L VISSER"], 1)
 ]
 
@@ -229,9 +229,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'mpad', u'mpad Documentation',
-     u"L VISSER", 'mpad',
-     'Mobile Pain Assessment Device', 'Miscellaneous'),
+    ('index', 'pain-measurement', u'pain-measurement Documentation',
+     u"L VISSER", 'pain-measurement',
+     'Objective Measurement of Fluctuating Pain', 'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
