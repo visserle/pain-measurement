@@ -1,8 +1,10 @@
 # work in progress
 
 """
-This script uses the 'mouse' library to manipulate the mouse state and position for Linux and Windows.
+This script uses the 'mouse' library to manipulate the mouse state and position for a Psychopy experiment running on Windows.
 
+Notes
+-----
 The 'mouse' library is written in pure Python library with no dependencies and provides functions to simulate mouse interactions.
 It works on both Windows and Linux. More details about the library can be found here: https://pypi.org/project/mouse/
 

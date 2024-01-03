@@ -107,3 +107,12 @@ target/
 
 # Mypy cache
 .mypy_cache/
+references/experiments/devices.md
+references/experiments/SOP.md
+notebooks/10_skorch_doctor.ipynb
+experiments/mpad2/README.md
+experiments/mpad1/old_mpad1_exp.psyexp
+experiments/README.md
+experiments/participants.xlsx
+experiments/+++ DO NOT IMPROVE CODE +++
+experiments/participants.xlsx

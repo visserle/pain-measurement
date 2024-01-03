@@ -4,5 +4,7 @@ Before we start this experiment, we have to make sure that in the protocol of Me
 | Psychopy script      | MMS                |
 |----------------------|--------------------|
 | `mms_baseline`       | Basislinie         |
-| `mms_rate_of_rise`   | Suchrate (°C/s)    |
+| `mms_rate_of_rise`   | Suchrate (Â°C/s)    |
 | `stimuli.duration`   | Dauer (s)          |
+
+These values are critical.

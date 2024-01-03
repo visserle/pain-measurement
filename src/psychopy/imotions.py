@@ -2,11 +2,7 @@
 
 # TODO
 # - add export data function, p. 34 onwards for experiment2
-# - Add option to connect that checks if imotions is avaiable or if you want to proceed without it by asking with input()
-#    -> could come in handy for psychopy testing, where you don't want to have imotions connected all the time
-# - find out if age and gender are considered in the analysis in imotions
-# - set to NoPrompt for data acquisition
-# -> find out how errors are logged for that
+# - set to NoPrompt for data acquisition: TODO: really? maybe figure out best way to handle this
 # - update doc strings
 
 import socket
@@ -16,6 +12,9 @@ from datetime import datetime
 import itertools
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
+
+class iMotionsError(Exception):
+    pass
 
 class RemoteControliMotions():
     """    
@@ -108,7 +107,7 @@ class RemoteControliMotions():
             logger.info("iMotions is ready for remote control.")
         except socket.error as exc:
             logger.error("iMotions is not ready for remote control. Error connecting to server:\n%s", exc)
-            raise Exception("iMotions is not ready for remote control. Error connecting to server:\n%s", exc) from exc
+            raise iMotionsError("iMotions is not ready for remote control. Error connecting to server:\n%s", exc) from exc
 
     def start_study(self, mode = "NormalPrompt"):
         """
@@ -124,7 +123,7 @@ class RemoteControliMotions():
         # sent status request to iMotions and proceed if iMotions is ready
         if self._check_status() != 0:
             logger.error("iMotions is not ready the start the study.")
-            raise Exception("iMotions is not ready the start the study.")
+            raise iMotionsError("iMotions is not ready the start the study.")
         start_study_query = f"R;3;;RUN;{self.study};{self.participant};Age={self.age} Gender={self.gender};{mode}\r\n"
         response = self._send_and_receive(start_study_query)
         # e.g. "13;RemoteControl;RUN;;-1;;1;"
@@ -132,7 +131,7 @@ class RemoteControliMotions():
         response_msg = response.split(";")[-1]
         if len(response_msg) > 0:
             logger.error("iMotions error: %s", response_msg)
-            raise Exception("iMotions error: %s", response_msg)
+            raise iMotionsError("iMotions error: %s", response_msg)
 
     def end_study(self):
         """
@@ -184,6 +183,7 @@ class EventRecievingiMotions():
     - start_study(self): Sends a marker indicating the start of a study.
     - end_study(self): Sends a marker indicating the end of a study.
     - send_marker(self, marker_name, value): Sends a specific marker with a given value to iMotions.
+    - send_stimulus_markers(self, seed): Sends a start and end stimulus marker for a given seed value of a stimulus function.
     - send_marker_with_time_stamp(self, marker_name): Sends a marker with the current timestamp.
     - send_temperatures(self, temperature): Sends the current temperature reading to iMotions.
     - send_ratings(self, rating): Sends a rating value to iMotions.
@@ -213,14 +213,11 @@ class EventRecievingiMotions():
     
     HOST = "localhost"
     PORT = 8089 # default port for iMotions event recieving
-    seed_cycles = {} # class variable to keep track of seed cycles (start and end stimulus markers)
-    
-    
+
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._time_stamp = self.time_stamp # use self.time_stamp to get the current time stamp
-        
-
+        self.seed_cycles = {} # class variable to keep track of seed cycles (start and end stimulus markers)
 
     @property
     def time_stamp(self):
@@ -234,7 +231,7 @@ class EventRecievingiMotions():
             logger.info("iMotions is ready for event recieving.")
         except socket.error as exc:
             logger.error("iMotions is not ready for event recieving. Error connecting to server:\n%s", exc)
-            raise Exception("iMotions is not ready for event recieving. Error connecting to server:\n%s", exc) from exc
+            raise iMotionsError(f"iMotions is not ready for event recieving. Error connecting to server:\n{exc}") from exc
 
     def _send_message(self, message):
         self.sock.sendall(message.encode('utf-8'))
@@ -250,14 +247,13 @@ class EventRecievingiMotions():
 
         This function creates and maintains a separate cycling state for each seed, ensuring that each call for a 
         particular seed alternates between 'start' and 'end' markers. A new cycle is initialized for each new seed.
-
         """
         if seed not in self.seed_cycles: # only create a new cycle if it doesn't exist yet
             self.seed_cycles[seed] = itertools.cycle([
                 f"M;2;;;stimulus;start of seed: {seed};S;\r\n",
                 f"M;2;;;stimulus;end of seed {seed};E;\r\n"])
         self._send_message(next(self.seed_cycles[seed]))
-        logger.info("iMotions received the marker for seed %s.", seed)
+        logger.info("iMotions received the marker for the stimulus with seed %s.", seed)
 
     def start_study(self):
         start_study_marker = f"M;2;;;marker_start_study;{self.time_stamp};D;\r\n"
@@ -269,21 +265,25 @@ class EventRecievingiMotions():
         self._send_message(end_study_marker)
         logger.info("iMotions received the marker for study end @ %s.", self.time_stamp[11:])
 
-    def send_temperatures(self, temperature):
+    def send_temperatures(self, temperature, debug=False):
         """
         For sending the current temperature to iMotions every frame.
         See imotions_temperature.xml for the xml structure.
         """
         imotions_event = f"E;1;TemperatureCurve;1;;;;TemperatureCurve;{temperature}\r\n"
         self._send_message(imotions_event)
+        if debug:
+            logger.debug("iMotions received the temperature %s.", temperature)
 
-    def send_ratings(self, rating):
+    def send_ratings(self, rating, debug=False):
         """
         See imotions_rating.xml for the xml structure.
         """
         imotions_event = f"E;1;RatingCurve;1;;;;RatingCurve;{rating}\r\n"
         self._send_message(imotions_event)
-        
+        if debug:
+            logger.debug("iMotions received the rating %s.", rating)
+
     def send_event_x_y(self, x, y):
         """
         Shows up as two seperate data streams in iMotions, based on a generic xml class. 
