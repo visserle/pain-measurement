@@ -3,7 +3,7 @@
 # TODO
 # remove regressor below
 """
-Pain Calibration. See calibration notebook for more details and visualizations.
+Pain (VAS) estimation. See calibration notebook for more details and visualizations.
 """
 
 import math

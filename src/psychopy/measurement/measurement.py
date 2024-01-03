@@ -35,20 +35,20 @@ import platform
 import psychopy.iohub as io
 from psychopy.hardware import keyboard
 
-from src.experiments.psychopy_utils import ask_for_confirmation, rgb255_to_rgb_psychopy, log_file_path
+from src.psychopy.psychopy_utils import ask_for_confirmation, rgb255_to_rgb_psychopy, psychopy_log_file_path
 
 import json
 
 # Logging
 import logging
-from src.experiments.log_config import configure_logging, close_root_logging
+from src.psychopy.log_config import configure_logging, close_root_logging
 
 
 # --- Setup global variables (available in all functions) ---
 # Ensure that relative paths start from the same directory as this script
 _thisDir = os.path.dirname(os.path.abspath(__file__))
 
-configure_logging(file_path=log_file_path(_thisDir), ignore_libs=['PIL'])
+configure_logging(file_path=psychopy_log_file_path(_thisDir), ignore_libs=['PIL'])
 
 config_path = os.path.join(_thisDir, 'config.json')
 with open(config_path, 'r') as file:
@@ -57,7 +57,7 @@ with open(config_path, 'r') as file:
 
 # Store info about the experiment session
 psychopyVersion = '2023.2.1'
-expName = 'mpad1_exp'  # from the Builder filename that created this script
+expName = 'measurement'  # from the Builder filename that created this script
 expInfo = {
     'date': data.getDateStr(), 
     'expName': expName,
@@ -76,16 +76,16 @@ expInfo["dummy"] = config['psychopy']['dummy']
 
 # Import dummy scripts for debugging if specified
 if expInfo["dummy"] is True:
-    from src.experiments.imotions_dummy import RemoteControliMotions, EventRecievingiMotions
-    from src.experiments.thermoino_dummy import ThermoinoComplexTimeCourses
+    from src.psychopy.imotions_dummy import RemoteControliMotions, EventRecievingiMotions
+    from src.psychopy.thermoino_dummy import ThermoinoComplexTimeCourses
     expInfo.update(config['psychopy']['dummy_participant'])
     participant_info = {}
     participant_info.update(config['psychopy']['dummy_participant'])
     
 elif expInfo["dummy"] is False:
-    from src.experiments.imotions import RemoteControliMotions, EventRecievingiMotions
-    from src.experiments.thermoino import ThermoinoComplexTimeCourses
-    from src.experiments.participant_data import read_last_participant
+    from src.psychopy.imotions import RemoteControliMotions, EventRecievingiMotions
+    from src.psychopy.thermoino import ThermoinoComplexTimeCourses
+    from src.psychopy.participant_data import read_last_participant
     participant_info = read_last_participant()
     expInfo.update(participant_info)
         
@@ -119,10 +119,10 @@ stimuli_clock = core.Clock()
 iti_duration = 8  + np.random.randint(0, 5)
 vas_labels = ("Keine\nSchmerzen", "Sehr starke Schmerzen")
 # Run 'Before Experiment' code from mouse_instruction
-import src.experiments.mouse_action as mouse_action
-from src.experiments.mouse_action import pixel_pos_y
+import src.psychopy.mouse_action as mouse_action
+from src.psychopy.mouse_action import pixel_pos_y
 # Run 'Before Experiment' code from stimuli_function
-from src.experiments.stimuli_function import StimuliFunction
+from src.psychopy.stimuli_function import StimuliFunction
 # Run 'Before Experiment' code from imotions_event
 from psychopy import core
 
@@ -186,7 +186,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='G:\\Meine Ablage\\PhD\\Code\\mpad-pilot\\experiments\\mpad1\\mpad1_exp.py',
+        originPath='G:\\Meine Ablage\\PhD\\Code\\pain-measurement\\experiments\\measurement\\measurement.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )

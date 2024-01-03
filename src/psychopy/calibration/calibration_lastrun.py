@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on Dezember 18, 2023, at 13:26
+    on Wed Jan  3 16:46:35 2024
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -38,7 +38,7 @@ from psychopy.hardware import keyboard
 _thisDir = os.path.dirname(os.path.abspath(__file__))
 # Store info about the experiment session
 psychopyVersion = '2023.2.1'
-expName = 'calibration_exp'  # from the Builder filename that created this script
+expName = 'calibration'  # from the Builder filename that created this script
 expInfo = {
     'participant': '',
     'age': '20',
@@ -58,12 +58,12 @@ with open(config_path, 'r') as file:
     config = json.load(file)
 
 # Logger
-from src.experiments.psychopy_utils import log_file_path
-from src.experiments.log_config import configure_logging, close_root_logging
-configure_logging(file_path=log_file_path())
+from src.psychopy.psychopy_utils import psychopy_log_file_path
+from src.psychopy.log_config import configure_logging, close_root_logging
+configure_logging(file_path=psychopy_log_file_path(_thisDir), ignore_libs=["PIL"])
 
 # Psychopy
-from src.experiments.psychopy_utils import rgb255_to_rgb_psychopy
+from src.psychopy.psychopy_utils import rgb255_to_rgb_psychopy
 element_color = rgb255_to_rgb_psychopy(config['psychopy']['element_color'])
 cross_pain_color = rgb255_to_rgb_psychopy(config['psychopy']['cross_pain_color'])
 cross_size = config['psychopy']['cross_size']
@@ -93,12 +93,10 @@ temp_start_vas0 = config['estimator']['temp_start_vas0'] #  will be set after VA
 temp_start_vas0_minus = config['estimator']['temp_start_vas0_minus']  # VAS 0 estimate plus int
 temp_std_vas0 = config['estimator']['temp_std_vas0']
 
-
-
 # Run 'Before Experiment' code from estimator_vas70
-from src.experiments.calibration import BayesianEstimatorVAS
+from src.psychopy.estimator import BayesianEstimatorVAS
 
-# Estimator for VAS 0 (pain threshold)
+# Estimator for VAS 70
 estimator_vas70 = BayesianEstimatorVAS(
     vas_value= 70, 
     temp_start=temp_start_vas70,
@@ -108,7 +106,7 @@ estimator_vas70 = BayesianEstimatorVAS(
 # Run 'Before Experiment' code from estimator_vas0
 # instantiating here does not make sense because we need the values from the VAS 0 esitmator first
 # Run 'Before Experiment' code from save_participant_data
-from src.experiments.participant_data import add_participant
+from src.psychopy.participant_data import add_participant
 
 def showExpInfoDlg(expInfo):
     """
@@ -169,7 +167,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='C:\\drive\\PhD\\Code\\mpad-pilot\\experiments\\calibration\\calibration_exp.py',
+        originPath='/Users/visser/drive/PhD/Code/pain-measurement/src/psychopy/calibration/calibration_lastrun.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -219,12 +217,12 @@ def setupWindow(expInfo=None, win=None):
     if win is None:
         # if not given a window to setup, make one
         win = visual.Window(
-            size=[1920, 1200], fullscr=True, screen=0,
+            size=[1710, 1112], fullscr=True, screen=0,
             winType='pyglet', allowStencil=False,
             monitor='testMonitor', color=[0,0,0], colorSpace='rgb',
             backgroundImage='', backgroundFit='none',
             blendMode='avg', useFBO=True,
-            units='norm'
+            units='height'
         )
         if expInfo is not None:
             # store frame rate of monitor if we can measure it
@@ -235,7 +233,7 @@ def setupWindow(expInfo=None, win=None):
         win.colorSpace = 'rgb'
         win.backgroundImage = ''
         win.backgroundFit = 'none'
-        win.units = 'norm'
+        win.units = 'height'
     win.mouseVisible = False
     win.hideMessage()
     return win
@@ -379,13 +377,12 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     # Run 'Begin Experiment' code from all_variables
     # Import dummy scripts for debugging if specified
     if expInfo["dummy"] is True:
-        from src.experiments.thermoino_dummy import Thermoino
+        from src.psychopy.thermoino_dummy import Thermoino
         expInfo["participant"] = "dummy"
     else:
-        from src.experiments.thermoino import Thermoino
+        from src.psychopy.thermoino import Thermoino
     
-    # "remind" psychopy to hide the mouse
-    win.mouseVisible = False
+    
     # Run 'Begin Experiment' code from thermoino
     luigi = Thermoino(
         port=port,
@@ -487,7 +484,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas70_2" ---
     text_info_vas70_2 = visual.TextStim(win=win, name='text_info_vas70_2',
-        text='Dabei orientieren wir uns an einer Schmerz-Skala von 1 bis 10:\n\n\n\n\n\n\n\n\nUnser Ziel ist es, herauszufinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.\n\n(Leertaste drücken, um fortzufahren)',
+        text='Dazu orientieren wir uns an einer Schmerz-Skala von 1 bis 10:\n\n\n\n\n\n\n\n\nUnser Ziel ist es, herauszufinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -505,7 +502,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas_70_3" ---
     text_info_vas70_3 = visual.TextStim(win=win, name='text_info_vas70_3',
-        text='Aufgrund der Capsaicin-Creme ist Ihre Schmerzschwelle nach unten verlagert. Dadruch verspüren Sie schneller starken Schmerz.\n\nAber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Aufgrund der Capsaicin-Creme ist Ihre Schmerzschwelle nach unten verlagert. Dadurch verspüren Sie schneller starken Schmerz.\n\nAber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -550,7 +547,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "info_vas0_transition" ---
     text_info_vas0 = visual.TextStim(win=win, name='text_info_vas0',
-        text='Wunderbar!\n\n\nAls Nächstes möchten wir bestimmen, wo Ihre Schmerzwelle liegt - also ab wann Sie erste Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
+        text='Wunderbar!\n\n\nAls Nächstes möchten wir bestimmen, wo Ihre Schmerzschwelle liegt - also ab wann Sie erste Schmerzen verspüren.\n\n\n(Leertaste drücken, um fortzufahren)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -595,7 +592,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     
     # --- Initialize components for Routine "bye" ---
     text_bye = visual.TextStim(win=win, name='text_bye',
-        text='Vielen Dank!\n\nAls Nächstes geht es mit dem Hauptexperiment weiter.\nMelden Sie sich bitte bei der Versuchsleitung.\n\n\n(Leertaste drücken, um Kalibrierung zu beenden)',
+        text='Vielen Dank!\n\nAls Nächstes geht es mit dem Hauptexperiment weiter.\nBitte melden Sie sich bei der Versuchsleitung.\n\n\n(Leertaste drücken, um Kalibrierung zu beenden)',
         font='Open Sans',
         pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
         color=element_color, colorSpace='rgb', opacity=None, 
@@ -618,6 +615,9 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     continueRoutine = True
     # update component parameters for each repeat
     thisExp.addData('welcome.started', globalClock.getTime())
+    # Run 'Begin Routine' code from all_variables
+    # "remind" psychopy to hide the mouse
+    win.mouseVisible = False
     key_welcome.keys = []
     key_welcome.rt = []
     _key_welcome_allKeys = []
