@@ -1,10 +1,4 @@
-# work in progress
-
-# TODO
-# remove regressor below
-"""
-Pain (VAS) estimation. See calibration notebook for more details and visualizations.
-"""
+"""Baysian estimation of pain VAS value. See calibration notebook for more details and visualizations."""
 
 import math
 import logging
@@ -52,8 +46,9 @@ class BayesianEstimatorVAS:
 
     Insights
     --------
-    The usual temperature range between pain threshold and pain tolerance is around 4°C without Capsaicin. 
-    From Andreas Strube's Neuron paper (2023) with stimuli of 8 s and Capsaicin: \n
+    The usual temperature range between pain threshold and pain tolerance is around 3-4°C without Capsaicin. 
+
+    From Andreas Strube's Neuron paper (2023) with stimuli of 8 s and with Capsaicin: \n
     "During experiment 1, pain levels were calibrated to achieve \n
     - VAS10 (M = 38.1°C, SD = 3.5°C, Min = 31.8°C, Max = 44.8°C),
     - VAS30 (M = 39°C, SD = 3.5°C, Min = 32.2°C, Max = 45.3°C),
@@ -64,13 +59,6 @@ class BayesianEstimatorVAS:
     - VAS30 (M = 39°C, SD = 3.1°C, Min = 32.1°C, Max = 45.3°C),
     - VAS50 (M = 38.19°C, SD = 3.1°C, Min = 32.5°C, Max = 46.1°C) and
     - VAS70 (M = 40.5°C, SD = 3.2°C, Min = 32.8°C, Max = 46.9°C) pain levels
-        
-    Extensions
-    ----------
-    - This class could be extended to implement a Kalman filter for more sophisticated estimations, if needed.
-    - For an intution on Kalman filters, see
-            - https://www.bzarg.com/p/how-a-kalman-filter-works-in-pictures/ and
-            - https://praveshkoirala.com/2023/06/13/a-non-mathematical-introduction-to-kalman-filters-for-programmers/.
     """
     
     MAX_TEMP = 48.
@@ -191,43 +179,3 @@ class BayesianEstimatorVAS:
    
     def get_estimate(self):
         return self.temps[-1]
-
-
-
-# not used for now, as we use the BayesianEstimatorVAS instead
-
-# class PainRegressor:
-#     """
-    
-#     Notes
-#     -----
-#     Renamed from Psychometric-perceptual scaling to PainRegressor.
-#     """
-#     def __init__(self, pain_threshold):
-#         self.pain_threshold = np.array(pain_threshold)
-#         self.fixed_temperatures = np.array(pain_threshold + [0.5, 1, 2, 1])
-#         self.vas_targtes = np.array([10, 30, 90])
-
-#         self.vas_ratings = [0]
-#         self.temps = [pain_threshold]
-
-#         self.slope = None
-#         self.intercept = None
-            
-
-#     def create_regression_(self, vas_rating, fixed_temperatures):
-#         self.vas_ratings.append(vas_rating)
-#         self.temps.append(fixed_temperatures)
-#         logger.info("Calibration psychometric-perceptual scaling: %s °C was rated %s on the VAS scale.", fixed_temperatures, vas_rating)
-
-#         if len(self.temps) == len(self.fixed_temperatures) + 1: # last trial for first regression
-#             self.slope, self.intercept = np.polyfit(self.temps, self.vas_ratings, 1)
-#             # y_pred = slope * x + intercept
-
-#     def t():
-#         pass
-#         # x = (y_pred - intercept) / slope
-#         # 10 30 90...
-
-#     def improve_regression():
-#         pass
