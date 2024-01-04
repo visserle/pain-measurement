@@ -100,10 +100,11 @@ target/
 
 # Mypy cache
 .mypy_cache/
-references/experiments/devices.md
-references/experiments/SOP.md
+references/psychopy/devices.md
+references/psychopy/SOP.md
+references/psychopy/modules.md
 notebooks/10_skorch_doctor.ipynb
-references/experiments/scripts.md
+references/psychopy/scripts.md
 src/psychopy/calibration/+++ DO NOT IMPROVE CODE +++
 src/psychopy/measurement/+++ DO NOT IMPROVE CODE +++
-references/experiments/modules.md
+

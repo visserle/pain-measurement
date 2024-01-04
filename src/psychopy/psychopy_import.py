@@ -21,6 +21,7 @@ def psychopy_import(package_name: str):
             process = subprocess.run([sys.executable, "-m", "pip", "install", package_name], check=True)
             if process.returncode != 0:
                 raise Exception("pip installation failed")
+            logger.info(f"Successfully installed '{package_name} using pip.")
             return importlib.import_module(package_name)
         except Exception as exc:
             logger.error(f"Failed to install and import '{package_name}': {exc}")

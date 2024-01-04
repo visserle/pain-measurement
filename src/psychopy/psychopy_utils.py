@@ -8,16 +8,18 @@ import logging
 import platform
 
 import tkinter as tk
+from tkinter import messagebox
 
 from src.psychopy.psychopy_import import psychopy_import
-
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 def runs_psychopy_path(exp_dir, sub_dir):
     """
-    Returns a Path object for a log file in the log directory with a timestamped filename for the psychopy experiment.
+    Returns a Path object for `root/runs/psychopy` for recording a psychopy experiment.
+    For a log file it returns the file path in the log directory with a timestamped filename;
+    for data it returns the data directory.
     
     This is hacky code. It assumes that the experiment is located in the root/src.psychopy directory while the log directory
     is located in root/runs/psychopy. It also assumes that the experiment directory is named the same as the experiment.
@@ -59,7 +61,7 @@ def ask_for_confirmation(second_monitor=False):
     root.lift()
     if platform.system() == "Windows":
         root.attributes('-topmost', True)
-    response = tk.messagebox.askyesno(
+    response = messagebox.askyesno(
         title = "Alles startklar?",
         message = """
         - MMS Programm umgestellt?\n

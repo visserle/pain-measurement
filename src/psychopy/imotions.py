@@ -180,8 +180,6 @@ class EventRecievingiMotions():
     - time_stamp(self): Returns the current timestamp.
     - connect(self): Establishes a connection to the iMotions software for event receiving.
     - _send_message(self, message): Sends a message to iMotions.
-    - start_study(self): Sends a marker indicating the start of a study.
-    - end_study(self): Sends a marker indicating the end of a study.
     - send_marker(self, marker_name, value): Sends a specific marker with a given value to iMotions.
     - send_stimulus_markers(self, seed): Sends a start and end stimulus marker for a given seed value of a stimulus function.
     - send_marker_with_time_stamp(self, marker_name): Sends a marker with the current timestamp.
@@ -204,7 +202,6 @@ class EventRecievingiMotions():
     ```python
     imotions_events = EventRecievingiMotions()
     imotions_events.connect()
-    imotions_events.start_study()
     send_stimulus_markers(seed=9) # sends a start stimulus marker for seed 9
     send_stimulus_markers(seed=9) # can be called again to send an end stimulus marker for seed 9
     imotions_events.close()
@@ -254,16 +251,6 @@ class EventRecievingiMotions():
                 f"M;2;;;stimulus;end of seed {seed};E;\r\n"])
         self._send_message(next(self.seed_cycles[seed]))
         logger.info("iMotions received the marker for the stimulus with seed %s.", seed)
-
-    def start_study(self):
-        start_study_marker = f"M;2;;;marker_start_study;{self.time_stamp};D;\r\n"
-        self._send_message(start_study_marker)
-        logger.info("iMotions received the marker for study start @ %s.", self.time_stamp[11:])
-
-    def end_study(self):
-        end_study_marker = f"M;2;;;marker_end_study;{self.time_stamp};D;\r\n"
-        self._send_message(end_study_marker)
-        logger.info("iMotions received the marker for study end @ %s.", self.time_stamp[11:])
 
     def send_temperatures(self, temperature, debug=False):
         """

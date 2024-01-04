@@ -7,11 +7,11 @@
         "bin_size_ms": 500
     },
     "psychopy": {
-        "name": "measurement",
+        "name": "pain-measurement",
         "psychopyVersion": "2023.2.1",
         "element_color": [128,64,192],
 		"marker_color": [192,64,128],
-        "dummy": true,
+        "dummy": false,
         "dummy_participant": {
             "time_stamp": "2023-01-01 15:00:00",
             "participant": "dummy",	

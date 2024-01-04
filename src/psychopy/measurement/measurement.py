@@ -57,7 +57,7 @@ with open(config_path, 'r') as file:
 
 # Store info about the experiment session
 psychopyVersion = '2023.2.1'
-expName = 'measurement'  # from the Builder filename that created this script
+expName = 'pain-measurement'  # same name as in iMotions / config.json
 expInfo = {
     'date': data.getDateStr(), 
     'expName': expName,
@@ -426,7 +426,8 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         languageStyle='LTR',
         depth=-2.0);
     key_welcome = keyboard.Keyboard()
-    
+    win.mouseVisible = False # "remind" psychopy to hide the mouse
+
     # --- Initialize components for Routine "welcome_2" ---
     text_welcome_2 = visual.TextStim(win=win, name='text_welcome_2',
         text='Mit diesem Experiment möchten wir mit Hilfe Ihrer Daten Schmerzen objektiv messbar machen.\n\n\n(Leertaste drücken, um fortzufahren)',
@@ -456,6 +457,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         languageStyle='LTR',
         depth=0.0);
     key_instruction = keyboard.Keyboard()
+    win.mouseVisible = False # "remind" psychopy to hide the mouse
 
     # --- Initialize components for Routine "instruction_1" ---
     text_instruction_1 = visual.TextStim(win=win, name='text_instruction_1',
@@ -517,7 +519,8 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         languageStyle='LTR',
         depth=0.0);
     key_ready = keyboard.Keyboard()
-    
+    win.mouseVisible = False # "remind" psychopy to hide the mouse
+
     # --- Initialize components for Routine "trial_prep" ---
     vas_cont_prep = visual.Slider(win=win, name='vas_cont_prep',
         startValue=50, size=(1.0, 0.1), pos=(0, 0), units=win.units,
@@ -539,7 +542,6 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     """ Connect with event recieving API """
     imotions_event = EventRecievingiMotions()
     imotions_event.connect()
-    imotions_event.start_study()
     
     # create a clock
     stimuli_clock = core.Clock()
@@ -1642,7 +1644,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         
         seed = seeds[loop_trials.thisN]
         # TODO: might needs a change once the trials randomization is implemented
-        logging.info(f"Psychopy starts trial ({loop_trials.thisN + 1}/{n_trials} with seed {seed}") 
+        logging.info(f"Psychopy starts trial ({loop_trials.thisN + 1}/{n_trials}) with seed {seed}") 
         
         currentLoop = loop_trials
         thisExp.timestampOnFlip(win, 'thisRow.t')
@@ -2179,7 +2181,6 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     luigi.close()
     # Run 'End Experiment' code from imotions_event
     """ Close event recieving API connection """
-    imotions_event.end_study()
     imotions_event.close()
     # Run 'End Experiment' code from trial_end
     close_root_logging()

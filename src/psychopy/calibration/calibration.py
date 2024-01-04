@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2023.2.1),
-    on Wed Jan  3 16:46:42 2024
+    on Januar 04, 2024, at 14:03
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -41,7 +41,7 @@ psychopyVersion = '2023.2.1'
 expName = 'calibration'  # from the Builder filename that created this script
 expInfo = {
     'participant': '',
-    'age': '20',
+    'age': '',
     'gender': ["","Female","Male"],
     'session': '01',
     'dummy': False,
@@ -58,9 +58,12 @@ with open(config_path, 'r') as file:
     config = json.load(file)
 
 # Logger
-from src.psychopy.psychopy_utils import psychopy_log_file_path
-from src.psychopy.log_config import configure_logging, close_root_logging
-configure_logging(file_path=psychopy_log_file_path(_thisDir), ignore_libs=["PIL"])
+import logging as python_logging
+# psychopy imports psychopy.logging as logging, hence the rename
+from src.psychopy.psychopy_utils import runs_psychopy_path
+from src.log_config import configure_logging, close_root_logging
+configure_logging(file_path=runs_psychopy_path(_thisDir, "logs"), ignore_libs=["PIL"])
+# note that we specified the psychopy data folder via the preferences in the builder using the same function
 
 # Psychopy
 from src.psychopy.psychopy_utils import rgb255_to_rgb_psychopy
@@ -157,7 +160,7 @@ def setupData(expInfo, dataDir=None):
     # data file name stem = absolute path + name; later add .psyexp, .csv, .log, etc
     if dataDir is None:
         dataDir = _thisDir
-    filename = u'data/%s_%s_%s' % (expInfo['participant'], expName, expInfo['date'])
+    filename = u'%s/data/%s_%s_%s' % (runs_psychopy_path(_thisDir,"data"), expInfo['participant'], expName, expInfo['date'])
     # make sure filename is relative to dataDir
     if os.path.isabs(filename):
         dataDir = os.path.commonprefix([dataDir, filename])
@@ -167,7 +170,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='/Users/visser/drive/PhD/Code/pain-measurement/src/psychopy/calibration/calibration.py',
+        originPath='C:\\drive\\PhD\\Code\\pain-measurement\\src\\psychopy\\calibration\\calibration.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -217,7 +220,7 @@ def setupWindow(expInfo=None, win=None):
     if win is None:
         # if not given a window to setup, make one
         win = visual.Window(
-            size=[1710, 1112], fullscr=True, screen=0,
+            size=[1920, 1200], fullscr=True, screen=0,
             winType='pyglet', allowStencil=False,
             monitor='testMonitor', color=[0,0,0], colorSpace='rgb',
             backgroundImage='', backgroundFit='none',
@@ -1605,7 +1608,7 @@ def run(expInfo, thisExp, win, inputs, globalClock=None, thisSession=None):
     thisExp.addData('count_in_preexposure.stopped', globalClock.getTime())
     # Run 'End Routine' code from transition_preexposure_to_vas70
     # If response was yes
-    logging.info("Preexposure painful? Answer: %s", response_preexposure.keys)
+    python_logging.info("Preexposure painful? Answer: %s", response_preexposure.keys)
     
     if response_preexposure.keys == "y":
         # Decrease starting temperature
