@@ -16,13 +16,25 @@ even when DPI scaling is in use. This method is safe to use with all types of mo
 import ctypes
 import platform
 from functools import wraps
-from .psychopy_utils import psychopy_import
+from src.psychopy.psychopy_utils import psychopy_import
 
 # Initialize the module only if the platform is not Darwin
 if platform.system() != 'Darwin':
     mouse = psychopy_import("mouse")
     user32 = ctypes.windll.user32
     user32.SetProcessDPIAware()
+    
+    screeninfo = psychopy_import("screeninfo")
+    # Get monitor size (psychopy starts on secondary monitor)
+    # Keep in mind:
+    # - iMotions always starts the eyetracker calibration on the primary monitor
+    # - Psychopy by default starts on the second monitor
+    # -> that means we have to set our second monitor as primary monitor in Windows
+    #    and rely on the order of the monitors in the screeninfo.get_monitors() list instead of the is_primary attribute
+    monitors = screeninfo.get_monitors()
+    monitor = monitors[0]
+    monitor_left = monitor.x
+    monitor_right = monitor.x + monitor.width
 
 def non_darwin_only(func):
     """Decorator to skip the decorated function if the platform is Darwin."""
@@ -43,7 +55,8 @@ def hold():
 @non_darwin_only
 def check(pixel_y):
     """
-    Checks if the mouse is pressed and moves it to the pixel y-coordinate if necessary.
+    Checks if the mouse is pressed and moves it to the pixel y-coordinate if necessary. 
+    It also makes sure that the mouse stays within one monitor (defined on module level).
 
     This function can be used in combination with a psychopy slider component for continuous ratings by calling it every frame.
 
@@ -61,10 +74,17 @@ def check(pixel_y):
     If it is not, it moves the mouse to the desired y-coordinate using mouse.move.
 
     """
+    mouse_x, mouse_y = mouse.get_position()
+    
     if not mouse.is_pressed(button='left'):
-        hold()
-    if not (pixel_y*0.9 < mouse.get_position()[1] < pixel_y*1.1): # get y-coordinate
-        mouse.move(mouse.get_position()[0], pixel_y, absolute=True, duration=0) # move to slider position
+        mouse.hold(button="left")
+    if not (pixel_y*0.9 < mouse_y < pixel_y*1.1): # get y-coordinate
+        mouse.move(mouse_x, pixel_y, absolute=True, duration=0) # move to slider position
+    # Also make sure that the mouse stays within the monitor
+    if monitor_right < mouse_x:
+        mouse.move(monitor_right, mouse_y, absolute=True, duration=0)
+    elif monitor_left > mouse_x:
+        mouse.move(monitor_left, mouse_y, absolute=True, duration=0)
 
 @non_darwin_only
 def release():
