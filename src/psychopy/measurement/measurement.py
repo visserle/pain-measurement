@@ -1693,7 +1693,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
             rate_of_rise_option="mms_program")
         luigi.load_ctc()
         luigi.trigger()
-        
+        imotions_event.send_prep_markers()
         prep_duration = luigi.prep_ctc()[1]
         # Run 'Begin Routine' code from mouse_prep
         vas_pos_y = pixel_pos_y(
@@ -1931,6 +1931,7 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         # Sometimes the Thermoino takes some time to set the temperature back to baseline
         # Here, we force this with a loop for each frame.
         success = False
+        prep_marker_sent = False
         # Run 'Begin Routine' code from trial_end
         # Store the trial number for conditional text box
         this_trial = loop_trials.thisN    
@@ -1963,7 +1964,10 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
             # update/draw components on each frame
             # Run 'Each Frame' code from reset_temp
             if not success and frameN % 10 == 0:
-                success = luigi.set_temp(mms_baseline)[2]
+                _, time_to_baseline, success = luigi.set_temp(mms_baseline)
+                if success: # if success, add the time to baseline to the current time
+                    time_to_baseline_reached = t + time_to_baseline
+                    logging.info(f"Set back to baseline in {time_to_baseline} seconds")
             
             # *text_trial_end* updates
             
@@ -2019,12 +2023,23 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
             if thisExp.status == FINISHED or endExpNow:
                 endExperiment(thisExp, inputs=inputs, win=win)
                 return
+
+            # Additional check if the baseline temperature has been reached
+            if t >= time_to_baseline_reached and success and not prep_marker_sent:
+                imotions_event.send_prep_markers()
+                prep_marker_sent = True # only send the marker once
+
+            if not prep_marker_sent:
+                continueRoutine = True
+                win.flip()
+                continue
             
             # check if all components have finished
             if not continueRoutine:  # a component has requested a forced-end of Routine
                 routineForceEnded = True
                 break
             continueRoutine = False  # will revert to True if at least one component still running
+                
             for thisComponent in trial_endComponents:
                 if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
                     continueRoutine = True
