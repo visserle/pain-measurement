@@ -135,7 +135,7 @@ class BayesianEstimatorVAS:
     @current_temp.setter
     def current_temp(self, value):
         self._current_temp = value
-        if self._current_temp > self.MAX_TEMP:
+        if self._current_temp >= self.MAX_TEMP:
             logger.warning("Maximum temperature of %s °C reached.", self.MAX_TEMP)
 
     @property

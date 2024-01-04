@@ -24,8 +24,7 @@ if X_DIR.stem in exp_dirs: # when running from psychopy runner
     FILE_PATH = X_DIR.parent.parent.parent / "runs" / "psychopy" / "participants.xlsx"
 else: # when running from project root
     FILE_PATH = X_DIR / "runs" / "psychopy" / 'participants.xlsx'
-    # FIXME: does this really work?!
-    """"""""""""""""""""
+
 
 def init_excel_file():
     headers = ['time_stamp', 'participant', 'age', 'gender', 'vas0', 'vas70', 'baseline_temp', 'temp_range']
