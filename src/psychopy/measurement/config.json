@@ -11,7 +11,7 @@
         "psychopyVersion": "2023.2.1",
         "element_color": [128,64,192],
 		"marker_color": [192,64,128],
-        "dummy": false,
+        "dummy": true,
         "dummy_participant": {
             "time_stamp": "2023-01-01 15:00:00",
             "participant": "dummy",	
@@ -22,7 +22,7 @@
         }
     },
     "stimuli": {
-        "seeds": [320, 43, 999, 242, 32, 1, 98, 478, 234, 67, 3],
+        "seeds": [320, 43, 242, 320, 43, 242, 320, 43, 242, 320, 43, 242],
         "minimal_desired_duration": 200,
         "periods": [67, 20],
         "sample_rate": 60,

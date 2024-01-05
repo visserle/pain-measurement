@@ -43,6 +43,7 @@ class Thermoino:
         move_time_s = abs(temp_target - self.temp) / self.mms_rate_of_rise
         self.temp = temp_target
         success = True
+        logging.debug("Thermoino (dummy) sets temperature to %s°C in %s seconds", temp_target, move_time_s)
         return (self, move_time_s, success)
 
     def wait(self, duration):

@@ -182,6 +182,7 @@ class EventRecievingiMotions():
     - _send_message(self, message): Sends a message to iMotions.
     - send_marker(self, marker_name, value): Sends a specific marker with a given value to iMotions.
     - send_stimulus_markers(self, seed): Sends a start and end stimulus marker for a given seed value of a stimulus function.
+    - send_prep_markers(self): Sends a start and end marker for the preparation phase.
     - send_marker_with_time_stamp(self, marker_name): Sends a marker with the current timestamp.
     - send_temperatures(self, temperature): Sends the current temperature reading to iMotions.
     - send_ratings(self, rating): Sends a rating value to iMotions.
@@ -215,6 +216,9 @@ class EventRecievingiMotions():
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._time_stamp = self.time_stamp # use self.time_stamp to get the current time stamp
         self.seed_cycles = {} # class variable to keep track of seed cycles (start and end stimulus markers)
+        self.prep_cycle = itertools.cycle([
+                "M;2;;;heat_prep;start;D;\r\n",
+                "M;2;;;heat_prep;end;D;\r\n"])
 
     @property
     def time_stamp(self):
@@ -247,10 +251,14 @@ class EventRecievingiMotions():
         """
         if seed not in self.seed_cycles: # only create a new cycle if it doesn't exist yet
             self.seed_cycles[seed] = itertools.cycle([
-                f"M;2;;;stimulus;start of seed: {seed};S;\r\n",
-                f"M;2;;;stimulus;end of seed {seed};E;\r\n"])
+                f"M;2;;;heat_stimulus;start of seed: {seed};S;\r\n",
+                f"M;2;;;heat_stimulus;end of seed {seed};E;\r\n"])
         self._send_message(next(self.seed_cycles[seed]))
         logger.info("iMotions received the marker for the stimulus with seed %s.", seed)
+
+    def send_prep_markers(self):
+        self._send_message(next(self.prep_cycle))
+        logger.debug("iMotions received the marker for the preparation phase.")
 
     def send_temperatures(self, temperature, debug=False):
         """

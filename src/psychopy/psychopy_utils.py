@@ -83,6 +83,3 @@ def ask_for_confirmation(second_monitor=False):
 def rgb255_to_rgb_psychopy(rgb255):
     """Convert a RGB color from 0-255 scale to the [-1,1] coloar scale exclusively used in psychopy.""" 
     return [(x / 127.5) - 1 for x in rgb255]
-
-if __name__ == "__main__":
-    ask_for_confirmation()

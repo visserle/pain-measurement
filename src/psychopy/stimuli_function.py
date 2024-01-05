@@ -205,7 +205,7 @@ class StimuliFunction():
         self.baseline_temp = 0
         logger.debug(f"Succesfully created stimuli function with seed {self.seed} and duration {self.duration}.")
         if desired_big_decreases:
-            logger.debug(f"Number of big decreases: {self.number_of_big_decreases}, average length: {self.avg_length_of_big_decreases}.")
+            logger.debug(f"Number of big decreases: {self.number_of_big_decreases}, average length: {self.avg_length_of_big_decreases:.2f}.")
 
 
     def _create_wave(self):

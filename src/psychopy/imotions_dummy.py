@@ -58,6 +58,10 @@ class EventRecievingiMotions:
     This class mimics the behavior of the EventRecievingiMotions without requiring an actual connection to iMotions.
     """
     seed_cycles = {}
+    prep_cycle = itertools.cycle([
+        "M;2;;;heat_prep;start;D;\r\n",
+        "M;2;;;heat_prep;end;D;\r\n"])
+
     
     def __init__(self):
         self.connected = False
@@ -74,13 +78,6 @@ class EventRecievingiMotions:
     def _send_message(self, message):
         pass
 
-    def start_study(self):
-        if self.connected:
-            logger.info("iMotions (dummy) received the marker for study start @ %s", self.time_stamp)
-
-    def end_study(self):
-        if self.connected:
-            logger.info("iMotions (dummy) received the marker for study end @ %s", self.time_stamp)
 
     def send_marker(self, marker_name, value):
         if self.connected:
@@ -104,6 +101,9 @@ class EventRecievingiMotions:
                 f"M;2;;;stimulus;end of seed {seed};E;\r\n"])
         string = next(self.seed_cycles[seed])
         logger.info("iMotions (dummy) received the marker %s", string)
+
+    def send_prep_markers(self):
+        logger.info("iMotions (dummy) received the marker %s", next(self.prep_cycle))
 
     def send_temperatures(self, temperature):
         if self.connected:
