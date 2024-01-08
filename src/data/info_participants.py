@@ -2,28 +2,33 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 from pathlib import Path
 
-from src.data.info_data import DataInfo, trial, temperature, rating, eda, ecg, pupillometry, affectiva, system
+from src.data.info_data import DATA_DICT
 
-assert Path.cwd().name == 'pain-measurement', 'Working directory must be the root of the project'
+if Path.cwd().name != 'pain-measurement':
+    raise EnvironmentError('Working directory must be the root of the project')
 ROOT_DIR = Path.cwd()
+
 
 @dataclass
 class Participant:
     id: str
-    signals: List[str] = field(init=False)
-    non_available_signals: Optional[List[str]] = field(default_factory=list)
-
-    SIGNAL_LIST = ['trial', 'temperature', 'rating', 'eda', 'ecg', 'eeg', 'pupillometry', 'affectiva', 'system']
+    data: List[str] = field(init=False)
+    non_available_data: Optional[List[str]] = field(default_factory=list)
 
     def __post_init__(self):
-        if not all(signal in self.SIGNAL_LIST for signal in self.non_available_signals):
-            raise ValueError("non_available_signals contains invalid signal names")
-        self.signals = [signal for signal in self.SIGNAL_LIST if signal not in self.non_available_signals]
-
-    def get_path(self, data_info: DataInfo) -> Path:
-        """Constructs the full path for a participant's data."""
-        return ROOT_DIR / 'data' / 'raw' / self.id / data_info.path
+        # Handle missing keys in DATA_DICT
+        self.data = [data for data in DATA_DICT if data not in self.non_available_data and data in DATA_DICT]
         
+    def get_path(self, data: str) -> Path:
+        if data not in DATA_DICT:
+            raise KeyError(f"Data key '{data}' not found in DATA_DICT")
+        return ROOT_DIR / 'data' / 'raw' / self.id / DATA_DICT[data].path
+    
+    def get_paths(self, ignore: Optional[List[str]] = None) -> List[Path]:
+        if ignore is None:
+            ignore = []
+        return [self.get_path(data) for data in self.data if data not in ignore]
+
 
 p_001 = Participant(
     id = '001_pilot_bjoern',
@@ -31,18 +36,5 @@ p_001 = Participant(
 
 p_002 = Participant(
     id = '002_pilot_melis',
-    non_available_signals = ['eeg'],
+    non_available_data = ['eeg'],
 )
-
-print(p_001.get_path(trial))
-
-
-# @dataclass
-# class Participant:
-#     id: str
-#     signals: list = field(init=False)
-#     non_available_signals: list = None
-    
-#     def __post_init__(self):
-#         SIGNAL_LIST = ['trial','temperature','rating','eda','ecg','eeg','pupillometry','affectiva','system']
-#         self.signals = [signal for signal in SIGNAL_LIST if signal not in self.non_available_signals] if self.non_available_signals else SIGNAL_LIST
