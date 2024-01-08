@@ -1,23 +1,17 @@
-from pathlib import Path
 from dataclasses import dataclass
-from src.data.info_participants import Participant
-
-
-assert Path.cwd().name == 'pain-measurement', 'Working directory must be the root of the project'
-ROOT_DIR = Path.cwd()
+from pathlib import Path
+from typing import List, Optional, Dict
 
 
 @dataclass
 class DataInfo:
     path: str
-    imotions_columns: list # columns from the imotions csv file
-    keep_columns: list
-    plot_columns: list = None
-    rename_columns: dict = None
-    native_sampling_rate: float = None
-    
-    def get_path(self, participant: Participant):
-        return ROOT_DIR / 'data' / 'raw' / participant.id / self.path
+    imotions_columns: List[str]  # columns from the imotions csv file
+    keep_columns: List[str]
+    plot_columns: Optional[List[str]] = None
+    rename_columns: Optional[Dict[str, str]] = None
+    native_sampling_rate: Optional[float] = None
+
 
 
 trial = DataInfo(
