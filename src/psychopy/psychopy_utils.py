@@ -26,7 +26,7 @@ def runs_psychopy_path(exp_dir, sub_dir):
     """
     exp_dir = Path(exp_dir)
     exp_name = exp_dir.name
-    work_dir = exp_dir.parent.parent.parent
+    work_dir = exp_dir.parents[2]
     # Make sure we are in root directory
     assert work_dir.name == "pain-measurement" or work_dir.name == "pain-placebo"
     exp_dir = work_dir / "runs" / "psychopy" / exp_name

@@ -15,7 +15,7 @@ Further modifications were made:
     - Mouse:
         - Remind psychopy to hide the mouse in the run function
 
-Note: These are minimal modifications to the auto-generated experiment, so there might be a better way to do this.
+Note: These are minimal modifications to the auto-generated experiment, so there might be more elegant solutions.
 """
 
 # --- Import packages ---
@@ -1643,10 +1643,24 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
     for thisLoop_trial in loop_trials:
         
         seed = seeds[loop_trials.thisN]
+        stimuli = StimuliFunction(
+            minimal_desired_duration=minimal_desired_duration,
+            frequencies=frequencies,
+            temp_range=temp_range,
+            sample_rate=sample_rate,
+            desired_big_decreases=desired_big_decreases,
+            random_periods=random_periods,
+            seed=seed
+        ).add_baseline_temp(
+            baseline_temp=baseline_temp
+        ).add_plateaus(
+            plateau_duration=plateau_duration, 
+            n_plateaus=n_plateaus
+        ).generalize_big_decreases()
+
         # TODO: might needs a change once the trials randomization is implemented
         logging.info(f"Psychopy starts trial ({loop_trials.thisN + 1}/{n_trials}) with seed {seed}") 
         
-        currentLoop = loop_trials
         thisExp.timestampOnFlip(win, 'thisRow.t')
         # pause experiment here if requested
         if thisExp.status == PAUSED:
@@ -1669,20 +1683,6 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
         # Run 'Begin Routine' code from stimuli_function
         trial = loop_trials.thisN
         
-        stimuli = StimuliFunction(
-            minimal_desired_duration=minimal_desired_duration,
-            frequencies=frequencies,
-            temp_range=temp_range,
-            sample_rate=sample_rate,
-            desired_big_decreases=desired_big_decreases,
-            random_periods=random_periods,
-            seed=seed
-        ).add_baseline_temp(
-            baseline_temp=baseline_temp
-        ).add_plateaus(
-            plateau_duration=plateau_duration, 
-            n_plateaus=n_plateaus
-        ).generalize_big_decreases()
         
         # Run 'Begin Routine' code from thermoino_prep
         luigi.flush_ctc()
@@ -1844,11 +1844,10 @@ def run(expInfo, thisExp, globalClock=None, thisSession=None):
             # update/draw components on each frame
             # Run 'Each Frame' code from imotions_event
             """ Stream data for pain rating """
-            imotions_event.send_ratings(
-                round(vas_cont.getMarkerPos(),3))
+            imotions_event.send_ratings(vas_cont.getMarkerPos())
             
             idx_stimuli = int(stimuli_clock.getTime()*stimuli.sample_rate)
-            if idx_stimuli < len(stimuli.wave):
+            if idx_stimuli < len(stimuli.wave): # Check if we are still in the stimuli wave
                 imotions_event.send_temperatures(stimuli.wave[idx_stimuli])
             # Run 'Each Frame' code from mouse
             mouse_action.check(vas_pos_y)

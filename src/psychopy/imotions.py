@@ -129,7 +129,7 @@ class RemoteControliMotions():
         # e.g. "13;RemoteControl;RUN;;-1;;1;"
         logger.info("iMotions started study %s for participant %s.", self.study, self.participant)
         response_msg = response.split(";")[-1]
-        if len(response_msg) > 0:
+        if len(response_msg) > 0: # if there is a response message, something went wrong
             logger.error("iMotions error: %s", response_msg)
             raise iMotionsError("iMotions error: %s", response_msg)
 
@@ -217,8 +217,8 @@ class EventRecievingiMotions():
         self._time_stamp = self.time_stamp # use self.time_stamp to get the current time stamp
         self.seed_cycles = {} # class variable to keep track of seed cycles (start and end stimulus markers)
         self.prep_cycle = itertools.cycle([
-                "M;2;;;heat_prep;start;D;\r\n",
-                "M;2;;;heat_prep;end;D;\r\n"])
+                "M;2;;;heat_on_ramp;start;D;\r\n",
+                "M;2;;;heat_off_ramp;end;D;\r\n"])
 
     @property
     def time_stamp(self):
@@ -251,12 +251,14 @@ class EventRecievingiMotions():
         """
         if seed not in self.seed_cycles: # only create a new cycle if it doesn't exist yet
             self.seed_cycles[seed] = itertools.cycle([
-                f"M;2;;;heat_stimulus;start of seed: {seed};S;\r\n",
-                f"M;2;;;heat_stimulus;end of seed {seed};E;\r\n"])
+                f"M;2;;;heat_stimulus;{seed};S;\r\n",
+                f"M;2;;;heat_stimulus;{seed};E;\r\n"])
         self._send_message(next(self.seed_cycles[seed]))
         logger.info("iMotions received the marker for the stimulus with seed %s.", seed)
 
     def send_prep_markers(self):
+        """Marker to indicate the start and end the ramp on/ramp off of the heat stimulus.
+        Directly before and after the prep marker we are at baseline temperature."""
         self._send_message(next(self.prep_cycle))
         logger.debug("iMotions received the marker for the preparation phase.")
 
@@ -265,7 +267,7 @@ class EventRecievingiMotions():
         For sending the current temperature to iMotions every frame.
         See imotions_temperature.xml for the xml structure.
         """
-        imotions_event = f"E;1;TemperatureCurve;1;;;;TemperatureCurve;{temperature}\r\n"
+        imotions_event = f"E;1;TemperatureCurve;1;;;;TemperatureCurve;{temperature:.2f}\r\n"
         self._send_message(imotions_event)
         if debug:
             logger.debug("iMotions received the temperature %s.", temperature)
@@ -274,7 +276,7 @@ class EventRecievingiMotions():
         """
         See imotions_rating.xml for the xml structure.
         """
-        imotions_event = f"E;1;RatingCurve;1;;;;RatingCurve;{rating}\r\n"
+        imotions_event = f"E;1;RatingCurve;1;;;;RatingCurve;{rating:.2f}\r\n"
         self._send_message(imotions_event)
         if debug:
             logger.debug("iMotions received the rating %s.", rating)

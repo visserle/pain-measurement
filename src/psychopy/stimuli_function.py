@@ -353,8 +353,6 @@ class StimuliFunction():
             new_wave = np.pad(new_wave, (0, required_length - wave_length), 'constant', constant_values=(padding_value,))
         self._wave = new_wave
         
-        # Round all values to 3 decimals
-        self._wave = np.round(self._wave, 3)
 
     def add_baseline_temp(self, baseline_temp):
         """

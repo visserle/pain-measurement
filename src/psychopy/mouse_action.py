@@ -25,12 +25,13 @@ if platform.system() != 'Darwin':
     user32.SetProcessDPIAware()
     
     screeninfo = psychopy_import("screeninfo")
-    # Get monitor size (psychopy starts on secondary monitor)
+    # Get monitor size
     # Keep in mind:
     # - iMotions always starts the eyetracker calibration on the primary monitor
-    # - Psychopy by default starts on the second monitor
+    # - Psychopy by default starts on the second monitor if two monitors are connected
     # -> that means we have to set our second monitor as primary monitor in Windows
     #    and rely on the order of the monitors in the screeninfo.get_monitors() list instead of the is_primary attribute
+    # TODO: we could make this more robust
     monitors = screeninfo.get_monitors()
     monitor = monitors[0]
     monitor_left = monitor.x
@@ -142,4 +143,4 @@ def pixel_pos_y(component_pos, win_size, win_pos):
 
 
 if __name__ == "__main__":
-    hold() # trolling
+    hold()
