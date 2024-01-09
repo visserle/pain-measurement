@@ -39,7 +39,27 @@ def reorder_multiindex(df):
     return df
 
 
-def interpolate_data(df, method='linear'):
+def resample(df, ms=2):
+    if 'Time' not in df.index.names:
+        raise ValueError("Index must contain 'Time'.")
+    if 'Trial' in df.index.names:
+        df = df.groupby('Trial').resample(f'{ms}ms', level='Time').mean()
+    else:
+        df = df.resample(f'{ms}ms', level='Time').mean()
+    return df
+
+
+def resample_to_500hz(df):
+    if 'Time' not in df.index.names:
+        raise ValueError("Index must contain 'Time'.")
+    if 'Trial' in df.index.names:
+        df = df.groupby('Trial').resample('2ms', level='Time').mean()
+    else:
+        df = df.resample('2ms', level='Time').mean()
+    return df
+
+
+def interpolate(df, method='linear'):
     columns_to_interpolate = df.columns[(df.dtypes == float)]
     if 'Trial' in df.index.names:
         df[columns_to_interpolate] = df.groupby('Trial')[columns_to_interpolate].transform(lambda x: x.interpolate(method=method))
@@ -48,7 +68,7 @@ def interpolate_data(df, method='linear'):
     return df
 
 
-def standardize_data(df):
+def standardize(df):
     # Exclude 'Timestamp' from the columns to be standardized
     columns_to_standardize = df.columns[(df.dtypes == float) & (df.columns != 'Timestamp')]
     if 'Trial' in df.index.names:
@@ -57,3 +77,12 @@ def standardize_data(df):
         df[columns_to_standardize] = (df[columns_to_standardize] - df[columns_to_standardize].mean()) / df[columns_to_standardize].std()
     return df
 
+
+def normalize(df):
+    # Exclude 'Timestamp' from the columns to be standardized
+    columns_to_normalize = df.columns[(df.dtypes == float) & (df.columns != 'Timestamp')]
+    if 'Trial' in df.index.names:
+        df[columns_to_normalize] = df.groupby('Trial')[columns_to_normalize].transform(lambda x: (x - x.min()) / (x.max() - x.min()))
+    else:
+        df[columns_to_normalize] = (df[columns_to_normalize] - df[columns_to_normalize].min()) / (df[columns_to_normalize].max() - df[columns_to_normalize].min())
+    return df

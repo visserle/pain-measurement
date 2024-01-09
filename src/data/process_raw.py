@@ -5,20 +5,19 @@ from functools import reduce
 
 from dataclasses import dataclass
 from typing import List, Optional, Dict
-from src.data.info_data import trial, rating, temperature, eda, ecg, eeg, pupillometry, affectiva, system
+from src.data.info_data import TRIAL, TEMPERATURE, RATING, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA, SYSTEM
 #from src.data.info_participants import TODO
 
-# Define DataSignal class
+
 @dataclass
-class DataSignal:
+class SignalData:
     name: str
     data: pd.DataFrame
 
-# Define Participant class
 @dataclass
 class Participant:
     id: str
-    signals: dict[str, DataSignal]
+    signals: dict[str, SignalData]
 
     def to_dataframe(self):
         data_frames = [signal.data for signal in self.signals.values()]
@@ -32,7 +31,6 @@ class Participant:
         return merged_df.sort_values(by=['Timestamp'])
 
 
-# Function to load signal data
 def load_signal_data(signal_path, data_info):
     # Find start index for data
     with open(signal_path, 'r') as file:
@@ -45,9 +43,9 @@ def load_signal_data(signal_path, data_info):
         skiprows=data_start_index + 1,
         usecols=lambda column: column in data_info.keep_columns,
     )
-    return DataSignal(name=data_info.name, data=data)
+    return SignalData(name=data_info.name, data=data)
 
-# Function to load participant data
+
 def load_participant_data(participant_id, base_path, data_infos):
     participant_path = os.path.join(base_path, participant_id)
     signals = {}
@@ -56,3 +54,6 @@ def load_participant_data(participant_id, base_path, data_infos):
         if os.path.exists(file_path):
             signals[data_info.name] = load_signal_data(file_path, data_info)
     return Participant(id=participant_id, signals=signals)
+
+def main():
+    pass
