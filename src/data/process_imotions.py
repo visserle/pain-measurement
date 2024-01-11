@@ -14,6 +14,7 @@ from src.log_config import configure_logging
 
 configure_logging()
 
+
 @dataclass
 class Data:
     """Dataclass for a single imotions csv files"""
@@ -25,6 +26,10 @@ class Participant:
     id: str
     datasets: Dict[str, Data]
     
+    def __getattr__(self, name):
+        if name in self.datasets.keys():
+           return self.datasets[name].dataset
+        
     def save_individual_datasets(self, output_dir: str) -> None:
         os.makedirs(output_dir, exist_ok=True)
         for data_name, data in self.datasets.items():
@@ -58,8 +63,9 @@ def load_dataset(
         data_path: str, 
         data_info: DataInfoBase
         ) -> Data:
+    
     if isinstance(data_info, iMotionsInfo):
-        # Find start index for data
+        # Find start index in external data files
         with open(data_path, 'r') as file:
             lines = file.readlines(2**16) # only read a few lines
         data_start_index = next(i for i, line in enumerate(lines) if "#DATA" in line)
@@ -91,13 +97,11 @@ def main():
     IMOTIONS_DIR = DATA_DIR / "imotions"
     RAW_DIR = DATA_DIR / "raw"
     
-    
     for particpant in PARTICIPANT_LIST:
         participant_data = load_participant_datasets(
             particpant.id, IMOTIONS_DIR, IMOTIONS_LIST
             )
         participant_data.save_individual_datasets(RAW_DIR / particpant.id)
-
 
 if __name__ == "__main__":
     main()
