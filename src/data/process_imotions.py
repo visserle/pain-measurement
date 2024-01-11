@@ -6,8 +6,10 @@ from dataclasses import dataclass
 from typing import Dict, List
 import logging
 
-from src.data.info_external import ExternalInfo, EXTERNAL_LIST
+from src.data.info_data import DataInfoBase
+from src.data.info_imotions import iMotionsInfo, IMOTIONS_LIST
 from src.data.info_participants import PARTICIPANT_LIST
+
 from src.log_config import configure_logging
 
 configure_logging()
@@ -52,21 +54,29 @@ class Participant:
         return merged_df
 
 
-def load_dataset(data_path: str, data_info: ExternalInfo) -> Data:
-    # Find start index for data
-    with open(data_path, 'r') as file:
-        lines = file.readlines(2**16) # only read a few lines
-    data_start_index = next(i for i, line in enumerate(lines) if "#DATA" in line)
+def load_dataset(
+        data_path: str, 
+        data_info: DataInfoBase
+        ) -> Data:
+    if isinstance(data_info, iMotionsInfo):
+        # Find start index for data
+        with open(data_path, 'r') as file:
+            lines = file.readlines(2**16) # only read a few lines
+        data_start_index = next(i for i, line in enumerate(lines) if "#DATA" in line)
     # Load and process data
     dataset = pd.read_csv(
         data_path, 
-        skiprows=data_start_index + 1,
+        skiprows=data_start_index + 1 if isinstance(data_info, iMotionsInfo) else 0,
         usecols=lambda column: column in data_info.keep_columns,
     )
     dataset.rename(columns=data_info.rename_columns, inplace=True) if data_info.rename_columns else None
     return Data(name=data_info.name, dataset=dataset)
 
-def load_participant_datasets(participant_id: str, base_path: str, data_infos: List[ExternalInfo]) -> Participant:
+def load_participant_datasets(
+        participant_id: str, 
+        base_path: str, 
+        data_infos: List[iMotionsInfo]
+        ) -> Participant:
     participant_path = os.path.join(base_path, participant_id)
     datasets: Dict[str, Data] = {}
     for data_info in data_infos:
@@ -78,17 +88,16 @@ def load_participant_datasets(participant_id: str, base_path: str, data_infos: L
 
 def main():
     DATA_DIR = Path("./data")
-    EXTERNAL_DIR = DATA_DIR / "external"
+    IMOTIONS_DIR = DATA_DIR / "imotions"
     RAW_DIR = DATA_DIR / "raw"
     
     
     for particpant in PARTICIPANT_LIST:
         participant_data = load_participant_datasets(
-            particpant.id, EXTERNAL_DIR, EXTERNAL_LIST
+            particpant.id, IMOTIONS_DIR, IMOTIONS_LIST
             )
         participant_data.save_individual_datasets(RAW_DIR / particpant.id)
-        #participant_data.save_whole_dataset(RAW_DIR / f"{particpant.id}.csv")
+
 
 if __name__ == "__main__":
     main()
-    
