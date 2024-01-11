@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from typing import Dict, List
 import logging
 
-from src.data.info_data import DataInfoBase
-from src.data.info_imotions import iMotionsInfo, IMOTIONS_LIST
-from src.data.info_participants import PARTICIPANT_LIST
+from src.data.config_data import DataConfigBase
+from src.data.config_imotions import iMotionsConfig, IMOTIONS_LIST
+from src.data.config_participants import PARTICIPANT_LIST
 
 from src.log_config import configure_logging
 
@@ -29,6 +29,7 @@ class Participant:
     def __getattr__(self, name):
         if name in self.datasets.keys():
            return self.datasets[name].dataset
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
         
     def save_individual_datasets(self, output_dir: str) -> None:
         os.makedirs(output_dir, exist_ok=True)
@@ -61,10 +62,10 @@ class Participant:
 
 def load_dataset(
         data_path: str, 
-        data_info: DataInfoBase
+        data_config: DataConfigBase
         ) -> Data:
     
-    if isinstance(data_info, iMotionsInfo):
+    if isinstance(data_config, iMotionsConfig):
         # Find start index in external data files
         with open(data_path, 'r') as file:
             lines = file.readlines(2**16) # only read a few lines
@@ -72,23 +73,23 @@ def load_dataset(
     # Load and process data
     dataset = pd.read_csv(
         data_path, 
-        skiprows=data_start_index + 1 if isinstance(data_info, iMotionsInfo) else 0,
-        usecols=lambda column: column in data_info.keep_columns,
+        skiprows=data_start_index + 1 if isinstance(data_config, iMotionsConfig) else 0,
+        usecols=lambda column: column in data_config.keep_columns,
     )
-    dataset.rename(columns=data_info.rename_columns, inplace=True) if data_info.rename_columns else None
-    return Data(name=data_info.name, dataset=dataset)
+    dataset.rename(columns=data_config.rename_columns, inplace=True) if data_config.rename_columns else None
+    return Data(name=data_config.name, dataset=dataset)
 
 def load_participant_datasets(
         participant_id: str, 
         base_path: str, 
-        data_infos: List[iMotionsInfo]
+        data_configs: List[iMotionsConfig]
         ) -> Participant:
     participant_path = os.path.join(base_path, participant_id)
     datasets: Dict[str, Data] = {}
-    for data_info in data_infos:
-        file_path = os.path.join(participant_path, data_info.path)
+    for data_config in data_configs:
+        file_path = os.path.join(participant_path, data_config.path)
         if os.path.exists(file_path):
-            datasets[data_info.name] = load_dataset(file_path, data_info)
+            datasets[data_config.name] = load_dataset(file_path, data_config)
     return Participant(id=participant_id, datasets=datasets)
 
 
