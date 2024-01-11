@@ -90,6 +90,7 @@ target/
 
 # exclude data from source control by default
 /data/external
+/data/imotions
 /data/interim
 /data/processed
 /data/raw
