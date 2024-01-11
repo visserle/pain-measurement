@@ -4,7 +4,12 @@ from typing import List, Optional
 __all__ = ['DATA_DICT', 'DataInfo', 'TRIAL', 'TEMPERATURE', 'RATING', 'EDA', 'ECG', 'EEG', 'PUPILLOMETRY', 'AFFECTIVA', 'SYSTEM']
 
 @dataclass
-class DataInfo:
+class DataInfoBase:
+    """Base class for type hinting"""
+    pass
+
+@dataclass
+class DataInfo(DataInfoBase):
     name: str
     columns: List[str]
     plot_columns: Optional[List[str]] = None

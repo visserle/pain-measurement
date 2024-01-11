@@ -1,10 +1,12 @@
+"""Contains information about the iMotions data files (= external data)."""
+
 from dataclasses import dataclass
 from typing import List, Optional, Dict
+from src.data.info_data import DataInfoBase
 
-__all__ = ['DATA_DICT', 'ExternalInfo', 'TRIAL', 'TEMPERATURE', 'RATING', 'EDA', 'ECG', 'EEG', 'PUPILLOMETRY', 'AFFECTIVA', 'SYSTEM']
 
-@dataclass
-class ExternalInfo:
+@dataclass(frozen=True)
+class iMotionsInfo(DataInfoBase):
     name: str
     path: str
     imotions_columns: List[str]  # columns copied from the imotions csv file
@@ -12,32 +14,35 @@ class ExternalInfo:
     rename_columns: Optional[Dict[str, str]] = None
     device_sampling_rate: Optional[float] = None
     notes: Optional[str] = None
+    frozen = True
 
 
-TRIAL = ExternalInfo(
+TRIAL = iMotionsInfo(
     name = 'trial',
     path = 'ExternalMarker_ET_EventAPI_ExternDevice.csv',
     imotions_columns = ["RowNumber","Timestamp","MarkerName","MarkerDescription","MarkerType","SceneType"],
     keep_columns = ["Timestamp","MarkerDescription"],
-    notes = "MarkerDescription will be renamed to Stimuli_Seed, \
-        it originally contains the stimulus seed and is send once at the start and end of each trial.",
+    rename_columns = {
+        "MarkerDescription": "Stimuli_Seed",
+        },
+    notes = "MarkerDescription contains the stimulus seed and is originally send once at the start and end of each trial.",
 )
 
-TEMPERATURE = ExternalInfo(
+TEMPERATURE = iMotionsInfo(
     name = 'temperature',
     path = 'TemperatureCurve_TemperatureCurve@1_ET_EventAPI_ExternDevice.csv',
     imotions_columns = ["RowNumber","Timestamp","Temperature"],
     keep_columns = ["Timestamp","Temperature"],
 )
 
-RATING = ExternalInfo(
+RATING = iMotionsInfo(
     name = 'rating',
     path = 'RatingCurve_RatingCurve@1_ET_EventAPI_ExternDevice.csv',
     imotions_columns = ["RowNumber","Timestamp","Rating"],
     keep_columns = ["Timestamp","Rating"],
 )
 
-EDA = ExternalInfo(
+EDA = iMotionsInfo(
     name = 'eda',
     path = 'Shimmer3_GSR+_&_EDA_(D200)_Shimmer3_GSR+_&_EDA_(D200)_ET_Shimmer_ShimmerDevice.csv',
     imotions_columns = ["RowNumber","Timestamp","SampleNumber","Timestamp RAW","Timestamp CAL","System Timestamp CAL","VSenseBatt RAW","VSenseBatt CAL","GSR RAW","GSR Resistance CAL","GSR Conductance CAL","Packet reception rate RAW"],
@@ -50,7 +55,7 @@ EDA = ExternalInfo(
     device_sampling_rate = 128,
 )
 
-ECG = ExternalInfo(
+ECG = iMotionsInfo(
     name = 'ecg',
     path = 'Shimmer3_ECG_(68BF)_Shimmer3_ECG_(68BF)_ET_Shimmer_ShimmerDevice.csv',
     imotions_columns = ["RowNumber","Timestamp","SampleNumber","Timestamp RAW","Timestamp CAL","System Timestamp CAL","VSenseBatt RAW","VSenseBatt CAL","EXG1 Status RAW","ECG LL-RA RAW","ECG LL-RA CAL","ECG LA-RA RAW","ECG LA-RA CAL","EXG2 Status RAW","ECG Vx-RL RAW","ECG Vx-RL CAL","Heart Rate ECG LL-RA ALG","IBI ECG LL-RA ALG","Packet reception rate RAW"],
@@ -67,7 +72,7 @@ ECG = ExternalInfo(
     device_sampling_rate = 512,
 )
 
-EEG = ExternalInfo(
+EEG = iMotionsInfo(
     name = 'eeg',
     path = 'EEG_Enobio-Wifi_ENOBIO-8-NE-Wifi(00_07_80_0D_82_F7)_ET_Lsl_LslSensor.csv',
     imotions_columns = ["RowNumber","Timestamp","LSL Timestamp","Ch1","Ch2","Ch3","Ch4","Ch5","Ch6","Ch7","Ch8"],
@@ -85,7 +90,7 @@ EEG = ExternalInfo(
     device_sampling_rate = 500,
 )
 
-PUPILLOMETRY = ExternalInfo(
+PUPILLOMETRY = iMotionsInfo(
     name = 'pupillometry',
     path = 'ET_Eyetracker.csv',
     imotions_columns = ["RowNumber","Timestamp","ET_GazeLeftx","ET_GazeLefty","ET_GazeRightx","ET_GazeRighty","ET_PupilLeft","ET_PupilRight","ET_TimeSignal","ET_DistanceLeft","ET_DistanceRight","ET_CameraLeftX","ET_CameraLeftY","ET_CameraRightX","ET_CameraRightY"],
@@ -99,7 +104,7 @@ PUPILLOMETRY = ExternalInfo(
     device_sampling_rate = 60,
 )
 
-AFFECTIVA = ExternalInfo(
+AFFECTIVA = iMotionsInfo(
     name = 'affectiva',
     path = 'Affectiva_AFFDEX_ET_Affectiva_AffectivaCameraDevice.csv',
     imotions_columns = ["RowNumber","Timestamp","SampleNumber","Anger","Contempt","Disgust","Fear","Joy","Sadness","Surprise","Engagement","Valence","Sentimentality","Confusion","Neutral","Attention","Brow Furrow","Brow Raise","Cheek Raise","Chin Raise","Dimpler","Eye Closure","Eye Widen","Inner Brow Raise","Jaw Drop","Lip Corner Depressor","Lip Press","Lip Pucker","Lip Stretch","Lip Suck","Lid Tighten","Mouth Open","Nose Wrinkle","Smile","Smirk","Upper Lip Raise","Blink","BlinkRate","Pitch","Yaw","Roll","Interocular Distance"],
@@ -107,7 +112,7 @@ AFFECTIVA = ExternalInfo(
     notes = "Affectiva data is not sampled at a constant rate and can contain NaNs.",
 )
 
-SYSTEM = ExternalInfo(
+SYSTEM = iMotionsInfo(
     name = 'system',
     path = 'System_Load_Monitor_iMotions.SysMonitor@1_ET_EventAPI_ExternDevice.csv',
     imotions_columns = ["RowNumber","Timestamp","CPU Sys","Memory Sys","CPU Proc","Memory Proc"],
@@ -115,4 +120,4 @@ SYSTEM = ExternalInfo(
 )
 
 
-EXTERNAL_LIST = [TRIAL, TEMPERATURE, RATING, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA, SYSTEM]
+IMOTIONS_LIST = [TRIAL, TEMPERATURE, RATING, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA, SYSTEM]
