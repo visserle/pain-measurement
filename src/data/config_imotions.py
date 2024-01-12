@@ -10,7 +10,7 @@ from src.data.config_data import DataConfigBase
 class iMotionsConfig(DataConfigBase):
     name: str
     name_imotions: str
-    use_columns: List[str] # columns to keep in the final dataframe
+    load_columns: List[str] # columns to load
     rename_columns: Optional[Dict[str, str]] = None
     notes: Optional[str] = None
     
@@ -21,7 +21,7 @@ class iMotionsConfig(DataConfigBase):
 TRIAL = iMotionsConfig(
     name = 'trial',
     name_imotions = 'ExternalMarker_ET_EventAPI_ExternDevice',
-    use_columns = ["Timestamp","MarkerDescription"],
+    load_columns = ["Timestamp","MarkerDescription"],
     rename_columns = {
         "MarkerDescription": "Stimuli_Seed",
         },
@@ -31,19 +31,19 @@ TRIAL = iMotionsConfig(
 TEMPERATURE = iMotionsConfig(
     name = 'temperature',
     name_imotions = 'TemperatureCurve_TemperatureCurve@1_ET_EventAPI_ExternDevice',
-    use_columns = ["Timestamp","Temperature"],
+    load_columns = ["Timestamp","Temperature"],
 )
 
 RATING = iMotionsConfig(
     name = 'rating',
     name_imotions = 'RatingCurve_RatingCurve@1_ET_EventAPI_ExternDevice',
-    use_columns = ["Timestamp","Rating"],
+    load_columns = ["Timestamp","Rating"],
 )
 
 EDA = iMotionsConfig(
     name = 'eda',
     name_imotions = 'Shimmer3_GSR+_&_EDA_(D200)_Shimmer3_GSR+_&_EDA_(D200)_ET_Shimmer_ShimmerDevice',
-    use_columns = ["Timestamp","GSR Conductance CAL","VSenseBatt CAL","Packet reception rate RAW"],
+    load_columns = ["Timestamp","GSR Conductance CAL","VSenseBatt CAL","Packet reception rate RAW"],
     rename_columns = {
         "GSR Conductance CAL": "EDA_RAW",
         "VSenseBatt CAL": "EDA_d_Battery",
@@ -54,7 +54,7 @@ EDA = iMotionsConfig(
 ECG = iMotionsConfig(
     name = 'ecg',
     name_imotions = 'Shimmer3_ECG_(68BF)_Shimmer3_ECG_(68BF)_ET_Shimmer_ShimmerDevice',
-    use_columns = ["Timestamp","ECG LL-RA CAL","ECG LA-RA CAL","ECG Vx-RL CAL","Heart Rate ECG LL-RA ALG","IBI ECG LL-RA ALG","VSenseBatt CAL","Packet reception rate RAW"],
+    load_columns = ["Timestamp","ECG LL-RA CAL","ECG LA-RA CAL","ECG Vx-RL CAL","Heart Rate ECG LL-RA ALG","IBI ECG LL-RA ALG","VSenseBatt CAL","Packet reception rate RAW"],
     rename_columns = {
         "ECG LL-RA CAL": "ECG_LL-RA",
         "ECG LA-RA CAL": "ECG_LA-RA",
@@ -69,7 +69,7 @@ ECG = iMotionsConfig(
 EEG = iMotionsConfig(
     name = 'eeg',
     name_imotions = 'EEG_Enobio-Wifi_ENOBIO-8-NE-Wifi(00_07_80_0D_82_F7)_ET_Lsl_LslSensor',
-    use_columns = ["Timestamp","Ch1","Ch2","Ch3","Ch4","Ch5","Ch6","Ch7","Ch8"],
+    load_columns = ["Timestamp","Ch1","Ch2","Ch3","Ch4","Ch5","Ch6","Ch7","Ch8"],
     rename_columns = {
         "Ch1": "EEG_RAW_Ch1",
         "Ch2": "EEG_RAW_Ch2",
@@ -85,7 +85,7 @@ EEG = iMotionsConfig(
 PUPILLOMETRY = iMotionsConfig(
     name = 'pupillometry',
     name_imotions = 'ET_Eyetracker',
-    use_columns = ["Timestamp","ET_PupilLeft","ET_PupilRight","ET_DistanceLeft","ET_DistanceRight"],
+    load_columns = ["Timestamp","ET_PupilLeft","ET_PupilRight","ET_DistanceLeft","ET_DistanceRight"],
     rename_columns = {
         "ET_PupilLeft": "Pupillometry_L",
         "ET_PupilRight": "Pupillometry_R",
@@ -97,14 +97,14 @@ PUPILLOMETRY = iMotionsConfig(
 AFFECTIVA = iMotionsConfig(
     name = 'affectiva',
     name_imotions = 'Affectiva_AFFDEX_ET_Affectiva_AffectivaCameraDevice',
-    use_columns = ["Timestamp","Anger","Contempt","Disgust","Fear","Joy","Sadness","Surprise","Engagement","Valence","Sentimentality","Confusion","Neutral","Attention","Brow Furrow","Brow Raise","Cheek Raise","Chin Raise","Dimpler","Eye Closure","Eye Widen","Inner Brow Raise","Jaw Drop","Lip Corner Depressor","Lip Press","Lip Pucker","Lip Stretch","Lip Suck","Lid Tighten","Mouth Open","Nose Wrinkle","Smile","Smirk","Upper Lip Raise","Blink","BlinkRate","Pitch","Yaw","Roll","Interocular Distance"],
+    load_columns = ["Timestamp","Anger","Contempt","Disgust","Fear","Joy","Sadness","Surprise","Engagement","Valence","Sentimentality","Confusion","Neutral","Attention","Brow Furrow","Brow Raise","Cheek Raise","Chin Raise","Dimpler","Eye Closure","Eye Widen","Inner Brow Raise","Jaw Drop","Lip Corner Depressor","Lip Press","Lip Pucker","Lip Stretch","Lip Suck","Lid Tighten","Mouth Open","Nose Wrinkle","Smile","Smirk","Upper Lip Raise","Blink","BlinkRate","Pitch","Yaw","Roll","Interocular Distance"],
     notes = "Affectiva data is not sampled at a constant rate and can contain NaNs.",
 )
 
 SYSTEM = iMotionsConfig(
     name = 'system',
     name_imotions = 'System_Load_Monitor_iMotions.SysMonitor@1_ET_EventAPI_ExternDevice',
-    use_columns = ["Timestamp","CPU Sys","Memory Sys","CPU Proc","Memory Proc"],
+    load_columns = ["Timestamp","CPU Sys","Memory Sys","CPU Proc","Memory Proc"],
 )
 
 
