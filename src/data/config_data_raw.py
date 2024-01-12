@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 from pathlib import Path
 from src.data.config_data import DataConfigBase
+from src.data.transform_data import create_timedelta_index
 
 
 @dataclass
@@ -15,6 +16,7 @@ class RawConfig(DataConfigBase):
     def __post_init__(self):
         self.load_dir = Path('data/raw')
         self.save_dir = Path('data/trial')
+        self.transformations = [create_timedelta_index] if not self.transformations else [create_timedelta_index] + self.transformations
 
 
 TRIAL = RawConfig(

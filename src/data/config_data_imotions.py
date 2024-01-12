@@ -17,6 +17,7 @@ class iMotionsConfig(DataConfigBase):
     def __post_init__(self):
         self.load_dir = Path('data/imotions')
         self.save_dir = Path('data/raw')
+        self.transformations = None
 
 TRIAL = iMotionsConfig(
     name = 'trial',
