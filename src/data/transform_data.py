@@ -2,20 +2,22 @@ import pandas as pd
 import numpy as np
 
 
-def create_timedelta_index(df):
-    """Convert the time stamp to time delta and set it as index."""
-    # just casting to timedelta64[ms] is faster but less accurate
-    df["Time"] = pd.to_timedelta(df["Timestamp"], unit='ms').round('ms').astype('timedelta64[ms]')
-    df.set_index("Time", append=True if 'Trial' in df.index.names else False, inplace=True)
-    # Remove duplicate index
-    df = df[~df.index.duplicated(keep='first')]
-    return df
+def apply_func_participant(participant, func):
+    """Wierd utility function, will be removed in the future, see process_data.py."""
+    #TODO: use map instead, e.g.:
+    # dict(zip(a, map(f, a.values())))
+    # dict(map(lambda item: (item[0], f(item[1])), my_dictionary.items()
+    for data in participant.datasets:
+        participant.datasets[data].dataset = func(participant.datasets[data].dataset)
+    return participant
 
 
 def create_trial_index(df):
-    """Create a trial index based on the MarkerDescription which contains the stimulus seed and is originally send once at the start and end of each trial."""
-    # 0. Check if all trials are complete
-    # TODO
+    """Create a trial index based on the stimuli seed which is originally send once at the start and end of each trial."""
+    # Check if the trial index already exists
+    if 'Trial' in df.index.names:
+        return df
+    # 0. Check if all trials are complete  # TODO
     # 1. Forward fill and backward fill columns
     ffill = df['Stimuli_Seed'].ffill()
     bfill = df['Stimuli_Seed'].bfill()
@@ -30,6 +32,14 @@ def create_trial_index(df):
     df.set_index('Trial', append=True if 'Time' in df.index.names else False, inplace=True)
     return df
 
+def create_timedelta_index(df):
+    """Convert the time stamp to time delta and set it as index."""
+    # just casting to timedelta64[ms] is faster but less accurate
+    df["Time"] = pd.to_timedelta(df["Timestamp"], unit='ms').round('ms').astype('timedelta64[ms]')
+    df.set_index("Time", append=True if 'Trial' in df.index.names else False, inplace=True)
+    # Remove duplicate index
+    df = df[~df.index.duplicated(keep='first')]
+    return df
 
 def reorder_multiindex(df):
     if ('Trial' in df.index.names) and ('Time' in df.index.names):
@@ -57,12 +67,13 @@ def resample_to_500hz(df):
     return df
 
 
-def interpolate(df, method='linear'):
+def interpolate(df, method='linear', limit_direction='both'):
     columns_to_interpolate = df.columns[(df.dtypes == float)]
+    # When working with data that represents several trials, we need to interpolate each trial separately
     if 'Trial' in df.index.names:
-        df[columns_to_interpolate] = df.groupby('Trial')[columns_to_interpolate].transform(lambda x: x.interpolate(method=method))
+        df[columns_to_interpolate] = df.groupby('Trial')[columns_to_interpolate].transform(lambda x: x.interpolate(method=method, limit_direction=limit_direction))
     else:
-        df[columns_to_interpolate] = df[columns_to_interpolate].interpolate(method=method)
+        df[columns_to_interpolate] = df[columns_to_interpolate].interpolate(method=method, limit_direction=limit_direction)
     return df
 
 
