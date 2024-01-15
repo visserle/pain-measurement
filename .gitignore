@@ -1,4 +1,21 @@
 # work in progress
+notebooks/00_stimuli_function.ipynb
+notebooks/03_dataset_size.ipynb
+notebooks/04_time_series.ipynb
+notebooks/05_preprocess_data.ipynb
+src/data/01_statistical_tests.ipynb
+src/data/05_preprocess_data Kopie.ipynb
+src/data/catboost.ipynb
+src/data/get_data Kopie.ipynb
+src/data/get_data_ecg.ipynb
+src/data/get_data_eda.ipynb
+src/data/get_data_eeg.ipynb
+src/data/test.py
+src/models/mlp.py
+src/models/model.ipynb
+src/models/models.py
+src/models/models_2.py
+
 
 # excluded for now
 /runs
@@ -10,6 +27,21 @@ notebooks/10_skorch_doctor.ipynb
 references/psychopy/scripts.md
 src/psychopy/calibration/+++ DO NOT IMPROVE CODE +++
 src/psychopy/measurement/+++ DO NOT IMPROVE CODE +++
+plan.md
+run_psychopy_calibration.bat
+run_psychopy_measurement.bat
+
+
+# exclude data from source control by default
+/data/external
+/data/imotions
+/data/interim
+/data/processed
+data/trial
+/data/raw
+/data/_test
+
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -88,12 +120,6 @@ target/
 # Jupyter NB Checkpoints
 .ipynb_checkpoints/
 
-# exclude data from source control by default
-/data/external
-/data/imotions
-/data/interim
-/data/processed
-/data/raw
 
 # Mac OS-specific storage files
 .DS_Store
@@ -104,3 +130,4 @@ target/
 
 # Mypy cache
 .mypy_cache/
+
