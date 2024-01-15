@@ -386,6 +386,8 @@ class StimuliFunction():
         # we could than floor or ceil the mean length to get the desired length
         # also keep in mind that we do padding in the setter to get to a full second
         # where we always prolong, but never shorten the wave
+        # Note: So far, this seems to work fine, maybe because of the padding?
+        # do some more testing here and maybe just leave it as it is
 
         if self.avg_length_of_big_decreases is not None:
             if mean_length != self.avg_length_of_big_decreases:
