@@ -20,8 +20,9 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 # Set the path to the Excel file
 exp_dirs = "calibration", "measurement", "placebo"
 X_DIR = Path.cwd()
-if X_DIR.stem in exp_dirs: # when running from psychopy runner
-    FILE_PATH = X_DIR.parent.parent.parent / "runs" / "psychopy" / "participants.xlsx"
+# when running from psychopy runner (not recommended)
+if X_DIR.stem in exp_dirs: 
+    FILE_PATH = X_DIR.parents[2] / "runs" / "psychopy" / "participants.xlsx"
 else: # when running from project root
     FILE_PATH = X_DIR / "runs" / "psychopy" / 'participants.xlsx'
 
