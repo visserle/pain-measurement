@@ -54,7 +54,7 @@ class Participant:
            return self.datasets[name].dataset
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
-def load_dataset(
+def load_dataset_old(
         participant_config: ParticipantConfig,
         data_config: DataConfigBase,
         ) -> Data:
@@ -78,6 +78,47 @@ def load_dataset(
         dataset.rename(columns=data_config.rename_columns, inplace=True) if data_config.rename_columns else None
     return Data(name=data_config.name, dataset=dataset)
 
+def load_participant_datasets_old(
+        participant_config: ParticipantConfig, 
+        data_configs: List[DataConfigBase]
+        ) -> Participant:
+
+    datasets: Dict[str, Data] = {}
+    for data_config in data_configs:
+        datasets[data_config.name] = load_dataset_old(participant_config, data_config)
+    return Participant(id=participant_config.id, datasets=datasets)
+
+
+
+
+def load_dataset(
+        participant_config: ParticipantConfig,
+        data_config: DataConfigBase
+        ) -> Data:
+
+    file_path = data_config.load_dir / participant_config.id / f"{participant_config.id}_{data_config.name}.csv"
+    file_start_index = 0
+    # iMotions data are stored in a different format and have metadata we need to skip
+    if isinstance(data_config, iMotionsConfig):
+        file_path = data_config.load_dir / participant_config.id / f"{data_config.name_imotions}.csv"
+        with open(file_path, 'r') as file:
+            lines = file.readlines(2**16) # only read a few lines
+        file_start_index = next(i for i, line in enumerate(lines) if "#DATA" in line) + 1
+
+    # Load and process data using Polars
+    dataset = pl.read_csv(
+        file_path, 
+        columns=data_config.load_columns,
+        skip_rows=file_start_index,
+        infer_schema_length=1000,
+    )
+    
+    if isinstance(data_config, iMotionsConfig):
+        if data_config.rename_columns:
+            dataset = dataset.rename(data_config.rename_columns)
+
+    return Data(name=data_config.name, dataset=dataset)
+
 def load_participant_datasets(
         participant_config: ParticipantConfig, 
         data_configs: List[DataConfigBase]
@@ -86,7 +127,10 @@ def load_participant_datasets(
     datasets: Dict[str, Data] = {}
     for data_config in data_configs:
         datasets[data_config.name] = load_dataset(participant_config, data_config)
+        
     return Participant(id=participant_config.id, datasets=datasets)
+
+
 
 
 
@@ -164,20 +208,20 @@ def save_participant_datasets(
 
 def main():
     list_of_data_configs = [
-        #IMOTIONS_LIST,
-        RAW_LIST,
-        TRIAL_LIST,
+        IMOTIONS_LIST,
+        # RAW_LIST,
+        # TRIAL_LIST,
     ]
 
-    for data_configs in list_of_data_configs:
-        for particpant in PARTICIPANT_LIST:
-            participant_data = load_participant_datasets(
-                particpant, data_configs)
-            participant_data = transform_participant_datasets(
-                participant_data, data_configs)
-            save_participant_datasets(participant_data, data_configs)
+    # for data_configs in list_of_data_configs:
+    #     for particpant in PARTICIPANT_LIST:
+    #         participant_data = load_participant_datasets(
+    #             particpant, data_configs)
+    #         participant_data = transform_participant_datasets(
+    #             participant_data, data_configs)
+    #         save_participant_datasets(participant_data, data_configs)
 
-    data = load_participant_datasets(PARTICIPANT_LIST[0], TRIAL_LIST)
+    data = load_participant_datasets(PARTICIPANT_LIST[0], IMOTIONS_LIST)
     print(data.eeg.head())
 
 if __name__ == "__main__":
@@ -215,44 +259,6 @@ if __name__ == "__main__":
 
 
 
-
-# def load_dataset_pl(
-#         participant_config: ParticipantConfig,
-#         data_config: DataConfigBase
-#         ) -> Data:
-
-#     file_path = data_config.load_dir / participant_config.id / f"{participant_config.id}_{data_config.name}.csv"
-#     file_start_index = 0
-#     # iMotions data are stored in a different format and have metadata we need to skip
-#     if isinstance(data_config, iMotionsConfig):
-#         file_path = data_config.load_dir / participant_config.id / f"{data_config.name_imotions}.csv"
-#         with open(file_path, 'r') as file:
-#             lines = file.readlines(2**16) # only read a few lines
-#         file_start_index = next(i for i, line in enumerate(lines) if "#DATA" in line) + 1
-
-#     # Load and process data using Polars
-#     dataset = pl.read_csv(
-#         file_path, 
-#         columns=data_config.load_columns,
-#         skip_rows=file_start_index,
-#     ).to_pandas()
-    
-#     if isinstance(data_config, iMotionsConfig):
-#         if data_config.rename_columns:
-#             dataset = dataset.rename(data_config.rename_columns)
-
-#     return Data(name=data_config.name, dataset=dataset)
-
-# def load_participant_datasets_pl(
-#         participant_config: ParticipantConfig, 
-#         data_configs: List[DataConfigBase]
-#         ) -> Participant:
-
-#     datasets: Dict[str, Data] = {}
-#     for data_config in data_configs:
-#         datasets[data_config.name] = load_dataset_pl(participant_config, data_config)
-        
-#     return Participant(id=participant_config.id, datasets=datasets)
 
 
 
