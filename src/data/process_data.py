@@ -51,7 +51,7 @@ class Participant:
         if name in self.datasets:
            return self.datasets[name].dataset
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
-
+    
     def __repr__(self):
         return f"Participant(id={self.id}, datasets={self.datasets.keys()})"
 
@@ -98,7 +98,7 @@ def load_participant_datasets(
 
 
 def transform_dataset(
-        df: pl.DataFrame,
+        data: Data,
         data_config: DataConfigBase
         ) -> Data:
     """
@@ -118,8 +118,8 @@ def transform_dataset(
     """
     if data_config.transformations:
         for transformation in data_config.transformations:
-            df = transformation(df)
-    return df
+            data.dataset = transformation(data.dataset)
+            
 
 def transform_participant_datasets(
         participant_data: Participant,
@@ -131,17 +131,17 @@ def transform_participant_datasets(
     if isinstance(data_configs[0], iMotionsConfig):
         for data_config in IMOTIONS_LIST:
             # add the stimuli seed column to all datasets of the participant except for the trial data which already has it
-            if "Stimuli_Seed" not in participant_data(data_config.name).columns:
-                participant_data.datasets[data_config.name].dataset = participant_data(data_config.name).join(
+            if "Stimuli_Seed" not in participant_data.datasets[data_config.name].dataset.columns:
+                participant_data.datasets[data_config.name].dataset = participant_data.datasets[data_config.name].dataset.join(
                     participant_data.trial,
                     on='Timestamp',
                     how='outer_coalesce',
                 ).sort('Timestamp')
-            assert participant_data(data_config.name)['Timestamp'].is_sorted(descending=False)
+            assert participant_data.datasets[data_config.name].dataset['Timestamp'].is_sorted(descending=False)
 
     # Do the regular transformation(s) as defined in the config
     for data_config in data_configs:
-        transform_dataset(participant_data(data_config.name), data_config)
+        transform_dataset(participant_data.datasets[data_config.name], data_config)
     return participant_data
 
 
