@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Dict
 from pathlib import Path
 from src.data.config_data import DataConfigBase
+from src.data.transform_data import create_trials, add_timedelta_column, interpolate
 
 
 @dataclass
@@ -12,12 +13,15 @@ class iMotionsConfig(DataConfigBase):
     name_imotions: str
     load_columns: List[str] # columns to load
     rename_columns: Optional[Dict[str, str]] = None
+    transformations: Optional[List] = None
+    sample_rate: Optional[int] = None # TODO!
     notes: Optional[str] = None
     
     def __post_init__(self):
         self.load_dir = Path('data/imotions')
         self.save_dir = Path('data/raw')
-        self.transformations = None
+        self.transformations = [create_trials] if not self.transformations else [create_trials] + self.transformations
+        
 
 TRIAL = iMotionsConfig(
     name = 'trial',
