@@ -8,7 +8,7 @@ from colorama import Fore, Back, Style
 def configure_logging(
         stream_level=logging.INFO, stream=True,
         file_level=logging.DEBUG, file_path=None,
-        ignore_libs=None):
+        ignore_libs=None, colored=False):
     """
     Configures the root logger for logging messages to the console and optionally to a file.
     Supports ignoring logs from specified libraries.
@@ -26,18 +26,20 @@ def configure_logging(
     if stream:
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setLevel(stream_level)
-        colored_formatter = ColoredFormatter(
-            '{asctime} |{color} {levelname:7} {reset}| {name} | {message}',
-            style='{', datefmt='%H:%M:%S',
-            colors={
-                'DEBUG': Fore.CYAN,
-                'INFO': Fore.GREEN,
-                'WARNING': Fore.YELLOW,
-                'ERROR': Fore.RED,
-                'CRITICAL': Fore.RED + Back.WHITE + Style.BRIGHT,
-            }
-        )
-        stream_handler.setFormatter(colored_formatter)
+        stream_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s', datefmt='%H:%M:%S')
+        if colored:
+            stream_formatter = ColoredFormatter(
+                '{asctime} |{color} {levelname:7} {reset}| {name} | {message}',
+                style='{', datefmt='%H:%M:%S',
+                colors={
+                    'DEBUG': Fore.CYAN,
+                    'INFO': Fore.GREEN,
+                    'WARNING': Fore.YELLOW,
+                    'ERROR': Fore.RED,
+                    'CRITICAL': Fore.RED + Back.WHITE + Style.BRIGHT,
+                }
+            )
+        stream_handler.setFormatter(stream_formatter)
         handlers.append(stream_handler)
 
     # FileHandler for file logging, added only if file path is provided

@@ -36,15 +36,50 @@ def create_trials(df: pl.DataFrame):
     # Create a new column that contains the trial number
     df = df.with_columns(
         pl.col('Stimuli_Seed')
-        .diff()              # Calculate differences
-        .fill_null(value=0)  # Replace initial null with 0 because the first trial is always 0
-        .ne(0)               # Check for non-zero differences
-        .cum_sum()           # Cumulative sum of boolean values
-        .cast(pl.UInt8)      # Cast to integer data type between 0 and 255
-        .alias('Trial')      # Rename the series to 'Trial'
+        .diff()                 # Calculate differences
+        .fill_null(value=0)     # Replace initial null with 0 because the first trial is always 0
+        .ne(0)                  # Check for non-zero differences
+        .cum_sum()              # Cumulative sum of boolean values
+        .cast(pl.UInt8)         # Cast to integer data type between 0 and 255
+        .alias('Trial')         # Rename the series to 'Trial'
     )
     return df
 
+
+def interpolate_to_marker_timestamps(df):
+    # Define a custom function for the transformation
+    def replace_timestamps(group_df):
+        """
+        We define the timestamp where the marker was send as the first measurement timestamp 
+        of the device to have the exact same trial duration for each modality 
+        (different devices have different sampling rates). This shifts the data by about 5 ms
+        and could be interpreted as an interpolation.
+        """
+        # Get the first and last timestamp of the group
+        # TODO: NOTE: there is a difference between using the integer indexing and boolean indexing below
+        # - we should decide depending on how duplicate timestamps are handled
+        # especially in what order duplicate timestamps are removed
+        first_timestamp = group_df["Timestamp"][0]
+        second_timestamp = group_df["Timestamp"][1]
+        second_to_last_timestamp = group_df["Timestamp"][-2]
+        last_timestamp = group_df["Timestamp"][-1]
+        
+        # Replace the second and second-to-last timestamps
+        return group_df.with_columns(
+            pl.when(pl.col("Timestamp") == group_df["Timestamp"][1])
+            .then(first_timestamp)
+            .when(pl.col("Timestamp") == group_df["Timestamp"][-2])
+            .then(last_timestamp)
+            .otherwise(pl.col("Timestamp"))
+            .alias("Timestamp")
+        ).drop_nulls()
+
+    # Only if there are nulls in the df
+    if sum(df.null_count()).item() == 0:
+        return df
+    # Apply the custom function to each group
+    return df.group_by("Trial", maintain_order=True).map_groups(replace_timestamps)
+    
 
 def add_timedelta_column(df: pl.DataFrame):
     # NOTE: saving timedelta to csv runs into problems, maybe we can do without it for now / just use it for debuggings
