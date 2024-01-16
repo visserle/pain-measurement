@@ -1,9 +1,12 @@
-import pandas as pd
 import numpy as np
+import polars as pl
+import pandas as pd
 
+# NOTE: square brackets can be used to access columns in polars but do not allow lazy evaluation -> use select, take, etc for performance
+# TODO: cast data types for more performance
 
 def apply_func_participant(participant, func):
-    """Wierd utility function, will be removed in the future, see process_data.py."""
+    """Utility function for debugging, will be removed in the future, see process_data.py."""
     #TODO: use map instead, e.g.:
     # dict(zip(a, map(f, a.values())))
     # dict(map(lambda item: (item[0], f(item[1])), my_dictionary.items()
@@ -12,44 +15,49 @@ def apply_func_participant(participant, func):
     return participant
 
 
-def create_trial_index(df):
-    """Create a trial index based on the stimuli seed which is originally send once at the start and end of each trial."""
-    # Check if the trial index already exists
-    if 'Trial' in df.index.names:
-        return df
-    # 0. Check if all trials are complete  # TODO
-    # 1. Forward fill and backward fill columns
-    ffill = df['Stimuli_Seed'].ffill()
-    bfill = df['Stimuli_Seed'].bfill()
-    # 2. Where forward fill and backward fill are equal, replace the NaNs in the original Stimuli_Seed
-    df['Stimuli_Seed'] = np.where(ffill == bfill, ffill, df['Stimuli_Seed'])
-    # 3. Only keep rows where the Stimuli_Seed is not NaN
-    df = df[df['Stimuli_Seed'].notna()]
-    df['Stimuli_Seed'] = df['Stimuli_Seed'].astype(int)
+def create_trials(df: pl.DataFrame):
+    # TODO: maybe we need to interpolate here for the nan at the start and end of each trial
+    """Create a trial column based on the stimuli seed which is originally send only once at the start and end of each trial."""
+    # TODO: Check if all trials are complete
+    # Forward fill and backward fill columns
+    ffill = df['Stimuli_Seed'].fill_null(strategy='forward')
+    bfill = df['Stimuli_Seed'].fill_null(strategy='backward')
+    # Where forward fill and backward fill are equal, replace the NaNs in the original Stimuli_Seed
+    # this is the same as np.where(ffill == bfill, ffill, df['Stimuli_Seed'])
+    df = df.with_columns(
+        pl.when(ffill == bfill)
+        .then(ffill)
+        .otherwise(df['Stimuli_Seed'])
+        .alias('Stimuli_Seed')
+    )
+    assert df['Timestamp'].is_sorted(descending=False)
+    # Only keep rows where the Stimuli_Seed is not NaN
+    df = df.filter(df['Stimuli_Seed'].is_not_null())
     # Create a new column that contains the trial number
-    df['Trial'] = df.Stimuli_Seed.diff().ne(0).cumsum()
-    # Add Trial to the index
-    df.set_index('Trial', append=True if 'Time' in df.index.names else False, inplace=True)
-    return df
-
-def create_timedelta_index(df):
-    """Convert the time stamp to time delta and set it as index."""
-    # just casting to timedelta64[ms] is faster but less accurate
-    df["Time"] = pd.to_timedelta(df["Timestamp"], unit='ms').round('ms').astype('timedelta64[ms]')
-    df.set_index("Time", append=True if 'Trial' in df.index.names else False, inplace=True)
-    # Remove duplicate index
-    df = df[~df.index.duplicated(keep='first')]
-    return df
-
-def reorder_multiindex(df):
-    if ('Trial' in df.index.names) and ('Time' in df.index.names):
-        df = df.reorder_levels(['Trial', 'Time'])
+    df = df.with_columns(
+        pl.col('Stimuli_Seed')
+        .diff()              # Calculate differences
+        .fill_null(value=0)  # Replace initial null with 0 because the first trial is always 0
+        .ne(0)               # Check for non-zero differences
+        .cum_sum()           # Cumulative sum of boolean values
+        .cast(pl.UInt8)      # Cast to integer data type between 0 and 255
+        .alias('Trial')      # Rename the series to 'Trial'
+    )
     return df
 
 
-def resample(df, ms):
-    if 'Time' not in df.index.names:
-        raise ValueError("Index must contain 'Time'.")
+def add_timedelta_column(df: pl.DataFrame):
+    # NOTE: saving timedelta to csv runs into problems, maybe we can do without it for now / just use it for debuggings
+    """Create a new column that contains the time from Timestamp in ms."""
+    df = df.with_columns(
+        df['Timestamp']
+        .cast(pl.Duration(time_unit='ms'))
+        .alias('Time')
+    )
+    return df
+
+
+def resample(df: pl.DataFrame, ms: int):
     if 'Trial' in df.index.names:
         df = df.groupby('Trial').resample(f'{ms}ms', level='Time').mean()
     else:

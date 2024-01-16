@@ -24,7 +24,6 @@ p_002 = ParticipantConfig(
     non_available_data = ['eeg'],
 )
 
-
 PARTICIPANT_LIST = [
     p_001,
     #p_002,

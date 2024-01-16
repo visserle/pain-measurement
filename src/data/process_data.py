@@ -1,7 +1,5 @@
 # work in progress
-# TODO:
-# - maybe make transformation faster by using map or list comprehension?
-# - switch to polars?
+
 
 """
 This is the main script for processing data obtained from the iMotions software.
@@ -27,7 +25,6 @@ import polars as pl
 from src.data.config_data import DataConfigBase
 from src.data.config_data_imotions import iMotionsConfig, IMOTIONS_LIST
 from src.data.config_data_raw import RawConfig, RAW_LIST
-from src.data.config_data_trial import TrialConfig, TRIAL_LIST
 from src.data.config_participant import ParticipantConfig, PARTICIPANT_LIST
 
 from src.log_config import configure_logging
@@ -47,19 +44,25 @@ class Participant:
     id: str
     datasets: Dict[str, Data]
     
+    def __call__(self, attr_name):
+        return getattr(self, attr_name)
+
     def __getattr__(self, name):
         if name in self.datasets:
            return self.datasets[name].dataset
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+    
+    def __repr__(self):
+        return f"Participant(id={self.id}, datasets={self.datasets.keys()})"
 
-
+    
 def load_dataset(
         participant_config: ParticipantConfig,
         data_config: DataConfigBase
         ) -> Data:
 
     file_path = data_config.load_dir / participant_config.id / f"{participant_config.id}_{data_config.name}.csv"
-    
+    file_start_index = 0
     # iMotions data are stored in a different format and have metadata we need to skip
     if isinstance(data_config, iMotionsConfig):
         file_path = data_config.load_dir / participant_config.id / f"{data_config.name_imotions}.csv"
@@ -71,7 +74,7 @@ def load_dataset(
     dataset = pl.read_csv(
         file_path, 
         columns=data_config.load_columns,
-        skip_rows=0 if not file_start_index else file_start_index,
+        skip_rows=file_start_index,
         infer_schema_length=1000,
     )
     
@@ -123,9 +126,9 @@ def transform_participant_datasets(
         data_configs: List[DataConfigBase]
         ) -> Participant:
     """Transform all datasets for a single participant."""
-    # Special case for imotions data: we need to add the stimuli seed column
+    
+    # Special case for imotions data: we first need to merge trial information into each dataset (via Stimuli_Seed)
     if isinstance(data_configs[0], iMotionsConfig):
-        # datasets are missing the trial information (via Stimuli_Seed) and need to be merged with the trial data first
         for data_config in IMOTIONS_LIST:
             # add the stimuli seed column to all datasets of the participant except for the trial data which already has it
             if "Stimuli_Seed" not in participant_data.datasets[data_config.name].dataset.columns:
@@ -170,7 +173,6 @@ def main():
     list_of_data_configs = [
         IMOTIONS_LIST,
         #RAW_LIST,
-        #TRIAL_LIST,
     ]
 
     for data_configs in list_of_data_configs:
@@ -180,6 +182,8 @@ def main():
             participant_data = transform_participant_datasets(
                 participant_data, data_configs)
             save_participant_datasets(participant_data, data_configs)
+
+    print(participant_data.eeg.head())
 
     # data = load_participant_datasets(PARTICIPANT_LIST[0], IMOTIONS_LIST)
     # print(data.eeg.head())
@@ -202,3 +206,11 @@ if __name__ == "__main__":
 #     merged_df.sort_values(by=['Timestamp'], inplace=True)
 #     logging.info(f"Dataframe shape: {merged_df.shape}")
 #     return merged_df
+
+# working pl function:
+# def merge_dfs(dfs: List[pl.DataFrame]) -> pl.DataFrame:
+#     return reduce(
+#         lambda left, right: 
+#             left.join(right, on=['Timestamp','Trial'], how='outer_coalesce')
+#             .sort('Timestamp'),
+#         dfs)
