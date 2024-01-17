@@ -19,7 +19,6 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 import logging
 
-import pandas as pd
 import polars as pl
 
 from src.data.config_data import DataConfigBase
@@ -29,7 +28,7 @@ from src.data.config_participant import ParticipantConfig, PARTICIPANT_LIST
 
 from src.log_config import configure_logging
 
-configure_logging()
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 @dataclass
@@ -83,6 +82,7 @@ def load_dataset(
         if data_config.rename_columns:
             dataset = dataset.rename(data_config.rename_columns)
 
+    logger.debug("Dataset '%s' for participant %s loaded from %s", data_config.name, participant_config.id, file_path)
     return Data(name=data_config.name, dataset=dataset)
 
 def load_participant_datasets(
@@ -93,7 +93,8 @@ def load_participant_datasets(
     datasets: Dict[str, Data] = {}
     for data_config in data_configs:
         datasets[data_config.name] = load_dataset(participant_config, data_config)
-        
+    
+    logger.info(f"Participant {participant_config.id} loaded with datasets: {datasets.keys()}")
     return Participant(id=participant_config.id, datasets=datasets)
 
 
@@ -158,7 +159,7 @@ def save_dataset(
     # Write the DataFrame to CSV
     # TODO: problems with saving timedelta format, but we can do without it for now
     data.dataset.write_csv(file_path)
-    logging.info(f"Dataset '{data_config.name}' for participant {participant_config.id} saved to {file_path}")
+    logger.debug("Dataset '%s' for participant %s saved to %s", data_config.name, participant_config.id, file_path)
 
 def save_participant_datasets(
         participant: Participant,
@@ -167,9 +168,11 @@ def save_participant_datasets(
     """Save all datasets for a single participant to csv files."""
     for data_config in data_configs:
         save_dataset(participant.datasets[data_config.name], participant, data_config)
-
+    logger.info(f"Participant {participant.id} saved with datasets: {participant.datasets.keys()}")
 
 def main():
+    configure_logging(color=True, stream_level=logging.DEBUG)
+
     list_of_data_configs = [
         IMOTIONS_LIST,
         #RAW_LIST,
@@ -183,16 +186,12 @@ def main():
                 participant_data, data_configs)
             save_participant_datasets(participant_data, data_configs)
 
-    print(participant_data.eeg)
-
-    # data = load_participant_datasets(PARTICIPANT_LIST[0], IMOTIONS_LIST)
-    # print(data.eeg.head())
-    
-    # data_2 = transform_participant_datasets(data, IMOTIONS_LIST)
-    # print(data_2.eeg.head())
+    # print(participant_data.eeg)
 
 if __name__ == "__main__":
     main()
+
+
 
 
 # def merge_participant_datasets(self) -> pd.DataFrame:

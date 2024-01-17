@@ -1,14 +1,11 @@
 import sys
 import logging
-from typing import Optional, Dict
-
-from colorama import Fore, Back, Style
 
 
 def configure_logging(
         stream_level=logging.INFO, stream=True,
         file_level=logging.DEBUG, file_path=None,
-        ignore_libs=None, colored=False):
+        ignore_libs=None, color=False):
     """
     Configures the root logger for logging messages to the console and optionally to a file.
     Supports ignoring logs from specified libraries.
@@ -20,6 +17,7 @@ def configure_logging(
     - file_path: The path to the debug log file for the file handler, logs are only saved to a file if this is provided.
     - ignore_libs: A list of library names whose logs should be ignored.
     """
+
     handlers = []
 
     # StreamHandler for console logging
@@ -27,17 +25,10 @@ def configure_logging(
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setLevel(stream_level)
         stream_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s', datefmt='%H:%M:%S')
-        if colored:
+        if color:
             stream_formatter = ColoredFormatter(
                 '{asctime} |{color} {levelname:7} {reset}| {name} | {message}',
-                style='{', datefmt='%H:%M:%S',
-                colors={
-                    'DEBUG': Fore.CYAN,
-                    'INFO': Fore.GREEN,
-                    'WARNING': Fore.YELLOW,
-                    'ERROR': Fore.RED,
-                    'CRITICAL': Fore.RED + Back.WHITE + Style.BRIGHT,
-                }
+                style='{', datefmt='%H:%M:%S'
             )
         stream_handler.setFormatter(stream_formatter)
         handlers.append(stream_handler)
@@ -84,22 +75,35 @@ def close_root_logging():
         root_logger.removeHandler(handler)
 
 class ColoredFormatter(logging.Formatter):
-    """Colored log formatter."""
+    try:
+        from colorama import Fore, Back, Style
+        COLORS = {
+            'DEBUG': Fore.CYAN,
+            'INFO': Fore.GREEN,
+            'WARNING': Fore.YELLOW,
+            'ERROR': Fore.RED,
+            'CRITICAL': Fore.RED + Back.WHITE + Style.BRIGHT,
+            'RESET': Style.RESET_ALL
+        }
+    except ImportError:
+        print("Colorama module not found, proceeding without colored output.")
+        COLORS = {'RESET': ''}  # No colors, but include 'RESET' for consistency
 
-    def __init__(self, *args, colors: Optional[Dict[str, str]]=None, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         """Initialize the formatter with specified format strings."""
         super().__init__(*args, **kwargs)
-        self.colors = colors if colors else {}
+        self.colors = ColoredFormatter.COLORS
 
     def format(self, record) -> str:
         """Format the specified record as text."""
         record.color = self.colors.get(record.levelname, '')
-        record.reset = Style.RESET_ALL
+        record.reset = self.colors['RESET']
         return super().format(record)
-
+    
 
 def main():
-    configure_logging(stream_level=logging.DEBUG)
+    configure_logging(color=True, stream_level=logging.DEBUG)
+    
     logging.debug("This is a debug message.")
     logging.info("This is an info message.")
     logging.warning("This is a warning message.")
