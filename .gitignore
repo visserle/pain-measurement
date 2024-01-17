@@ -6,10 +6,6 @@ notebooks/05_preprocess_data.ipynb
 src/data/01_statistical_tests.ipynb
 src/data/05_preprocess_data Kopie.ipynb
 src/data/catboost.ipynb
-src/data/get_data Kopie.ipynb
-src/data/get_data_ecg.ipynb
-src/data/get_data_eda.ipynb
-src/data/get_data_eeg.ipynb
 src/data/test.py
 src/models/mlp.py
 src/models/model.ipynb
