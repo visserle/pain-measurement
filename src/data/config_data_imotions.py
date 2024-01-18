@@ -48,7 +48,7 @@ RATING = iMotionsConfig(
 EDA = iMotionsConfig(
     name = 'eda',
     name_imotions = 'Shimmer3_GSR+_&_EDA_(D200)_Shimmer3_GSR+_&_EDA_(D200)_ET_Shimmer_ShimmerDevice',
-    load_columns = ["Timestamp","GSR Conductance CAL","VSenseBatt CAL","Packet reception rate RAW"],
+    load_columns = ["SampleNumber","Timestamp","GSR Conductance CAL","VSenseBatt CAL","Packet reception rate RAW"],
     rename_columns = {
         "GSR Conductance CAL": "EDA_RAW",
         "VSenseBatt CAL": "EDA_d_Battery",
@@ -59,7 +59,7 @@ EDA = iMotionsConfig(
 ECG = iMotionsConfig(
     name = 'ecg',
     name_imotions = 'Shimmer3_ECG_(68BF)_Shimmer3_ECG_(68BF)_ET_Shimmer_ShimmerDevice',
-    load_columns = ["Timestamp","ECG LL-RA CAL","ECG LA-RA CAL","ECG Vx-RL CAL","Heart Rate ECG LL-RA ALG","IBI ECG LL-RA ALG","VSenseBatt CAL","Packet reception rate RAW"],
+    load_columns = ["SampleNumber","Timestamp","ECG LL-RA CAL","ECG LA-RA CAL","ECG Vx-RL CAL","Heart Rate ECG LL-RA ALG","IBI ECG LL-RA ALG","VSenseBatt CAL","Packet reception rate RAW"],
     rename_columns = {
         "ECG LL-RA CAL": "ECG_LL-RA",
         "ECG LA-RA CAL": "ECG_LA-RA",
@@ -85,6 +85,7 @@ EEG = iMotionsConfig(
         "Ch7": "EEG_RAW_Ch7",
         "Ch8": "EEG_RAW_Ch8",
         },
+    notes = "has no SampleNumber column",
 )
 
 PUPILLOMETRY = iMotionsConfig(
@@ -102,7 +103,7 @@ PUPILLOMETRY = iMotionsConfig(
 AFFECTIVA = iMotionsConfig(
     name = 'affectiva',
     name_imotions = 'Affectiva_AFFDEX_ET_Affectiva_AffectivaCameraDevice',
-    load_columns = ["Timestamp","Anger","Contempt","Disgust","Fear","Joy","Sadness","Surprise","Engagement","Valence","Sentimentality","Confusion","Neutral","Attention","Brow Furrow","Brow Raise","Cheek Raise","Chin Raise","Dimpler","Eye Closure","Eye Widen","Inner Brow Raise","Jaw Drop","Lip Corner Depressor","Lip Press","Lip Pucker","Lip Stretch","Lip Suck","Lid Tighten","Mouth Open","Nose Wrinkle","Smile","Smirk","Upper Lip Raise","Blink","BlinkRate","Pitch","Yaw","Roll","Interocular Distance"],
+    load_columns = ["SampleNumber","Timestamp","Anger","Contempt","Disgust","Fear","Joy","Sadness","Surprise","Engagement","Valence","Sentimentality","Confusion","Neutral","Attention","Brow Furrow","Brow Raise","Cheek Raise","Chin Raise","Dimpler","Eye Closure","Eye Widen","Inner Brow Raise","Jaw Drop","Lip Corner Depressor","Lip Press","Lip Pucker","Lip Stretch","Lip Suck","Lid Tighten","Mouth Open","Nose Wrinkle","Smile","Smirk","Upper Lip Raise","Blink","BlinkRate","Pitch","Yaw","Roll","Interocular Distance"],
     notes = "Affectiva data is not sampled at a constant rate and can contain NaNs.",
 )
 
@@ -110,6 +111,7 @@ SYSTEM = iMotionsConfig(
     name = 'system',
     name_imotions = 'System_Load_Monitor_iMotions.SysMonitor@1_ET_EventAPI_ExternDevice',
     load_columns = ["Timestamp","CPU Sys","Memory Sys","CPU Proc","Memory Proc"],
+    notes = "has no SampleNumber column",
 )
 
 
