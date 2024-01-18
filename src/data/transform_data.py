@@ -2,10 +2,32 @@ import numpy as np
 import polars as pl
 import pandas as pd
 
-# NOTE: square brackets can be used to access columns in polars but do not allow lazy evaluation -> use select, take, etc for performance
-# TODO: cast data types for more performance
+from functools import wraps
 
-def apply_func_participant(participant, func):
+
+# NOTE: square brackets can be used to access columns in polars but do not allow lazy evaluation -> use select, take, etc for performance
+# TODO: add **kwars to apply_func_participant
+# TODO: cast data types for more performance
+# TODO: Round all timestamps to remove floating point weirdness
+# 447,929.23030000000006, ...
+# 448,929.2894, ...
+# -> add as function to transformations of raw data, even imotions data?
+
+
+def map_trials(func):
+    """Decorator to apply a function to each trial in a DataFrame."""
+    @wraps(func)
+    def wrapper(df, **kwargs):
+        # Check if 'df' is a DataFrame and has a 'Trial' column
+        if not isinstance(df, pl.DataFrame) or 'Trial' not in df.columns:
+            raise ValueError("Input must be a Polars DataFrame with a 'Trial' column.")
+        # Apply the function to each trial
+        result = df.group_by('Trial', maintain_order=True).map_groups(lambda group: func(group, **kwargs))
+        return result
+    return wrapper
+
+
+def apply_func_participant(func, participant):
     """Utility function for debugging, will be removed in the future, see process_data.py."""
     #TODO: use map instead, e.g.:
     # dict(zip(a, map(f, a.values())))
@@ -46,39 +68,41 @@ def create_trials(df: pl.DataFrame):
     return df
 
 
+@map_trials
 def interpolate_to_marker_timestamps(df):
     # Define a custom function for the transformation
-    def replace_timestamps(group_df):
-        """
-        We define the timestamp where the marker was send as the first measurement timestamp 
-        of the device to have the exact same trial duration for each modality 
-        (different devices have different sampling rates). This shifts the data by about 5 ms
-        and could be interpreted as an interpolation.
-        """
-        # Get the first and last timestamp of the group
-        # TODO: NOTE: there is a difference between using the integer indexing and boolean indexing below
-        # - we should decide depending on how duplicate timestamps are handled
-        # especially in what order duplicate timestamps are removed
-        first_timestamp = group_df["Timestamp"][0]
-        second_timestamp = group_df["Timestamp"][1]
-        second_to_last_timestamp = group_df["Timestamp"][-2]
-        last_timestamp = group_df["Timestamp"][-1]
-        
-        # Replace the second and second-to-last timestamps
-        return group_df.with_columns(
-            pl.when(pl.col("Timestamp") == group_df["Timestamp"][1])
-            .then(first_timestamp)
-            .when(pl.col("Timestamp") == group_df["Timestamp"][-2])
-            .then(last_timestamp)
-            .otherwise(pl.col("Timestamp"))
-            .alias("Timestamp")
-        ).drop_nulls()
-
-    # Only if there are nulls in the df
+    # TODO;NOTE: maybe there is a better way to do this: 
+    # - https://docs.pola.rs/user-guide/expressions/null/#filling-missing-data
+    # - especially https://docs.pola.rs/user-guide/expressions/null/#fill-with-interpolation
+    """
+    We define the timestamp where the marker was send as the first measurement timestamp 
+    of the device to have the exact same trial duration for each modality 
+    (different devices have different sampling rates). This shifts the data by about 5 ms
+    and could be interpreted as an interpolation.
+    """
+    # Only do if there are nulls in the df which means that there are still the empty marker events were no data was recorded
+    # Else we could change values that are not supposed to be changed
     if sum(df.null_count()).item() == 0:
         return df
-    # Apply the custom function to each group
-    return df.group_by("Trial", maintain_order=True).map_groups(replace_timestamps)
+    
+    # Get the first and last timestamp of the group
+    # TODO: NOTE: there is a difference between using the integer indexing and boolean indexing below
+    # - we should decide depending on how duplicate timestamps are handled
+    # especially in what order duplicate timestamps are removed
+    first_timestamp = df["Timestamp"][0]
+    second_timestamp = df["Timestamp"][1]
+    second_to_last_timestamp = df["Timestamp"][-2]
+    last_timestamp = df["Timestamp"][-1]
+    
+    # Replace the second and second-to-last timestamps
+    return df.with_columns(
+        pl.when(pl.col("Timestamp") == df["Timestamp"][1])
+        .then(first_timestamp)
+        .when(pl.col("Timestamp") == df["Timestamp"][-2])
+        .then(last_timestamp)
+        .otherwise(pl.col("Timestamp"))
+        .alias("Timestamp")
+    ).drop_nulls()
     
 
 def add_timedelta_column(df: pl.DataFrame):
