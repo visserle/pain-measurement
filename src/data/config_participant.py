@@ -24,7 +24,12 @@ p_002 = ParticipantConfig(
     non_available_data = ['eeg'],
 )
 
+p_003 = ParticipantConfig(
+    id = '003_pilot_noah',
+)
+
 PARTICIPANT_LIST = [
     p_001,
     #p_002,
+    p_003,
 ]

@@ -3,8 +3,14 @@
 from dataclasses import dataclass
 from typing import List, Optional, Dict
 from pathlib import Path
+
+import polars as pl
+
 from src.data.config_data import DataConfigBase
 from src.data.transform_data import create_trials, interpolate_to_marker_timestamps
+
+# - add schemas for csv (for now dtype keyword only)
+# -> no need for infer_schema_length then (quite costly)
 
 
 @dataclass
@@ -12,6 +18,7 @@ class iMotionsConfig(DataConfigBase):
     name: str
     name_imotions: str
     load_columns: List[str] # columns to load
+    dtypes: Optional[Dict[str, str]] = None # TODO maybe full schema?
     rename_columns: Optional[Dict[str, str]] = None
     transformations: Optional[List] = None
     sample_rate: Optional[int] = None # TODO?!
@@ -60,6 +67,9 @@ ECG = iMotionsConfig(
     name = 'ecg',
     name_imotions = 'Shimmer3_ECG_(68BF)_Shimmer3_ECG_(68BF)_ET_Shimmer_ShimmerDevice',
     load_columns = ["SampleNumber","Timestamp","ECG LL-RA CAL","ECG LA-RA CAL","ECG Vx-RL CAL","Heart Rate ECG LL-RA ALG","IBI ECG LL-RA ALG","VSenseBatt CAL","Packet reception rate RAW"],
+    dtypes = {
+        "IBI ECG LL-RA ALG": pl.Float64,
+        },
     rename_columns = {
         "ECG LL-RA CAL": "ECG_LL-RA",
         "ECG LA-RA CAL": "ECG_LA-RA",
