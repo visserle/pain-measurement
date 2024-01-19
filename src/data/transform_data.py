@@ -1,8 +1,11 @@
+from functools import wraps
+import logging
+
 import numpy as np
 import polars as pl
 import pandas as pd
 
-from functools import wraps
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 # NOTE: square brackets can be used to access columns in polars but do not allow lazy evaluation -> use select, take, etc for performance
@@ -18,11 +21,18 @@ def map_trials(func):
     """Decorator to apply a function to each trial in a DataFrame."""
     @wraps(func)
     def wrapper(df, **kwargs):
-        # Check if 'df' is a DataFrame and has a 'Trial' column
-        if not isinstance(df, pl.DataFrame) or 'Trial' not in df.columns:
-            raise ValueError("Input must be a Polars DataFrame with a 'Trial' column.")
-        # Apply the function to each trial
-        result = df.group_by('Trial', maintain_order=True).map_groups(lambda group: func(group, **kwargs))
+        # Check if 'df' is a pl.DataFrame
+        if not isinstance(df, pl.DataFrame):
+            raise ValueError("Input must be a Polars DataFrame.")
+        # Check if DataFrame has a 'Trial' column
+        if 'Trial' in df.columns:
+            # Apply the function to each trial
+            result = df.group_by('Trial', maintain_order=True).map_groups(lambda group: func(group, **kwargs))
+        else:
+            # Apply the function to the whole DataFrame
+            logger.warning("No 'Trial' column found, applying function %s to the whole DataFrame instead.", func.__name__)
+            logger.info(f"Use {func.__name__}.__wrapped__() to access the function without the map_trials decorator.")
+            result = func(df, **kwargs)
         return result
     return wrapper
 
@@ -109,7 +119,7 @@ def add_timedelta_column(df: pl.DataFrame):
     # NOTE: saving timedelta to csv runs into problems, maybe we can do without it for now / just use it for debuggings
     """Create a new column that contains the time from Timestamp in ms."""
     df = df.with_columns(
-        df['Timestamp']
+        pl.col('Timestamp')
         .cast(pl.Duration(time_unit='ms'))
         .alias('Time')
     )
@@ -144,21 +154,21 @@ def interpolate(df, method='linear', limit_direction='both'):
     return df
 
 
-def standardize(df):
-    # Exclude 'Timestamp' from the columns to be standardized
-    columns_to_standardize = df.columns[(df.dtypes == float) & (df.columns != 'Timestamp')]
-    if 'Trial' in df.index.names:
-        df[columns_to_standardize] = df.groupby('Trial')[columns_to_standardize].transform(lambda x: (x - x.mean()) / x.std())
-    else:
-        df[columns_to_standardize] = (df[columns_to_standardize] - df[columns_to_standardize].mean()) / df[columns_to_standardize].std()
-    return df
 
 
-def normalize(df):
-    # Exclude 'Timestamp' from the columns to be standardized
-    columns_to_normalize = df.columns[(df.dtypes == float) & (df.columns != 'Timestamp')]
-    if 'Trial' in df.index.names:
-        df[columns_to_normalize] = df.groupby('Trial')[columns_to_normalize].transform(lambda x: (x - x.min()) / (x.max() - x.min()))
-    else:
-        df[columns_to_normalize] = (df[columns_to_normalize] - df[columns_to_normalize].min()) / (df[columns_to_normalize].max() - df[columns_to_normalize].min())
-    return df
+
+def min_max_scaler_col(col: pl.Expr) -> pl.Expr:
+    return (col - col.min()) / (col.max() - col.min())
+
+def standard_scaler_col(col: pl.Expr) -> pl.Expr:
+    return (col - col.mean()) / col.std()
+
+@map_trials
+def min_max_scaler(df: pl.DataFrame) -> pl.DataFrame:
+    return df.with_columns(
+        (min_max_scaler_col(pl.col(pl.Float64).exclude('Timestamp', 'Trial')))) # TODO: trial shouldn't even be float64
+
+@map_trials
+def standard_scaler(df: pl.DataFrame) -> pl.DataFrame:
+    return df.with_columns(
+        (standard_scaler_col(pl.col(pl.Float64).exclude('Timestamp', 'Trial')))) # TODO: trial shouldn't even be float64
