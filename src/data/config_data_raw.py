@@ -67,14 +67,6 @@ AFFECTIVA = RawConfig(
     notes = "Affectiva data is not sampled at a constant rate and the only orignal data that can contain NaNs.",
 )
 
-DATA_DICT = {
-    TEMPERATURE.name: TEMPERATURE,
-    RATING.name: RATING,
-    EDA.name: EDA,
-    ECG.name: ECG,
-    EEG.name: EEG,
-    PUPILLOMETRY.name: PUPILLOMETRY,
-    AFFECTIVA.name: AFFECTIVA,
-}
 
 RAW_LIST = [TEMPERATURE, RATING, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA]
+RAW_DICT = {config.name: config for config in RAW_LIST}

@@ -1,6 +1,7 @@
 import sys
 import logging
-
+from platform import system
+# TODO: add windows support
 
 def configure_logging(
         stream_level=logging.INFO, stream=True,
@@ -16,6 +17,7 @@ def configure_logging(
     - file_level: The logging level for the file handler.
     - file_path: The path to the debug log file for the file handler, logs are only saved to a file if this is provided.
     - ignore_libs: A list of library names whose logs should be ignored.
+    - color: Whether to enable colored output for the stream handler (requires colorama module).
     """
 
     handlers = []

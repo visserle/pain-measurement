@@ -33,3 +33,5 @@ PARTICIPANT_LIST = [
     #p_002,
     p_003,
 ]
+
+PARTICIPANT_DICT = {participant.id: participant for participant in PARTICIPANT_LIST}
