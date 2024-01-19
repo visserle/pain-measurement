@@ -1,4 +1,5 @@
-from functools import wraps
+from typing import Union, List, Iterable
+from functools import wraps, reduce
 import logging
 
 import numpy as np
@@ -15,6 +16,8 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 # 447,929.23030000000006, ...
 # 448,929.2894, ...
 # -> add as function to transformations of raw data, even imotions data?
+
+
 
 
 def map_trials(func):
@@ -155,20 +158,59 @@ def interpolate(df, method='linear', limit_direction='both'):
 
 
 
-
-
 def min_max_scaler_col(col: pl.Expr) -> pl.Expr:
     return (col - col.min()) / (col.max() - col.min())
 
 def standard_scaler_col(col: pl.Expr) -> pl.Expr:
     return (col - col.mean()) / col.std()
 
-@map_trials
+# NOTE: without map_trials for now
 def min_max_scaler(df: pl.DataFrame) -> pl.DataFrame:
     return df.with_columns(
         (min_max_scaler_col(pl.col(pl.Float64).exclude('Timestamp', 'Trial')))) # TODO: trial shouldn't even be float64
 
-@map_trials
+#@map_trials
 def standard_scaler(df: pl.DataFrame) -> pl.DataFrame:
     return df.with_columns(
         (standard_scaler_col(pl.col(pl.Float64).exclude('Timestamp', 'Trial')))) # TODO: trial shouldn't even be float64
+
+
+"""
+NOTE: TODO: NEW: scikit-learn’s transformers now support polars output with the set_output API.
+
+import polars as pl
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+
+df = pl.DataFrame(
+    {"height": [120, 140, 150, 110, 100], "pet": ["dog", "cat", "dog", "cat", "cat"]}
+)
+preprocessor = ColumnTransformer(
+    [
+        ("numerical", StandardScaler(), ["height"]),
+        ("categorical", OneHotEncoder(sparse_output=False), ["pet"]),
+    ],
+    verbose_feature_names_out=False,
+)
+preprocessor.set_output(transform="polars")
+
+df_out = preprocessor.fit_transform(df)
+df_out
+"""
+
+
+def merge_dfs(*dfs: Union[pl.DataFrame, List[pl.DataFrame]]) -> pl.DataFrame:
+    """
+    Merge multiple DataFrames on the 'Timestamp' and 'Trial' columns. 
+    Function accepts both a list of DataFrames or multiple DataFrames as arguments.
+    """
+    # Flatten in case of a single argument which is an iterable of DataFrames
+    if len(dfs) == 1 and isinstance(dfs[0], Iterable):
+        dfs = list(dfs[0])
+
+    df = reduce(
+        lambda left, right: 
+            left.join(right, on=['Timestamp', 'Trial'], how='outer_coalesce').sort('Timestamp'),
+            dfs)
+    return df
