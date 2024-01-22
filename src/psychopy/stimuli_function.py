@@ -566,7 +566,7 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
         autosize=True,
         height=300,
         width=900,
-        margin=dict(l=20, r=20, t=20, b=20))
+        margin=dict(l=20, r=20, t=40, b=20))
     fig.update_xaxes(
         title_text='Time (s)',
         tickmode='linear',

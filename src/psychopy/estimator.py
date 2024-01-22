@@ -175,7 +175,7 @@ class BayesianEstimatorVAS:
             logger.info("Calibration steps were (°C): %s.", self.steps)
             # warning if all steps were in the same direction
             if np.all(np.diff(self.steps) >= 0) or np.all(np.diff(self.steps) < 0):
-                logger.warning("Calibration steps were all in the same direction.")
+                logger.error("Calibration steps were all in the same direction.")
    
     def get_estimate(self):
         return self.temps[-1]

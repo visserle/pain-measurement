@@ -217,8 +217,8 @@ class EventRecievingiMotions():
         self._time_stamp = self.time_stamp # use self.time_stamp to get the current time stamp
         self.seed_cycles = {} # class variable to keep track of seed cycles (start and end stimulus markers)
         self.prep_cycle = itertools.cycle([
-                "M;2;;;heat_on_ramp;start;D;\r\n",
-                "M;2;;;heat_off_ramp;end;D;\r\n"])
+                "M;2;;;heat_on_ramp;;D;\r\n",
+                "M;2;;;heat_off_ramp;;D;\r\n"])
 
     @property
     def time_stamp(self):
