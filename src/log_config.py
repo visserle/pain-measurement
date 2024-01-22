@@ -1,7 +1,8 @@
+"""Logging configuration for the root logger."""
+
 import sys
 import logging
-from platform import system
-# TODO: add windows support
+
 
 def configure_logging(
         stream_level=logging.INFO, stream=True,
@@ -15,7 +16,8 @@ def configure_logging(
     - stream_level: The logging level for the stream handler.
     - stream: Whether to enable the stream handler for console logging.
     - file_level: The logging level for the file handler.
-    - file_path: The path to the debug log file for the file handler, logs are only saved to a file if this is provided.
+    - file_path: The path to the debug log file for the file handler, 
+                 logs are only saved to a file if this is provided.
     - ignore_libs: A list of library names whose logs should be ignored.
     - color: Whether to enable colored output for the stream handler (requires colorama module).
     
@@ -85,6 +87,7 @@ def close_root_logging():
         root_logger.removeHandler(handler)
 
 class ColoredFormatter(logging.Formatter):
+    """Logging Formatter class that adds colors and styles to log messages."""
     try:
         from colorama import Fore, Back, Style
         COLORS = {
@@ -109,9 +112,10 @@ class ColoredFormatter(logging.Formatter):
         record.color = self.colors.get(record.levelname, '')
         record.reset = self.colors['RESET']
         return super().format(record)
-    
+
 
 def main():
+    """Example usage of the configure_logging function."""
     configure_logging(color=True, stream_level=logging.DEBUG)
     logging.debug("This is a debug message.")
     logging.info("This is an info message.")
