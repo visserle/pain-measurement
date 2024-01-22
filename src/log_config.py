@@ -9,7 +9,7 @@ def configure_logging(
         ignore_libs=None, color=False):
     """
     Configures the root logger for logging messages to the console and optionally to a file.
-    Supports ignoring logs from specified libraries.
+    Supports ignoring logs from specified libraries and colored output.
     
     Parameters:
     - stream_level: The logging level for the stream handler.
@@ -18,6 +18,11 @@ def configure_logging(
     - file_path: The path to the debug log file for the file handler, logs are only saved to a file if this is provided.
     - ignore_libs: A list of library names whose logs should be ignored.
     - color: Whether to enable colored output for the stream handler (requires colorama module).
+    
+    Example usage:
+    >>> import logging
+    >>> configure_logging(stream_level=logging.DEBUG, ignore_libs=['matplotlib'], color=True)
+    >>> logging.debug("This is a debug message.")
     """
 
     handlers = []
@@ -26,10 +31,13 @@ def configure_logging(
     if stream:
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setLevel(stream_level)
-        stream_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s', datefmt='%H:%M:%S')
+        stream_formatter = logging.Formatter(
+            '{asctime} | {levelname:8}| {name} | {message}',
+            style='{', datefmt='%H:%M:%S'
+            )
         if color:
             stream_formatter = ColoredFormatter(
-                '{asctime} |{color} {levelname:7} {reset}| {name} | {message}',
+                '{asctime} |{color} {levelname:8}{reset}| {name} | {message}',
                 style='{', datefmt='%H:%M:%S'
             )
         stream_handler.setFormatter(stream_formatter)
@@ -37,7 +45,7 @@ def configure_logging(
 
     # FileHandler for file logging, added only if file path is provided
     if file_path:
-        file_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s')
+        file_formatter = logging.Formatter('{asctime} | {levelname:8}| {name} | {message}')
         file_handler = logging.FileHandler(file_path)
         file_handler.setLevel(file_level)
         file_handler.setFormatter(file_formatter)
@@ -105,7 +113,6 @@ class ColoredFormatter(logging.Formatter):
 
 def main():
     configure_logging(color=True, stream_level=logging.DEBUG)
-    
     logging.debug("This is a debug message.")
     logging.info("This is an info message.")
     logging.warning("This is a warning message.")

@@ -10,7 +10,7 @@ from typing import List, Optional
 @dataclass
 class ParticipantConfig:
     id: str
-    non_available_data: Optional[List[str]] = field(default_factory=list)
+    not_available_data: Optional[List[str]] = field(default_factory=list)
     exclude_trials: Optional[List[int]] = field(default_factory=list)
     best_ecg_channel: Optional[str] = None
 
@@ -21,7 +21,7 @@ p_001 = ParticipantConfig(
 
 p_002 = ParticipantConfig(
     id = '002_pilot_melis',
-    non_available_data = ['eeg'],
+    not_available_data = ['eeg'],
 )
 
 p_003 = ParticipantConfig(
@@ -30,7 +30,7 @@ p_003 = ParticipantConfig(
 
 PARTICIPANT_LIST = [
     p_001,
-    #p_002,
+    p_002,
     p_003,
 ]
 

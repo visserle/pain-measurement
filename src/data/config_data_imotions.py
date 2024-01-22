@@ -27,8 +27,8 @@ class iMotionsConfig(DataConfigBase):
     def __post_init__(self):
         self.load_dir = Path('data/imotions')
         self.save_dir = Path('data/raw')
-        self.transformations = [create_trials, interpolate_to_marker_timestamps] if not self.transformations else [create_trials, interpolate_to_marker_timestamps] + self.transformations
-        
+        self.transformations = [create_trials, interpolate_to_marker_timestamps]
+
 
 TRIAL = iMotionsConfig(
     name = 'trial',
