@@ -10,6 +10,9 @@ import polars as pl
 # where we create a stimulus object from the config file with the right seed, etc.
 # Also check after resampling, interpolation, etc.
 
+# # search for nan values in raw data (trial + data)
+# -> samplenumber, should be increasing by 1 all the time 
+
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
@@ -19,15 +22,16 @@ def check_sample_rate(df, unique_timestamp=False):
     
     timestamp_start = df.group_by("Trial").agg([
         pl.first('Timestamp'),
-    ]).sort('Trial').drop('Trial')
+    ]).sort('Trial').select('Timestamp')
     timestamp_end = df.group_by("Trial").agg([
         pl.last('Timestamp'),
-    ]).sort('Trial').drop('Trial')
+    ]).sort('Trial').select('Timestamp')
+    
     duration_in_s = (timestamp_end-timestamp_start) / 1000
 
     samples = df.group_by("Trial").agg([
         pl.count('Timestamp'),
-    ]).sort('Trial').drop('Trial')
+    ]).sort('Trial').select('Timestamp')
 
     sample_rate_per_trial = (samples/duration_in_s)
     sample_rate_mean = (sample_rate_per_trial).mean().item()
@@ -36,4 +40,17 @@ def check_sample_rate(df, unique_timestamp=False):
     logger.debug("Sample rate per trial: %s", np.round(sample_rate_per_trial.to_numpy().flatten(), 2))
     logger.info(f"The mean sample rate is {(sample_rate_mean):.2f}.")
     if coeff_of_variation > 0.5:
-        logger.warning(f"Sample rate varies more than 0.5% between trials: {coeff_of_variation:.2f}%.")
+        logger.warning(f"Sample rate varies more than 0.5% between trials: {coeff_of_variation:.2f}% (coefficient of variation).")
+
+
+def check_stimuli_length(df):
+    pass
+
+
+def check_battery(df):
+    pass
+
+
+def check_packet_loss(df):
+    pass
+

@@ -6,11 +6,14 @@ import numpy as np
 import polars as pl
 import pandas as pd
 
+
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 # NOTE: square brackets can be used to access columns in polars but do not allow lazy evaluation -> use select, take, etc for performance
-# TODO: add **kwars to apply_func_participant
+# although brackets can be faster for small dataframes
+# therre are issues on github reporting eager is faster than lazy
+# TODO: add **kwars to apply_func_participant and data config
 # TODO: cast data types for more performance
 # TODO: Round all timestamps to remove floating point weirdness
 # 447,929.23030000000006, ...
@@ -18,6 +21,15 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 # -> add as function to transformations of raw data, even imotions data?
 
 
+
+def map_participant_datasets(func, participant):
+    """Utility function for debugging, will be removed in the future, see process_data.py."""
+    #TODO: use map instead, e.g.:
+    # dict(zip(a, map(f, a.values())))
+    # dict(map(lambda item: (item[0], f(item[1])), my_dictionary.items()
+    for data in participant.datasets:
+        participant.datasets[data].dataset = func(participant.datasets[data].dataset)
+    return participant
 
 
 def map_trials(func):
@@ -40,22 +52,12 @@ def map_trials(func):
     return wrapper
 
 
-def apply_func_participant(func, participant):
-    """Utility function for debugging, will be removed in the future, see process_data.py."""
-    #TODO: use map instead, e.g.:
-    # dict(zip(a, map(f, a.values())))
-    # dict(map(lambda item: (item[0], f(item[1])), my_dictionary.items()
-    for data in participant.datasets:
-        participant.datasets[data].dataset = func(participant.datasets[data].dataset)
-    return participant
-
-
-def create_trials(df: pl.DataFrame):
+def create_trials(df: pl.DataFrame) -> pl.DataFrame:
     # TODO: maybe we need to interpolate here for the nan at the start and end of each trial
     """Create a trial column based on the stimuli seed which is originally send only once at the start and end of each trial."""
     # TODO: Check if all trials are complete
     # Forward fill and backward fill columns
-    ffill = df['Stimuli_Seed'].fill_null(strategy='forward')
+    ffill = df['Stimuli_Seed'].fill_null(strategy='forward') 
     bfill = df['Stimuli_Seed'].fill_null(strategy='backward')
     # Where forward fill and backward fill are equal, replace the NaNs in the original Stimuli_Seed
     # this is the same as np.where(ffill == bfill, ffill, df['Stimuli_Seed'])
@@ -81,8 +83,19 @@ def create_trials(df: pl.DataFrame):
     return df
 
 
+def add_timedelta_column(df: pl.DataFrame) -> pl.DataFrame:
+    # NOTE: saving timedelta to csv runs into problems, maybe we can do without it for now / just use it for debuggings
+    """Create a new column that contains the time from Timestamp in ms."""
+    df = df.with_columns(
+        pl.col('Timestamp')
+        .cast(pl.Duration(time_unit='ms'))
+        .alias('Time')
+    )
+    return df
+
+
 @map_trials
-def interpolate_to_marker_timestamps(df):
+def interpolate_to_marker_timestamps(df) -> pl.DataFrame:
     # Define a custom function for the transformation
     # TODO;NOTE: maybe there is a better way to do this: 
     # - https://docs.pola.rs/user-guide/expressions/null/#filling-missing-data
@@ -97,7 +110,7 @@ def interpolate_to_marker_timestamps(df):
     # Else we could change values that are not supposed to be changed
     if sum(df.null_count()).item() == 0:
         return df
-    
+
     # Get the first and last timestamp of the group
     # TODO: NOTE: there is a difference between using the integer indexing and boolean indexing below
     # - we should decide depending on how duplicate timestamps are handled
@@ -106,7 +119,7 @@ def interpolate_to_marker_timestamps(df):
     second_timestamp = df["Timestamp"][1]
     second_to_last_timestamp = df["Timestamp"][-2]
     last_timestamp = df["Timestamp"][-1]
-    
+
     # Replace the second and second-to-last timestamps
     return df.with_columns(
         pl.when(pl.col("Timestamp") == df["Timestamp"][1])
@@ -116,26 +129,20 @@ def interpolate_to_marker_timestamps(df):
         .otherwise(pl.col("Timestamp"))
         .alias("Timestamp")
     ).drop_nulls()
-    
-
-def add_timedelta_column(df: pl.DataFrame):
-    # NOTE: saving timedelta to csv runs into problems, maybe we can do without it for now / just use it for debuggings
-    """Create a new column that contains the time from Timestamp in ms."""
-    df = df.with_columns(
-        pl.col('Timestamp')
-        .cast(pl.Duration(time_unit='ms'))
-        .alias('Time')
-    )
-    return df
 
 
-def resample(df: pl.DataFrame, ms: int):
+@map_trials
+def interpolate(df) -> pl.DataFrame:
+    """Linearly interpolates the whole DataFrame."""
+    return df.interpolate()
+
+
+def resample(df: pl.DataFrame, ms: int) -> pl.DataFrame:
     if 'Trial' in df.index.names:
         df = df.groupby('Trial').resample(f'{ms}ms', level='Time').mean()
     else:
         df = df.resample(f'{ms}ms', level='Time').mean()
     return df
-
 
 def resample_to_500hz(df):
     if 'Time' not in df.index.names:
@@ -147,32 +154,38 @@ def resample_to_500hz(df):
     return df
 
 
-def interpolate(df, method='linear', limit_direction='both'):
-    columns_to_interpolate = df.columns[(df.dtypes == float)]
-    # When working with data that represents several trials, we need to interpolate each trial separately
-    if 'Trial' in df.index.names:
-        df[columns_to_interpolate] = df.groupby('Trial')[columns_to_interpolate].transform(lambda x: x.interpolate(method=method, limit_direction=limit_direction))
-    else:
-        df[columns_to_interpolate] = df[columns_to_interpolate].interpolate(method=method, limit_direction=limit_direction)
-    return df
+@map_trials
+def scale_min_max(df: pl.DataFrame) -> pl.DataFrame:
+    return df.with_columns(
+        (_scale_min_max_col(pl.col(pl.Float64).exclude('Timestamp', 'Trial')))) # TODO: trial shouldn't even be float64
 
-
-
-def min_max_scaler_col(col: pl.Expr) -> pl.Expr:
+def _scale_min_max_col(col: pl.Expr) -> pl.Expr:
     return (col - col.min()) / (col.max() - col.min())
 
-def standard_scaler_col(col: pl.Expr) -> pl.Expr:
+
+@map_trials
+def scale_standard(df: pl.DataFrame) -> pl.DataFrame:
+    return df.with_columns(
+        (_scale_standard_col(pl.col(pl.Float64).exclude('Timestamp', 'Trial')))) # TODO: trial shouldn't even be float64
+
+def _scale_standard_col(col: pl.Expr) -> pl.Expr:
     return (col - col.mean()) / col.std()
 
-# NOTE: without map_trials for now
-def min_max_scaler(df: pl.DataFrame) -> pl.DataFrame:
-    return df.with_columns(
-        (min_max_scaler_col(pl.col(pl.Float64).exclude('Timestamp', 'Trial')))) # TODO: trial shouldn't even be float64
 
-#@map_trials
-def standard_scaler(df: pl.DataFrame) -> pl.DataFrame:
-    return df.with_columns(
-        (standard_scaler_col(pl.col(pl.Float64).exclude('Timestamp', 'Trial')))) # TODO: trial shouldn't even be float64
+def merge_dfs(*dfs: Union[pl.DataFrame, List[pl.DataFrame]]) -> pl.DataFrame:
+    """
+    Merge multiple DataFrames on the 'Timestamp' and 'Trial' columns. 
+    Function accepts both a list of DataFrames or multiple DataFrames as arguments.
+    """
+    # Flatten in case of a single argument which is an iterable of DataFrames
+    if len(dfs) == 1 and isinstance(dfs[0], Iterable):
+        dfs = list(dfs[0])
+
+    df = reduce(
+        lambda left, right: 
+            left.join(right, on=['Timestamp', 'Trial'], how='outer_coalesce').sort('Timestamp'),
+            dfs)
+    return df
 
 
 """
@@ -198,19 +211,3 @@ preprocessor.set_output(transform="polars")
 df_out = preprocessor.fit_transform(df)
 df_out
 """
-
-
-def merge_dfs(*dfs: Union[pl.DataFrame, List[pl.DataFrame]]) -> pl.DataFrame:
-    """
-    Merge multiple DataFrames on the 'Timestamp' and 'Trial' columns. 
-    Function accepts both a list of DataFrames or multiple DataFrames as arguments.
-    """
-    # Flatten in case of a single argument which is an iterable of DataFrames
-    if len(dfs) == 1 and isinstance(dfs[0], Iterable):
-        dfs = list(dfs[0])
-
-    df = reduce(
-        lambda left, right: 
-            left.join(right, on=['Timestamp', 'Trial'], how='outer_coalesce').sort('Timestamp'),
-            dfs)
-    return df
