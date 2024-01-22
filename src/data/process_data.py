@@ -1,5 +1,10 @@
 # work in progress
 
+#  TODO
+# - makes a bit more sense to only display the warning for missing datasets once at loading time
+# - in thw other functions we can just check if the dataset is available and skip it if not
+# - based on a list of available datasets for each participant not with the convoluted if statements
+
 
 """
 This is the main script for processing data obtained from the iMotions software.
@@ -8,7 +13,6 @@ The script has three main steps:
 1. Load data from csv files
 2. Transform data
 3. Save data to csv files
-
 
 """
 
@@ -22,7 +26,7 @@ import logging
 import polars as pl
 
 from src.data.config_data import DataConfigBase
-from src.data.config_data_imotions import iMotionsConfig, IMOTIONS_LIST
+from src.data.config_data_imotions import iMotionsConfig, IMOTIONS_LIST, IMOTIONS_DICT
 from src.data.config_data_raw import RawConfig, RAW_LIST
 from src.data.config_participant import ParticipantConfig, PARTICIPANT_LIST
 
@@ -74,7 +78,8 @@ def load_dataset(
         file_path, 
         columns=data_config.load_columns,
         skip_rows=file_start_index,
-        infer_schema_length=1000,
+        dtypes={load_column: pl.Float64 for load_column in data_config.load_columns}, # FIXME TODO dirty hack, add data schema instead
+        #infer_schema_length=1000,
     )
     
     # For iMotions data we also want to rename some columns
@@ -92,9 +97,13 @@ def load_participant_datasets(
 
     datasets: Dict[str, Data] = {}
     for data_config in data_configs:
+        if data_config.name in participant_config.not_available_data:
+            logger.warning("Dataset '%s' for participant %s not available", data_config.name, participant_config.id)
+            continue
         datasets[data_config.name] = load_dataset(participant_config, data_config)
     
-    logger.info(f"Participant {participant_config.id} loaded with datasets: {datasets.keys()}")
+    available_datasets = [data_config.name for data_config in data_configs if data_config.name not in participant_config.not_available_data]
+    logger.info(f"Participant {participant_config.id} loaded with datasets: {available_datasets}")
     return Participant(id=participant_config.id, datasets=datasets)
 
 
@@ -108,7 +117,7 @@ def transform_dataset(
     
     From the old, basic code:
     
-    def apply_func_participant(participant, func):
+    def apply_func_participant(func, participant):
     #TODO: use map instead, e.g.:
     # dict(zip(a, map(f, a.values())))
     # dict(map(lambda item: (item[0], f(item[1])), my_dictionary.items()
@@ -120,9 +129,11 @@ def transform_dataset(
     if data_config.transformations:
         for transformation in data_config.transformations:
             data.dataset = transformation(data.dataset)
-            
+            logger.debug("Dataset '%s' transformed with %s", data_config.name, transformation.__name__)
+            # TODO: add **kwargs to transformations and pass them here
 
 def transform_participant_datasets(
+        participant_config: ParticipantConfig, 
         participant_data: Participant,
         data_configs: List[DataConfigBase]
         ) -> Participant:
@@ -131,6 +142,8 @@ def transform_participant_datasets(
     # Special case for imotions data: we first need to merge trial information into each dataset (via Stimuli_Seed)
     if isinstance(data_configs[0], iMotionsConfig):
         for data_config in IMOTIONS_LIST:
+            if data_config.name in participant_config.not_available_data:
+                continue # skip datasets that are not available, FIXME a bit convoluted, better to have a list of available datasets for each participant
             # add the stimuli seed column to all datasets of the participant except for the trial data which already has it
             if "Stimuli_Seed" not in participant_data.datasets[data_config.name].dataset.columns:
                 participant_data.datasets[data_config.name].dataset = participant_data.datasets[data_config.name].dataset.join(
@@ -139,77 +152,75 @@ def transform_participant_datasets(
                     how='outer_coalesce',
                 ).sort('Timestamp')
             assert participant_data.datasets[data_config.name].dataset['Timestamp'].is_sorted(descending=False)
+        logger.debug("Participant %s datasets are now merged with trial information", participant_data.id)
 
     # Do the regular transformation(s) as defined in the config
     for data_config in data_configs:
+        if data_config.name in participant_config.not_available_data:
+            logger.warning("Dataset '%s' for participant %s not available", data_config.name, participant_data.id)
+            continue
         transform_dataset(participant_data.datasets[data_config.name], data_config)
+    logger.info(f"Participant {participant_data.id} datasets successfully transformed")
     return participant_data
+
+    if isinstance(data_configs[0], DataConfigBase):
+        pass # TODO: merge datasets into one big dataset at the end
 
 
 def save_dataset(
         data: Data,
-        participant_config: ParticipantConfig,
+        participant_data: Participant,
         data_config: DataConfigBase
         ) -> None:
     """Save a single dataset to a csv file."""
-    output_dir = data_config.save_dir / participant_config.id
+    output_dir = data_config.save_dir / participant_data.id
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    file_path = output_dir / f"{participant_config.id}_{data_config.name}.csv"
+    file_path = output_dir / f"{participant_data.id}_{data_config.name}.csv"
 
     # Write the DataFrame to CSV
     # TODO: problems with saving timedelta format, but we can do without it for now
     data.dataset.write_csv(file_path)
-    logger.debug("Dataset '%s' for participant %s saved to %s", data_config.name, participant_config.id, file_path)
+    logger.debug("Dataset '%s' for participant %s saved to %s", data_config.name, participant_data.id, file_path)
 
 def save_participant_datasets(
-        participant: Participant,
+        participant_config: ParticipantConfig, 
+        participant_data: Participant,
         data_configs: List[DataConfigBase]
         ) -> None:
     """Save all datasets for a single participant to csv files."""
     for data_config in data_configs:
-        save_dataset(participant.datasets[data_config.name], participant, data_config)
-    logger.info(f"Participant {participant.id} saved with datasets: {participant.datasets.keys()}")
+        if data_config.name in participant_config.not_available_data:
+            logger.warning("Dataset '%s' for participant %s not available", data_config.name, participant_data.id)
+            continue
+        save_dataset(participant_data.datasets[data_config.name], participant_data, data_config)
+        
+    available_datasets = [data_config.name for data_config in data_configs if data_config.name not in participant_config.not_available_data]
+    logger.info(f"Participant {participant_data.id} saved with datasets: {available_datasets}")
+
 
 def main():
     configure_logging(color=True, stream_level=logging.DEBUG)
 
     list_of_data_configs = [
         IMOTIONS_LIST,
-        #RAW_LIST,
+        # RAW_LIST,
     ]
 
     for data_configs in list_of_data_configs:
         for participant_config in PARTICIPANT_LIST:
             participant_data = load_participant_datasets(
-                participant_config, data_configs)
+                participant_config,
+                data_configs)
             participant_data = transform_participant_datasets(
-                participant_data, data_configs)
-            save_participant_datasets(participant_data, data_configs)
+                participant_config,
+                participant_data, 
+                data_configs)
+            save_participant_datasets(
+                participant_config,
+                participant_data, 
+                data_configs)
 
-    # print(participant_data.eeg)
+    print(participant_data.eeg)
 
 if __name__ == "__main__":
     main()
-
-
-
-
-# def merge_participant_datasets(self) -> pd.DataFrame:
-#     data_frames = [data.dataset for data in self.datasets.values()]
-#     # Use reduce to merge all DataFrames on 'Timestamp'
-#     merged_df = reduce(
-#         # pd.concat would lead to duplicate timestamps
-#         lambda left, right: pd.merge(left, right, on='Timestamp', how='outer'),
-#         data_frames
-#     )
-#     merged_df.sort_values(by=['Timestamp'], inplace=True)
-#     logging.info(f"Dataframe shape: {merged_df.shape}")
-#     return merged_df
-
-# working pl function:
-# def merge_dfs(dfs: List[pl.DataFrame]) -> pl.DataFrame:
-#     return reduce(
-#         lambda left, right: 
-#             left.join(right, on=['Timestamp','Trial'], how='outer_coalesce')
-#             .sort('Timestamp'),
-#         dfs)
