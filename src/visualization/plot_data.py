@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Dict, List
+import logging
 
 import numpy as np
 import polars as pl
@@ -10,13 +11,17 @@ import hvplot.polars
 import panel as pn
 import holoviews as hv
 
+from src.data.log_config import configure_logging
+
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
+
 
 def plot_trial_matplotlib(df: pl.DataFrame, trial: int, features: List[str] = None):
     """
     To exclude a feature, simply use df.drop(feature)
     """
     if features is None:
-        features = df.drop('Timestamp','Time','Trial').columns    
+        features = df.drop('Timestamp','Time','Trial','Participant').columns    
     
     fig, ax = plt.subplots(figsize=(20, 10))
     for feature in features:
@@ -34,7 +39,7 @@ def plot_trial_plotly(df: pl.DataFrame, trial: int, features: List[str] = None):
     To exclude a feature, simply use df.drop(feature)
     """
     if features is None:
-        features = df.drop('Timestamp','Time','Trial').columns    
+        features = df.drop('Timestamp','Time','Trial','Participant').columns    
     
     fig = px.line(
         df.filter(pl.col('Trial') == trial),
@@ -49,8 +54,10 @@ def plot_trial_plotly(df: pl.DataFrame, trial: int, features: List[str] = None):
     fig.show()
 
 
-def plot_data_panel(df: pl.DataFrame, features: List[str] = None):
+def plot_data_panel(df: pl.DataFrame, features: List[str] = None, groups: str = None):
     """
+    Plots the data using hvPlot and Panel.
+    By default the plot will be grouped by Trial and Participant. 
     To exclude a feature, simply use df.drop(feature)
     
     TODO: grouped legend? https://community.plotly.com/t/plots-with-grouped-legend/71864
@@ -61,16 +68,24 @@ def plot_data_panel(df: pl.DataFrame, features: List[str] = None):
     eda.plot(x='Timestamp', y=['EDA_RAW', 'nk_EDA_Tonic', 'nk_EDA_Phasic'], groupby='Trial')
     """
     if features is None:
-        features = df.drop('Timestamp','Time','Trial').columns
+        features = df.drop('Timestamp','Time','Trial','Participant').columns
+    
+    if groups is None:
+        groups = ['Trial','Participant'] if 'Participant' in df.columns else 'Trial'
+    elif groups == "Trial":
+        groups = "Trial"
+        if 'Participant' in df.columns:
+            logger.error("Plotting trials of several participants leads to duplicate timestamps.")
+    elif groups == "Participant":
+        groups = "Participant"
 
     # Explicitly tell hvPlot to use Plotly
     hv.extension('plotly')
 
-    # maybe try in bokeh
     plot = df.hvplot(
         x='Timestamp',
         y=features,
-        groupby='Trial',
+        groupby=groups,
         backend='plotly',
         width=1400,
         height=600 
