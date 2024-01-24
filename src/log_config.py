@@ -1,6 +1,7 @@
 """Logging configuration for the root logger."""
 
 import sys
+import platform
 import logging
 
 
@@ -86,10 +87,14 @@ def close_root_logging():
         handler.close()
         root_logger.removeHandler(handler)
 
+
 class ColoredFormatter(logging.Formatter):
     """Logging Formatter class that adds colors and styles to log messages."""
     try:
         from colorama import Fore, Back, Style
+        if platform.system() == 'Windows':
+            from colorama import init
+            init()
         COLORS = {
             'DEBUG': Fore.CYAN,
             'INFO': Fore.GREEN,
