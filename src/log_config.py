@@ -96,8 +96,8 @@ class ColoredFormatter(logging.Formatter):
     try:
         from colorama import Fore, Back, Style
         if platform.system() == 'Windows':
-            from colorama import init
-            init()
+            from colorama import just_fix_windows_console
+            just_fix_windows_console()
         COLORS = {
             'DEBUG': Fore.CYAN,
             'INFO': Fore.GREEN,
