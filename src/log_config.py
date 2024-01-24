@@ -48,7 +48,10 @@ def configure_logging(
 
     # FileHandler for file logging, added only if file path is provided
     if file_path:
-        file_formatter = logging.Formatter('{asctime} | {levelname:8}| {name} | {message}')
+        file_formatter = logging.Formatter(
+            '{asctime} | {levelname:9}| {name} | {message}',
+            style='{'
+            )
         file_handler = logging.FileHandler(file_path)
         file_handler.setLevel(file_level)
         file_handler.setFormatter(file_formatter)
