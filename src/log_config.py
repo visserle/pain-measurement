@@ -8,7 +8,7 @@ import logging
 def configure_logging(
         stream_level=logging.INFO, stream=True,
         file_level=logging.DEBUG, file_path=None,
-        ignore_libs=None, color=False):
+        ignore_libs=None):
     """
     Configures the root logger for logging messages to the console and optionally to a file.
     Supports ignoring logs from specified libraries and colored output.
@@ -20,11 +20,10 @@ def configure_logging(
     - file_path: The path to the debug log file for the file handler, 
                  logs are only saved to a file if this is provided.
     - ignore_libs: A list of library names whose logs should be ignored.
-    - color: Whether to enable colored output for the stream handler (requires colorama module).
     
     Example usage:
     >>> import logging
-    >>> configure_logging(stream_level=logging.DEBUG, ignore_libs=['matplotlib'], color=True)
+    >>> configure_logging(stream_level=logging.DEBUG, ignore_libs=['matplotlib'])
     >>> logging.debug("This is a debug message.")
     """
 
@@ -34,15 +33,10 @@ def configure_logging(
     if stream:
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setLevel(stream_level)
-        stream_formatter = logging.Formatter(
-            '{asctime} | {levelname:8}| {name} | {message}',
+        stream_formatter = ColoredFormatter(
+            '{asctime} |{color} {levelname:8}{reset}| {name} | {message}',
             style='{', datefmt='%H:%M:%S'
-            )
-        if color:
-            stream_formatter = ColoredFormatter(
-                '{asctime} |{color} {levelname:8}{reset}| {name} | {message}',
-                style='{', datefmt='%H:%M:%S'
-            )
+        )
         stream_handler.setFormatter(stream_formatter)
         handlers.append(stream_handler)
 
@@ -91,24 +85,36 @@ def close_root_logging():
         root_logger.removeHandler(handler)
 
 
+class Color:
+    """A class for terminal color codes using ANSI escape sequences."""
+    BOLD = "\033[1m"
+    BLUE = "\033[94m"
+    WHITE = "\033[97m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    BOLD_RED = BOLD + RED
+    END = "\033[0m"
+
 class ColoredFormatter(logging.Formatter):
     """Logging Formatter class that adds colors and styles to log messages."""
-    try:
-        from colorama import Fore, Back, Style
-        if platform.system() == 'Windows':
+    
+    COLORS = {
+        'DEBUG': Color.BLUE,
+        'INFO': Color.GREEN,
+        'WARNING': Color.YELLOW,
+        'ERROR': Color.RED,
+        'CRITICAL': Color.BOLD_RED,
+        'RESET': Color.END
+    }
+    
+    if platform.system() == 'Windows':
+        try:
             from colorama import just_fix_windows_console
-            just_fix_windows_console()
-        COLORS = {
-            'DEBUG': Fore.CYAN,
-            'INFO': Fore.GREEN,
-            'WARNING': Fore.YELLOW,
-            'ERROR': Fore.RED,
-            'CRITICAL': Fore.RED + Back.WHITE + Style.BRIGHT,
-            'RESET': Style.RESET_ALL
-        }
-    except ImportError:
-        print("Colorama module not found, proceeding without colored output.")
-        COLORS = {'RESET': ''}  # No colors, but include 'RESET' for consistency
+            just_fix_windows_console() # Enable ANSI escape sequences on Windows
+        except ImportError:
+            print("Colorama module not found, proceeding without colored output.")
+            COLORS = {'RESET': ''}  # No colors, but include 'RESET' for consistency
 
     def __init__(self, *args, **kwargs) -> None:
         """Initialize the formatter with specified format strings."""
@@ -124,7 +130,7 @@ class ColoredFormatter(logging.Formatter):
 
 def main():
     """Example usage of the configure_logging function."""
-    configure_logging(color=True, stream_level=logging.DEBUG)
+    configure_logging(stream_level=logging.DEBUG)
     logging.debug("This is a debug message.")
     logging.info("This is an info message.")
     logging.warning("This is a warning message.")
