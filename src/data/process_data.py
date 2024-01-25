@@ -29,7 +29,6 @@ from src.data.config_data import DataConfigBase
 from src.data.config_data_imotions import iMotionsConfig, IMOTIONS_LIST, IMOTIONS_DICT
 from src.data.config_data_raw import RawConfig, RAW_LIST
 from src.data.config_participant import ParticipantConfig, PARTICIPANT_LIST
-
 from src.log_config import configure_logging
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
@@ -199,7 +198,7 @@ def save_participant_datasets(
 
 
 def main():
-    configure_logging(color=True, stream_level=logging.DEBUG)
+    configure_logging(stream_level=logging.DEBUG)
 
     list_of_data_configs = [
         IMOTIONS_LIST,

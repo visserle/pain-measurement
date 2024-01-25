@@ -43,7 +43,7 @@ def configure_logging(
     # FileHandler for file logging, added only if file path is provided
     if file_path:
         file_formatter = logging.Formatter(
-            '{asctime} | {levelname:9}| {name} | {message}',
+            '{asctime} | {levelname:8} | {name} | {message}',
             style='{'
             )
         file_handler = logging.FileHandler(file_path)
@@ -87,13 +87,15 @@ def close_root_logging():
 
 class Color:
     """A class for terminal color codes using ANSI escape sequences."""
-    BOLD = "\033[1m"
-    BLUE = "\033[94m"
+    BLUE = "\033[36m"
     WHITE = "\033[97m"
     GREEN = "\033[92m"
     YELLOW = "\033[93m"
     RED = "\033[91m"
-    BOLD_RED = BOLD + RED
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+    OVERLINE = "\033[53m"
+    BOLD_RED = BOLD + RED + UNDERLINE + OVERLINE
     END = "\033[0m"
 
 class ColoredFormatter(logging.Formatter):
@@ -107,7 +109,7 @@ class ColoredFormatter(logging.Formatter):
         'CRITICAL': Color.BOLD_RED,
         'RESET': Color.END
     }
-    
+
     if platform.system() == 'Windows':
         try:
             from colorama import just_fix_windows_console
