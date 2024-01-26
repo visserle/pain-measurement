@@ -94,13 +94,12 @@ class Color:
     RED = "\033[91m"
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
-    OVERLINE = "\033[53m"
-    BOLD_RED = BOLD + RED + UNDERLINE + OVERLINE
+    BOLD_RED = BOLD + RED + UNDERLINE
     END = "\033[0m"
 
 class ColoredFormatter(logging.Formatter):
     """Logging Formatter class that adds colors and styles to log messages."""
-    
+
     COLORS = {
         'DEBUG': Color.BLUE,
         'INFO': Color.GREEN,
@@ -112,11 +111,13 @@ class ColoredFormatter(logging.Formatter):
 
     if platform.system() == 'Windows':
         try:
+            # Enable ANSI escape sequences on Windows
             from colorama import just_fix_windows_console
-            just_fix_windows_console() # Enable ANSI escape sequences on Windows
+            just_fix_windows_console()
         except ImportError:
             print("Colorama module not found, proceeding without colored output.")
-            COLORS = {'RESET': ''}  # No colors, but include 'RESET' for consistency
+            # No colors, but include 'RESET' for consistency
+            COLORS = {'RESET': ''}  
 
     def __init__(self, *args, **kwargs) -> None:
         """Initialize the formatter with specified format strings."""
