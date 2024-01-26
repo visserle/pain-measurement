@@ -21,8 +21,6 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 # -> add as function to transformations of raw data, even imotions data?
 
 
-
-
 def map_participant_datasets(func, participant):
     """Utility function for debugging, will be removed in the future, see process_data.py."""
     #TODO: use map instead, e.g.:
@@ -33,70 +31,79 @@ def map_participant_datasets(func, participant):
     return participant
 
 
-def map_trials(func):
+def map_trials(func, trial_column='Trial'):
     """Decorator to apply a function to each trial in a DataFrame."""
     @wraps(func)
     def wrapper(df, **kwargs):
         # Check if 'df' is a pl.DataFrame
         if not isinstance(df, pl.DataFrame):
             raise ValueError("Input must be a Polars DataFrame.")
-        # Check if DataFrame has a 'Trial' column
-        if 'Trial' in df.columns:
+        # Check if DataFrame has the specified trial column
+        if trial_column in df.columns:
             # Apply the function to each trial
-            result = df.group_by('Trial', maintain_order=True).map_groups(lambda group: func(group, **kwargs))
+            result = df.group_by(trial_column, maintain_order=True).map_groups(lambda group: func(group, **kwargs))
         else:
             # Apply the function to the whole DataFrame
-            logger.warning("No 'Trial' column found, applying function %s to the whole DataFrame instead.", func.__name__)
+            logger.warning(f"No '{trial_column}' column found, applying function {func.__name__} to the whole DataFrame instead.")
             logger.info(f"Use {func.__name__}.__wrapped__() to access the function without the map_trials decorator.")
             result = func(df, **kwargs)
         return result
     return wrapper
 
 
-def create_trials(df: pl.DataFrame) -> pl.DataFrame:
+def create_trials(
+        df: pl.DataFrame,
+        marker_column='Stimuli_Seed',
+        trial_column='Trial') -> pl.DataFrame:
+    """Create a trial column based on the marker column which originally saves the stimuli seed only once at the start and end of each trial."""
     # TODO: maybe we need to interpolate here for the nan at the start and end of each trial
-    """Create a trial column based on the stimuli seed which is originally send only once at the start and end of each trial."""
     # TODO: Check if all trials are complete
     # Forward fill and backward fill columns
-    ffill = df['Stimuli_Seed'].fill_null(strategy='forward') 
-    bfill = df['Stimuli_Seed'].fill_null(strategy='backward')
+    ffill = df[marker_column].fill_null(strategy='forward') 
+    bfill = df[marker_column].fill_null(strategy='backward')
     # Where forward fill and backward fill are equal, replace the NaNs in the original Stimuli_Seed
-    # this is the same as np.where(ffill == bfill, ffill, df['Stimuli_Seed'])
+    # this is the same as np.where(ffill == bfill, ffill, df[marker_column])
     df = df.with_columns(
         pl.when(ffill == bfill)
         .then(ffill)
-        .otherwise(df['Stimuli_Seed'])
-        .alias('Stimuli_Seed')
+        .otherwise(df[marker_column])
+        .alias(marker_column)
     )
     assert df['Timestamp'].is_sorted(descending=False)
     # Only keep rows where the Stimuli_Seed is not NaN
-    df = df.filter(df['Stimuli_Seed'].is_not_null())
+    df = df.filter(df[marker_column].is_not_null())
     # Create a new column that contains the trial number
     df = df.with_columns(
-        pl.col('Stimuli_Seed')
+        pl.col(marker_column)
         .diff()                 # Calculate differences
         .fill_null(value=0)     # Replace initial null with 0 because the first trial is always 0
         .ne(0)                  # Check for non-zero differences
         .cum_sum()              # Cumulative sum of boolean values
         .cast(pl.UInt8)         # Cast to integer data type between 0 and 255
-        .alias('Trial')         # Rename the series to 'Trial'
+        .alias(trial_column)    # Rename the series
     )
     return df
 
 
-def add_timedelta_column(df: pl.DataFrame) -> pl.DataFrame:
-    # NOTE: saving timedelta to csv runs into problems, maybe we can do without it for now / just use it for debuggings
+def add_timedelta_column(
+        df: pl.DataFrame, 
+        timestamp_column='Timestamp', 
+        timedelta_column='Time',
+        time_unit='ms') -> pl.DataFrame:
     """Create a new column that contains the time from Timestamp in ms."""
+    # NOTE: saving timedelta to csv runs into problems, maybe we can do without it for now / just use it for debuggings
     df = df.with_columns(
-        pl.col('Timestamp')
-        .cast(pl.Duration(time_unit='ms'))
-        .alias('Time')
+        pl.col(timestamp_column)
+        .cast(pl.Duration(time_unit=time_unit))
+        .alias(timedelta_column)
     )
     return df
 
 
 @map_trials
-def interpolate_to_marker_timestamps(df) -> pl.DataFrame:
+def interpolate_to_marker_timestamps(
+        df: pl.DataFrame,
+        timestamp_column='Timestamp') -> pl.DataFrame:
     # Define a custom function for the transformation
     # TODO;NOTE: maybe there is a better way to do this: 
     # - https://docs.pola.rs/user-guide/expressions/null/#filling-missing-data
@@ -116,19 +123,19 @@ def interpolate_to_marker_timestamps(df) -> pl.DataFrame:
     # TODO: NOTE: there is a difference between using the integer indexing and boolean indexing below
     # - we should decide depending on how duplicate timestamps are handled
     # especially in what order duplicate timestamps are removed
-    first_timestamp = df["Timestamp"][0]
-    second_timestamp = df["Timestamp"][1]
-    second_to_last_timestamp = df["Timestamp"][-2]
-    last_timestamp = df["Timestamp"][-1]
+    first_timestamp = df[timestamp_column][0]
+    second_timestamp = df[timestamp_column][1]
+    second_to_last_timestamp = df[timestamp_column][-2]
+    last_timestamp = df[timestamp_column][-1]
 
     # Replace the second and second-to-last timestamps
     return df.with_columns(
-        pl.when(pl.col("Timestamp") == df["Timestamp"][1])
+        pl.when(pl.col(timestamp_column) == df[timestamp_column][1])
         .then(first_timestamp)
-        .when(pl.col("Timestamp") == df["Timestamp"][-2])
+        .when(pl.col(timestamp_column) == df[timestamp_column][-2])
         .then(last_timestamp)
-        .otherwise(pl.col("Timestamp"))
-        .alias("Timestamp")
+        .otherwise(pl.col(timestamp_column))
+        .alias(timestamp_column)
     ).drop_nulls()
 
 
@@ -156,24 +163,35 @@ def resample_to_500hz(df):
 
 
 @map_trials
-def scale_min_max(df: pl.DataFrame) -> pl.DataFrame:
+def scale_min_max(
+        df: pl.DataFrame,
+        exclude_columns=['Timestamp', 'Trial']) -> pl.DataFrame:
     return df.with_columns(
-        (_scale_min_max_col(pl.col(pl.Float64).exclude('Timestamp', 'Trial')))) # TODO: trial shouldn't even be float64
+        _scale_min_max_col(
+            pl.col(pl.Float64)
+            .exclude(exclude_columns))) # TODO: trial shouldn't even be float64
 
 def _scale_min_max_col(col: pl.Expr) -> pl.Expr:
     return (col - col.min()) / (col.max() - col.min())
 
 
 @map_trials
-def scale_standard(df: pl.DataFrame) -> pl.DataFrame:
+def scale_standard(
+        df: pl.DataFrame, 
+        exclude_columns=['Timestamp', 'Trial']) -> pl.DataFrame:  # TODO: trial shouldn't even be float64
     return df.with_columns(
-        (_scale_standard_col(pl.col(pl.Float64).exclude('Timestamp', 'Trial')))) # TODO: trial shouldn't even be float64
+        _scale_standard_col(
+            pl.col(pl.Float64)
+            .exclude(exclude_columns)))
 
 def _scale_standard_col(col: pl.Expr) -> pl.Expr:
     return (col - col.mean()) / col.std()
 
 
-def merge_dfs(*dfs: Union[pl.DataFrame, List[pl.DataFrame]]) -> pl.DataFrame:
+def merge_dfs(
+        *dfs: Union[pl.DataFrame, List[pl.DataFrame]],
+        merge_on=['Timestamp', 'Trial'],
+        sort_by=['Timestamp']) -> pl.DataFrame:
     """
     Merge multiple DataFrames on the 'Timestamp' and 'Trial' columns. 
     Function accepts both a list of DataFrames or multiple DataFrames as arguments.
@@ -184,7 +202,7 @@ def merge_dfs(*dfs: Union[pl.DataFrame, List[pl.DataFrame]]) -> pl.DataFrame:
 
     df = reduce(
         lambda left, right: 
-            left.join(right, on=['Timestamp', 'Trial'], how='outer_coalesce').sort('Timestamp'),
+            left.join(right, on=merge_on, how='outer_coalesce').sort(sort_by),
             dfs)
     return df
 

@@ -4,14 +4,9 @@ from functools import wraps
 
 import numpy as np
 import polars as pl
-import matplotlib.pyplot as plt
-import plotly.express as px
 import scipy.signal as signal
 
 from src.data.transform_data import map_trials
-from src.log_config import configure_logging
-
-configure_logging(stream_level=logging.DEBUG, ignore_libs=['matplotlib', 'Comm', 'bokeh', 'tornado', 'param'])
 
 
 EYES = ['Pupillometry_R', 'Pupillometry_L']
@@ -28,16 +23,17 @@ def map_eyes(eye_columns=EYES):
 
 
 @map_trials
-def process_pupillometry(df, sampling_rate=60, cutoff_frequency=0.5):
+def process_pupillometry(df: pl.DataFrame, sampling_rate=60, cutoff_frequency=0.5) -> pl.DataFrame:
     df = values_below_x_are_considered_blinks(df)
     df = remove_periods_around_blinks(df)
     df = interolate_pupillometry(df)
     df = low_pass_filter_pupillometry(df, sampling_rate, cutoff_frequency)
+    df = mean_pupil_size(df, EYES)
     return df
 
 
 @map_eyes()
-def values_below_x_are_considered_blinks(df, eye, x=2):
+def values_below_x_are_considered_blinks(df: pl.Dataframe, eye, x=2) -> pl.DataFrame:
     return df.with_columns(
         pl.when(pl.col(eye) < x)
         .then(-1)
@@ -45,8 +41,9 @@ def values_below_x_are_considered_blinks(df, eye, x=2):
         .alias(eye)
     )
 
+
 @map_eyes()
-def remove_periods_around_blinks(df, eye, period=120, sampling_rate=60):
+def remove_periods_around_blinks(df: pl.Dataframe, eye, period=120, sampling_rate=60) -> pl.DataFrame:
     # Remove periods of 120 ms before and after blinks
     # NOTE: Geuter 2014 used 100 ms cut-off before and after each blink
 
@@ -91,7 +88,7 @@ def remove_periods_around_blinks(df, eye, period=120, sampling_rate=60):
 
 
 @map_eyes()
-def interolate_pupillometry(df, eye):
+def interolate_pupillometry(df: pl.DataFrame, eye: str) -> pl.DataFrame:
     # Linearly interpolate and fill edge cases when the first or last value is null
     # NOTE: cubic spline?
     return df.with_columns([
@@ -102,34 +99,41 @@ def interolate_pupillometry(df, eye):
         .alias(eye)
     ])
 
+
 @map_eyes()
 def low_pass_filter_pupillometry(df, eye, sampling_rate, cutoff_frequency=2.0):
-    pupil_smoothed = _low_pass_filter(df[eye], sampling_rate, cutoff_frequency=0.5)
-    return df.with_columns(pl.Series(eye, pupil_smoothed))
+    pupil_low_pass_filtered = _low_pass_filter(df[eye], sampling_rate, cutoff_frequency=0.5)
+    return df.with_columns(pl.Series(eye, pupil_low_pass_filtered))
 
 
-def _low_pass_filter(data, sampling_rate, cutoff_frequency=2.0):
+def _low_pass_filter(
+        data: pl.Series,
+        sampling_rate, 
+        cutoff_frequency=2.0) -> np.ndarray:
     """
     Apply a low-pass filter to smooth the data.
     - data: numpy array of pupil size measurements.
     - sampling_rate: rate at which data was sampled (Hz).
     - cutoff_frequency: frequency at which to cut off the high-frequency signal.
-    Returns the filtered data.
+    Returns the filtered data as a numpy array.
     """
-    # Normalizing the frequency to Nyquist frequency
+    # Normalize the frequency to Nyquist frequency
     normalized_cutoff = cutoff_frequency / (0.5 * sampling_rate)
 
-    # Creating the filter
+    # Create filter
     b, a = signal.butter(N=2, Wn=normalized_cutoff, btype='low', analog=False)
 
-    # Applying the filter
+    # Apply filter
     filtered_data = signal.filtfilt(b, a, data)
 
     return filtered_data
 
 
-def mean_pupil_size(df, eyes):
+def mean_pupil_size(
+        df: pl.DataFrame,
+        eye_columns=EYES, 
+        new_column='Pupillometry') -> pl.DataFrame:
     return df.with_columns(
-        ((pl.col(eyes[1]) + pl.col(eyes[2])) / 2)
-        .alias('mean_pupil_size')
+        ((pl.col(eye_columns[0]) + pl.col(eye_columns[1])) / 2)
+        .alias(new_column)
     )

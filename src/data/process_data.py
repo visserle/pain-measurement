@@ -129,7 +129,7 @@ def transform_dataset(
         for transformation in data_config.transformations:
             data.dataset = transformation(data.dataset)
             logger.debug("Dataset '%s' transformed with %s", data_config.name, transformation.__name__)
-            # TODO: add **kwargs to transformations and pass them here
+            # TODO: add **kwargs to transformations and pass them here using lambda functions 
 
 def transform_participant_datasets(
         participant_config: ParticipantConfig, 
