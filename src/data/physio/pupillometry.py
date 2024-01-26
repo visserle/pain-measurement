@@ -29,7 +29,7 @@ def map_eyes(eye_columns=EYES):
 
 @map_trials
 def process_pupillometry(df, sampling_rate=60, cutoff_frequency=0.5):
-    df = values_below_x_are_still_blinks(df)
+    df = values_below_x_are_considered_blinks(df)
     df = remove_periods_around_blinks(df)
     df = interolate_pupillometry(df)
     df = low_pass_filter_pupillometry(df, sampling_rate, cutoff_frequency)
@@ -37,7 +37,7 @@ def process_pupillometry(df, sampling_rate=60, cutoff_frequency=0.5):
 
 
 @map_eyes()
-def values_below_x_are_still_blinks(df, eye, x=2):
+def values_below_x_are_considered_blinks(df, eye, x=2):
     return df.with_columns(
         pl.when(pl.col(eye) < x)
         .then(-1)
@@ -46,8 +46,8 @@ def values_below_x_are_still_blinks(df, eye, x=2):
     )
 
 @map_eyes()
-def remove_periods_around_blinks(df, eye, period=100, sampling_rate=60):
-    # Remove periods of 100 ms before and after blinks
+def remove_periods_around_blinks(df, eye, period=120, sampling_rate=60):
+    # Remove periods of 120 ms before and after blinks
     # NOTE: Geuter 2014 used 100 ms cut-off before and after each blink
 
     neg_ones = df[eye] == -1
@@ -66,7 +66,6 @@ def remove_periods_around_blinks(df, eye, period=100, sampling_rate=60):
     if df[eye][-1] == -1:
         end_indices.append(len(df) - 1) # if df you could also use df.height
 
-
     # Enlargen each segment (defined by start and end indices) by a given amount
     enlargen_amount = math.ceil(period/(1000/sampling_rate)) # 100 ms
     start_indices = [index - enlargen_amount for index in start_indices]
@@ -76,14 +75,13 @@ def remove_periods_around_blinks(df, eye, period=100, sampling_rate=60):
     start_indices = [max(index, 0) for index in start_indices]
     end_indices = [min(index, len(df) - 1) for index in end_indices]
 
-    # Initialize a condition (false just means rows selected here)
+    # Initialize a condition (false just means a condition with no rows selected here)
     condition = pl.lit(False)
 
     # Loop over each segment and update the condition
     for start, end in zip(start_indices, end_indices):
         condition = condition | (pl.arange(0, df.height).is_between(start, end))
 
-    # Using with_column to modify the eye column
     return df.with_columns(
         pl.when(condition)
         .then(None)
@@ -106,11 +104,11 @@ def interolate_pupillometry(df, eye):
 
 @map_eyes()
 def low_pass_filter_pupillometry(df, eye, sampling_rate, cutoff_frequency=2.0):
-    pupil_smoothed = low_pass_filter(df[eye], sampling_rate, cutoff_frequency=0.5)
+    pupil_smoothed = _low_pass_filter(df[eye], sampling_rate, cutoff_frequency=0.5)
     return df.with_columns(pl.Series(eye, pupil_smoothed))
 
 
-def low_pass_filter(data, sampling_rate, cutoff_frequency=2.0):
+def _low_pass_filter(data, sampling_rate, cutoff_frequency=2.0):
     """
     Apply a low-pass filter to smooth the data.
     - data: numpy array of pupil size measurements.
@@ -118,7 +116,7 @@ def low_pass_filter(data, sampling_rate, cutoff_frequency=2.0):
     - cutoff_frequency: frequency at which to cut off the high-frequency signal.
     Returns the filtered data.
     """
-    # Normalizing the frequency
+    # Normalizing the frequency to Nyquist frequency
     normalized_cutoff = cutoff_frequency / (0.5 * sampling_rate)
 
     # Creating the filter
@@ -130,3 +128,8 @@ def low_pass_filter(data, sampling_rate, cutoff_frequency=2.0):
     return filtered_data
 
 
+def mean_pupil_size(df, eyes):
+    return df.with_columns(
+        ((pl.col(eyes[1]) + pl.col(eyes[2])) / 2)
+        .alias('mean_pupil_size')
+    )
