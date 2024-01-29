@@ -1,10 +1,9 @@
-from typing import Union, List, Iterable
+from typing import List, Iterable
 from functools import wraps, reduce
 import logging
 
 import numpy as np
 import polars as pl
-import pandas as pd
 
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
@@ -34,22 +33,25 @@ def map_participant_datasets(func, participant):
 def map_trials(func, trial_column='Trial'):
     """Decorator to apply a function to each trial in a DataFrame."""
     @wraps(func)
-    def wrapper(df, **kwargs):
+    def wrapper(df, *args, **kwargs):
         # Check if 'df' is a pl.DataFrame
         if not isinstance(df, pl.DataFrame):
             raise ValueError("Input must be a Polars DataFrame.")
         # Check if DataFrame has the specified trial column
         if trial_column in df.columns:
+            # Warning if only one trial is found
+            if len(df[trial_column].unique()) == 1:
+                logger.warning("Only one trial found, applying function to the whole DataFrame.")
             # Apply the function to each trial
-            result = df.group_by(trial_column, maintain_order=True).map_groups(lambda group: func(group, **kwargs))
+            result = df.group_by(trial_column, maintain_order=True).map_groups(lambda group: func(group, *args, **kwargs))
+            logger.critical(f"Applying function {func.__name__} to each trial. We still have to find out if order is maintained.")
         else:
             # Apply the function to the whole DataFrame
             logger.warning(f"No '{trial_column}' column found, applying function {func.__name__} to the whole DataFrame instead.")
             logger.info(f"Use {func.__name__}.__wrapped__() to access the function without the map_trials decorator.")
-            result = func(df, **kwargs)
+            result = func(df, *args, **kwargs)
         return result
     return wrapper
-
 
 def create_trials(
         df: pl.DataFrame,
@@ -189,7 +191,7 @@ def _scale_standard_col(col: pl.Expr) -> pl.Expr:
 
 
 def merge_dfs(
-        *dfs: Union[pl.DataFrame, List[pl.DataFrame]],
+        *dfs: pl.DataFrame | List[pl.DataFrame],
         merge_on=['Timestamp', 'Trial'],
         sort_by=['Timestamp']) -> pl.DataFrame:
     """
