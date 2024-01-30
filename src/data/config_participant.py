@@ -16,16 +16,16 @@ class ParticipantConfig:
 
 
 p_001 = ParticipantConfig(
-    id = '001_pilot_bjoern',
+    id="001_pilot_bjoern",
 )
 
 p_002 = ParticipantConfig(
-    id = '002_pilot_melis',
-    not_available_data = ['eeg'],
+    id="002_pilot_melis",
+    not_available_data=["eeg"],
 )
 
 p_003 = ParticipantConfig(
-    id = '003_pilot_noah',
+    id="003_pilot_noah",
 )
 
 PARTICIPANT_LIST = [

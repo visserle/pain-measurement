@@ -1,7 +1,7 @@
 # work in progress
 
 # TODO
-# - Fix query function 
+# - Fix query function
 
 import logging
 import time
@@ -13,6 +13,7 @@ import serial.tools.list_ports
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
+
 def list_com_ports():
     """List all serial ports"""
     ports = serial.tools.list_ports.comports()
@@ -21,12 +22,13 @@ def list_com_ports():
         output.append("No serial ports found.")
     for port, desc, hwid in sorted(ports):
         output.append(f"{port}: {desc} [{hwid}]")
-    return '\n'.join(output)
+    return "\n".join(output)
 
 
 class ErrorCodes(Enum):
     """Error codes as defined in the Thermoino code (Thermode_PWM.ino)"""
-    ERR_NULL = 0 # not used
+
+    ERR_NULL = 0  # not used
     ERR_NO_PARAM = -1
     ERR_CMD_NOT_FOUND = -2
     ERR_CTC_BIN_WIDTH = -3
@@ -39,23 +41,26 @@ class ErrorCodes(Enum):
     ERR_BUSY = -10
     ERR_DEBUG_RANGE = -11
 
+
 class OkCodes(Enum):
     """OK codes as defined in the Thermoino code (Thermode_PWM.ino)"""
+
     OK_NULL = 0
     OK = 1
     OK_READY = 2
     OK_MOVE_SLOW = 3
     OK_MOVE_PREC = 4
 
+
 class Thermoino:
-    """  
-    The `Thermoino` class facilitates communication with the Thermoino (a composite of 
+    """
+    The `Thermoino` class facilitates communication with the Thermoino (a composite of
     Thermode and Arduino).
-    
+
     The class provides methods to initialize the device and set target temperatures.
-    
+
     For the most part, it is based on the MATLAB script UseThermoino.m.
-    
+
     Attributes
     ----------
     PORT : `str`
@@ -67,7 +72,7 @@ class Thermoino:
     temp : `int`
         Current (calculated) temperature [°C]. Starts at the baseline temperature.
     mms_baseline : `int`
-        Baseline temperature [°C]. 
+        Baseline temperature [°C].
         It has to be the same as in the MMS program.
     mms_rate_of_rise : `int`
         Rate of rise of temperature [°C/s]. It has to be the same as in the MMS program.
@@ -107,7 +112,7 @@ class Thermoino:
     luigi = Thermoino(
         port=port,
         mms_baseline=32,  # has to be the same as in MMS
-        mms_rate_of_rise=5  # has to be the same as in MMS
+        mms_rate_of_rise=5,  # has to be the same as in MMS
     )
 
     # Use luigi to set temperatures:
@@ -125,7 +130,7 @@ class Thermoino:
     def __init__(self, port, mms_baseline, mms_rate_of_rise):
         """
         Constructs a Thermoino object.
-        
+
         Parameters
         ----------
         port : `str`
@@ -138,19 +143,18 @@ class Thermoino:
             It can be changed class-wide by calucalting an adjusted rate of rise in the create_ctc method.
         """
         self.PORT = port
-        self.ser = None # will be set to the serial object in connect()
+        self.ser = None  # will be set to the serial object in connect()
         self.mms_baseline = mms_baseline
-        self.temp = mms_baseline # will get continuous class-internal updates to match the temperature of the Thermode
+        self.temp = mms_baseline  # will get continuous class-internal updates to match the temperature of the Thermode
         self.mms_rate_of_rise = mms_rate_of_rise
 
-        self.connected = False # will be set to True in connect()
-
+        self.connected = False  # will be set to True in connect()
 
     def connect(self):
         """
-        Connect to the Thermoino device. 
+        Connect to the Thermoino device.
         This method establishes a serial connection to the device and waits for it to boot up.
-        
+
         Returns
         -------
         `serial.Serial`
@@ -185,11 +189,11 @@ class Thermoino:
         Send a command to the Thermoino, read the response, decode it,
         and then pass the numeric response code to the _handle_response function.
         """
-        self.ser.write(command.encode()) # encode to bytes
+        self.ser.write(command.encode())  # encode to bytes
         if get_response:
             response = self.ser.readline()
             try:
-                decoded_response = response.decode('ascii').strip()
+                decoded_response = response.decode("ascii").strip()
             except UnicodeDecodeError:
                 logger.error("Thermoino response could not be decoded: %s", response)
                 decoded_response = None
@@ -198,9 +202,10 @@ class Thermoino:
 
     def _handle_response(self, decoded_response):
         """
-        Take the decoded response from _send_command, determine if it's an error or success 
+        Take the decoded response from _send_command, determine if it's an error or success
         code based on whether it's less than 0, and convert it to the corresponding enum value.
         """
+
         def _is_integer(s):
             """Check if a string is an integer, .isdigit() does not work for negative numbers."""
             try:
@@ -208,9 +213,9 @@ class Thermoino:
                 return True
             except ValueError:
                 return False
-    
+
         if not _is_integer(decoded_response):
-            return decoded_response # e.g. when using diag
+            return decoded_response  # e.g. when using diag
 
         decoded_response = int(decoded_response)
         if decoded_response < 0:
@@ -223,26 +228,26 @@ class Thermoino:
         """
         Send a 'DIAG' command to the Thermoino to get basic diagnostic information.
         """
-        output = self._send_command('DIAG\n')
+        output = self._send_command("DIAG\n")
         logger.info("Thermoino response to 'DIAG' (.diag): %s.", output)
 
     def trigger(self):
         """
         Trigger MMS to get ready for action.
         """
-        output = self._send_command('START\n')
+        output = self._send_command("START\n")
         if output in OkCodes.__members__:
             logger.debug("Thermoino response to 'START' (.trigger): %s.", output)
         elif output in ErrorCodes.__members__:
-            logger.error("Thermoino error for 'START' (.trigger): %s.", output)        
+            logger.error("Thermoino error for 'START' (.trigger): %s.", output)
         return self
 
     def set_temp(self, temp_target):
         """
-        Set a target temperature on the Thermoino device. 
+        Set a target temperature on the Thermoino device.
         Most common function in standard use.
         It is based on the 'MOVE' command, which is the most basic Thermoino command.
-        
+
         Parameters
         ----------
         temp_target : `int`
@@ -255,21 +260,26 @@ class Thermoino:
         Returns
         -------
         tuple
-            (self, float, bool) - self for chaining, float for the duration in seconds for the temperature change, bool for success      
+            (self, float, bool) - self for chaining, float for the duration in seconds for the temperature change, bool for success
         """
 
         move_time_us = round(((temp_target - self.temp) / self.mms_rate_of_rise) * 1e6)
         move_time_s = abs(move_time_us / 1e6)  # Convert to seconds as a measure of duration
-        output = self._send_command(f'MOVE;{move_time_us}\n')
+        output = self._send_command(f"MOVE;{move_time_us}\n")
         if output in OkCodes.__members__:
-            logger.info("Thermoino response to 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
+            # Update the current temperature
             self.temp = temp_target
+            logger.info(
+                "Thermoino response to 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output
+            )
             success = True
         elif output in ErrorCodes.__members__:
-            logger.error("Thermoino error for 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output)
+            logger.error(
+                "Thermoino error for 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output
+            )
             success = False
         return (self, move_time_s, success)
-    
+
     def sleep(self, duration):
         """
         - NOT RECOMMENDED FOR PSYCHOPY EXPERIMENTS -
@@ -294,13 +304,13 @@ class Thermoino:
 class ThermoinoComplexTimeCourses(Thermoino):
     """
     The `ThermoinoComplexTimeCourses` class facilitates communication with the Thermoino for complex temperature courses (CTC).
-    
+
     The class inherits from `Thermoino` and provides methods to initialize the device, set target temperatures,
     create and load complex temperature courses (CTC) on the Thermoino, and execute these courses.
-    
+
     For the most part, it is based on the MATLAB script UseThermoino.m.
-    
-    
+
+
     Attributes
     ----------
     PORT : `str`
@@ -312,7 +322,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     temp : `int`
         Current (calculated) temperature [°C]. Starts at the MMS baseline temperature.
     mms_baseline : `int`
-        Baseline temperature [°C]. 
+        Baseline temperature [°C].
         It has to be the same as in the MMS program.
     temp_course_duration : `int`
         Duration of the temperature course [s].
@@ -327,7 +337,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         for complex temperature courses a lower rate of rise is recommended (more precise).
     bin_size_ms : `int`
         Bin size in milliseconds for the complex temperature course.
-    
+
     Methods
     -------
     connect():
@@ -356,13 +366,13 @@ class ThermoinoComplexTimeCourses(Thermoino):
         Execute the loaded CTC on the Thermoino.
     flush_ctc()
         Reset CTC information on the Thermoino. This has to be done before loading a new CTC.
-    
+
     New stuff
     -----------
     - renamed init() to connect() to be consistent with python naming conventions
     - create_ctc(), where you load your temperature course with sampling rate and it returns the CTC (a resampled, differentiated, binned temperature course)
     - prep_ctc() which prepares the starting temperature for execution of the CTC
-    
+
     Examples
     --------
     ````python
@@ -375,17 +385,15 @@ class ThermoinoComplexTimeCourses(Thermoino):
     luigi = ThermoinoComplexTimeCourses(
         port=port,
         mms_baseline=32,  # has to be the same as in MMS
-        mms_rate_of_rise=5  # has to be the same as in MMS
+        mms_rate_of_rise=5,  # has to be the same as in MMS
     )
 
     # Use luigi for complex temperature courses:
     luigi.connect()
-    luigi.init_ctc(
-        bin_size_ms=500)
+    luigi.init_ctc(bin_size_ms=500)
     luigi.create_ctc(
-        temp_course=stimuli.wave,
-        sample_rate=stimuli.sample_rate,
-        rate_of_rise_option="mms_program")
+        temp_course=stimuli.wave, sample_rate=stimuli.sample_rate, rate_of_rise_option="mms_program"
+    )
     luigi.load_ctc()
     luigi.trigger()
     luigi.prep_ctc()
@@ -414,16 +422,15 @@ class ThermoinoComplexTimeCourses(Thermoino):
         self.temp_course_resampled = None
         self.ctc = None
 
-
     def init_ctc(self, bin_size_ms):
         """
         Initialize a complex temperature course (CTC) on the Thermoino device
-        by firstly defining the bin size in milliseconds. This has to be done before loading the CTC 
+        by firstly defining the bin size in milliseconds. This has to be done before loading the CTC
         into the Thermoino (load_ctc).
 
         This function also reset all ctc information stored on the Thermoino device.
         """
-        output = self._send_command(f'INITCTC;{bin_size_ms}\n')
+        output = self._send_command(f"INITCTC;{bin_size_ms}\n")
         if output in OkCodes.__members__:
             logger.debug("Thermoino response to 'INITCTC' (.init_ctc): %s.", output)
             self.bin_size_ms = bin_size_ms
@@ -431,19 +438,19 @@ class ThermoinoComplexTimeCourses(Thermoino):
             logger.error("Thermoino error to 'INITCTC' (.init_ctc): %s.", output)
         return self
 
-    def create_ctc(self, temp_course, sample_rate, rate_of_rise_option = "mms_program"):
+    def create_ctc(self, temp_course, sample_rate, rate_of_rise_option="mms_program"):
         """
         Create a complex temperature course (CTC) based on the provided temperature course, the sample rate.
         A CTC is a differentiated, binned temperature course. The rate of rise either is either the
         same as in the `Thermoino` instance or will be determined from the temperature course.
-        In the latter case, an "optimal" rate of rise will be returned, as the lower the rate of rise is, 
+        In the latter case, an "optimal" rate of rise will be returned, as the lower the rate of rise is,
         the more precise the temperature control via the thermode.
-        
+
         Either way, the rate of rise must be the same as specified in the MMS program.
-        
-        On the x-axis, the time course is defined in bin_size_ms. 
+
+        On the x-axis, the time course is defined in bin_size_ms.
         On the y-axis, the amount of time for opening the thermode in a bin is defined in ms.
-        
+
         Parameters
         ----------
         temp_course : `numpy.ndarray`
@@ -455,7 +462,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             Default is "mms_program", which uses the same rate of rise as specified in the Thermoino object.
             If "adjusted" provided, an "optimal" rate of rise will be determined from the temperature course.
             (The lower the rate of rise is, the more precise the temperature control via the thermode.)
-        
+
         Side effects
         ------------
         Creates / modifies the following attributes (self.):\n
@@ -473,19 +480,22 @@ class ThermoinoComplexTimeCourses(Thermoino):
         self.temp_course_duration = temp_course.shape[0] / sample_rate
         # Resample the temperature course according to the bin size:
         # i.e. for a 100 s stimuli with a bin size of 500 ms we'd need 200 bins á 500 ms
-        temp_course_resampled = temp_course[::int(sample_rate / (1000 / self.bin_size_ms))]
+        temp_course_resampled = temp_course[:: int(sample_rate / (1000 / self.bin_size_ms))]
         self.temp_course_resampled = temp_course_resampled
         temp_course_resampled_diff = np.gradient(temp_course_resampled)
 
         if rate_of_rise_option == "adjusted":
             # determine adjusted rate of rise (has to be updated in MMS accordingly)
             rate_of_rise_adjusted = max(temp_course_resampled_diff * (1000 / self.bin_size_ms))
-            rate_of_rise_adjusted = np.ceil(rate_of_rise_adjusted * 10) / 10  # round up to .1°C precision
+            # round up to .1°C precision
+            rate_of_rise_adjusted = np.ceil(rate_of_rise_adjusted * 10) / 10
             # Update the rate of rise
             self.mms_rate_of_rise = rate_of_rise_adjusted
         else:
             if rate_of_rise_option != "mms_program":
-                raise ValueError("Thermoino rate of raise value has to be either mms_program or adjusted")
+                raise ValueError(
+                    "Thermoino rate of raise value has to be either mms_program or adjusted."
+                )
 
         mms_rate_of_rise_ms = self.mms_rate_of_rise / 1e3
         # scale to mms_rate_of_rise (in milliseconds)
@@ -493,7 +503,11 @@ class ThermoinoComplexTimeCourses(Thermoino):
         # Thermoino only accepts integers
         temp_course_resampled_diff_binned = np.round(temp_course_resampled_diff_binned).astype(int)
         self.ctc = temp_course_resampled_diff_binned
-        logger.info("Thermoino-adapted CTC is ready to be loaded with %s bins, each %s ms long.", len(self.ctc), self.bin_size_ms)
+        logger.info(
+            "Thermoino-adapted CTC is ready to be loaded with %s bins, each %s ms long.",
+            len(self.ctc),
+            self.bin_size_ms,
+        )
         return self
 
     def load_ctc(self, debug=False):
@@ -509,13 +523,25 @@ class ThermoinoComplexTimeCourses(Thermoino):
         """
         logger.debug("Thermoino is receiving the CTC in single bins ...")
         for idx, i in enumerate(self.ctc):
-            output = self._send_command(f'LOADCTC;{i}\n')
+            output = self._send_command(f"LOADCTC;{i}\n")
 
             if output in ErrorCodes.__members__:
-                logger.error("Thermoino error for 'LOADCTC' (.load_ctc), bin %s of %s: %s.", idx + 1, len(self.ctc), output)
-                raise ValueError(f"Error while loading bin {idx + 1} of {len(self.ctc)}. Error code: {output}")
+                logger.error(
+                    "Thermoino error for 'LOADCTC' (.load_ctc), bin %s of %s: %s.",
+                    idx + 1,
+                    len(self.ctc),
+                    output,
+                )
+                raise ValueError(
+                    f"Error while loading bin {idx + 1} of {len(self.ctc)}. Error code: {output}"
+                )
             elif debug:
-                logger.debug("Thermoino response to 'LOADCTC' (.load_ctc), bin %s of %s: %s.", idx + 1, len(self.ctc), output)
+                logger.debug(
+                    "Thermoino response to 'LOADCTC' (.load_ctc), bin %s of %s: %s.",
+                    idx + 1,
+                    len(self.ctc),
+                    output,
+                )
 
         logger.info("Thermoino received the whole CTC.")
         return self
@@ -524,16 +550,16 @@ class ThermoinoComplexTimeCourses(Thermoino):
         """
         Query information about the complex temperature course (CTC) on the Thermoino device.
 
-        This method sends a 'QUERYCTC' command to the device. Depending on the query level (`queryLvl`), 
-        different types of information are returned, e.g. ctcStatus, ctcBinSize, 
+        This method sends a 'QUERYCTC' command to the device. Depending on the query level (`queryLvl`),
+        different types of information are returned, e.g. ctcStatus, ctcBinSize,
         CTC length, the CTC itself.
 
         Parameters
         ----------
         queryLvl : `int`
-            The query level. 
-            Level 1 returns only the CTC status and verbose status description. 
-            Level 2 returns additional information, including CTC bin size, CTC length, CTC execution flag, 
+            The query level.
+            Level 1 returns only the CTC status and verbose status description.
+            Level 2 returns additional information, including CTC bin size, CTC length, CTC execution flag,
             and the full CTC (which can take some time to transfer).
         statAbort : `bool`
             If True and the CTC status is 0, an error is raised and execution is stopped.
@@ -543,7 +569,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         `str`
             The output from the Thermoino device.
         """
-        output = self._send_command(f'QUERYCTC;{queryLvl};{statAbort}\n')
+        output = self._send_command(f"QUERYCTC;{queryLvl};{statAbort}\n")
         logger.info("Thermoino response to 'QUERYCTC' (.query_ctc): %s.", output)
 
     def prep_ctc(self):
@@ -552,11 +578,19 @@ class ThermoinoComplexTimeCourses(Thermoino):
         This is seperate from exec_ctc to be able to use exec_ctc in a psychopy routine and control the exact length of the stimulation.
         """
         if not self.temp == self.temp_course_resampled[0]:
-            prep_duration = round(abs(self.temp - self.temp_course_resampled[0]) / self.mms_rate_of_rise,1)
-            prep_duration += 0.5 # add 0.5 s to be sure
+            prep_duration = round(
+                abs(self.temp - self.temp_course_resampled[0]) / self.mms_rate_of_rise, 1
+            )
+            prep_duration += 0.5  # add 0.5 s to be sure
             self.set_temp(self.temp_course_resampled[0])
-            logger.info("Thermoino prepares the CTC for execution by setting the starting temperature at %s °C", self.temp)
-            logger.info("Thermoino is taking %s s to reach the starting temperature of the CTC.", prep_duration)
+            logger.info(
+                "Thermoino prepares the CTC for execution by setting the starting temperature at %s °C",
+                self.temp,
+            )
+            logger.info(
+                "Thermoino is taking %s s to reach the starting temperature of the CTC.",
+                prep_duration,
+            )
         else:
             prep_duration = 0
             logger.info("Thermoino is ready to execute the CTC.")
@@ -567,16 +601,25 @@ class ThermoinoComplexTimeCourses(Thermoino):
         Execute the CTC on the Thermoino device.
         """
         if self.temp != self.temp_course_resampled[0]:
-            logger.error("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
-            raise ValueError("Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first.")
+            logger.error(
+                "Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first."
+            )
+            raise ValueError(
+                "Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first."
+            )
 
         exec_duration = self.temp_course_duration
-        output = self._send_command('EXECCTC\n')
+        output = self._send_command("EXECCTC\n")
         if output in OkCodes.__members__:
+            # Update the temperature to the last temperature of the CTC
+            self.temp = round(self.temp_course_resampled[-1], 2)
             logger.debug("Thermoino response to 'EXECCTC' (.exec_ctc): %s.", output)
-            logger.info("Thermoino will execute the CTC with a duration of %s s.", self.temp_course_duration)
-            self.temp = round(self.temp_course_resampled[-1],2)
-            logger.info("Thermoino will set the temperature to %s °C after the CTC ends.", self.temp)
+            logger.info(
+                "Thermoino will execute the CTC with a duration of %s s.", self.temp_course_duration
+            )
+            logger.info(
+                "Thermoino will set the temperature to %s °C after the CTC ends.", self.temp
+            )
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error for 'EXECCTC' (.exec_ctc): %s.", output)
         return (self, exec_duration)
@@ -587,7 +630,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
 
         This method sends a 'FLUSHCTC' command to the device. Before loading a new CTC, the old one has to be flushed or else it will be appended.
         """
-        output = self._send_command('FLUSHCTC\n')
+        output = self._send_command("FLUSHCTC\n")
         if output in OkCodes.__members__:
             logger.info("Thermoino response to 'FLUSHCTC' (.flush_ctc): %s.", output)
         elif output in ErrorCodes.__members__:

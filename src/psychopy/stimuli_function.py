@@ -17,12 +17,12 @@ import scipy.signal
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-class StimuliFunction():
+class StimuliFunction:
     """
-    The `StimuliFunction` class creates a wave-like pattern that can be used for various stimuli functions. 
-    
-    Its main attribute, `wave`, is a numpy array that is computed by adding a low-frequency baseline wave and 
-    a high-frequency modulation wave (optionally with varying periods) together. The resulting `wave` can be 
+    The `StimuliFunction` class creates a wave-like pattern that can be used for various stimuli functions.
+
+    Its main attribute, `wave`, is a numpy array that is computed by adding a low-frequency baseline wave and
+    a high-frequency modulation wave (optionally with varying periods) together. The resulting `wave` can be
     modified using different methods in the class, like adding flat regions (plateaus), adjusting the
     baseline temperature, or generalizing the big decreases in temperature to a cosine wave segment.
 
@@ -67,12 +67,12 @@ class StimuliFunction():
     Methods
     -------
     add_baseline_temp(baseline_temp):
-        Adds a baseline temperature to the stimuli function. Should be around VAS = 35. 
+        Adds a baseline temperature to the stimuli function. Should be around VAS = 35.
         (handled in a seperate function to be able to reuse the same seed for different baseline temperatures)
     add_prolonged_extrema(time_to_be_added, percentage_of_extrema, prolong_type='loc_min'):
-        Adds prolonged extrema (either loc_maxima or loc_minima) to the stimuli function.    
+        Adds prolonged extrema (either loc_maxima or loc_minima) to the stimuli function.
     add_plateaus(length, n_plateaus):
-        Adds plateaus to the stimuli function. 
+        Adds plateaus to the stimuli function.
     generalize_big_decreases(length=None):
         Generalizes big decreases in the stimuli function.
 
@@ -81,37 +81,40 @@ class StimuliFunction():
     ```python
     import numpy as np
 
-    minimal_desired_duration = 200 # in seconds
-    periods = [67, 20] # [0] is the baseline and [1] the modulation; in seconds
-    frequencies = 1./np.array(periods)
-    temp_range = 3 # VAS 70 - VAS 0
+    minimal_desired_duration = 200  # in seconds
+    # [0] is the baseline and [1] the modulation; in seconds
+    periods = [67, 20]
+    frequencies = 1.0 / np.array(periods)
+    temp_range = 3  # VAS 70 - VAS 0
     sample_rate = 60
-    desired_big_decreases = [3,20] # [0] is the number of decreases and [1] the average length in s these decreases
+    # [0] is the number of decreases and [1] the average length in s these decreases
+    desired_big_decreases = [3, 20]
     random_periods = True
-    baseline_temp = 40 # @ VAS 35
+    baseline_temp = 40  # @ VAS 35
 
     plateau_duration = 20
     n_plateaus = 3
 
-    stimuli = StimuliFunction(
-        minimal_desired_duration=minimal_desired_duration,
-        frequencies=frequencies,
-        temp_range=temp_range,
-        sample_rate=sample_rate,
-        desired_big_decreases=desired_big_decreases,
-        random_periods=random_periods,
-        seed=seed
-    ).add_baseline_temp(
-        baseline_temp=baseline_temp
-    ).add_plateaus(
-        plateau_duration=plateau_duration, 
-        n_plateaus=n_plateaus
-    ).generalize_big_decreases(
+    stimuli = (
+        StimuliFunction(
+            minimal_desired_duration=minimal_desired_duration,
+            frequencies=frequencies,
+            temp_range=temp_range,
+            sample_rate=sample_rate,
+            desired_big_decreases=desired_big_decreases,
+            random_periods=random_periods,
+            seed=seed,
+        )
+        .add_baseline_temp(baseline_temp=baseline_temp)
+        .add_plateaus(plateau_duration=plateau_duration, n_plateaus=n_plateaus)
+        .generalize_big_decreases()
     )
     ```
-	For more information on the resulting stimuli wave use:
-	>>> from stimuli_function import stimuli_extra
-	>>> _ = stimuli_extra(stimuli.wave, stimuli.wave_dot, stimuli.sample_rate, s_RoC=0.2, display_stats=True)
+        For more information on the resulting stimuli wave use:
+        >>> from stimuli_function import stimuli_extra
+        >>> _ = stimuli_extra(
+        ...     stimuli.wave, stimuli.wave_dot, stimuli.sample_rate, s_RoC=0.2, display_stats=True
+        ... )
 
 
     Notes
@@ -120,7 +123,7 @@ class StimuliFunction():
     The function stimuli_extra can be used to plot the stimuli function with plotly.\n
     _________________________________________________________________\n
     The usual range from pain threshold to pain tolerance is about 4 °C. \n
-        
+
     From Andreas Strube's Neuron paper (2023) with stimuli of 8 s and Capsaicin: \n
     "During experiment 1, pain levels were calibrated to achieve \n
     - VAS10 (M = 38.1°C, SD = 3.5°C, Min = 31.8°C, Max = 44.8°C), \n
@@ -137,14 +140,15 @@ class StimuliFunction():
     """
 
     def __init__(
-            self,
-            minimal_desired_duration,
-            frequencies,
-            temp_range,
-            sample_rate,
-            desired_big_decreases=None,
-            random_periods=True,
-            seed=None):
+        self,
+        minimal_desired_duration,
+        frequencies,
+        temp_range,
+        sample_rate,
+        desired_big_decreases=None,
+        random_periods=True,
+        seed=None,
+    ):
         """
         The constructor for StimuliFunction class.
 
@@ -177,13 +181,15 @@ class StimuliFunction():
 
         # Sinusoidal waves where [0] is the baseline and [1] the modulation which gets added on top
         self.frequencies = np.array(frequencies)
-        self.periods = 1/self.frequencies
+        self.periods = 1 / self.frequencies
 
         # Calculate the amplitudes for the sinusoidal waves based on the given temperature range
         self.temp_range = temp_range
-        self._amplitude_proportion = 0.375 # value based on empirical testing, see notebook
+        self._amplitude_proportion = 0.375  # value based on empirical testing, see notebook
         self.amplitudes = self._calculate_amplitudes()
-        self.temp_criteria = self.temp_range * 0.8 # critical temperature difference for big decreases
+        self.temp_criteria = (
+            self.temp_range * 0.8
+        )  # critical temperature difference to qualify as a big decrease
 
         # Sampling rate and actual duration (without add_ methods)
         self.sample_rate = sample_rate
@@ -203,10 +209,13 @@ class StimuliFunction():
         self._duration = self.duration
         self._wave_dot = self.wave_dot
         self.baseline_temp = 0
-        logger.debug(f"Succesfully created stimuli function with seed {self.seed} and duration {self.duration}.")
+        logger.debug(
+            f"Succesfully created stimuli function with seed {self.seed} and duration {self.duration}."
+        )
         if desired_big_decreases:
-            logger.debug(f"Number of big decreases: {self.number_of_big_decreases}, average length: {self.avg_length_of_big_decreases:.2f}.")
-
+            logger.debug(
+                f"Number of big decreases: {self.number_of_big_decreases}, average length: {self.avg_length_of_big_decreases:.2f}."
+            )
 
     def _create_wave(self):
         # Summing self.baseline and self.modulation to create the stimuli function self.wave
@@ -233,18 +242,18 @@ class StimuliFunction():
 
     def _create_baseline(self):
         """Creates the baseline sinusoidal wave"""
-        time = np.arange(0, self.minimal_duration, 1/self.sample_rate)
-        self.baseline = \
-            self.amplitudes[0] * -np.cos(time * 2 * np.pi * self.frequencies[0])
+        time = np.arange(0, self.minimal_duration, 1 / self.sample_rate)
+        self.baseline = self.amplitudes[0] * -np.cos(time * 2 * np.pi * self.frequencies[0])
 
     def _create_modulation(self):
         """
         Creates the modulation sinusoidal wave (with varying frequency if random_periods=True).
         The modulation has to be created period-wise as the frequency varies with every period.
         """
+
         def _noise_that_sums_to_0(n, factor):
             """
-            Returns a noise vector that sums to 0 to be added to the periods of the modulation 
+            Returns a noise vector that sums to 0 to be added to the periods of the modulation
             if self.random_periods is True.
             """
             # create noise for n//2
@@ -260,24 +269,25 @@ class StimuliFunction():
             self.rng.shuffle(noise)
             return np.round(noise)
 
-        modulation_random_factor = _noise_that_sums_to_0(
-            n = self.modulation_n_periods,
-            factor = 0.6) if self.random_periods else np.zeros(self.modulation_n_periods)
+        modulation_random_factor = (
+            _noise_that_sums_to_0(n=self.modulation_n_periods, factor=0.6)
+            if self.random_periods
+            else np.zeros(self.modulation_n_periods)
+        )
 
         # create the modulation period-wise
         self.modulation = []
         for i in range(self.modulation_n_periods):
             period = self.periods[1] + modulation_random_factor[i]
-            frequency = 1/period
+            frequency = 1 / period
             num_steps = int(period * self.sample_rate)
-            time_ = np.linspace(0, period, num_steps) # do not use arange here, floating point errors
+            # do not use arange here, floating point errors
+            time_ = np.linspace(0, period, num_steps)
             # wave_ has to be inverted every second period to get a sinosoidal wave
             if i % 2 == 0:
-                wave_ = \
-                    self.amplitudes[1] * -np.cos(np.pi * frequency * time_)
+                wave_ = self.amplitudes[1] * -np.cos(np.pi * frequency * time_)
             else:
-                wave_ = \
-                    self.amplitudes[1] * -np.cos(np.pi * frequency * time_) * -1
+                wave_ = self.amplitudes[1] * -np.cos(np.pi * frequency * time_) * -1
             self.modulation.extend(wave_)
         self.modulation = np.array(self.modulation)
 
@@ -316,13 +326,13 @@ class StimuliFunction():
 
     @property
     def duration(self):
-        """ The duration of the wave in seconds."""
-        self._duration = self.wave.shape[0] / self.sample_rate 
+        """The duration of the wave in seconds."""
+        self._duration = self.wave.shape[0] / self.sample_rate
         return self._duration
 
     @property
     def wave_dot(self):
-        self._wave_dot = np.gradient(self.wave, 1/self.sample_rate) # dx in seconds
+        self._wave_dot = np.gradient(self.wave, 1 / self.sample_rate)  # dx in seconds
         return self._wave_dot
 
     @property
@@ -334,7 +344,7 @@ class StimuliFunction():
     def loc_minima(self):
         self._loc_minima, _ = scipy.signal.find_peaks(-self.wave, prominence=0.5)
         return self._loc_minima
-    
+
     @property
     def wave(self):
         return self._wave
@@ -350,9 +360,13 @@ class StimuliFunction():
         if wave_length % self.sample_rate != 0:
             required_length = wave_length + (self.sample_rate - (wave_length % self.sample_rate))
             padding_value = new_wave[-1]
-            new_wave = np.pad(new_wave, (0, required_length - wave_length), 'constant', constant_values=(padding_value,))
+            new_wave = np.pad(
+                new_wave,
+                (0, required_length - wave_length),
+                "constant",
+                constant_values=(padding_value,),
+            )
         self._wave = new_wave
-        
 
     def add_baseline_temp(self, baseline_temp):
         """
@@ -364,7 +378,7 @@ class StimuliFunction():
 
     def _check_big_decreases(self):
         """
-        Identifies the locations of big and small decreases in temperature 
+        Identifies the locations of big and small decreases in temperature
         between the local maxima and minima of the wave and checks if the number and length of big decreases
         is as specified.
         """
@@ -399,12 +413,12 @@ class StimuliFunction():
         self.idx_decreases["big"] = idx_big_decreases
         self.loc_extrema_temps_diff = loc_extrema_temps_diff
         return True
-    
+
     def generalize_big_decreases(self, length=None):
         """
-        Modifies the wave to generalize the sections of big decreases (found via _check_number_of_decreases) by 
-        replacing them with cosine wave segments. 
-    
+        Modifies the wave to generalize the sections of big decreases (found via _check_number_of_decreases) by
+        replacing them with cosine wave segments.
+
         Parameters
         ----------
         length : int or None
@@ -412,25 +426,29 @@ class StimuliFunction():
             is used which does not change the duration of the wave and is therefore the default.
         """
         if self.check_decreases_flag is False:
-            raise ValueError("Please specify the number and length of big decreases in the constructor.")
-        
+            raise ValueError(
+                "Please specify the number and length of big decreases in the constructor."
+            )
+
         idx_big_decreases = self.idx_decreases["big"]
         temp_diffs = self.loc_extrema_temps_diff
-    
+
         if length is None:
             # Calculate the mean duration of big decreases
             lengths = self.loc_minima[idx_big_decreases] - self.loc_maxima[idx_big_decreases]
             mean_length = int(np.mean(lengths))
         else:
             mean_length = length * self.sample_rate
-            logger.warning(f"Using a fixed length of {length} seconds for the cosine wave segments can change the duration of the wave.")
-    
+            logger.warning(
+                f"Using a fixed length of {length} seconds for the cosine wave segments can change the duration of the wave."
+            )
+
         self.avg_length_of_big_decreases = mean_length / self.sample_rate
-    
+
         # Create the modified wave
         wave_new = []
         idx_original = 0
-    
+
         for j in idx_big_decreases:
             idx_start = self.loc_maxima[j]
             idx_end = self.loc_minima[j]
@@ -438,19 +456,23 @@ class StimuliFunction():
             wave_new.extend(self.wave[idx_original:idx_start])
             # Generate the cosine wave segment
             x = np.linspace(0, np.pi, mean_length)
-            y = np.cos(x) * temp_diffs[j]/2 + self.wave[idx_start] - temp_diffs[j]/2
+            y = np.cos(x) * temp_diffs[j] / 2 + self.wave[idx_start] - temp_diffs[j] / 2
             # Insert the new wave segment
             wave_new.extend(y)
             # Update the starting index for the next iteration
             idx_original = idx_end
-    
+
         # Append the remaining original wave values after the last segment
         wave_new.extend(self.wave[idx_original:])
         self.wave = np.array(wave_new)
-        logger.debug(f"Generalized big decreases to have a length of {mean_length/self.sample_rate} seconds.")
+        logger.debug(
+            f"Generalized big decreases to have a length of {mean_length/self.sample_rate} seconds."
+        )
         return self
-    
-    def add_prolonged_extrema(self, time_to_be_added, percentage_of_extrema, prolong_type='loc_minima'):
+
+    def add_prolonged_extrema(
+        self, time_to_be_added, percentage_of_extrema, prolong_type="loc_minima"
+    ):
         """
         Adds prolonged extrema (either loc_maxima or loc_minima) to the wave.
 
@@ -464,28 +486,30 @@ class StimuliFunction():
             The type of extremum to prolong ('loc_maxima' or 'loc_minima').
         """
 
-        if prolong_type not in ['loc_maxima', 'loc_minima']:
+        if prolong_type not in ["loc_maxima", "loc_minima"]:
             raise ValueError("Invalid prolong_type. Choose either 'loc_maxima' or 'loc_minima'.")
 
-        extrema = self.loc_maxima if prolong_type == 'loc_maxima' else self.loc_minima
-        extrema_chosen = self.rng_numpy.choice(extrema, int(len(extrema) * percentage_of_extrema), replace=False)
+        extrema = self.loc_maxima if prolong_type == "loc_maxima" else self.loc_minima
+        extrema_chosen = self.rng_numpy.choice(
+            extrema, int(len(extrema) * percentage_of_extrema), replace=False
+        )
 
         wave_new = []
         for idx, i in enumerate(self.wave):
             wave_new.append(i)
             if idx in extrema_chosen:
-                wave_new.extend(
-                    [i] * time_to_be_added * self.sample_rate)
+                wave_new.extend([i] * time_to_be_added * self.sample_rate)
 
         self.wave = np.array(wave_new)
         return self
 
     def add_plateaus(self, plateau_duration: int, n_plateaus: int):
         """
-        Adds plateaus to the wave at random positions, but only when the temperature is rising 
-        and the temperature is between the 25th and 75th percentile. The distance between the 
+        Adds plateaus to the wave at random positions, but only when the temperature is rising
+        and the temperature is between the 25th and 75th percentile. The distance between the
         plateaus is at least 1.5 times the plateau_duration.
         """
+
         def _generate_plateau(start_value):
             """Generate a plateau with the given start value in °C."""
             return np.full(plateau_duration * self.sample_rate, start_value)
@@ -503,13 +527,14 @@ class StimuliFunction():
                     "Unable to add the specified number of plateaus within the given wave.\n"
                     "This issue usually arises when the number and/or duration of plateaus is too high.\n"
                     "relative to the plateau_duration of the wave.\n"
-                    "Try again with a different seed or change the parameters of the add_plateaus method.")
+                    "Try again with a different seed or change the parameters of the add_plateaus method."
+                )
             idx_plateaus = self.rng_numpy.choice(idx_iqr_values, n_plateaus, replace=False)
             idx_plateaus = np.sort(idx_plateaus)
             # the distance between the plateaus should be at least 1.5 plateau_duration
             if np.all(np.diff(idx_plateaus) > 1.5 * plateau_duration * self.sample_rate):
                 break
-                
+
         wave_new = []
         for idx, i in enumerate(self.wave):
             wave_new.append(i)
@@ -522,7 +547,7 @@ class StimuliFunction():
 def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
     """
     For plotly graphing of f(x), f'(x), and labels. Also displays the number and length of cooling segments.
-    
+
     Parameters
     ----------
     f : array_like
@@ -533,10 +558,10 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
         The sample rate of the data.
     s_RoC : float
         The rate of change threshold (°C/s) for alternative labels.
-        For more information about thresholds, also see: http://www.scholarpedia.org/article/Thermal_touch#Thermal_thresholds 
+        For more information about thresholds, also see: http://www.scholarpedia.org/article/Thermal_touch#Thermal_thresholds
     display_stats : bool, optional
         If True, the number and length of cooling segments are displayed (default is True).
-    
+
     Returns
     -------
     labels : array_like
@@ -545,20 +570,18 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
         A ternary array where 0 indicates cooling, 1 indicates heating, and 2 indicates a rate of change less than s_RoC.
     fig : plotly.graph_objects.Figure
         The plotly figure.
-        
+
     Examples
     --------
     >>> _ = stimuli_extra(stimuli.wave, stimuli.wave_dot, stimuli.sample_rate, s_RoC=0.2)
     """
     import plotly.graph_objects as go
 
-    time = np.array(range(len(f))) / sample_rate    
+    time = np.array(range(len(f))) / sample_rate
     # 0 for cooling, 1 for heating
     labels = (f_dot >= 0).astype(int)
     # alternative: 0 for cooling, 1 for heating, 2 for RoC < s_RoC
-    labels_alt = np.where(
-        np.abs(f_dot) > s_RoC,
-        labels, 2)
+    labels_alt = np.where(np.abs(f_dot) > s_RoC, labels, 2)
 
     # Plot functions and labels
     fig = go.Figure()
@@ -580,7 +603,7 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
     colors = "royalblue", "skyblue", "springgreen", "violet"
 
     for idx, i in enumerate(func):
-        visible = "legendonly" if idx != 0 else True # only show the first function by default
+        visible = "legendonly" if idx != 0 else True  # only show the first function by default
         fig.add_scatter(
             x=time, y=i,
             name=func_names[idx],
@@ -590,22 +613,24 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
     fig.show()
 
     # Calculate the number and length of cooling segments from the alternative labels.
-    # segment_change indicates where the label changes, 
+    # segment_change indicates where the label changes,
     # segment_number is the cumulative sum of segment_change
-    df = pd.DataFrame({'label': labels_alt})
-    df['segment_change'] = df['label'].ne(df['label'].shift())
-    df['segment_number'] = df['segment_change'].cumsum()
+    df = pd.DataFrame({"label": labels_alt})
+    df["segment_change"] = df["label"].ne(df["label"].shift())
+    df["segment_number"] = df["segment_change"].cumsum()
 
     # group by segment_number and calculate the size of each group
-    segment_sizes = df.groupby('segment_number').size()
+    segment_sizes = df.groupby("segment_number").size()
 
     # filter the segments that correspond to the label 0
-    label_0_segments = df.loc[df['label'] == 0, 'segment_number']
+    label_0_segments = df.loc[df["label"] == 0, "segment_number"]
     label_0_sizes = segment_sizes.loc[label_0_segments.unique()]
 
     # calculate the number and length of segments in seconds
     if display_stats:
-        print(f"Cooling segments [s] based on 'Label_alt' with a rate of change threshold of {s_RoC} (°C/s):\n")
-        print((label_0_sizes/sample_rate).describe().apply('{:,.2f}'.format))
+        print(
+            f"Cooling segments [s] based on 'Label_alt' with a rate of change threshold of {s_RoC} (°C/s):\n"
+        )
+        print((label_0_sizes / sample_rate).describe().apply("{:,.2f}".format))
 
     return labels, labels_alt, fig

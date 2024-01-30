@@ -1,10 +1,9 @@
-from typing import List, Iterable
-from functools import wraps, reduce
 import logging
+from functools import reduce, wraps
+from typing import Iterable, List
 
 import numpy as np
 import polars as pl
-
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 

@@ -1,9 +1,10 @@
-import logging
 import importlib
+import logging
 import subprocess
 import sys
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
+
 
 def psychopy_import(package_name: str):
     """
@@ -18,7 +19,9 @@ def psychopy_import(package_name: str):
     except ImportError:
         try:
             # Try to install the package using pip in a subprocess
-            process = subprocess.run([sys.executable, "-m", "pip", "install", package_name], check=True)
+            process = subprocess.run(
+                [sys.executable, "-m", "pip", "install", package_name], check=True
+            )
             if process.returncode != 0:
                 raise Exception("pip installation failed")
             logger.info(f"Successfully installed '{package_name} using pip.")
