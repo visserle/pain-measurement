@@ -3,15 +3,16 @@
 import logging
 import platform
 import sys
+from typing import List, Optional
 
 
 def configure_logging(
-    stream_level=logging.INFO,
-    stream=True,
-    file_level=logging.DEBUG,
-    file_path=None,
-    ignore_libs=None,
-):
+    stream_level: int = logging.INFO,
+    stream: bool = True,
+    file_level: int = logging.DEBUG,
+    file_path: Optional[str] = None,
+    ignore_libs: Optional[List[str]] = None,
+) -> None:
     """
     Configures the root logger for logging messages to the console and optionally to a file.
     Supports ignoring logs from specified libraries and colored output.
@@ -45,11 +46,12 @@ def configure_logging(
 
     # FileHandler for file logging, added only if file path is provided
     if file_path:
-        file_formatter = logging.Formatter(
-            "{asctime} | {levelname:8} | {name} | {message}", style="{"
-        )
         file_handler = logging.FileHandler(file_path)
         file_handler.setLevel(file_level)
+        file_formatter = logging.Formatter(
+            "{asctime} | {levelname:8} | {name} | {message}", 
+            style="{"
+        )
         file_handler.setFormatter(file_formatter)
         handlers.append(file_handler)
 
@@ -140,7 +142,7 @@ class ColoredFormatter(logging.Formatter):
 
 def main():
     """Example usage of the configure_logging function."""
-    configure_logging(stream_level=logging.DEBUG)
+    configure_logging(stream_level=logging.DEBUG, file_level=10, file_path="debug.log")
     logging.debug("This is a debug message.")
     logging.info("This is an info message.")
     logging.warning("This is a warning message.")
