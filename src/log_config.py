@@ -10,7 +10,7 @@ def configure_logging(
     stream_level: int = logging.INFO,
     stream: bool = True,
     file_level: int = logging.DEBUG,
-    file_path: str | Path | None = None,
+    file_path: Path | str | None = None,
     ignore_libs: list[str] | None = None,
 ) -> None:
     """
@@ -116,9 +116,9 @@ class ColoredFormatter(logging.Formatter):
         "RESET": Color.END,
     }
 
+    # Enable ANSI escape sequences on Windows
     if platform.system() == "Windows":
         try:
-            # Enable ANSI escape sequences on Windows
             from colorama import just_fix_windows_console
 
             just_fix_windows_console()
