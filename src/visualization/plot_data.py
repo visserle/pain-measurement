@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Dict, List
 import logging
 
 import numpy as np
@@ -11,12 +10,12 @@ import hvplot.polars
 import panel as pn
 import holoviews as hv
 
-from src.data.log_config import configure_logging
+from src.log_config import configure_logging
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-def plot_trial_matplotlib(df: pl.DataFrame, trial: int, features: List[str] = None):
+def plot_trial_matplotlib(df: pl.DataFrame, trial: int, features: list[str] = None):
     """
     To exclude a feature, simply use df.drop(feature)
     """
@@ -34,7 +33,7 @@ def plot_trial_matplotlib(df: pl.DataFrame, trial: int, features: List[str] = No
     plt.show()
     
     
-def plot_trial_plotly(df: pl.DataFrame, trial: int, features: List[str] = None):
+def plot_trial_plotly(df: pl.DataFrame, trial: int, features: list[str] = None):
     """
     To exclude a feature, simply use df.drop(feature)
     """
@@ -54,11 +53,15 @@ def plot_trial_plotly(df: pl.DataFrame, trial: int, features: List[str] = None):
     fig.show()
 
 
-def plot_data_panel(df: pl.DataFrame, features: List[str] = None, groups: str = None):
+def plot_data_panel(df: pl.DataFrame, features: list[str] = None, groups: str = None):
     """
     Plots the data using hvPlot and Panel.
-    By default the plot will be grouped by Trial and Participant. 
     To exclude a feature, simply use df.drop(feature)
+    By default the plot will be grouped by Trial and (if available) Participant.
+    
+    To concat the data of several partcipants for one modality and add a participant column
+    you can use concat_participants_on_modality from the plotting utils module.
+    
     
     TODO: grouped legend? https://community.plotly.com/t/plots-with-grouped-legend/71864
 

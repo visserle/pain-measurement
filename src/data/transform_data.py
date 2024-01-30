@@ -1,6 +1,6 @@
 import logging
+from collections.abc import Iterable
 from functools import reduce, wraps
-from typing import Iterable, List
 
 import numpy as np
 import polars as pl
@@ -190,7 +190,7 @@ def _scale_standard_col(col: pl.Expr) -> pl.Expr:
 
 
 def merge_dfs(
-        *dfs: pl.DataFrame | List[pl.DataFrame],
+        *dfs: pl.DataFrame | list[pl.DataFrame],
         merge_on=['Timestamp', 'Trial'],
         sort_by=['Timestamp']) -> pl.DataFrame:
     """

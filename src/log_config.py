@@ -1,17 +1,17 @@
-"""Logging configuration for the root logger."""
+"""Logging configuration for the root logger (Python >= 3.10)."""
 
 import logging
 import platform
 import sys
-from typing import List, Optional
+from pathlib import Path
 
 
 def configure_logging(
     stream_level: int = logging.INFO,
     stream: bool = True,
     file_level: int = logging.DEBUG,
-    file_path: Optional[str] = None,
-    ignore_libs: Optional[List[str]] = None,
+    file_path: str | Path | None = None,
+    ignore_libs: list[str] | None = None,
 ) -> None:
     """
     Configures the root logger for logging messages to the console and optionally to a file.
@@ -49,8 +49,7 @@ def configure_logging(
         file_handler = logging.FileHandler(file_path)
         file_handler.setLevel(file_level)
         file_formatter = logging.Formatter(
-            "{asctime} | {levelname:8} | {name} | {message}", 
-            style="{"
+            "{asctime} | {levelname:8} | {name} | {message}", style="{"
         )
         file_handler.setFormatter(file_formatter)
         handlers.append(file_handler)

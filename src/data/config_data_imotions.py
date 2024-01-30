@@ -1,8 +1,7 @@
 """Contains information about the iMotions data files (= external data)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import polars as pl
 
@@ -17,12 +16,12 @@ from src.data.transform_data import create_trials, interpolate_to_marker_timesta
 class iMotionsConfig(DataConfigBase):
     name: str
     name_imotions: str
-    load_columns: List[str]  # columns to load
-    dtypes: Optional[Dict[str, str]] = None  # TODO maybe full schema?
-    rename_columns: Optional[Dict[str, str]] = None
-    transformations: Optional[List] = None
-    sample_rate: Optional[int] = None  # TODO?!
-    notes: Optional[str] = None
+    load_columns: list[str]
+    dtypes: dict[str, str] = field(default_factory=dict)  # TODO maybe full schema?
+    rename_columns: dict[str, str] = field(default_factory=dict)
+    transformations: list[callable] = field(default_factory=list)
+    sample_rate: int | None = None
+    notes: str | None = None
 
     def __post_init__(self):
         self.load_dir = Path("data/imotions")

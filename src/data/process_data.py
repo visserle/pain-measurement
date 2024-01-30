@@ -21,7 +21,6 @@ import os
 from dataclasses import dataclass
 from functools import reduce
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import polars as pl
 
@@ -47,7 +46,7 @@ class Participant:
     """Dataclass for a single participant"""
 
     id: str
-    datasets: Dict[str, Data]
+    datasets: dict[str, Data]
 
     def __call__(self, attr_name):
         return getattr(self, attr_name)
@@ -103,9 +102,9 @@ def load_dataset(participant_config: ParticipantConfig, data_config: DataConfigB
 
 
 def load_participant_datasets(
-    participant_config: ParticipantConfig, data_configs: List[DataConfigBase]
+    participant_config: ParticipantConfig, data_configs: list[DataConfigBase]
 ) -> Participant:
-    datasets: Dict[str, Data] = {}
+    datasets: dict[str, Data] = {}
     for data_config in data_configs:
         if data_config.name in participant_config.not_available_data:
             logger.warning(
@@ -153,7 +152,7 @@ def transform_dataset(data: Data, data_config: DataConfigBase) -> Data:
 def transform_participant_datasets(
     participant_config: ParticipantConfig,
     participant_data: Participant,
-    data_configs: List[DataConfigBase],
+    data_configs: list[DataConfigBase],
 ) -> Participant:
     """Transform all datasets for a single participant."""
 
@@ -213,7 +212,7 @@ def save_dataset(data: Data, participant_data: Participant, data_config: DataCon
 def save_participant_datasets(
     participant_config: ParticipantConfig,
     participant_data: Participant,
-    data_configs: List[DataConfigBase],
+    data_configs: list[DataConfigBase],
 ) -> None:
     """Save all datasets for a single participant to csv files."""
     for data_config in data_configs:

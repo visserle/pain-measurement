@@ -3,9 +3,8 @@ For processing raw data.
 
 Note that TRIAL and SYSTEM are not included as data classes.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
 
 from src.data.config_data import DataConfigBase
 from src.data.physio.pupillometry import process_pupillometry
@@ -15,10 +14,10 @@ from src.data.transform_data import interpolate  # resample
 @dataclass
 class RawConfig(DataConfigBase):
     name: str
-    load_columns: List[str]
-    transformations: Optional[List] = None
-    sampling_rate: Optional[int] = None
-    notes: Optional[str] = None
+    load_columns: list[str]
+    transformations: list[callable] = field(default_factory=list)
+    sampling_rate: int | None = None
+    notes: str | None = None
 
     def __post_init__(self):
         self.load_dir = Path("data/raw")

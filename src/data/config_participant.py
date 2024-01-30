@@ -4,15 +4,14 @@
 # also note down which ecg channel has the best quality
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 
 @dataclass
 class ParticipantConfig:
     id: str
-    not_available_data: Optional[List[str]] = field(default_factory=list)
-    exclude_trials: Optional[List[int]] = field(default_factory=list)
-    best_ecg_channel: Optional[str] = None
+    not_available_data: list[str] = field(default_factory=list)
+    exclude_trials: list[int] = field(default_factory=list)
+    best_ecg_channel: str | None = None
 
 
 p_001 = ParticipantConfig(

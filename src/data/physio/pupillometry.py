@@ -5,7 +5,6 @@
 
 
 import logging
-from typing import List
 
 import numpy as np
 import polars as pl
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 EYE_COLUMNS = ["Pupillometry_R", "Pupillometry_L"]
 
 
-def ensure_list(to_list):
+def ensure_list(to_list: str | list[str]) -> list[str]:
     """Convert string to list idempotently."""
     return [to_list] if isinstance(to_list, str) else to_list
 
@@ -45,7 +44,7 @@ def values_below_x_are_considered_blinks(df: pl.DataFrame, eye_columns, x=1.5) -
     return df
 
 
-def _get_blink_segments(df: pl.DataFrame, eye_columns: str | List[str]) -> pl.DataFrame:
+def _get_blink_segments(df: pl.DataFrame, eye_columns: str | list[str]) -> pl.DataFrame:
     """
     This helper functions returns the start and end timestamps of blink segments in the given DataFrame.
     It returns a DataFrame to be usable in a Polars pipeline.
