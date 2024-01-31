@@ -204,7 +204,6 @@ class BayesianEstimatorVAS:
                 "Calibration estimate for VAS %s: %s °C.", self.vas_value, self.get_estimate()
             )
             logger.debug("Calibration steps were (°C): %s.", self.steps)
-            # warning if all steps were in the same direction
             if self.check_steps():
                 logger.error("Calibration steps were all in the same direction.")
 
@@ -212,7 +211,7 @@ class BayesianEstimatorVAS:
         """
         Checks whether the temperature steps were all in the same direction, which is a sign of a bad estimate.
         """
-        return np.all(np.diff(self.steps) >= 0) or np.all(np.diff(self.steps) <= 0)
+        return np.all(self.steps >= 0) or np.all(self.steps <= 0)
 
     def get_estimate(self):
         return self.temps[-1]
