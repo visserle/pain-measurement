@@ -1,0 +1,32 @@
+[thermoino]
+port = "COM7"
+mms_baseline = 28.0  # must be the same as in MMS
+mms_rate_of_rise = 10  # must be the same as in MMS
+bin_size_ms = 500
+
+[expyriment]
+name = "pain-measurement"
+element_color = [128, 64, 192]
+marker_color = [192, 64, 128]
+dummy = true
+
+[dummy_participant]
+time_stamp = "2023-01-01 15:00:00"
+participant = "dummy"
+age = 20
+gender = "Female"
+temp_range = 3
+baseline_temp = 40.0
+
+[stimuli]
+seeds = [320, 43, 242, 320, 43, 242, 320, 43, 242, 320, 43, 242]
+minimal_desired_duration = 200
+periods = [67, 20]
+sample_rate = 60
+desired_big_decreases = [3, 20]
+random_periods = true
+plateau_duration = 20
+n_plateaus = 3
+
+[imotions]
+start_study_mode = "NormalPrompt"
