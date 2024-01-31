@@ -19,30 +19,33 @@ class ThermoinoDummy:
         self.mms_rate_of_rise = mms_rate_of_rise
         self.connected = False
 
-        logger.warning("+++ Thermoino running in dummy mode +++")
+        logger.warning("+++ RUNNING IN DUMMY MODE +++")
 
     def connect(self):
         self.connected = True
-        logger.info("Thermoino (dummy) connected")
+        logger.info("Connection established.")
 
     def close(self):
         self.connected = False
-        logger.debug("Thermoino (dummy) closed")
+        logger.debug("Connection closed.")
 
     def _send_command(self, *args):
-        return None
+        return "Dummy response."
 
     def diag(self):
-        return self._send_command('DIAG\n')
+        output = self._send_command('DIAG\n')
+        logger.info("Basic diagnostic information: %s.", output)
 
     def trigger(self):
-        return self._send_command('START\n')
+        self._send_command('START\n')
+        logger.debug("Triggered.")
 
     def set_temp(self, temp_target):
         move_time_s = abs(temp_target - self.temp) / self.mms_rate_of_rise
         self.temp = temp_target
         success = True
-        logging.debug("Thermoino (dummy) sets temperature to %s°C in %s seconds", temp_target, move_time_s)
+        logger.info("Set temperature to %s°C.", temp_target)
+        logger.debug("Move time to set temperature: %s s.", move_time_s)
         return (move_time_s, success)
 
     def wait(self, duration):
@@ -75,7 +78,7 @@ class ThermoinoComplexTimeCoursesDummy(ThermoinoDummy):
 
     def load_ctc(self, debug=False):
         # Simulate loading CTC into the device
-        logger.debug("Thermoino (dummy) received the whole CTC.")
+        logger.debug("Loading CTC into Thermoino (dummy).")
         return self._send_command('LOADCTC\n', debug)
 
     def query_ctc(self, queryLvl, statAbort):
@@ -83,7 +86,7 @@ class ThermoinoComplexTimeCoursesDummy(ThermoinoDummy):
     
     def prep_ctc(self):
         prep_duration = 1
-        logger.debug("Thermoino (dummy) is ready to execute the CTC.")
+        logger.debug("Prepping CTC (dummy).")
         return (self, prep_duration)
  
     def exec_ctc(self):
