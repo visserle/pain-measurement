@@ -9,11 +9,11 @@ cross_pain_color = [192, 64, 128]
 cross_size = [0.06, 0.06]
 
 [stimulus]
-stimulus_duration = 8
-iti_duration = 8
-iti_max_jitter = 3
-iti_duration_short = 2
-temps_preexposure = [35.0, 36.0, 37.0]
+stimulus_duration = 8000
+iti_duration = 8000
+iti_max_jitter = 3000
+iti_duration_short = 2000
+preexposure_temperatures = [35.0, 36.0, 37.0]
 preexposure_correction = 2.0  # we subtract this from the vas70 estimate if preexposure was painful
 # +++ In psychopy, we still need to add np.random.randint(0, 3) to the iti_duration +++
 

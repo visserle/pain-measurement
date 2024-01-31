@@ -25,6 +25,17 @@ EXPERIMENT = config['experiment']
 STIMULUS = config['stimulus']
 ESTIMATOR = config['estimator']
 
+DEVELOP_MODE = True
+if DEVELOP_MODE:
+    control.set_develop_mode(True)
+    STIMULUS["iti_duration"] = 500
+    STIMULUS["stimulus_duration"] = 200
+
+control.defaults.window_size = (800, 600)
+design.defaults.experiment_background_colour = misc.constants.C_DARKGREY
+stimuli.defaults.textline_text_colour = EXPERIMENT["element_color"]
+stimuli.defaults.textbox_text_colour = EXPERIMENT["element_color"]
+
 # Note: wait() has the following signature:
 # wait(keys=None, duration=None, wait_for_keyup=False, callback_function=None, process_control_events=True)
 
@@ -33,36 +44,33 @@ def press_space():
     exp.keyboard.wait(keys=misc.constants.K_SPACE)
 
 
-control.set_develop_mode(True)
-control.defaults.window_size = (800, 600)
-design.defaults.experiment_background_colour = misc.constants.C_DARKGREY
 
 exp = design.Experiment(name=EXP_NAME)
 
 control.initialize(exp)
 
-# Convert SCRIPT to stimuli
+# Convert scripts to stimuli
 for key in SCRIPT.keys():
     SCRIPT[key] = stimuli.TextBox(
         text=SCRIPT[key],
         size=[600, 500],
         position=[0, -100],
         text_size=20,
-        text_colour=misc.constants.C_WHITE,
     )
 
 # Preload stimuli
 for text in SCRIPT.values():
     text.preload()
 
-fixation_cross = stimuli.FixCross(colour=EXPERIMENT["cross_pain_color"])
-fixation_cross.preload
-
+cross_idle = stimuli.FixCross(colour=EXPERIMENT["element_color"])
+cross_pain = stimuli.FixCross(colour=EXPERIMENT["cross_pain_color"])
+cross_idle.preload
+cross_pain.preload
 
 control.start(skip_ready_screen=True)
 
+
 SCRIPT["welcome_1"].present()
-stimuli.Tone(duration=1000, frequency=440).play()
 press_space()
 SCRIPT["welcome_2"].present()
 press_space()
@@ -70,8 +78,14 @@ SCRIPT["welcome_3"].present()
 press_space()
 SCRIPT["info_preexposure"].present()
 press_space()
-fixation_cross.present()
-press_space()
+
+for idx, _ in enumerate(STIMULUS["preexposure_temperatures"]):
+    cross_idle.present()
+    # For the first trial, we use a shorter ITI
+    misc.Clock().wait(STIMULUS["iti_duration"] if not idx == 0 else STIMULUS["iti_duration_short"])
+    cross_pain.present()
+    misc.Clock().wait(STIMULUS["stimulus_duration"])
+
 SCRIPT["question_preexposure"].present()
 found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
 if found == misc.constants.K_y:
@@ -101,12 +115,15 @@ for trial in range(estimator_vas70.trials):
     SCRIPT["question_vas70"].present()
     found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
     if found == misc.constants.K_y:
-        estimator_vas70.conduct_trial(response="y",trial=trial)
+        success = estimator_vas70.conduct_trial(response="y",trial=trial)
         SCRIPT["answer_yes"].present()
     elif found == misc.constants.K_n:
-        estimator_vas70.conduct_trial(response="n",trial=trial)
+        success = estimator_vas70.conduct_trial(response="n",trial=trial)
         SCRIPT["answer_no"].present()
     misc.Clock().wait(1000)
+# Play a warn signal if all steps of the calibration were in the same direction 
+if not success:
+    stimuli.Tone(duration=1000, frequency=440).play()
 
 SCRIPT["info_vas0"].present()
 estimator_vas0 = BayesianEstimatorVAS(
@@ -115,18 +132,23 @@ estimator_vas0 = BayesianEstimatorVAS(
     temp_std=ESTIMATOR["temp_std_vas0"],
     trials=ESTIMATOR["trials_vas0"]
     )
+
 press_space()
 
 for trial in range(estimator_vas0.trials):
     SCRIPT["question_vas0"].present()
     found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
     if found == misc.constants.K_y:
-        estimator_vas0.conduct_trial(response="y",trial=trial)
+        success = estimator_vas0.conduct_trial(response="y",trial=trial)
         SCRIPT["answer_yes"].present()
     elif found == misc.constants.K_n:
-        estimator_vas0.conduct_trial(response="n",trial=trial)
+        sucess = estimator_vas0.conduct_trial(response="n",trial=trial)
         SCRIPT["answer_no"].present()
     misc.Clock().wait(1000)
+# Play a warn signal if all steps of the calibration were in the same direction 
+if not success:
+    stimuli.Tone(duration=1000, frequency=440).play()
+
 SCRIPT["bye"].present()
 
 control.end()
