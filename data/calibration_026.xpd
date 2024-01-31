@@ -1,0 +1,11 @@
+#Expyriment 0.11.dev1 (Python 3.11.7), .xpd-file, coding: UTF-8
+#date: Wed Jan 31 2024 15:19:54
+#--EXPERIMENT INFO
+#e mainfile: calibration.py
+#e sha1: 84ca7e
+#e modules: src/expyriment/estimator.py (32705f), src/log_config.py (ef14e3)
+#e Experiment: Calibration
+#e no between subject factors
+#--SUBJECT INFO
+#s id: 26
+subject_id,

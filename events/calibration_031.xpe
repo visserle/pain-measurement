@@ -1,0 +1,45 @@
+#Expyriment 0.11.dev1 (Python 3.11.7), .xpe-file, coding: UTF-8
+#date: Wed Jan 31 2024 15:45:06
+#sha1: 48ebcd
+#modules: src/expyriment/estimator.py (32705f), src/log_config.py (ef14e3)
+#display: size=(800, 600), window_mode=True, open_gl=2
+#os: uname_result(system='Darwin', node='MacBook-Air-von-visser.local', release='23.2.0', version='Darwin Kernel Version 23.2.0: Wed Nov 15 21:59:33 PST 2023; root:xnu-10002.61.3~2/RELEASE_ARM64_T8112', machine='arm64')
+Time,Type,Event,Value,Detail,Detail2
+637,design,log,
+#design: #exp: Calibration
+#design: block_cnt,block_id,trial_cnt,trial_id
+637,design,logged,
+637,Experiment,started
+652,Stimulus,presented,0
+670,Stimulus,played,b'/var/folders/54/0yy_ylvj7tx247wkq0n07dnr0000gn/T/expyriment_iqb71y_s/freq4400_dur1000.0_vbscs02u.wav'
+1498,Keyboard,received,32,wait
+1503,Stimulus,presented,1
+1787,Keyboard,received,32,wait
+1803,Stimulus,presented,2
+1920,Keyboard,received,32,wait
+1936,Stimulus,presented,3
+2048,Keyboard,received,32,wait
+2053,Stimulus,presented,16
+2144,Keyboard,received,32,wait
+2153,Stimulus,presented,4
+2832,Keyboard,received,121,wait
+2836,Stimulus,presented,12
+3838,Stimulus,presented,5
+4528,Keyboard,received,32,wait
+4539,Stimulus,presented,6
+4857,Keyboard,received,32,wait
+4873,Stimulus,presented,7
+5023,Keyboard,received,32,wait
+5023,stdout,received,'5023'
+5023,stdout,received,'5023'
+5039,Stimulus,presented,8
+6080,Keyboard,received,110,wait
+6090,Stimulus,presented,13
+7108,Stimulus,presented,8
+7160,Keyboard,received,110,wait
+7175,Stimulus,presented,13
+8192,Stimulus,presented,8
+8425,Experiment,paused
+8442,Stimulus,presented,17
+9113,Keyboard,received,y,wait_char
+9113,Experiment,ended
