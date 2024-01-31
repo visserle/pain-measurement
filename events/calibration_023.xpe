@@ -1,0 +1,47 @@
+#Expyriment 0.11.dev1 (Python 3.11.7), .xpe-file, coding: UTF-8
+#date: Wed Jan 31 2024 15:09:59
+#sha1: ff600e
+#modules: src/expyriment/estimator.py (32705f), src/log_config.py (ef14e3)
+#display: size=(800, 600), window_mode=True, open_gl=2
+#os: uname_result(system='Darwin', node='MacBook-Air-von-visser.local', release='23.2.0', version='Darwin Kernel Version 23.2.0: Wed Nov 15 21:59:33 PST 2023; root:xnu-10002.61.3~2/RELEASE_ARM64_T8112', machine='arm64')
+Time,Type,Event,Value,Detail,Detail2
+633,design,log,
+#design: #exp: Calibration
+#design: block_cnt,block_id,trial_cnt,trial_id
+633,design,logged,
+633,Experiment,started
+648,Stimulus,presented,5
+1249,Keyboard,received,32,wait
+1266,Stimulus,presented,6
+1471,Keyboard,received,32,wait
+1483,Stimulus,presented,7
+1661,Keyboard,received,32,wait
+1666,Stimulus,presented,8
+2854,Keyboard,received,110,wait
+2868,Stimulus,presented,13
+2868,stdout,received,'Estimated temperature for VAS 70: 41.6 °C'
+3885,Stimulus,presented,8
+3909,Keyboard,received,110,wait
+3918,Stimulus,presented,13
+3918,stdout,received,'Estimated temperature for VAS 70: 42.8 °C'
+4936,Stimulus,presented,8
+5133,Keyboard,received,110,wait
+5136,Stimulus,presented,13
+5136,stdout,received,'Estimated temperature for VAS 70: 43.8 °C'
+6153,Stimulus,presented,8
+6326,Keyboard,received,110,wait
+6337,Stimulus,presented,13
+6337,stdout,received,'Estimated temperature for VAS 70: 44.7 °C'
+7354,Stimulus,presented,8
+7383,Keyboard,received,110,wait
+7387,Stimulus,presented,13
+7387,stdout,received,'Estimated temperature for VAS 70: 45.5 °C'
+8405,Stimulus,presented,8
+8808,Keyboard,received,110,wait
+8823,Stimulus,presented,13
+8823,stdout,received,'Estimated temperature for VAS 70: 46.0 °C'
+9842,Stimulus,presented,8
+10070,Keyboard,received,110,wait
+10073,Stimulus,presented,13
+10073,stdout,received,'Estimated temperature for VAS 70: 46.0 °C'
+11073,Experiment,ended
