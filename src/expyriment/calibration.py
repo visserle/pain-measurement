@@ -2,6 +2,7 @@ import json
 import logging
 from pathlib import Path
 
+import toml
 import yaml
 from expyriment import control, design, misc, stimuli
 
@@ -10,24 +11,19 @@ from src.log_config import configure_logging
 
 configure_logging(stream_level=logging.DEBUG)
 
+# Load config from TOML file
+with open('src/expyriment/calibration_config.toml', 'r', encoding='utf8') as file:
+    config = toml.load(file)
+
+# Load SCRIPT from YAML file
+with open('src/expyriment/calibration_SCRIPT.yaml', 'r', encoding='utf8') as file:
+    SCRIPT = yaml.safe_load(file)
+
 EXP_NAME = "pain-calibration"
-
-# Load config from JSON file
-with open('src/expyriment/calibration_config.json', 'r') as file:
-    config = json.load(file)
-
-# Load script from YAML file
-with open('src/expyriment/calibration_script.yaml', 'r', encoding='utf8') as file:
-    script = yaml.safe_load(file)
-
-
-correction_after_preexposure = 2.0
-# Initialize estimator for VAS 70
-temp_start_vas70 = 40.0
-trials_vas70 = 7
-trials_vas0 = 5
-
-
+THERMOINO = config['thermoino']
+EXPERIMENT = config['experiment']
+STIMULUS = config['stimulus']
+ESTIMATOR = config['estimator']
 
 # Note: wait() has the following signature:
 # wait(keys=None, duration=None, wait_for_keyup=False, callback_function=None, process_control_events=True)
@@ -45,10 +41,10 @@ exp = design.Experiment(name=EXP_NAME)
 
 control.initialize(exp)
 
-# Convert script to stimuli
-for key in script.keys():
-    script[key] = stimuli.TextBox(
-        text=script[key],
+# Convert SCRIPT to stimuli
+for key in SCRIPT.keys():
+    SCRIPT[key] = stimuli.TextBox(
+        text=SCRIPT[key],
         size=[600, 500],
         position=[0, -100],
         text_size=20,
@@ -56,80 +52,81 @@ for key in script.keys():
     )
 
 # Preload stimuli
-for text in script.values():
+for text in SCRIPT.values():
     text.preload()
 
-fixation_cross = stimuli.FixCross(colour=misc.constants.C_WHITE)
+fixation_cross = stimuli.FixCross(colour=EXPERIMENT["cross_pain_color"])
 fixation_cross.preload
 
 
 control.start(skip_ready_screen=True)
 
-script["welcome_1"].present()
-stimuli.Tone(duration=1000, frequency=4400).play()
+SCRIPT["welcome_1"].present()
+stimuli.Tone(duration=1000, frequency=440).play()
 press_space()
-script["welcome_2"].present()
+SCRIPT["welcome_2"].present()
 press_space()
-script["welcome_3"].present()
+SCRIPT["welcome_3"].present()
 press_space()
-script["info_preexposure"].present()
+SCRIPT["info_preexposure"].present()
 press_space()
 fixation_cross.present()
 press_space()
-script["question_preexposure"].present()
+SCRIPT["question_preexposure"].present()
 found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
 if found == misc.constants.K_y:
+    ESTIMATOR["temp_start_vas70"] -= STIMULUS["preexposure_correction"]
+    SCRIPT["answer_yes"].present()
     logging.info("Preexposure was painful.")
-    temp_start_vas70 -= correction_after_preexposure
-    script["answer_yes"].present()
 elif found == misc.constants.K_n:
+    SCRIPT["answer_no"].present()
     logging.info("Preexposure was not painful.")
-    script["answer_no"].present()
 misc.Clock().wait(1000)
-script["info_vas70_1"].present()
+SCRIPT["info_vas70_1"].present()
 press_space()
-script["info_vas70_2"].present()
+SCRIPT["info_vas70_2"].present()
 press_space()
-script["info_vas70_3"].present()
+SCRIPT["info_vas70_3"].present()
 
 estimator_vas70 = BayesianEstimatorVAS(
     vas_value=70,
-    temp_start=temp_start_vas70,
-    temp_std=3.5,
-    trials=trials_vas70
+    temp_start=ESTIMATOR["temp_start_vas70"],
+    temp_std=ESTIMATOR["temp_std_vas70"],
+    trials=ESTIMATOR["trials_vas70"]
     )
+
 press_space()
 
 for trial in range(estimator_vas70.trials):
-    script["question_vas70"].present()
+    SCRIPT["question_vas70"].present()
     found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
     if found == misc.constants.K_y:
         estimator_vas70.conduct_trial(response="y",trial=trial)
-        script["answer_yes"].present()
+        SCRIPT["answer_yes"].present()
     elif found == misc.constants.K_n:
         estimator_vas70.conduct_trial(response="n",trial=trial)
-        script["answer_no"].present()
+        SCRIPT["answer_no"].present()
     misc.Clock().wait(1000)
 
-script["info_vas0"].present()
+SCRIPT["info_vas0"].present()
 estimator_vas0 = BayesianEstimatorVAS(
     vas_value=0,
-    temp_start=estimator_vas70.get_estimate() - 3, # TODO
-    temp_std=3.5,
-    trials=trials_vas0
+    temp_start=estimator_vas70.get_estimate() - ESTIMATOR["temp_start_vas0_offset"],
+    temp_std=ESTIMATOR["temp_std_vas0"],
+    trials=ESTIMATOR["trials_vas0"]
     )
 press_space()
 
 for trial in range(estimator_vas0.trials):
-    script["question_vas0"].present()
+    SCRIPT["question_vas0"].present()
     found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
     if found == misc.constants.K_y:
         estimator_vas0.conduct_trial(response="y",trial=trial)
-        script["answer_yes"].present()
+        SCRIPT["answer_yes"].present()
     elif found == misc.constants.K_n:
         estimator_vas0.conduct_trial(response="n",trial=trial)
-        script["answer_no"].present()
+        SCRIPT["answer_no"].present()
     misc.Clock().wait(1000)
-script["bye"].present()
+SCRIPT["bye"].present()
 
 control.end()

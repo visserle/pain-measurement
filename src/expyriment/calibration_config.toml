@@ -3,25 +3,27 @@ port = "COM7"
 mms_baseline = 28.0  # must be the same as in MMS
 mms_rate_of_rise = 10  # must be the same as in MMS
 
-[expyriment]
+[experiment]
 element_color = [128, 64, 192]
 cross_pain_color = [192, 64, 128]
 cross_size = [0.06, 0.06]
 
-[stimuli]
-stimuli_duration = 8
+[stimulus]
+stimulus_duration = 8
 iti_duration = 8
 iti_max_jitter = 3
 iti_duration_short = 2
 temps_preexposure = [35.0, 36.0, 37.0]
-correction_after_preexposure = 2.0  # we subtract this from the vas70 estimate if preexposure was painful
+preexposure_correction = 2.0  # we subtract this from the vas70 estimate if preexposure was painful
 # +++ In psychopy, we still need to add np.random.randint(0, 3) to the iti_duration +++
 
 [estimator]
+# VAS 70
 trials_vas70 = 7
 temp_start_vas70 = 42.0
 temp_std_vas70 = 3.5
+# VAS 0
 trials_vas0 = 5
 temp_start_vas0 = inf  # will be set after VAS 70 estimate
-temp_start_vas0_minus = 3.0
+temp_start_vas0_offset = 3.0  # vas0 = vas70 - offset
 temp_std_vas0 = 1.5
