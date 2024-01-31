@@ -12,7 +12,7 @@ src/models/model.ipynb
 src/models/models.py
 src/models/models_2.py
 data
-events
+Events
 
 # excluded for now
 /runs

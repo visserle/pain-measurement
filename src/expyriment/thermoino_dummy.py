@@ -4,7 +4,7 @@ import time
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-class Thermoino:
+class ThermoinoDummy:
     """
     A dummy version of the Thermoino class for testing and debugging.
     This class rudimentarily mimics the behavior of the Thermoino without requiring an actual device.
@@ -24,7 +24,6 @@ class Thermoino:
     def connect(self):
         self.connected = True
         logger.info("Thermoino (dummy) connected")
-        return self
 
     def close(self):
         self.connected = False
@@ -44,14 +43,13 @@ class Thermoino:
         self.temp = temp_target
         success = True
         logging.debug("Thermoino (dummy) sets temperature to %s°C in %s seconds", temp_target, move_time_s)
-        return (self, move_time_s, success)
+        return (move_time_s, success)
 
     def wait(self, duration):
         time.sleep(duration)
-        return self
 
 
-class ThermoinoComplexTimeCourses(Thermoino):
+class ThermoinoComplexTimeCoursesDummy(ThermoinoDummy):
     """
     A dummy version of the ThermoinoComplexTimeCourses class for testing and debugging.
     This class rudimentarily mimics the behavior of the Thermoino without requiring an actual device.
@@ -73,7 +71,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         # Implement the logic for creating CTC based on temp_course and sample_rate
         # For dummy purposes, simply set self.ctc to a simulated value
         self.ctc = [40] * 100  # Example simulated CTC
-        return self
+
 
     def load_ctc(self, debug=False):
         # Simulate loading CTC into the device
@@ -95,5 +93,5 @@ class ThermoinoComplexTimeCourses(Thermoino):
     def flush_ctc(self):
         self.ctc = None
         self._send_command('FLUSHCTC\n')
-        return self
+
     

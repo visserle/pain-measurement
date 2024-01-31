@@ -169,8 +169,7 @@ class Thermoino:
             logger.error("Thermoino connection failed @ %s.", self.PORT)
             ports_info = list_com_ports()
             logger.info(f"Available serial ports are:\n{ports_info}")
-            raise
-        return self
+            raise serial.SerialException(f"Thermoino connection failed @ {self.PORT}.")
 
     def close(self):
         """
@@ -240,7 +239,6 @@ class Thermoino:
             logger.debug("Thermoino response to 'START' (.trigger): %s.", output)
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error for 'START' (.trigger): %s.", output)
-        return self
 
     def set_temp(self, temp_target):
         """
@@ -278,17 +276,17 @@ class Thermoino:
                 "Thermoino error for 'MOVE' (.set_temp) to %s °C: %s.", temp_target, output
             )
             success = False
-        return (self, move_time_s, success)
+        return (move_time_s, success)
 
     def sleep(self, duration):
         """
-        - NOT RECOMMENDED FOR PSYCHOPY EXPERIMENTS -
+        - NOT RECOMMENDED -
 
         Sleep for a given duration in seconds.
         This function delays the execution in Python for a given number of seconds.
 
-        It should not be used in a Psychopy experiment (e.g. for continuous ratings) as this function blocks the execution
-        of anything else (at least as long as there is no threading).
+        It should not be used in a experiment (e.g. for continuous ratings) as this function blocks the execution
+        of anything else.
 
         Parameters
         ----------
@@ -296,9 +294,8 @@ class Thermoino:
             The duration to sleep in seconds.
         """
 
-        logger.info("Thermoino sleeps for %s s using time.sleep.", duration)
+        logger.warning("Thermoino sleeps for %s s using time.sleep.", duration)
         time.sleep(duration)
-        return self
 
 
 class ThermoinoComplexTimeCourses(Thermoino):
@@ -436,7 +433,6 @@ class ThermoinoComplexTimeCourses(Thermoino):
             self.bin_size_ms = bin_size_ms
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error to 'INITCTC' (.init_ctc): %s.", output)
-        return self
 
     def create_ctc(self, temp_course, sample_rate, rate_of_rise_option="mms_program"):
         """
@@ -508,7 +504,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             len(self.ctc),
             self.bin_size_ms,
         )
-        return self
+
 
     def load_ctc(self, debug=False):
         """
@@ -544,7 +540,6 @@ class ThermoinoComplexTimeCourses(Thermoino):
                 )
 
         logger.info("Thermoino received the whole CTC.")
-        return self
 
     def query_ctc(self, queryLvl, statAbort):
         """
@@ -594,7 +589,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         else:
             prep_duration = 0
             logger.info("Thermoino is ready to execute the CTC.")
-        return (self, prep_duration)
+        return prep_duration
 
     def exec_ctc(self):
         """
@@ -622,7 +617,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             )
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error for 'EXECCTC' (.exec_ctc): %s.", output)
-        return (self, exec_duration)
+        return exec_duration
 
     def flush_ctc(self):
         """
@@ -635,4 +630,3 @@ class ThermoinoComplexTimeCourses(Thermoino):
             logger.info("Thermoino response to 'FLUSHCTC' (.flush_ctc): %s.", output)
         elif output in ErrorCodes.__members__:
             logger.error("Thermoino error for 'FLUSHCTC' (.flush_ctc): %s.", output)
-        return self
