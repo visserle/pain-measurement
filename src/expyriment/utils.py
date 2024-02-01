@@ -16,10 +16,10 @@ def load_script(file_path):
         return yaml.safe_load(file)
 
 
-def prepare_stimuli(script):
+def prepare_stimuli(script, box_size, text_size):
     """Convert script strings to TextBox stimuli and preload them."""
     for key, value in script.items():
-        script[key] = stimuli.TextBox(text=value, size=[600, 500], position=[0, -100], text_size=20)
+        script[key] = stimuli.TextBox(text=value, size=box_size, position=[0, 0], text_size=text_size)
         script[key].preload()
 
 
@@ -62,7 +62,7 @@ def scale_text_size(screen_size, base_text_size=40, base_screen_size=(1920, 1200
     return scaled_text_size
 
 
-def scale_box_size(screen_size, base_box_size=(500, 500), base_screen_size=(1920, 1200)):
+def scale_box_size(screen_size, base_box_size=(1500, 1000), base_screen_size=(1920, 1200)):
     """
     Calculate the adjusted box size based on the screen size.
 

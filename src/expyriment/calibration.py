@@ -1,6 +1,6 @@
 # TODO
-# formatting of text box
 # vas picture
+# fix argesparse
 
 import argparse
 import logging
@@ -14,21 +14,29 @@ from expyriment import control, design, misc, stimuli, io
 from src.expyriment.estimator import BayesianEstimatorVAS
 from src.expyriment.thermoino import Thermoino
 from src.expyriment.thermoino_dummy import ThermoinoDummy
-from src.expyriment.utils import load_configuration, load_script, prepare_stimuli, warn_signal
+from src.expyriment.utils import (
+    load_configuration,
+    load_script,
+    prepare_stimuli,
+    warn_signal,
+    scale_box_size,
+    scale_text_size,
+)
 from src.expyriment.participant_data import ask_for_participant_info, add_participant_info
 from src.log_config import close_root_logging, configure_logging
 
 # Check if the script is run from the command line
 if len(sys.argv) > 1:
     parser = argparse.ArgumentParser(description="Run the pain-calibration experiment.")
-    parser.add_argument(
-        "--dummy", action="store_true", help="Run in development mode."
-    )
+    parser.add_argument("--dummy", action="store_true", help="Run in development mode.")
     args = parser.parse_args()
     DEVELOP_MODE = args.dummy
 else:
-    # Default mode when not using CLI arguments
-    DEVELOP_MODE = True
+    response = input("Run in development mode? (y/n) ")
+    if response == "y":
+        DEVELOP_MODE = True
+    elif response == "n":
+        DEVELOP_MODE = False
 
 # Constants
 EXP_NAME = "pain-calibration"
@@ -66,7 +74,6 @@ STIMULUS = config["stimulus"]
 JITTER = random.randint(0, STIMULUS["iti_max_jitter"]) if not DEVELOP_MODE else 0
 
 # Expyriment defaults
-control.defaults.window_size = (800, 600)
 design.defaults.experiment_background_colour = misc.constants.C_DARKGREY
 stimuli.defaults.textline_text_colour = EXPERIMENT["element_color"]
 stimuli.defaults.textbox_text_colour = EXPERIMENT["element_color"]
@@ -77,19 +84,32 @@ io.defaults.outputfile_time_stamp = True
 # Development mode settings
 if DEVELOP_MODE:
     Thermoino = ThermoinoDummy
+    control.defaults.window_size = (800, 600)
     control.set_develop_mode(True)
     STIMULUS["iti_duration"] = 300
     STIMULUS["stimulus_duration"] = 200
+    participant_info = config["dummy_participant"]
 else:
+    Thermoino = ThermoinoDummy  # NOTE REMOVE THIS
     participant_info = ask_for_participant_info()
 
-participant_info = ask_for_participant_info() # to be removed TODO
 # Experiment setup
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
-prepare_stimuli(SCRIPT)
-cross_idle = stimuli.FixCross(colour=EXPERIMENT["element_color"])
-cross_pain = stimuli.FixCross(colour=EXPERIMENT["cross_pain_color"])
+screen_size = exp.screen.size
+prepare_stimuli(
+    SCRIPT, box_size=scale_box_size(screen_size), text_size=scale_text_size(screen_size)
+)
+cross_idle = stimuli.FixCross(
+    size=scale_box_size(screen_size, base_box_size=EXPERIMENT["cross_size"]),
+    line_width=scale_text_size(screen_size, base_text_size=EXPERIMENT["cross_line_width"]),
+    colour=EXPERIMENT["element_color"],
+)
+cross_pain = stimuli.FixCross(
+    size=scale_box_size(screen_size, base_box_size=EXPERIMENT["cross_size"]),
+    line_width=scale_text_size(screen_size, base_text_size=EXPERIMENT["cross_line_width"]),
+    colour=EXPERIMENT["cross_pain_color"],
+)
 cross_idle.preload()
 cross_pain.preload()
 
@@ -147,7 +167,7 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
 
 
 # Experiment procedure
-def main():  
+def main():
     # Start experiment
     control.start(skip_ready_screen=True)
 
@@ -200,8 +220,8 @@ def main():
 
     # Close and clean up
     control.end()
-    add_participant_info(PARTICIPANTS_EXCEL_PATH, participant_info)
     luigi.close()
+    add_participant_info(PARTICIPANTS_EXCEL_PATH, participant_info)
     close_root_logging()
 
 
