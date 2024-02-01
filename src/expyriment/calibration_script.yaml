@@ -1,15 +1,18 @@
 welcome_1: |-
   Herzlich willkommen zum Experiment!
 
+
   Bitte drücken Sie die Leertaste.
 welcome_2: |-
   Wir beginnen das Experiment mit einer Schmerz-Kalibrierung.
+
 
   (Leertaste drücken, um fortzufahren)
 welcome_3: |-
   Hierzu wärmen wir die Hautstelle an Ihrem Arm zuerst kurz auf.
 
   Anschließend bestimmen wir, ab wann Sie leichte und starke Schmerzen verspüren.
+
 
   (Leertaste drücken, um fortzufahren)
 info_preexposure: |-
@@ -29,6 +32,12 @@ info_vas70_1: |-
   (Leertaste drücken, um fortzufahren)
 info_vas70_2: |-
   Dazu orientieren wir uns an einer Schmerz-Skala von 1 bis 10:
+
+
+
+
+
+
 
 
 

@@ -1,6 +1,7 @@
 # TODO
 # vas picture
 # fix argesparse
+# fix formatting in script
 
 import argparse
 import logging
@@ -9,20 +10,21 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from expyriment import control, design, misc, stimuli, io
+from expyriment import control, design, io, misc, stimuli
 
 from src.expyriment.estimator import BayesianEstimatorVAS
+from src.expyriment.participant_data import add_participant_info, ask_for_participant_info
 from src.expyriment.thermoino import Thermoino
 from src.expyriment.thermoino_dummy import ThermoinoDummy
 from src.expyriment.utils import (
     load_configuration,
     load_script,
     prepare_stimuli,
-    warn_signal,
+    scale_ratio,
     scale_box_size,
     scale_text_size,
+    warn_signal,
 )
-from src.expyriment.participant_data import ask_for_participant_info, add_participant_info
 from src.log_config import close_root_logging, configure_logging
 
 # Check if the script is run from the command line
@@ -44,6 +46,7 @@ CONFIG_PATH = Path("src/expyriment/calibration_config.toml")
 SCRIPT_PATH = Path("src/expyriment/calibration_SCRIPT.yaml")
 LOG_DIR = Path("runs/expyriment/calibration/")
 PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
+VAS_PICTURE_PATH = Path("src/expyriment/vas_picture.png").as_posix()
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
@@ -56,9 +59,9 @@ def press_space():
     exp.keyboard.wait(keys=misc.constants.K_SPACE)
 
 
-def present_script_and_wait(script_key):
+def present_script_and_wait(script_key, clear=True, update=True):
     """Present a script and wait for space key press."""
-    SCRIPT[script_key].present()
+    SCRIPT[script_key].present(clear=clear, update=update)
     press_space()
 
 
@@ -112,6 +115,10 @@ cross_pain = stimuli.FixCross(
 )
 cross_idle.preload()
 cross_pain.preload()
+# Load VAS picture, move it a bit up and scale it
+vas_picture = stimuli.Picture(VAS_PICTURE_PATH, position=(0, 100 * scale_ratio(screen_size)))
+vas_picture.scale(0.72 * scale_ratio(screen_size))
+vas_picture.preload()
 
 # Initialize Thermoino
 luigi = Thermoino(
@@ -170,31 +177,32 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
 def main():
     # Start experiment
     control.start(skip_ready_screen=True)
+    
+    # # Introduction
+    # present_script_and_wait("welcome_1")
+    # present_script_and_wait("welcome_2")
+    # present_script_and_wait("welcome_3")
 
-    # Introduction
-    present_script_and_wait("welcome_1")
-    present_script_and_wait("welcome_2")
-    present_script_and_wait("welcome_3")
+    # # Pre-exposure Trials
+    # present_script_and_wait("info_preexposure")
+    # run_preexposure_trials()
 
-    # Pre-exposure Trials
-    present_script_and_wait("info_preexposure")
-    run_preexposure_trials()
-
-    # Pre-exposure Feedback
-    SCRIPT["question_preexposure"].present()
-    found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
-    if found == misc.constants.K_y:
-        ESTIMATOR["temp_start_vas70"] -= STIMULUS["preexposure_correction"]
-        SCRIPT["answer_yes"].present()
-        logging.info("Preexposure was painful.")
-    elif found == misc.constants.K_n:
-        SCRIPT["answer_no"].present()
-        logging.info("Preexposure was not painful.")
-    misc.Clock().wait(1000)
+    # # Pre-exposure Feedback
+    # SCRIPT["question_preexposure"].present()
+    # found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
+    # if found == misc.constants.K_y:
+    #     ESTIMATOR["temp_start_vas70"] -= STIMULUS["preexposure_correction"]
+    #     SCRIPT["answer_yes"].present()
+    #     logging.info("Preexposure was painful.")
+    # elif found == misc.constants.K_n:
+    #     SCRIPT["answer_no"].present()
+    #     logging.info("Preexposure was not painful.")
+    # misc.Clock().wait(1000)
 
     # VAS 70 Estimation
     present_script_and_wait("info_vas70_1")
-    present_script_and_wait("info_vas70_2")
+    vas_picture.present(clear=True, update=False)
+    present_script_and_wait("info_vas70_2", clear=False, update=True)
     present_script_and_wait("info_vas70_3")
 
     estimator_vas70 = BayesianEstimatorVAS(

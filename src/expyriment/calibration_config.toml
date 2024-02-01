@@ -6,7 +6,8 @@ mms_rate_of_rise = 10.0  # must be the same as in MMS
 [experiment]
 element_color = [128, 64, 192]
 cross_pain_color = [192, 64, 128]
-cross_size = [0.06, 0.06]
+cross_size = [100, 100]
+cross_line_width = 20
 
 [stimulus]
 stimulus_duration = 8000
