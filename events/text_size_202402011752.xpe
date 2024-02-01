@@ -1,0 +1,9 @@
+#Expyriment 0.11.dev1 (Python 3.11.7), .xpe-file, coding: UTF-8
+#date: Thu Feb 01 2024 17:52:54
+#sha1: 478477
+#modules: 
+#display: size=(1024, 768), window_mode=True, open_gl=2
+#os: uname_result(system='Darwin', node='MacBook-Air-von-visser.local', release='23.2.0', version='Darwin Kernel Version 23.2.0: Wed Nov 15 21:59:33 PST 2023; root:xnu-10002.61.3~2/RELEASE_ARM64_T8112', machine='arm64')
+Time,Type,Event,Value,Detail,Detail2
+566,Stimulus,presented,0
+21834,Keyboard,received,32,wait
