@@ -1,3 +1,7 @@
+# TODO
+# formatting of text box
+# vas picture
+
 import argparse
 import logging
 import random
@@ -5,20 +9,20 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from expyriment import control, design, misc, stimuli
+from expyriment import control, design, misc, stimuli, io
 
 from src.expyriment.estimator import BayesianEstimatorVAS
 from src.expyriment.thermoino import Thermoino
 from src.expyriment.thermoino_dummy import ThermoinoDummy
 from src.expyriment.utils import load_configuration, load_script, prepare_stimuli, warn_signal
+from src.expyriment.participant_data import ask_for_participant_info, add_participant_info
 from src.log_config import close_root_logging, configure_logging
 
 # Check if the script is run from the command line
 if len(sys.argv) > 1:
-    # Argument Parsing
     parser = argparse.ArgumentParser(description="Run the pain-calibration experiment.")
     parser.add_argument(
-        "--dummy", action="store_true", help="Run in development mode with ThermoinoDummy."
+        "--dummy", action="store_true", help="Run in development mode."
     )
     args = parser.parse_args()
     DEVELOP_MODE = args.dummy
@@ -31,6 +35,7 @@ EXP_NAME = "pain-calibration"
 CONFIG_PATH = Path("src/expyriment/calibration_config.toml")
 SCRIPT_PATH = Path("src/expyriment/calibration_SCRIPT.yaml")
 LOG_DIR = Path("runs/expyriment/calibration/")
+PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
@@ -65,14 +70,20 @@ control.defaults.window_size = (800, 600)
 design.defaults.experiment_background_colour = misc.constants.C_DARKGREY
 stimuli.defaults.textline_text_colour = EXPERIMENT["element_color"]
 stimuli.defaults.textbox_text_colour = EXPERIMENT["element_color"]
+io.defaults.eventfile_directory = (LOG_DIR / "events").as_posix()
+io.defaults.datafile_directory = (LOG_DIR / "data").as_posix()
+io.defaults.outputfile_time_stamp = True
 
 # Development mode settings
 if DEVELOP_MODE:
-    control.set_develop_mode(True)
-    STIMULUS["iti_duration"] = 500
-    STIMULUS["stimulus_duration"] = 200
     Thermoino = ThermoinoDummy
+    control.set_develop_mode(True)
+    STIMULUS["iti_duration"] = 300
+    STIMULUS["stimulus_duration"] = 200
+else:
+    participant_info = ask_for_participant_info()
 
+participant_info = ask_for_participant_info() # to be removed TODO
 # Experiment setup
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
@@ -136,7 +147,7 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
 
 
 # Experiment procedure
-def main():
+def main():  
     # Start experiment
     control.start(skip_ready_screen=True)
 
@@ -172,7 +183,7 @@ def main():
         temp_std=ESTIMATOR["temp_std_vas70"],
         trials=ESTIMATOR["trials_vas70"],
     )
-    estimate_vas70 = run_estimation_trials(estimator=estimator_vas70)
+    participant_info["vas70"] = run_estimation_trials(estimator=estimator_vas70)
 
     # VAS 0 Estimation
     present_script_and_wait("info_vas0")
@@ -182,13 +193,14 @@ def main():
         temp_std=ESTIMATOR["temp_std_vas0"],
         trials=ESTIMATOR["trials_vas0"],
     )
-    estimate_vas0 = run_estimation_trials(estimator=estimator_vas0)
+    participant_info["vas0"] = run_estimation_trials(estimator=estimator_vas0)
 
     # End of Experiment
     present_script_and_wait("bye")
 
     # Close and clean up
     control.end()
+    add_participant_info(PARTICIPANTS_EXCEL_PATH, participant_info)
     luigi.close()
     close_root_logging()
 

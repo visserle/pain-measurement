@@ -12,6 +12,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
+
 class ParticipantDataApp:
     def __init__(self, master):
         self.master = master
@@ -41,7 +42,9 @@ class ParticipantDataApp:
         # Create gender combobox
         gender_label = ttk.Label(self.master, text="Gender:")
         gender_label.grid(column=0, row=2, sticky=tk.W, padx=5, pady=5)
-        self.gender_combobox = ttk.Combobox(self.master, values=["Male", "Female"], state="readonly")
+        self.gender_combobox = ttk.Combobox(
+            self.master, values=["Male", "Female"], state="readonly"
+        )
         self.gender_combobox.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5)
 
         # Create submit button
@@ -50,12 +53,13 @@ class ParticipantDataApp:
 
     def submit_data(self):
         self.participant_info["id"] = self.id_entry.get()
-        self.participant_info["age"] = self.age_entry.get()
+        self.participant_info["age"] = int(self.age_entry.get())
         self.participant_info["gender"] = self.gender_combobox.get()
         logger.info(f"Participant ID: {self.participant_info['id']}")
         logger.info(f"Participant Age: {self.participant_info['age']}")
         logger.info(f"Participant Gender: {self.participant_info['gender']}")
         self.master.destroy()
+
 
 def ask_for_participant_info():
     root = tk.Tk()
@@ -65,7 +69,6 @@ def ask_for_participant_info():
     root.deiconify()  # Show window when ready
     root.mainloop()
     return app.participant_info
-
 
 
 def init_excel_file(file_path):
@@ -106,7 +109,7 @@ def complete_participant_info(participant_info: dict):
     return participant_info
 
 
-def add_participant_info(file_path, participant_info: dict):
+def add_participant_info(file_path, participant_info: dict) -> dict:
     """
     Adds a participant to the participants.xlsx file.
 
@@ -133,27 +136,28 @@ def add_participant_info(file_path, participant_info: dict):
         "baseline_temp",
         "temp_range",
     ]
-    new_participant = pd.DataFrame([participant_info], columns=new_order)
+    participant_info_df = pd.DataFrame([participant_info], columns=new_order)
 
     # Append participant info to the participants.xlsx file
-    participants_df = pd.read_excel(file_path)
-    if participants_df.empty or participants_df.isna().all().all():
-        participants_df = new_participant
+    participants_xlsx = pd.read_excel(file_path)
+    if participants_xlsx.empty or participants_xlsx.isna().all().all():
+        participants_xlsx = participant_info_df
     else:
         # Check if the last participant is the same as the one you want to add
-        last_participant = participants_df.iloc[-1]["id"]
+        last_participant = participants_xlsx.iloc[-1]["id"]
         if last_participant == participant_info["id"]:
             logger.critical(
                 f"Participant {participant_info['id']} already exists as the last entry."
             )
-        participants_df = pd.concat([participants_df, new_participant], ignore_index=True)
+        participants_xlsx = pd.concat([participants_xlsx, participant_info_df], ignore_index=True)
     # Save the updated participants.xlsx file
-    participant_info.to_excel(file_path, index=False)
+    participants_xlsx.to_excel(file_path, index=False)
     logger.info(f"Added participant {participant_info['id']} to {file_path}")
+
     return participant_info
 
 
-def read_last_participant(file_path): # TODO FIXME
+def read_last_participant(file_path):  # TODO FIXME
     """
     Returns information about the last participant from the participants.xlsx file.
 
