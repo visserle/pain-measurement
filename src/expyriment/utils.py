@@ -162,13 +162,11 @@ if __name__ == "__main__":
     # Determine the current screen size
     screen_size = exp.screen.size
 
-    # Calculate the scaled font size
+    # Calculate the scaled font size and box size
     scaled_font_size = scale_text_size(screen_size)
-
-    # Calculate the scaled box size
     scaled_box_size = scale_box_size(screen_size)
 
-    # Create a text stimulus with the adjusted font size and box size
+    # Create a text stimulus with the adjusted sizes
     text_stimulus = stimuli.TextBox(
         "Scaled\nText",
         size=scaled_box_size,

@@ -1,5 +1,4 @@
 # TODO
-# vas picture
 # fix argesparse
 # fix formatting in script
 
@@ -34,11 +33,8 @@ if len(sys.argv) > 1:
     args = parser.parse_args()
     DEVELOP_MODE = args.dummy
 else:
-    response = input("Run in development mode? (y/n) ")
-    if response == "y":
-        DEVELOP_MODE = True
-    elif response == "n":
-        DEVELOP_MODE = False
+    DEVELOP_MODE = True
+
 
 # Constants
 EXP_NAME = "pain-calibration"
@@ -115,7 +111,7 @@ cross_pain = stimuli.FixCross(
 )
 cross_idle.preload()
 cross_pain.preload()
-# Load VAS picture, move it a bit up and scale it
+# Load VAS picture, move it a bit up and scale it (empirically determined)
 vas_picture = stimuli.Picture(VAS_PICTURE_PATH, position=(0, 100 * scale_ratio(screen_size)))
 vas_picture.scale(0.72 * scale_ratio(screen_size))
 vas_picture.preload()
@@ -177,27 +173,27 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
 def main():
     # Start experiment
     control.start(skip_ready_screen=True)
-    
-    # # Introduction
-    # present_script_and_wait("welcome_1")
-    # present_script_and_wait("welcome_2")
-    # present_script_and_wait("welcome_3")
 
-    # # Pre-exposure Trials
-    # present_script_and_wait("info_preexposure")
-    # run_preexposure_trials()
+    # Introduction
+    present_script_and_wait("welcome_1")
+    present_script_and_wait("welcome_2")
+    present_script_and_wait("welcome_3")
 
-    # # Pre-exposure Feedback
-    # SCRIPT["question_preexposure"].present()
-    # found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
-    # if found == misc.constants.K_y:
-    #     ESTIMATOR["temp_start_vas70"] -= STIMULUS["preexposure_correction"]
-    #     SCRIPT["answer_yes"].present()
-    #     logging.info("Preexposure was painful.")
-    # elif found == misc.constants.K_n:
-    #     SCRIPT["answer_no"].present()
-    #     logging.info("Preexposure was not painful.")
-    # misc.Clock().wait(1000)
+    # Pre-exposure Trials
+    present_script_and_wait("info_preexposure")
+    run_preexposure_trials()
+
+    # Pre-exposure Feedback
+    SCRIPT["question_preexposure"].present()
+    found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
+    if found == misc.constants.K_y:
+        ESTIMATOR["temp_start_vas70"] -= STIMULUS["preexposure_correction"]
+        SCRIPT["answer_yes"].present()
+        logging.info("Preexposure was painful.")
+    elif found == misc.constants.K_n:
+        SCRIPT["answer_no"].present()
+        logging.info("Preexposure was not painful.")
+    misc.Clock().wait(1000)
 
     # VAS 70 Estimation
     present_script_and_wait("info_vas70_1")
