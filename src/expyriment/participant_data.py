@@ -12,67 +12,10 @@ import pandas as pd
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
-
-# def ask_for_partcipant_info():
-#     """Ask for participant information."""
-
-#     # Function to execute when submit button is clicked
-#     def submit_data():
-#         participant_info = {}
-#         participant_info["id"] = id_entry.get()
-#         participant_info["age"] = age_entry.get()
-#         participant_info["gender"] = gender_combobox.get()
-#         logger.info(f"Participant ID: {participant_info['id']}")
-#         logger.info(f"Participant Age: {participant_info['age']}")
-#         logger.info(f"Participant Gender: {participant_info['gender']}")
-#         # Close the window
-#         root.destroy()
-#         return participant_info
-
-#     # Create a window
-#     root = tk.Tk()
-#     root.title("Participant Data Input")
-#     root.withdraw()
-
-#     # Configure grid layout
-#     root.columnconfigure(0, weight=1)
-#     root.columnconfigure(1, weight=3)
-
-#     # Data for creating labels and entries
-#     fields = ["ID", "Age", "Gender"]
-#     entries = []
-
-#     for i, field in enumerate(fields[:-1]):  # Exclude Gender from this loop
-#         label = ttk.Label(root, text=f"{field}:")
-#         label.grid(column=0, row=i, sticky=tk.W, padx=5, pady=5)
-#         entry = ttk.Entry(root)
-#         entry.grid(column=1, row=i, sticky=tk.EW, padx=5, pady=5)
-#         entries.append(entry)
-
-#     # Unpack entries to individual variables for easy access
-#     id_entry, age_entry = entries
-
-#     # Adding a combobox for gender selection, set to readonly to prevent typing
-#     gender_label = ttk.Label(root, text="Gender:")
-#     gender_label.grid(column=0, row=len(fields) - 1, sticky=tk.W, padx=5, pady=5)
-#     gender_combobox = ttk.Combobox(root, values=["Male", "Female"], state="readonly")
-#     gender_combobox.grid(column=1, row=len(fields) - 1, sticky=tk.EW, padx=5, pady=5)
-
-#     submit_button = ttk.Button(root, text="Submit", command=submit_data)
-#     submit_button.grid(column=0, row=len(fields), columnspan=2, sticky=tk.EW, padx=5, pady=5)
-
-#     center_window(root)
-#     root.deiconify()
-
-#     root.mainloop()
-
-
-
 class ParticipantDataApp:
     def __init__(self, master):
         self.master = master
-        self.participant_info = {}  # Store participant info here
-
+        self.participant_info = {}
         self.setup_ui()
 
     def setup_ui(self):
@@ -85,7 +28,7 @@ class ParticipantDataApp:
         entries = []
 
         # Create entries for ID and Age
-        for i, field in enumerate(fields[:-1]):  # Exclude Gender from this loop
+        for i, field in enumerate(fields[:-1]):  # exclude Gender from this loop
             label = ttk.Label(self.master, text=f"{field}:")
             label.grid(column=0, row=i, sticky=tk.W, padx=5, pady=5)
             entry = ttk.Entry(self.master)
@@ -101,6 +44,7 @@ class ParticipantDataApp:
         self.gender_combobox = ttk.Combobox(self.master, values=["Male", "Female"], state="readonly")
         self.gender_combobox.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5)
 
+        # Create submit button
         submit_button = ttk.Button(self.master, text="Submit", command=self.submit_data)
         submit_button.grid(column=0, row=3, columnspan=2, sticky=tk.EW, padx=5, pady=5)
 
