@@ -1,5 +1,6 @@
 import logging
 import random
+from datetime import datetime
 from pathlib import Path
 
 import toml
@@ -8,45 +9,51 @@ from expyriment import control, design, misc, stimuli
 
 from src.expyriment.estimator import BayesianEstimatorVAS
 from src.expyriment.thermoino import Thermoino
-from src.log_config import configure_logging
+from src.expyriment.thermoino_dummy import ThermoinoDummy
+from src.log_config import close_root_logging, configure_logging
 
-configure_logging(stream_level=logging.DEBUG)
 
-# Load config from TOML file
-with open(Path("src/expyriment/calibration_config.toml"), "r", encoding="utf8") as file:
-    config = toml.load(file)
-
-# Load script from YAML file
-with open(Path("src/expyriment/calibration_SCRIPT.yaml"), "r", encoding="utf8") as file:
-    SCRIPT = yaml.safe_load(file)
-
+# Constants
 EXP_NAME = "pain-calibration"
-THERMOINO = config["thermoino"]
-EXPERIMENT = config["experiment"]
-ESTIMATOR = config["estimator"]
-STIMULUS = config["stimulus"]
-JITTER = random.randint(0, STIMULUS["iti_max_jitter"])
-
+CONFIG_PATH = Path("src/expyriment/calibration_config.toml")
+SCRIPT_PATH = Path("src/expyriment/calibration_SCRIPT.yaml")
+LOG_DIR = Path("runs/expyriment/calibration/")
 DEVELOP_MODE = True
-if DEVELOP_MODE:
-    control.set_develop_mode(True)
-    STIMULUS["iti_duration"] = 500
-    STIMULUS["stimulus_duration"] = 200
-    JITTER = 0
-    from src.expyriment.thermoino_dummy import ThermoinoDummy as Thermoino
 
-control.defaults.window_size = (800, 600)
-design.defaults.experiment_background_colour = misc.constants.C_DARKGREY
-stimuli.defaults.textline_text_colour = EXPERIMENT["element_color"]
-stimuli.defaults.textbox_text_colour = EXPERIMENT["element_color"]
+# Configure logging
+log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
+configure_logging(stream_level=logging.DEBUG, file_path=log_file)
 
-# Note: wait() has the following signature:
-# wait(keys=None, duration=None, wait_for_keyup=False, callback_function=None, process_control_events=True)
+
+# Utility functions
+def load_configuration(file_path):
+    """Load configuration from a TOML file."""
+    with open(file_path, "r", encoding="utf8") as file:
+        return toml.load(file)
+
+
+def load_script(file_path):
+    """Load script from a YAML file."""
+    with open(file_path, "r", encoding="utf8") as file:
+        return yaml.safe_load(file)
+
+
+def prepare_stimuli(script):
+    """Convert script strings to TextBox stimuli and preload them."""
+    for key, value in script.items():
+        script[key] = stimuli.TextBox(text=value, size=[600, 500], position=[0, -100], text_size=20)
+        script[key].preload()
 
 
 def press_space():
     """Press space to continue."""
     exp.keyboard.wait(keys=misc.constants.K_SPACE)
+
+    
+def present_script_and_wait(script_key):
+    """Present a script and wait for space key press."""
+    SCRIPT[script_key].present()
+    press_space()
 
 
 def warn_signal():
@@ -54,7 +61,66 @@ def warn_signal():
     stimuli.Tone(duration=500, frequency=440).play()
 
 
-def estimation_trials(estimator: BayesianEstimatorVAS) -> float:
+# Load configurations and script
+config = load_configuration(CONFIG_PATH)
+SCRIPT = load_script(SCRIPT_PATH)
+
+# Experiment settings
+THERMOINO = config["thermoino"]
+EXPERIMENT = config["experiment"]
+ESTIMATOR = config["estimator"]
+STIMULUS = config["stimulus"]
+JITTER = random.randint(0, STIMULUS["iti_max_jitter"]) if not DEVELOP_MODE else 0
+
+# Expyriment defaults
+control.defaults.window_size = (800, 600)
+design.defaults.experiment_background_colour = misc.constants.C_DARKGREY
+stimuli.defaults.textline_text_colour = EXPERIMENT["element_color"]
+stimuli.defaults.textbox_text_colour = EXPERIMENT["element_color"]
+
+# Development mode settings
+if DEVELOP_MODE:
+    control.set_develop_mode(True)
+    STIMULUS["iti_duration"] = 500
+    STIMULUS["stimulus_duration"] = 200
+    Thermoino = ThermoinoDummy
+
+# Experiment setup
+exp = design.Experiment(name=EXP_NAME)
+control.initialize(exp)
+prepare_stimuli(SCRIPT)
+cross_idle = stimuli.FixCross(colour=EXPERIMENT["element_color"])
+cross_pain = stimuli.FixCross(colour=EXPERIMENT["cross_pain_color"])
+cross_idle.preload()
+cross_pain.preload()
+
+# Initialize Thermoino
+luigi = Thermoino(
+    port=THERMOINO["port"],
+    mms_baseline=THERMOINO["mms_baseline"],
+    mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
+)
+luigi.connect()
+
+
+# Utility functions
+def run_preexposure_trials():
+    """Run pre-exposure trials with different temperatures."""
+    for idx, temp in enumerate(STIMULUS["preexposure_temperatures"]):
+        cross_idle.present()
+        iti_duration = STIMULUS["iti_duration"] if idx != 0 else STIMULUS["iti_duration_short"]
+        misc.Clock().wait(iti_duration + JITTER)
+        luigi.trigger()
+        time_for_ramp_up, _ = luigi.set_temp(temp)
+        cross_pain.present()
+        misc.Clock().wait(STIMULUS["stimulus_duration"] + time_for_ramp_up)
+        time_for_ramp_down, _ = luigi.set_temp(THERMOINO["mms_baseline"])
+        cross_idle.present()
+        misc.Clock().wait(time_for_ramp_down)
+
+
+def run_estimation_trials(estimator: BayesianEstimatorVAS):
+    """Run estimation trials and return the final estimate."""
     for trial in range(estimator.trials):
         cross_idle.present()
         misc.Clock().wait(STIMULUS["iti_duration"] + JITTER)
@@ -75,118 +141,69 @@ def estimation_trials(estimator: BayesianEstimatorVAS) -> float:
             estimator.conduct_trial(response="n", trial=trial)
             SCRIPT["answer_no"].present()
         misc.Clock().wait(1000)
-    # Warning tone if all steps of the calibration were in the same direction
+    # Additional warning tone if all steps of the calibration were in the same direction
     if estimator.check_steps():
         warn_signal()
     return estimator.get_estimate()
 
-##############################################
-# INIT
-##############################################
 
-exp = design.Experiment(name=EXP_NAME)
+# Experiment procedure
+def main():
+    # Start experiment
+    control.start(skip_ready_screen=True)
 
-control.initialize(exp)
+    # Introduction
+    present_script_and_wait("welcome_1")
+    present_script_and_wait("welcome_2")
+    present_script_and_wait("welcome_3")
 
-# Convert scripts to stimuli
-for key in SCRIPT.keys():
-    SCRIPT[key] = stimuli.TextBox(
-        text=SCRIPT[key],
-        size=[600, 500],
-        position=[0, -100],
-        text_size=20,
+    # Pre-exposure Trials
+    present_script_and_wait("info_preexposure")
+    run_preexposure_trials()
+
+    # Pre-exposure Feedback
+    SCRIPT["question_preexposure"].present()
+    found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
+    if found == misc.constants.K_y:
+        ESTIMATOR["temp_start_vas70"] -= STIMULUS["preexposure_correction"]
+        SCRIPT["answer_yes"].present()
+        logging.info("Preexposure was painful.")
+    elif found == misc.constants.K_n:
+        SCRIPT["answer_no"].present()
+        logging.info("Preexposure was not painful.")
+    misc.Clock().wait(1000)
+
+    # VAS 70 Estimation
+    present_script_and_wait("info_vas70_1")
+    present_script_and_wait("info_vas70_2")
+    present_script_and_wait("info_vas70_3")
+
+    estimator_vas70 = BayesianEstimatorVAS(
+        vas_value=70,
+        temp_start=ESTIMATOR["temp_start_vas70"],
+        temp_std=ESTIMATOR["temp_std_vas70"],
+        trials=ESTIMATOR["trials_vas70"],
     )
+    estimate_vas70 = run_estimation_trials(estimator=estimator_vas70)
 
-# Preload stimuli
-for text in SCRIPT.values():
-    text.preload()
-
-cross_idle = stimuli.FixCross(colour=EXPERIMENT["element_color"])
-cross_pain = stimuli.FixCross(colour=EXPERIMENT["cross_pain_color"])
-cross_idle.preload()
-cross_pain.preload()
-
-# Initialize Thermoino
-luigi = Thermoino(
-    port=THERMOINO["port"],
-    mms_baseline=THERMOINO["mms_baseline"],
-    mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
-)
-luigi.connect()
-
-##############################################
-# START
-##############################################
-
-
-control.start(skip_ready_screen=True)
-
-SCRIPT["welcome_1"].present()
-press_space()
-SCRIPT["welcome_2"].present()
-press_space()
-SCRIPT["welcome_3"].present()
-press_space()
-SCRIPT["info_preexposure"].present()
-press_space()
-
-for idx, _ in enumerate(STIMULUS["preexposure_temperatures"]):
-    cross_idle.present()
-    # For the first trial, we use a shorter ITI
-    misc.Clock().wait(
-        STIMULUS["iti_duration"] + JITTER
-        if not idx == 0
-        else STIMULUS["iti_duration_short"]
+    # VAS 0 Estimation
+    present_script_and_wait("info_vas0")
+    estimator_vas0 = BayesianEstimatorVAS(
+        vas_value=0,
+        temp_start=estimator_vas70.get_estimate() - ESTIMATOR["temp_start_vas0_offset"],
+        temp_std=ESTIMATOR["temp_std_vas0"],
+        trials=ESTIMATOR["trials_vas0"],
     )
-    luigi.trigger()
-    time_for_ramp_up, _ = luigi.set_temp(STIMULUS["preexposure_temperatures"][idx])
-    cross_pain.present()
-    misc.Clock().wait(STIMULUS["stimulus_duration"] + time_for_ramp_up)
-    time_for_ramp_down , _ = luigi.set_temp(THERMOINO["mms_baseline"])
-    cross_idle.present()
-    misc.Clock().wait(time_for_ramp_down)
+    estimate_vas0 = run_estimation_trials(estimator=estimator_vas0)
 
-SCRIPT["question_preexposure"].present()
-found, _ = exp.keyboard.wait(keys=[misc.constants.K_y, misc.constants.K_n])
-if found == misc.constants.K_y:
-    ESTIMATOR["temp_start_vas70"] -= STIMULUS["preexposure_correction"]
-    SCRIPT["answer_yes"].present()
-    logging.info("Preexposure was painful.")
-elif found == misc.constants.K_n:
-    SCRIPT["answer_no"].present()
-    logging.info("Preexposure was not painful.")
-misc.Clock().wait(1000)
-SCRIPT["info_vas70_1"].present()
-press_space()
-SCRIPT["info_vas70_2"].present()
-press_space()
-SCRIPT["info_vas70_3"].present()
-press_space()
+    # End of Experiment
+    present_script_and_wait("bye")
 
-estimator_vas70 = BayesianEstimatorVAS(
-    vas_value=70,
-    temp_start=ESTIMATOR["temp_start_vas70"],
-    temp_std=ESTIMATOR["temp_std_vas70"],
-    trials=ESTIMATOR["trials_vas70"],
-)
-estimate_vas70 = estimation_trials(estimator=estimator_vas70)
-SCRIPT["info_vas0"].present()
-press_space()
-estimator_vas0 = BayesianEstimatorVAS(
-    vas_value=0,
-    temp_start=estimator_vas70.get_estimate() - ESTIMATOR["temp_start_vas0_offset"],
-    temp_std=ESTIMATOR["temp_std_vas0"],
-    trials=ESTIMATOR["trials_vas0"],
-)
-estimate_vas0 = estimation_trials(estimator=estimator_vas0)
+    # Close and clean up
+    control.end()
+    luigi.close()
+    close_root_logging()
 
 
-SCRIPT["bye"].present()
-press_space()
-
-##############################################
-# END
-##############################################
-
-control.end()
-luigi.close()
+if __name__ == "__main__":
+    main()
