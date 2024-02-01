@@ -1,11 +1,12 @@
 import logging
 import platform
 import tkinter as tk
+import tkinter.messagebox as messagebox
 import warnings
 from datetime import datetime
 from tkinter import ttk
 
-from src.expyriment.utils import center_window
+from src.expyriment.utils import center_tk_window
 
 warnings.filterwarnings("ignore", "\nPyarrow", DeprecationWarning)
 import pandas as pd
@@ -52,9 +53,26 @@ class ParticipantDataApp:
         submit_button.grid(column=0, row=3, columnspan=2, sticky=tk.EW, padx=5, pady=5)
 
     def submit_data(self):
-        self.participant_info["id"] = self.id_entry.get()
-        self.participant_info["age"] = int(self.age_entry.get())
+        # Initial check for empty fields
+        if not self.id_entry.get().strip():
+            messagebox.showwarning("Missing Information", "ID is required.")
+            return
+        if not self.age_entry.get().strip():
+            messagebox.showwarning("Missing Information", "Age is required.")
+            return
+        if not self.gender_combobox.get().strip():
+            messagebox.showwarning("Missing Information", "Gender is required.")
+            return
+
+        # Get participant info from fields
+        self.participant_info["id"] = self.id_entry.get().strip()
+        try:
+            self.participant_info["age"] = int(self.age_entry.get())
+        except ValueError:
+            messagebox.showwarning("Invalid Input", "Age must be a number.")
+            return
         self.participant_info["gender"] = self.gender_combobox.get()
+
         logger.info(f"Participant ID: {self.participant_info['id']}")
         logger.info(f"Participant Age: {self.participant_info['age']}")
         logger.info(f"Participant Gender: {self.participant_info['gender']}")
@@ -65,7 +83,7 @@ def ask_for_participant_info():
     root = tk.Tk()
     root.withdraw()  # Hide window initially
     app = ParticipantDataApp(root)
-    center_window(root)
+    center_tk_window(root)
     root.deiconify()  # Show window when ready
     root.mainloop()
     return app.participant_info
@@ -153,7 +171,7 @@ def add_participant_info(file_path, participant_info: dict) -> dict:
     # Save the updated participants.xlsx file
     participants_xlsx.to_excel(file_path, index=False)
     logger.info(f"Added participant {participant_info['id']} to {file_path}")
-
+    
     return participant_info
 
 
@@ -196,5 +214,5 @@ def read_last_participant(file_path):  # TODO FIXME
 
 
 if __name__ == "__main__":
-    # ask_for_partcipant_info()
     ask_for_participant_info()
+    print("Done.")
