@@ -1,24 +1,36 @@
+import argparse
 import logging
 import random
+import sys
 from datetime import datetime
 from pathlib import Path
 
-import toml
-import yaml
 from expyriment import control, design, misc, stimuli
 
 from src.expyriment.estimator import BayesianEstimatorVAS
 from src.expyriment.thermoino import Thermoino
 from src.expyriment.thermoino_dummy import ThermoinoDummy
+from src.expyriment.utils import load_configuration, load_script, prepare_stimuli, warn_signal
 from src.log_config import close_root_logging, configure_logging
 
+# Check if the script is run from the command line
+if len(sys.argv) > 1:
+    # Argument Parsing
+    parser = argparse.ArgumentParser(description="Run the pain-calibration experiment.")
+    parser.add_argument(
+        "--dummy", action="store_true", help="Run in development mode with ThermoinoDummy."
+    )
+    args = parser.parse_args()
+    DEVELOP_MODE = args.dummy
+else:
+    # Default mode when not using CLI arguments
+    DEVELOP_MODE = True
 
 # Constants
 EXP_NAME = "pain-calibration"
 CONFIG_PATH = Path("src/expyriment/calibration_config.toml")
 SCRIPT_PATH = Path("src/expyriment/calibration_SCRIPT.yaml")
 LOG_DIR = Path("runs/expyriment/calibration/")
-DEVELOP_MODE = True
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
@@ -26,39 +38,15 @@ configure_logging(stream_level=logging.DEBUG, file_path=log_file)
 
 
 # Utility functions
-def load_configuration(file_path):
-    """Load configuration from a TOML file."""
-    with open(file_path, "r", encoding="utf8") as file:
-        return toml.load(file)
-
-
-def load_script(file_path):
-    """Load script from a YAML file."""
-    with open(file_path, "r", encoding="utf8") as file:
-        return yaml.safe_load(file)
-
-
-def prepare_stimuli(script):
-    """Convert script strings to TextBox stimuli and preload them."""
-    for key, value in script.items():
-        script[key] = stimuli.TextBox(text=value, size=[600, 500], position=[0, -100], text_size=20)
-        script[key].preload()
-
-
 def press_space():
     """Press space to continue."""
     exp.keyboard.wait(keys=misc.constants.K_SPACE)
 
-    
+
 def present_script_and_wait(script_key):
     """Present a script and wait for space key press."""
     SCRIPT[script_key].present()
     press_space()
-
-
-def warn_signal():
-    """Play a warn signal."""
-    stimuli.Tone(duration=500, frequency=440).play()
 
 
 # Load configurations and script
@@ -103,7 +91,7 @@ luigi = Thermoino(
 luigi.connect()
 
 
-# Utility functions
+# Trial functions
 def run_preexposure_trials():
     """Run pre-exposure trials with different temperatures."""
     for idx, temp in enumerate(STIMULUS["preexposure_temperatures"]):
