@@ -1,3 +1,4 @@
+import math
 import logging
 import time
 
@@ -41,12 +42,13 @@ class ThermoinoDummy:
         logger.debug("Triggered.")
 
     def set_temp(self, temp_target):
-        move_time_s = abs(temp_target - self.temp) / self.mms_rate_of_rise
+        move_time_us = round(((temp_target - self.temp) / self.mms_rate_of_rise) * 1e6)
+        duration_ms = math.ceil(abs(move_time_us / 1e3))
         self.temp = temp_target
         success = True
-        logger.info("Set temperature to %s°C.", temp_target)
-        logger.debug("Move time to set temperature: %s s.", move_time_s)
-        return (move_time_s, success)
+        output = "OK_MOVE_SLOW"
+        logger.info("Change temperature to %s°C in %s s (%s).", temp_target, duration_ms / 1000, output)
+        return (duration_ms, success)
 
     def wait(self, duration):
         time.sleep(duration)

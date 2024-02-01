@@ -3,8 +3,9 @@
 
 # TODO
 # - Fix query function
-# - fix prep_ctc
+# - fix prep_ctc, and set_temp
 
+import math
 import logging
 import time
 from enum import Enum
@@ -259,18 +260,19 @@ class Thermoino:
         """
 
         move_time_us = round(((temp_target - self.temp) / self.mms_rate_of_rise) * 1e6)
-        move_time_s = abs(move_time_us / 1e6)  # Convert to seconds as a measure of duration
         output = self._send_command(f"MOVE;{move_time_us}\n")
+        duration_ms = math.ceil(abs(move_time_us / 1e3))
         if output in OkCodes.__members__:
             # Update the current temperature
             self.temp = temp_target
-            logger.info("Set temperature to %s°C.: %s", temp_target, output)
-            logger.debug("Move time to set temperature: %s s.", move_time_s)
+            logger.info(
+                "Change temperature to %s°C in %s s: %s.", temp_target, duration_ms / 1000, output
+            )
             success = True
         elif output in ErrorCodes.__members__:
             logger.error("Setting temperature to %s°C failed: %s.", temp_target, output)
             success = False
-        return (move_time_s, success)
+        return (duration_ms, success)
 
     def sleep(self, duration):
         """
