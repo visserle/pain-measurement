@@ -5,6 +5,7 @@
 # - set to NoPrompt for data acquisition: TODO: really? maybe figure out best way to handle this
 # - update doc strings
 # - add UPD support
+# - maybe switch to send two events at the same time? send_x_y
 
 import itertools
 import logging
@@ -251,7 +252,7 @@ class EventRecievingiMotions:
     def send_marker(self, marker_name, value):
         imotions_marker = f"M;2;;;{marker_name};{value};D;\r\n"
         self._send_message(imotions_marker)
-        logger.debug("Received the marker %s: %s.", marker_name, value)
+        logger.debug("Received marker %s: %s.", marker_name, value)
 
     def send_stimulus_markers(self, seed):
         """
@@ -265,7 +266,7 @@ class EventRecievingiMotions:
                 [f"M;2;;;heat_stimulus;{seed};S;\r\n", f"M;2;;;heat_stimulus;{seed};E;\r\n"]
             )
         self._send_message(next(self.seed_cycles[seed]))
-        logger.debug("Received stimulus marker with seed %s.", seed)
+        logger.debug("Received stimulus marker for seed %s.", seed)
 
     def send_prep_markers(self):
         """Marker to indicate the start and end the ramp on/ramp off of the heat stimulus.
@@ -281,7 +282,7 @@ class EventRecievingiMotions:
         imotions_event = f"E;1;TemperatureCurve;1;;;;TemperatureCurve;{temperature:.2f}\r\n"
         self._send_message(imotions_event)
         if debug:
-            logger.debug("Received the temperature %s.", temperature)
+            logger.debug("Received temperature: %s.", temperature)
 
     def send_ratings(self, rating, debug=False):
         """
@@ -290,7 +291,7 @@ class EventRecievingiMotions:
         imotions_event = f"E;1;RatingCurve;1;;;;RatingCurve;{rating:.2f}\r\n"
         self._send_message(imotions_event)
         if debug:
-            logger.debug("Received the rating %s.", rating)
+            logger.debug("Received rating: %s.", rating)
 
     def send_event_x_y(self, x, y):
         """
