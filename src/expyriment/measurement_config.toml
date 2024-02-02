@@ -8,14 +8,6 @@ bin_size_ms = 500
 element_color = [128, 64, 192]
 marker_color = [192, 64, 128]
 
-[dummy_participant]
-time_stamp = "2023-01-01 15:00:00"
-participant = "dummy"
-age = 20
-gender = "Female"
-temp_range = 3
-baseline_temp = 40.0
-
 [stimulus]
 seeds = [320, 43, 242, 320, 43, 242, 320, 43, 242, 320, 43, 242]
 minimal_desired_duration = 200
@@ -28,3 +20,11 @@ n_plateaus = 3
 
 [imotions]
 start_study_mode = "NormalPrompt"
+
+[dummy_participant]
+time_stamp = "2023-01-01 15:00:00"
+participant = "dummy"
+age = 20
+gender = "Female"
+temp_range = 3
+baseline_temp = 40.0
