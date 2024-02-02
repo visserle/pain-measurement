@@ -1,4 +1,5 @@
-welcome_1: |-
+welcome: 
+  1: |-
 
 
 
@@ -6,23 +7,11 @@ welcome_1: |-
 
 
 
-  Herzlich willkommen zum Experiment!
+    Herzlich willkommen zum Experiment!
 
 
-  Bitte drücken Sie die Leertaste.
-welcome_2: |-
-
-
-
-
-
-
-
-  Wir beginnen das Experiment mit einer Schmerz-Kalibrierung.
-
-
-  (Leertaste drücken, um fortzufahren)
-welcome_3: |-
+    Bitte drücken Sie die Leertaste.
+  2: |-
 
 
 
@@ -30,12 +19,24 @@ welcome_3: |-
 
 
 
-  Hierzu wärmen wir die Hautstelle an Ihrem Arm zuerst kurz auf.
-
-  Anschließend bestimmen wir, ab wann Sie leichte und starke Schmerzen verspüren.
+    Wir beginnen das Experiment mit einer Schmerz-Kalibrierung.
 
 
-  (Leertaste drücken, um fortzufahren)
+    (Leertaste drücken, um fortzufahren)
+  3: |-
+
+
+
+
+
+
+
+    Hierzu wärmen wir die Hautstelle an Ihrem Arm zuerst kurz auf.
+
+    Anschließend bestimmen wir, ab wann Sie leichte und starke Schmerzen verspüren.
+
+
+    (Leertaste drücken, um fortzufahren)
 info_preexposure: |-
   
 
@@ -61,23 +62,21 @@ question_preexposure: |-
   War einer dieser Reize für Sie schmerzhaft?
 
   (Drücken Sie "y" für Ja oder "n" für Nein.)
-info_vas70_1: |-
-  
+info_vas70:
+  1: |-
+    
 
 
 
 
 
 
-  Als Nächstes möchten wir herausfinden, ab wann Sie starke Schmerzen verspüren.
+    Als Nächstes möchten wir herausfinden, ab wann Sie starke Schmerzen verspüren.
 
 
-  (Leertaste drücken, um fortzufahren)
-info_vas70_2: |-
-  Dazu orientieren wir uns an einer Schmerz-Skala von 1 bis 10:
-
-
-
+    (Leertaste drücken, um fortzufahren)
+  2: |-
+    Dazu orientieren wir uns an einer Schmerz-Skala von 1 bis 10:
 
 
 
@@ -89,23 +88,26 @@ info_vas70_2: |-
 
 
 
-  Unser Ziel ist es, herauszufinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.
-
-  (Leertaste drücken, um fortzufahren)
-info_vas70_3: |-
-  
 
 
 
+    Unser Ziel ist es, herauszufinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.
+
+    (Leertaste drücken, um fortzufahren)
+  3: |-
+    
 
 
 
-  Aufgrund der Capsaicin-Creme ist Ihre Schmerzschwelle nach unten verlagert. Dadurch verspüren Sie schneller starken Schmerz.
-
-  Aber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.
 
 
-  (Leertaste drücken, um fortzufahren)
+
+    Aufgrund der Capsaicin-Creme ist Ihre Schmerzschwelle nach unten verlagert. Dadurch verspüren Sie schneller starken Schmerz.
+
+    Aber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.
+
+
+    (Leertaste drücken, um fortzufahren)
 question_vas70: |-
   
 
