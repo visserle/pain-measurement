@@ -1,0 +1,152 @@
+welcome:
+  1: |-
+    
+    
+
+
+    
+    
+    Willkommen zum Haupt-Experiment!
+    
+
+    Bitte drücken Sie die Leertaste.
+  2: |-
+
+
+
+
+
+
+
+    Mit diesem Experiment möchten wir mit Hilfe Ihrer Daten Schmerzen objektiv messbar machen.
+    
+
+    (Leertaste drücken, um fortzufahren)
+  3: |-
+
+
+
+
+
+
+
+    Dazu erhalten Sie im Folgenden Schmerzen mit schwankender Intensität über insgesamt 12 Blöcke á 4 Minuten.
+    
+    
+    (Leertaste drücken, um fortzufahren)
+  4: |-
+
+
+
+
+
+
+
+    Ihre Aufgabe ist es, Ihren Schmerz durchgehend zu bewerten.
+    Dies geschieht über eine Skala, die Sie auf der folgenden Seite sehen.
+
+    
+    (Leertaste drücken, um fortzufahren)
+instruction:
+  1: |-
+
+
+
+
+
+
+
+
+    (Leertaste drücken, um fortzufahren)
+  2: |-
+    Bitte bewegen Sie Ihren Mauszeiger auf der Skala hin und her!
+
+
+
+
+
+
+
+
+
+    (Leertaste drücken, um fortzufahren)
+  3: |-
+    Die Beschriftungen "Keine Schmerzen" und "Sehr starke Schmerzen" entsprechen dabei Ihren Werten aus der Kalibrierung.
+    
+    
+    
+    
+    
+
+    
+    
+    (Leertaste drücken, um fortzufahren)
+  4: |-
+    Bitte bewerten Sie Ihren Schmerz kontinuierlich, also ohne Pausen.
+    Nutzen Sie die gesamte Breite der Skala!
+
+
+
+
+
+
+
+
+
+
+    (Leertaste drücken, um fortzufahren)
+ready_set_go: |-
+
+
+
+
+
+
+
+  Als Nächstes startet das Experiment.
+  
+  Sollten Sie noch Fragen haben, richten Sie sich bitte jetzt an die Versuchsleitung.
+  
+  
+  (Leertaste drücken, um fortzufahren)
+next_trial: |-
+
+
+
+
+
+
+
+    Dieser Block ist geschafft.
+    
+    Nun wechseln wir die Haustelle am Arm.
+    
+    Bitte melden Sie sich bei der Versuchsleitung.
+    
+    
+    (Leertaste drücken, um fortzufahren)
+approve : |-
+
+
+
+
+
+
+
+  Sind Sie bereit für den nächsten Block?
+
+
+  (Leertaste drücken, um fortzufahren)
+bye: |-
+
+
+
+
+
+
+
+  Das Experiment ist vorbei.
+  
+  
+  
+  Vielen Dank für Ihre Teilnahme!

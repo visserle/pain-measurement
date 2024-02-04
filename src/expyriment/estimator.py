@@ -28,7 +28,7 @@ class BayesianEstimatorVAS:
     Example
     -------
     ```python
-    from src.experiments.calibration import BayesianEstimatorVAS
+    from src.expyriment.estimator import BayesianEstimatorVAS
 
     # Get estimate for VAS 50
     temp_start_vas50 = 40.0
@@ -144,7 +144,18 @@ class BayesianEstimatorVAS:
     def steps(self):
         return np.diff(self.temps)
 
-    def conduct_trial(self, response, trial=None):
+    def conduct_trial(self, response, trial) -> None:
+        """
+        Conducts a single estimation trial and updates internal states based on the response.
+
+        Parameters
+        ----------
+        response : str
+            Subject's response to the trial stimulus. Must be either "y" or "n".
+
+        trial : int
+            Trial number (0-indexed).
+        """
         # Collect the subject's response and define a cdf likelihood function based on it
         if response == "y":
             logger.info(
@@ -188,14 +199,18 @@ class BayesianEstimatorVAS:
         # Update the prior for the next iteration
         self.prior = np.copy(posterior)
 
-        if trial == self.trials - 1:  # last trial
-            logger.info(
-                "Calibration estimate for VAS %s: %s °C.", self.vas_value, self.get_estimate()
-            )
-            logger.info("Calibration steps were (°C): %s.", self.steps)
-            # warning if all steps were in the same direction
-            if np.all(np.diff(self.steps) >= 0) or np.all(np.diff(self.steps) < 0):
-                logger.error("Calibration steps were all in the same direction.")
+    def validate_steps(self) -> bool:
+        """
+        Validates whether the temperature steps were all in the same direction, which is a sign of a bad estimate.
+        """
+        return ~(np.all(self.steps >= 0) or np.all(self.steps <= 0))
 
-    def get_estimate(self):
+    def get_estimate(self) -> float:
+        """
+        Retrieves the final estimated temperature after all trials are conducted.
+        """
+        logger.info("Calibration estimate for VAS %s: %s °C.", self.vas_value, self.get_estimate())
+        logger.debug("Calibration steps were (°C): %s.", self.steps)
+        if self.validate_steps():
+            logger.error("Calibration steps were all in the same direction.")
         return self.temps[-1]

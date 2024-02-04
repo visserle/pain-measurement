@@ -11,7 +11,8 @@ src/models/mlp.py
 src/models/model.ipynb
 src/models/models.py
 src/models/models_2.py
-
+data
+Events
 
 # excluded for now
 /runs

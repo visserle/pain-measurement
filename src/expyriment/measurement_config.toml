@@ -1,0 +1,43 @@
+[thermoino]
+port = "COM7"
+mms_baseline = 28.0  # must be the same as in MMS
+mms_rate_of_rise = 10  # must be the same as in MMS
+bin_size_ms = 500
+
+[experiment]
+text_size = 40
+text_box_size = [1500, 900] 
+element_color = [128, 64, 192]
+marker_color = [192, 64, 128]
+
+[visual_analogue_scale]
+text_size = 40
+mouse_sampling_rate = 40
+bar_length = 600
+bar_thickness = 30
+bar_position = [0, 0]
+slider_width = 10
+slider_height = 90
+slider_color = [194, 24, 7]
+
+[stimulus]
+seeds = [280, 43, 242, 320, 43, 242, 320, 43, 242, 320, 43, 242]
+minimal_desired_duration = 200
+periods = [67, 20]  # periods are easier to handle than frequencies
+sample_rate = 5
+desired_big_decreases = [3, 20]
+random_periods = true
+plateau_duration = 20
+n_plateaus = 3
+
+[imotions]
+start_study_mode = "NormalPrompt"
+sample_rate = 30
+
+[dummy_participant]
+time_stamp = "2023-01-01 15:00:00"
+participant = "dummy"
+age = 20
+gender = "Female"
+temp_range = 3
+baseline_temp = 40.0

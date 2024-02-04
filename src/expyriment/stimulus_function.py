@@ -5,7 +5,7 @@
 # change criteria in add plateaus to absolute values based on the temperature range
 # maybe refactor into two classes with wave & sitmuli function
 
-"""Stimuli generation for the thermal pain experiment"""
+"""Stimulus generation for the thermal pain experiment"""
 
 import logging
 import math
@@ -17,9 +17,9 @@ import scipy.signal
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-class StimuliFunction:
+class StimulusFunction:
     """
-    The `StimuliFunction` class creates a wave-like pattern that can be used for various stimuli functions.
+    The `StimulusFunction` class creates a wave-like pattern that can be used for various stimuli functions.
 
     Its main attribute, `wave`, is a numpy array that is computed by adding a low-frequency baseline wave and
     a high-frequency modulation wave (optionally with varying periods) together. The resulting `wave` can be
@@ -35,7 +35,7 @@ class StimuliFunction:
     periods : numpy.array
         an array of periods of the sinusoidal waves, calculated as 1/frequency.
     temp_range : float
-        the temperature range for the stimuli function, from VAS 0 to VAS 70.
+        the temperature range for the stimulus function, from VAS 0 to VAS 70.
     amplitude_proportion : float
         the proportion of the amplitudes of the baseline and modulation.
     amplitudes : numpy.array
@@ -43,38 +43,38 @@ class StimuliFunction:
     baseline_temp : float
         the baseline temperature.
     minimal_desired_duration : float
-        the desired minimal duration for the vanilla stimuli function (without add_ methods)
+        the desired minimal duration for the vanilla stimulus function (without add_ methods)
     minimal_duration : float
-        the duration for the vanilla stimuli function (without add_ methods), calculated as a multiple of the period of the modulation.
+        the duration for the vanilla stimulus function (without add_ methods), calculated as a multiple of the period of the modulation.
         always use self.duration or self.wave.shape[0] / self.sample_rate to get the actual duration.
     duration (@property) : float
-        the actual, up-to-date duration of the stimuli function (wave)
+        the actual, up-to-date duration of the stimulus function (wave)
     sample_rate : int
-        the sample rate for the stimuli function.
+        the sample rate for the stimulus function.
     modulation_n_periods : float
         the number of periods for the modulation.
     random_periods : bool
         a flag to determine if the periods of the modulation is randomized.
     wave : numpy.array
-        the stimuli function, calculated as the sum of the baseline and the modulation.
+        the stimulus function, calculated as the sum of the baseline and the modulation.
     wave_dot (@property): numpy.array
-        the derivative of the stimuli function with respect to time (dx in seconds).
+        the derivative of the stimulus function with respect to time (dx in seconds).
     loc_maxima (@property): list
-        a list of peak temperatures (local maximas) in the stimuli function (i.e. self.wave).
+        a list of peak temperatures (local maximas) in the stimulus function (i.e. self.wave).
     loc_minima (@property): list
-        a list of local minima in the stimuli function.
+        a list of local minima in the stimulus function.
 
     Methods
     -------
     add_baseline_temp(baseline_temp):
-        Adds a baseline temperature to the stimuli function. Should be around VAS = 35.
+        Adds a baseline temperature to the stimulus function. Should be around VAS = 35.
         (handled in a seperate function to be able to reuse the same seed for different baseline temperatures)
     add_prolonged_extrema(time_to_be_added, percentage_of_extrema, prolong_type='loc_min'):
-        Adds prolonged extrema (either loc_maxima or loc_minima) to the stimuli function.
+        Adds prolonged extrema (either loc_maxima or loc_minima) to the stimulus function.
     add_plateaus(length, n_plateaus):
-        Adds plateaus to the stimuli function.
+        Adds plateaus to the stimulus function.
     generalize_big_decreases(length=None):
-        Generalizes big decreases in the stimuli function.
+        Generalizes big decreases in the stimulus function.
 
     Example
     -------
@@ -95,8 +95,8 @@ class StimuliFunction:
     plateau_duration = 20
     n_plateaus = 3
 
-    stimuli = (
-        StimuliFunction(
+    stimulus = (
+        StimulusFunction(
             minimal_desired_duration=minimal_desired_duration,
             frequencies=frequencies,
             temp_range=temp_range,
@@ -110,17 +110,17 @@ class StimuliFunction:
         .generalize_big_decreases()
     )
     ```
-        For more information on the resulting stimuli wave use:
-        >>> from stimuli_function import stimuli_extra
-        >>> _ = stimuli_extra(
-        ...     stimuli.wave, stimuli.wave_dot, stimuli.sample_rate, s_RoC=0.2, display_stats=True
+        For more information on the resulting stimulus wave use:
+        >>> from stimulus_function import stimulus_extra
+        >>> _ = stimulus_extra(
+        ...     stimulus.wave, stimulus.wave_dot, stimulus.sample_rate, s_RoC=0.2, display_stats=True
         ... )
 
 
     Notes
     -----
-    Inspecting the stimuli function is best done with a vanilla wave, i.e. without random periods or the add_ methods.
-    The function stimuli_extra can be used to plot the stimuli function with plotly.\n
+    Inspecting the stimulus function is best done with a vanilla wave, i.e. without random periods or the add_ methods.
+    The function stimulus_extra can be used to plot the stimulus function with plotly.\n
     _________________________________________________________________\n
     The usual range from pain threshold to pain tolerance is about 4 °C. \n
 
@@ -150,7 +150,7 @@ class StimuliFunction:
         seed=None,
     ):
         """
-        The constructor for StimuliFunction class.
+        The constructor for StimulusFunction class.
 
         Parameters
         ----------
@@ -159,7 +159,7 @@ class StimuliFunction:
         frequencies : list
             The frequencies of the sinusoidal waves, where [0] is the baseline and [1] the modulation.
         temp_range : float
-            The temperature range for the stimuli function, from VAS 0 to VAS 70.
+            The temperature range for the stimulus function, from VAS 0 to VAS 70.
         sample_rate : int, optional
             The sample rate of the wave.
         random_periods : bool, optional
@@ -196,7 +196,7 @@ class StimuliFunction:
         self.minimal_desired_duration = minimal_desired_duration
         self._calculate_minimal_duration()
 
-        # Further modifications to the stimuli function
+        # Further modifications to the stimulus function
         self.random_periods = random_periods
         self.check_decreases_flag = bool(desired_big_decreases)
         if self.check_decreases_flag:
@@ -210,7 +210,7 @@ class StimuliFunction:
         self._wave_dot = self.wave_dot
         self.baseline_temp = 0
         logger.debug(
-            f"Succesfully created stimuli function with seed {self.seed} and duration {self.duration}."
+            f"Succesfully created stimulus function with seed {self.seed} and duration {self.duration}."
         )
         if desired_big_decreases:
             logger.debug(
@@ -218,7 +218,7 @@ class StimuliFunction:
             )
 
     def _create_wave(self):
-        # Summing self.baseline and self.modulation to create the stimuli function self.wave
+        # Summing self.baseline and self.modulation to create the stimulus function self.wave
         counter = 0
         while True:
             self._create_baseline()
@@ -231,7 +231,7 @@ class StimuliFunction:
                 counter += 1
                 if counter > 1000:
                     raise ValueError(
-                        "Unable to create a stimuli function with the exact number and average length of big decreases within the given wave.\n"
+                        "Unable to create a stimulus function with the exact number and average length of big decreases within the given wave.\n"
                         "Take a look at the unmodified wave (without add_ methods, etc.) to get a feeling on what's possible.\n"
                         "Remember that we want to modify the wave without changing its duration so we can't just search for any number of big decreases or any average length.\n"
                     )
@@ -544,7 +544,7 @@ class StimuliFunction:
         return self
 
 
-def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
+def stimulus_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
     """
     For plotly graphing of f(x), f'(x), and labels. Also displays the number and length of cooling segments.
 
@@ -573,7 +573,7 @@ def stimuli_extra(f, f_dot, sample_rate, s_RoC, display_stats=True):
 
     Examples
     --------
-    >>> _ = stimuli_extra(stimuli.wave, stimuli.wave_dot, stimuli.sample_rate, s_RoC=0.2)
+    >>> _ = stimulus_extra(stimulus.wave, stimulus.wave_dot, stimulus.sample_rate, s_RoC=0.2)
     """
     import plotly.graph_objects as go
 

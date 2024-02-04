@@ -1,10 +1,11 @@
+import math
 import logging
 import time
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-class Thermoino:
+class ThermoinoDummy:
     """
     A dummy version of the Thermoino class for testing and debugging.
     This class rudimentarily mimics the behavior of the Thermoino without requiring an actual device.
@@ -19,39 +20,41 @@ class Thermoino:
         self.mms_rate_of_rise = mms_rate_of_rise
         self.connected = False
 
-        logger.warning("+++ Thermoino running in dummy mode +++")
+        logger.warning("+++ RUNNING IN DUMMY MODE +++")
 
     def connect(self):
         self.connected = True
-        logger.info("Thermoino (dummy) connected")
-        return self
+        logger.info("Connection established.")
 
     def close(self):
         self.connected = False
-        logger.debug("Thermoino (dummy) closed")
+        logger.debug("Connection closed.")
 
     def _send_command(self, *args):
-        return None
+        return "Dummy response."
 
     def diag(self):
-        return self._send_command('DIAG\n')
+        output = self._send_command('DIAG\n')
+        logger.info("Basic diagnostic information: %s.", output)
 
     def trigger(self):
-        return self._send_command('START\n')
+        self._send_command('START\n')
+        logger.debug("Triggered.")
 
     def set_temp(self, temp_target):
-        move_time_s = abs(temp_target - self.temp) / self.mms_rate_of_rise
+        move_time_us = round(((temp_target - self.temp) / self.mms_rate_of_rise) * 1e6)
+        duration_ms = math.ceil(abs(move_time_us / 1e3))
         self.temp = temp_target
         success = True
-        logging.debug("Thermoino (dummy) sets temperature to %s°C in %s seconds", temp_target, move_time_s)
-        return (self, move_time_s, success)
+        output = "OK_MOVE_SLOW"
+        logger.info("Change temperature to %s°C in %s s (%s).", temp_target, duration_ms / 1000, output)
+        return (duration_ms, success)
 
     def wait(self, duration):
         time.sleep(duration)
-        return self
 
 
-class ThermoinoComplexTimeCourses(Thermoino):
+class ThermoinoComplexTimeCoursesDummy(ThermoinoDummy):
     """
     A dummy version of the ThermoinoComplexTimeCourses class for testing and debugging.
     This class rudimentarily mimics the behavior of the Thermoino without requiring an actual device.
@@ -73,19 +76,19 @@ class ThermoinoComplexTimeCourses(Thermoino):
         # Implement the logic for creating CTC based on temp_course and sample_rate
         # For dummy purposes, simply set self.ctc to a simulated value
         self.ctc = [40] * 100  # Example simulated CTC
-        return self
+
 
     def load_ctc(self, debug=False):
         # Simulate loading CTC into the device
-        logger.debug("Thermoino (dummy) received the whole CTC.")
+        logger.debug("Loading CTC into Thermoino (dummy).")
         return self._send_command('LOADCTC\n', debug)
 
     def query_ctc(self, queryLvl, statAbort):
         return self._send_command(f'QUERYCTC;{queryLvl};{statAbort}\n')
     
     def prep_ctc(self):
-        prep_duration = 1
-        logger.debug("Thermoino (dummy) is ready to execute the CTC.")
+        prep_duration = 1000
+        logger.debug("Prepping CTC (dummy).")
         return (self, prep_duration)
  
     def exec_ctc(self):
@@ -95,5 +98,5 @@ class ThermoinoComplexTimeCourses(Thermoino):
     def flush_ctc(self):
         self.ctc = None
         self._send_command('FLUSHCTC\n')
-        return self
+
     
