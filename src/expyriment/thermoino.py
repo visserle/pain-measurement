@@ -385,7 +385,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     luigi.connect()
     luigi.init_ctc(bin_size_ms=500)
     luigi.create_ctc(
-        temp_course=stimuli.wave, sample_rate=stimuli.sample_rate, rate_of_rise_option="mms_program"
+        temp_course=stimulus.wave, sample_rate=stimulus.sample_rate
     )
     luigi.load_ctc()
     luigi.trigger()
@@ -483,6 +483,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
             rate_of_rise_adjusted = np.ceil(rate_of_rise_adjusted * 10) / 10
             # Update the rate of rise
             self.mms_rate_of_rise = rate_of_rise_adjusted
+            logger.info("Rate of rise adjusted to %s°C/s.", self.mms_rate_of_rise)
+            logger.warning("Make sure to update the MMS program accordingly.")
         else:
             if rate_of_rise_option != "mms_program":
                 raise ValueError(

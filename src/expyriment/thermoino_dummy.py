@@ -87,7 +87,7 @@ class ThermoinoComplexTimeCoursesDummy(ThermoinoDummy):
         return self._send_command(f'QUERYCTC;{queryLvl};{statAbort}\n')
     
     def prep_ctc(self):
-        prep_duration = 1
+        prep_duration = 1000
         logger.debug("Prepping CTC (dummy).")
         return (self, prep_duration)
  
