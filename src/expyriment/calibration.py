@@ -51,15 +51,17 @@ JITTER = random.randint(0, STIMULUS["iti_max_jitter"])
 
 # Create an argument parser
 parser = argparse.ArgumentParser(description="Run the pain-measurement experiment.")
-parser.add_argument("--thermoino", action="store_true", help="Enable Thermoino device")
-parser.add_argument("--participant", action="store_true", help="Use real participant data")
-parser.add_argument("--full_screen", action="store_true", help="Run in full screen mode")
-parser.add_argument("--full_stimuli", action="store_true", help="Use full stimuli duration")
+parser.add_argument("--thermoino", action="store_true", default=False, help="Enable Thermoino device")
+parser.add_argument("--participant", action="store_true", default=False, help="Use real participant data")
+parser.add_argument("--full_screen", action="store_true", default=False, help="Run in full screen mode")
+parser.add_argument("--full_stimuli", action="store_true", default=False, help="Use full stimuli duration")
 parser.add_argument("--all", action="store_true", help="Enable all features")
-
-# Parse the command-line arguments and adjust if --all is set
 args = parser.parse_args()
-args = [setattr(args, flag, True) for flag in vars(args)] if args.all else args
+
+# Adjust settings
+if args.all:
+    for flag in vars(args).keys():
+        setattr(args, flag, True)
 
 if not args.thermoino:
     Thermoino = ThermoinoDummy
@@ -83,7 +85,6 @@ io.defaults.eventfile_directory = (LOG_DIR / "events").as_posix()
 io.defaults.datafile_directory = (LOG_DIR / "data").as_posix()
 io.defaults.outputfile_time_stamp = True
 io.defaults.mouse_show_cursor = False
-
 
 # Experiment setup
 participant_info = ask_for_participant_info()
