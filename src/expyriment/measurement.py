@@ -33,18 +33,6 @@ from src.expyriment.utils import (
 from src.expyriment.visual_analogue_scale import VisualAnalogueScale
 from src.log_config import close_root_logging, configure_logging
 
-# Check if the script is run from the command line
-if len(sys.argv) > 1:
-    parser = argparse.ArgumentParser(description="Run the pain-measurement experiment.")
-    parser.add_argument("--dummy", action="store_true", help="Run in development mode.")
-    args = parser.parse_args()
-    DEVELOP_MODE = args.dummy
-else:
-    DEVELOP_MODE = True
-
-# ask_for_measurement_start()
-
-
 # Constants
 NAME = "measurement"
 EXP_NAME = f"pain-{NAME}"
@@ -57,17 +45,45 @@ PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
 configure_logging(stream_level=logging.DEBUG, file_path=log_file)
 
-
 # Load configurations and script
 config = load_configuration(CONFIG_PATH)
 SCRIPT = load_script(SCRIPT_PATH)
-
-# Experiment settings
 THERMOINO = config["thermoino"]
 EXPERIMENT = config["experiment"]
 STIMULUS = config["stimulus"]
 IMOTIONS = config["imotions"]
 VAS = config["visual_analogue_scale"]
+
+# Create an argument parser
+parser = argparse.ArgumentParser(description="Run the pain-measurement experiment.")
+parser.add_argument("--imotions", action="store_true", help="Enable iMotions integration")
+parser.add_argument("--thermoino", action="store_true", help="Enable Thermoino device")
+parser.add_argument("--participant", action="store_true", help="Use real participant data")
+parser.add_argument("--full_screen", action="store_true", help="Run in full screen mode")
+parser.add_argument("--full_stimuli", action="store_true", help="Use full stimuli duration")
+parser.add_argument("--all", action="store_true", help="Enable all features")
+args = parser.parse_args()
+
+# Adjust settings
+if args.all:
+    for flag in vars(args).keys():
+        setattr(args, flag, True)
+ 
+if not args.imotions:
+    EventRecievingiMotions = EventRecievingiMotionsDummy
+    RemoteControliMotions = RemoteControliMotionsDummy
+    ask_for_measurement_start = lambda: logging.info("Skip asking for measurement start because of dummy iMotions.")
+if not args.thermoino:
+    ThermoinoComplexTimeCourses = ThermoinoComplexTimeCoursesDummy
+if not args.participant:
+    read_last_participant = lambda x: config["dummy_participant"]
+    logging.info("Using dummy participant data.")
+if not args.full_screen:
+    control.defaults.window_size = (800, 600)
+    control.set_develop_mode(True)
+if not args.full_stimuli:
+    # TODO add short stimuli
+    logging.info("Using short stimulus and ITI durations.")
 
 
 # Expyriment defaults
@@ -79,23 +95,16 @@ io.defaults.eventfile_directory = (LOG_DIR / "events").as_posix()
 io.defaults.datafile_directory = (LOG_DIR / "data").as_posix()
 io.defaults.outputfile_time_stamp = True
 
-# Development mode settings
-if DEVELOP_MODE:
-    ThermoinoComplexTimeCourses = ThermoinoComplexTimeCoursesDummy
-    EventRecievingiMotions = EventRecievingiMotionsDummy
-    RemoteControliMotions = RemoteControliMotionsDummy
-    control.defaults.window_size = (800, 600)
-    control.set_develop_mode(True)
-    STIMULUS["iti_duration"] = 300
-    STIMULUS["stimulus_duration"] = 200
-    participant_info = config["dummy_participant"]
-else:
-    ThermoinoComplexTimeCourses = ThermoinoComplexTimeCoursesDummy  # NOTE REMOVE THIS
-    EventRecievingiMotions = EventRecievingiMotionsDummy  # NOTE REMOVE THIS
-    RemoteControliMotions = RemoteControliMotionsDummy  # NOTE REMOVE THIS
-    participant_info = read_last_participant(PARTICIPANTS_EXCEL_PATH)
-
+# Load participant info
 participant_info = read_last_participant(PARTICIPANTS_EXCEL_PATH)
+
+# Initialize iMotions
+imotions_control = RemoteControliMotions(study=EXP_NAME, participant_info=participant_info)
+imotions_control.connect()
+imotions_event = EventRecievingiMotions()
+imotions_event.connect()
+
+ask_for_measurement_start()
 
 # Experiment setup
 exp = design.Experiment(name=EXP_NAME)
@@ -131,11 +140,6 @@ for seed in STIMULUS["seeds"]:
     )
     stimuli_functions[seed] = stimulus
 
-# Initialize iMotions
-imotions_control = RemoteControliMotions(study=EXP_NAME, participant_info=participant_info)
-imotions_control.connect()
-imotions_event = EventRecievingiMotions()
-imotions_event.connect()
 
 # Initialize Thermoino
 thermoino = ThermoinoComplexTimeCourses(
@@ -146,15 +150,15 @@ thermoino = ThermoinoComplexTimeCourses(
 thermoino.connect()
 
 
-def prepare_complex_time_course(stimulus: StimulusFunction, thermoino_config: dict) -> float:
+def prepare_complex_time_course(stimulus_obj: StimulusFunction, thermoino_config: dict) -> float:
     thermoino.flush_ctc()
     thermoino.init_ctc(bin_size_ms=thermoino_config["bin_size_ms"])
-    thermoino.create_ctc(temp_course=stimulus.wave, sample_rate=stimulus.sample_rate)
-    thermoino.load_ctc()
+    thermoino.create_ctc(temp_course=stimulus_obj.wave, sample_rate=stimulus_obj.sample_rate)
+    thermoino.load_ctc() # This takes some time NOTE TODO
     thermoino.trigger()
-    prep_duration = thermoino.prep_ctc()[1]
+    prep_duration_ms = thermoino.prep_ctc()
     imotions_event.send_prep_markers()
-    return prep_duration
+    return prep_duration_ms
 
 def run_measurement_trial():
     # move if statement out of rate function
@@ -162,7 +166,7 @@ def run_measurement_trial():
     imotions_event.send_ratings(rating=vas_slider.rating)
     # send temperature
     # using different sample rate
-    
+
 
 def main():
     imotions_control.start_study(mode=IMOTIONS["start_study_mode"])
@@ -179,7 +183,7 @@ def main():
     for text in SCRIPT["instruction"].values():
         exp.keyboard.wait(
             K_SPACE,
-            callback_function=lambda: vas_slider.rate(instruction_textbox=text),
+            callback_function=lambda text=text: vas_slider.rate(instruction_textbox=text),
         )
 
     # Ready
