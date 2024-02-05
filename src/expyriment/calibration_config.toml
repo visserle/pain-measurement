@@ -1,9 +1,11 @@
 [thermoino]
-port = "COM7"
+port = "COM3" # COM7 on the experiment computer
 mms_baseline = 28.0  # must be the same as in MMS
 mms_rate_of_rise = 10.0  # must be the same as in MMS
 
 [experiment]
+text_size = 40
+text_box_size = [1500, 900]
 element_color = [128, 64, 192]
 cross_pain_color = [192, 64, 128]
 cross_size = [100, 100]
@@ -29,6 +31,6 @@ temp_start_vas0_offset = 3.0  # vas0 = vas70 - offset
 temp_std_vas0 = 1.5
 
 [dummy_participant]
-participant = "dummy"
+id = "dummy"
 age = 20
 gender = "Female"

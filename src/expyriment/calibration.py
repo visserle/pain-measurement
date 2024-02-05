@@ -78,7 +78,7 @@ if DEVELOP_MODE:
     STIMULUS["stimulus_duration"] = 200
     participant_info = config["dummy_participant"]
 else:
-    Thermoino = ThermoinoDummy  # NOTE REMOVE THIS
+    #Thermoino = ThermoinoDummy  # NOTE REMOVE THIS
     participant_info = ask_for_participant_info()
     STIMULUS["iti_duration"] = 300  # NOTE REMOVE THIS
     STIMULUS["stimulus_duration"] = 200  # NOTE REMOVE THIS
@@ -217,7 +217,7 @@ def main():
         temp_std=ESTIMATOR["temp_std_vas0"],
         trials=ESTIMATOR["trials_vas0"],
     )
-    success = run_estimation_trials(estimator=estimator_vas70)
+    success = run_estimation_trials(estimator=estimator_vas0)
     if not success:
         warn_signal()
         pass  # TODO
