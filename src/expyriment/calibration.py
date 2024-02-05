@@ -27,16 +27,6 @@ from src.expyriment.utils import (
 )
 from src.log_config import close_root_logging, configure_logging
 
-# Check if the script is run from the command line
-if len(sys.argv) > 1:
-    parser = argparse.ArgumentParser(description="Run the pain-calibration experiment.")
-    parser.add_argument("--dummy", action="store_true", help="Run in development mode.")
-    args = parser.parse_args()
-    DEVELOP_MODE = args.dummy
-else:
-    DEVELOP_MODE = True
-
-
 # Constants
 NAME = "calibration"
 EXP_NAME = f"pain-{NAME}"
@@ -45,7 +35,6 @@ SCRIPT_PATH = Path(f"src/expyriment/{NAME}_script.yaml")
 LOG_DIR = Path(f"runs/expyriment/{NAME}/")
 PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
 VAS_PICTURE_PATH = Path("src/expyriment/vas_picture.png").as_posix()
-
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
@@ -58,7 +47,33 @@ THERMOINO = config["thermoino"]
 EXPERIMENT = config["experiment"]
 ESTIMATOR = config["estimator"]
 STIMULUS = config["stimulus"]
-JITTER = random.randint(0, STIMULUS["iti_max_jitter"]) if not DEVELOP_MODE else 0
+JITTER = random.randint(0, STIMULUS["iti_max_jitter"])
+
+# Create an argument parser
+parser = argparse.ArgumentParser(description="Run the pain-measurement experiment.")
+parser.add_argument("--thermoino", action="store_true", help="Enable Thermoino device")
+parser.add_argument("--participant", action="store_true", help="Use real participant data")
+parser.add_argument("--full_screen", action="store_true", help="Run in full screen mode")
+parser.add_argument("--full_stimuli", action="store_true", help="Use full stimuli duration")
+parser.add_argument("--all", action="store_true", help="Enable all features")
+
+# Parse the command-line arguments and adjust if --all is set
+args = parser.parse_args()
+args = [setattr(args, flag, True) for flag in vars(args)] if args.all else args
+
+if not args.thermoino:
+    Thermoino = ThermoinoDummy
+if not args.participant:
+    ask_for_participant_info = lambda: config["dummy_participant"]
+    logging.info("Using dummy participant data.")
+if not args.full_screen:
+    control.defaults.window_size = (800, 600)
+    control.set_develop_mode(True)
+if not args.full_stimuli:
+    STIMULUS["iti_duration"] = 300
+    STIMULUS["stimulus_duration"] = 200
+    JITTER = 0
+    logging.info("Using short stimulus and ITI durations.")
 
 # Expyriment defaults
 design.defaults.experiment_background_colour = C_DARKGREY
@@ -69,21 +84,10 @@ io.defaults.datafile_directory = (LOG_DIR / "data").as_posix()
 io.defaults.outputfile_time_stamp = True
 io.defaults.mouse_show_cursor = False
 
-# Development mode settings
-if DEVELOP_MODE:
-    Thermoino = ThermoinoDummy
-    control.defaults.window_size = (800, 600)
-    control.set_develop_mode(True)
-    STIMULUS["iti_duration"] = 300
-    STIMULUS["stimulus_duration"] = 200
-    participant_info = config["dummy_participant"]
-else:
-    #Thermoino = ThermoinoDummy  # NOTE REMOVE THIS
-    participant_info = ask_for_participant_info()
-    STIMULUS["iti_duration"] = 300  # NOTE REMOVE THIS
-    STIMULUS["stimulus_duration"] = 200  # NOTE REMOVE THIS
 
 # Experiment setup
+participant_info = ask_for_participant_info()
+
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
