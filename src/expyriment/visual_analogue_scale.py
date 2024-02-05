@@ -16,21 +16,33 @@ class VisualAnalogueScale:
         self.slider_width = scale_1d_value(vas_config.get("slider_width", 10), self.screen_size)
         self.slider_height = scale_1d_value(vas_config.get("slider_height", 90), self.screen_size)
         self.slider_color = vas_config.get("slider_color", (194, 24, 7))
-        self.slider_initial_position = scale_2d_tuple(vas_config.get("slider_initial_position", (0, self.bar_position[1])), self.screen_size)
+        self.slider_initial_position = scale_2d_tuple(
+            vas_config.get("slider_initial_position", (0, self.bar_position[1])), self.screen_size
+        )
         self.slider_min_x = -(self.bar_length / 2)
         self.slider_max_x = self.bar_length / 2
         self.mouse_sampling_rate = vas_config.get("mouse_sampling_rate", 60)
         self.mouse_refresh = max(1000 // self.mouse_sampling_rate, 1)
-        self.label_text_size = scale_1d_value(vas_config.get("label_text_size", 40), self.screen_size)
-        self.label_text_box_size = scale_2d_tuple(vas_config.get("label_text_box_size", (250, 100)), self.screen_size)
-        self.label_right_position = vas_config.get("label_position", (self.slider_max_x, self.bar_position[1] - scale_1d_value(100, self.screen_size)))
-        self.label_left_position = self.label_right_position[0] - self.bar_length, self.label_right_position[1]
+        self.label_text_size = scale_1d_value(
+            vas_config.get("label_text_size", 40), self.screen_size
+        )
+        self.label_text_box_size = scale_2d_tuple(
+            vas_config.get("label_text_box_size", (250, 100)), self.screen_size
+        )
+        self.label_right_position = vas_config.get(
+            "label_position",
+            (self.slider_max_x, self.bar_position[1] - scale_1d_value(100, self.screen_size)),
+        )
+        self.label_left_position = (
+            self.label_right_position[0] - self.bar_length,
+            self.label_right_position[1],
+        )
 
         self.create_slider_elements()
 
         self.last_time = -1
         self.last_x_pos = -1
-        
+
         self.rating = 50
 
     def create_slider_elements(self):
@@ -98,11 +110,11 @@ class VisualAnalogueScale:
                 self.label_left,
                 self.label_right,
             ]
-            
+
             # Conditionally add the optional textbox
             if instruction_textbox:
                 stimuli_list.append(instruction_textbox)
-            
+
             # Plot all stimuli
             for stimulus in stimuli_list:
                 stimulus.plot(composition)

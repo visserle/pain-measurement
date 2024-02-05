@@ -31,7 +31,7 @@ class RemoteControliMotionsDummy:
         if self.connected:
             logger.info(
                 "Started recording participant %s (%s)", self.participant_info["id"], self.study
-                )
+            )
 
     def end_study(self):
         if self.connected:
@@ -46,11 +46,7 @@ class RemoteControliMotionsDummy:
             )
 
     def export_data(self, path):
-        logger.info(
-            "Exported data for participant %s to %s",
-            self.participant_info["id"],
-            path
-        )
+        logger.info("Exported data for participant %s to %s", self.participant_info["id"], path)
 
     def close(self):
         self.connected = False
@@ -64,7 +60,9 @@ class EventRecievingiMotionsDummy:
     """
 
     seed_cycles = {}
-    prep_cycle = itertools.cycle(["M;2;;;thermode_ramp_on;start;D;\r\n", "M;2;;;thermode_ramp_off;end;D;\r\n"])
+    prep_cycle = itertools.cycle(
+        ["M;2;;;thermode_ramp_on;start;D;\r\n", "M;2;;;thermode_ramp_off;end;D;\r\n"]
+    )
 
     def __init__(self):
         self.connected = False
@@ -87,9 +85,7 @@ class EventRecievingiMotionsDummy:
 
     def send_marker_with_time_stamp(self, marker_name):
         if self.connected:
-            logger.info(
-                "Received the marker %s at %s", marker_name, self.time_stamp
-            )
+            logger.info("Received the marker %s at %s", marker_name, self.time_stamp)
 
     def send_stimulus_markers(self, seed):
         """

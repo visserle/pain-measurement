@@ -1,6 +1,8 @@
+# FIXME !
 # work in progress
 
 # TODO
+# fix _check_big_decreases, loc_min, loc_max shape error!
 # update doc strings
 # change criteria in add plateaus to absolute values based on the temperature range
 # maybe refactor into two classes with wave & sitmuli function
@@ -384,7 +386,8 @@ class StimulusFunction:
         """
         loc_maxima_temps = self.wave[self.loc_maxima]
         loc_minima_temps = self.wave[self.loc_minima]
-        loc_extrema_temps_diff = loc_maxima_temps - loc_minima_temps
+        # FIXME TODO THIS STILL CAN LEAD TO A SHAPE ERROR!!! FIXME TODO
+        loc_extrema_temps_diff = loc_maxima_temps - loc_minima_temps 
         idx_big_decreases = np.where(((loc_extrema_temps_diff) > self.temp_criteria) == 1)[0]
 
         if self.number_of_big_decreases is not None:
@@ -466,7 +469,7 @@ class StimulusFunction:
         wave_new.extend(self.wave[idx_original:])
         self.wave = np.array(wave_new)
         logger.debug(
-            f"Generalized big decreases to have a length of {mean_length/self.sample_rate} seconds."
+            f"Generalized big decreases to have a length of {(mean_length/self.sample_rate):.2f} seconds."
         )
         return self
 

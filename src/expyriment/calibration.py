@@ -1,12 +1,10 @@
 # TODO
-# fix argesparse
 # fix formatting in script
 # maybe add error that calibration failed in the experiment slides
 
 import argparse
 import logging
 import random
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -50,11 +48,19 @@ STIMULUS = config["stimulus"]
 JITTER = random.randint(0, STIMULUS["iti_max_jitter"])
 
 # Create an argument parser
-parser = argparse.ArgumentParser(description="Run the pain-measurement experiment.")
-parser.add_argument("--thermoino", action="store_true", default=False, help="Enable Thermoino device")
-parser.add_argument("--participant", action="store_true", default=False, help="Use real participant data")
-parser.add_argument("--full_screen", action="store_true", default=False, help="Run in full screen mode")
-parser.add_argument("--full_stimuli", action="store_true", default=False, help="Use full stimuli duration")
+parser = argparse.ArgumentParser(description="Run the pain-calibration experiment.")
+parser.add_argument(
+    "--thermoino", action="store_true", default=False, help="Enable Thermoino device"
+)
+parser.add_argument(
+    "--participant", action="store_true", default=False, help="Use real participant data"
+)
+parser.add_argument(
+    "--full_screen", action="store_true", default=False, help="Run in full screen mode"
+)
+parser.add_argument(
+    "--full_stimuli", action="store_true", default=False, help="Use full stimuli duration"
+)
 parser.add_argument("--all", action="store_true", help="Enable all features")
 args = parser.parse_args()
 

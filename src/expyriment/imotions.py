@@ -239,9 +239,7 @@ class EventRecievingiMotions:
             self.sock.connect((self.HOST, self.PORT))
             logger.debug("Ready for event recieving.")
         except socket.error as exc:
-            logger.error(
-                "Not ready for event recieving. Error connecting to server:\n%s", exc
-            )
+            logger.error("Not ready for event recieving. Error connecting to server:\n%s", exc)
             raise iMotionsError(
                 f"Not ready for event recieving. Error connecting to server:\n{exc}"
             ) from exc

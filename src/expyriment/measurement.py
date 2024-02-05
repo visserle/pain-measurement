@@ -7,7 +7,6 @@
 
 import argparse
 import logging
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -68,11 +67,13 @@ args = parser.parse_args()
 if args.all:
     for flag in vars(args).keys():
         setattr(args, flag, True)
- 
+
 if not args.imotions:
     EventRecievingiMotions = EventRecievingiMotionsDummy
     RemoteControliMotions = RemoteControliMotionsDummy
-    ask_for_measurement_start = lambda: logging.info("Skip asking for measurement start because of dummy iMotions.")
+    ask_for_measurement_start = lambda: logging.info(
+        "Skip asking for measurement start because of dummy iMotions."
+    )
 if not args.thermoino:
     ThermoinoComplexTimeCourses = ThermoinoComplexTimeCoursesDummy
 if not args.participant:
@@ -154,11 +155,12 @@ def prepare_complex_time_course(stimulus_obj: StimulusFunction, thermoino_config
     thermoino.flush_ctc()
     thermoino.init_ctc(bin_size_ms=thermoino_config["bin_size_ms"])
     thermoino.create_ctc(temp_course=stimulus_obj.wave, sample_rate=stimulus_obj.sample_rate)
-    thermoino.load_ctc() # This takes some time NOTE TODO
+    thermoino.load_ctc()  # This takes some time NOTE TODO
     thermoino.trigger()
     prep_duration_ms = thermoino.prep_ctc()
     imotions_event.send_prep_markers()
     return prep_duration_ms
+
 
 def run_measurement_trial():
     # move if statement out of rate function
@@ -205,7 +207,6 @@ def main():
             callback_function=run_measurement_trial,
         )
         # End of trial
-        thermoino.temp = 38
         duration, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
         exp.clock.wait(duration, callback_function=lambda: vas_slider.rate())
         imotions_event.send_prep_markers()

@@ -1,5 +1,5 @@
-import math
 import logging
+import math
 import time
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
@@ -34,11 +34,11 @@ class ThermoinoDummy:
         return "Dummy response."
 
     def diag(self):
-        output = self._send_command('DIAG\n')
+        output = self._send_command("DIAG\n")
         logger.info("Basic diagnostic information: %s.", output)
 
     def trigger(self):
-        self._send_command('START\n')
+        self._send_command("START\n")
         logger.debug("Triggered.")
 
     def set_temp(self, temp_target):
@@ -47,7 +47,9 @@ class ThermoinoDummy:
         self.temp = temp_target
         success = True
         output = "OK_MOVE_SLOW"
-        logger.info("Change temperature to %s°C in %s s (%s).", temp_target, duration_ms / 1000, output)
+        logger.info(
+            "Change temperature to %s°C in %s s (%s).", temp_target, duration_ms / 1000, output
+        )
         return (duration_ms, success)
 
     def wait(self, duration):
@@ -70,33 +72,30 @@ class ThermoinoComplexTimeCoursesDummy(ThermoinoDummy):
 
     def init_ctc(self, bin_size_ms):
         self.bin_size_ms = bin_size_ms
-        return self._send_command(f'INITCTC;{bin_size_ms}\n')
+        return self._send_command(f"INITCTC;{bin_size_ms}\n")
 
     def create_ctc(self, *args, **kwargs):
         # Implement the logic for creating CTC based on temp_course and sample_rate
         # For dummy purposes, simply set self.ctc to a simulated value
         self.ctc = [40] * 100  # Example simulated CTC
 
-
     def load_ctc(self, debug=False):
         # Simulate loading CTC into the device
         logger.debug("Loading CTC into Thermoino (dummy).")
-        return self._send_command('LOADCTC\n', debug)
+        return self._send_command("LOADCTC\n", debug)
 
     def query_ctc(self, queryLvl, statAbort):
-        return self._send_command(f'QUERYCTC;{queryLvl};{statAbort}\n')
-    
+        return self._send_command(f"QUERYCTC;{queryLvl};{statAbort}\n")
+
     def prep_ctc(self):
         prep_duration = 1000
         logger.debug("Prepping CTC (dummy).")
         return prep_duration
- 
+
     def exec_ctc(self):
         exec_duration = self.bin_size_ms * len(self.ctc) / 1000
         return exec_duration
 
     def flush_ctc(self):
         self.ctc = None
-        self._send_command('FLUSHCTC\n')
-
-    
+        self._send_command("FLUSHCTC\n")

@@ -36,7 +36,7 @@ sample_rate = 30
 
 [dummy_participant]
 time_stamp = "2023-01-01 15:00:00"
-participant = "dummy"
+id = "dummy"
 age = 20
 gender = "Female"
 temp_range = 3
