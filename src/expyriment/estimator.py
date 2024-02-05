@@ -209,7 +209,8 @@ class BayesianEstimatorVAS:
         """
         Retrieves the final estimated temperature after all trials are conducted.
         """
-        logger.info("Calibration estimate for VAS %s: %s °C.", self.vas_value, self.get_estimate())
+        estimate = self.temps[-1]
+        logger.info("Calibration estimate for VAS %s: %s °C.", self.vas_value, estimate)
         logger.debug("Calibration steps were (°C): %s.", self.steps)
         if self.validate_steps():
             logger.error("Calibration steps were all in the same direction.")
