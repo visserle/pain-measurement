@@ -89,11 +89,11 @@ class ThermoinoComplexTimeCoursesDummy(ThermoinoDummy):
     def prep_ctc(self):
         prep_duration = 1000
         logger.debug("Prepping CTC (dummy).")
-        return (self, prep_duration)
+        return prep_duration
  
     def exec_ctc(self):
         exec_duration = self.bin_size_ms * len(self.ctc) / 1000
-        return (self, exec_duration)
+        return exec_duration
 
     def flush_ctc(self):
         self.ctc = None
