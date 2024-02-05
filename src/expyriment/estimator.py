@@ -199,19 +199,19 @@ class BayesianEstimatorVAS:
         # Update the prior for the next iteration
         self.prior = np.copy(posterior)
 
+        if trial == self.trials - 1:  # last trial
+            logger.info(
+                "Calibration estimate for VAS %s: %s °C.", self.vas_value, self.get_estimate()
+            )
+            logger.debug("Calibration steps were (°C): %s.", self.steps)
+            if self.validate_steps():
+                logger.error("Calibration steps were all in the same direction.")
+
     def validate_steps(self) -> bool:
         """
         Validates whether the temperature steps were all in the same direction, which is a sign of a bad estimate.
         """
         return ~(np.all(self.steps >= 0) or np.all(self.steps <= 0))
 
-    def get_estimate(self) -> float:
-        """
-        Retrieves the final estimated temperature after all trials are conducted.
-        """
-        estimate = self.temps[-1]
-        logger.info("Calibration estimate for VAS %s: %s °C.", self.vas_value, estimate)
-        logger.debug("Calibration steps were (°C): %s.", self.steps)
-        if self.validate_steps():
-            logger.error("Calibration steps were all in the same direction.")
+    def get_estimate(self):
         return self.temps[-1]
