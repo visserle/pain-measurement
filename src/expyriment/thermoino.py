@@ -556,24 +556,18 @@ class ThermoinoComplexTimeCourses(Thermoino):
         output = self._send_command(f"QUERYCTC;{queryLvl};{statAbort}\n")
         logger.info("Querying complex temperature course (CTC) information: %s.", output)
 
-    def prep_ctc(self):
+    def prep_ctc(self) -> float:
         """
         Prepare the CTC for the execution by setting the starting temperature. It returns the duration for the temperature to be reached but does not wait.
         This is seperate from exec_ctc to be able to use exec_ctc in a psychopy routine and control the exact length of the stimulation.
+        
+        Returns the duration in ms from the set_temp function.
         """
-        if not self.temp == self.temp_course_resampled[0]:
-            logger.info("Prepare the starting temperature of the CTC.")
-            prep_duration = round(
-                abs(self.temp - self.temp_course_resampled[0]) / self.mms_rate_of_rise, 1
-            )
-            # prep_duration += 0.5  # add 0.5 s to be sure FIXME bad idea
-            move_time_s = self.set_temp(self.temp_course_resampled[0])
-            # TODO check if move_time_s is the same as prep_duration
-            print("are they the same?")
-            print(move_time_s, "from set temp")
-            print(prep_duration, "from prep_ctc")
-        else:
-            prep_duration = 0
+        logger.info("Prepare the starting temperature of the CTC.")
+        prep_duration, success = self.set_temp(self.temp_course_resampled[0])
+        # prep_duration += 0.5  # not sure if we really need this TODO
+        if not success:
+            logger.error("Preparing complex temperature course (CTC) failed.")
         return prep_duration
 
     def exec_ctc(self):
