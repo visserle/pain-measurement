@@ -31,7 +31,7 @@ plateau_duration = 20
 n_plateaus = 3
 
 [imotions]
-sample_rate = 30
+sample_rate = 10
 start_study_mode = "NormalPrompt"
 
 [dummy_participant]

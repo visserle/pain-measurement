@@ -17,6 +17,7 @@ from expyriment.misc.constants import C_DARKGREY, K_SPACE
 from src.expyriment.imotions import EventRecievingiMotions, RemoteControliMotions
 from src.expyriment.imotions_dummy import EventRecievingiMotionsDummy, RemoteControliMotionsDummy
 from src.expyriment.participant_data import read_last_participant
+from src.expyriment.rate_limiter import RateLimiter
 from src.expyriment.stimulus_function import StimulusFunction
 from src.expyriment.thermoino import ThermoinoComplexTimeCourses
 from src.expyriment.thermoino_dummy import ThermoinoComplexTimeCoursesDummy
@@ -27,7 +28,6 @@ from src.expyriment.utils import (
     prepare_script,
     scale_1d_value,
     scale_2d_tuple,
-    warn_signal,
 )
 from src.expyriment.visual_analogue_scale import VisualAnalogueScale
 from src.log_config import close_root_logging, configure_logging
@@ -102,6 +102,7 @@ participant_info = read_last_participant(PARTICIPANTS_EXCEL_PATH)
 # Initialize iMotions
 imotions_control = RemoteControliMotions(study=EXP_NAME, participant_info=participant_info)
 imotions_control.connect()
+event_limiter = RateLimiter(rate=IMOTIONS["sample_rate"])
 imotions_event = EventRecievingiMotions()
 imotions_event.connect()
 
@@ -163,11 +164,10 @@ def prepare_complex_time_course(stimulus_obj: StimulusFunction, thermoino_config
 
 
 def run_measurement_trial():
-    # move if statement out of rate function
     vas_slider.rate()
-    imotions_event.send_ratings(rating=vas_slider.rating)
+    if event_limiter.is_allowed(current_time=exp.clock.time):
+        imotions_event.send_ratings(rating=vas_slider.rating)
     # send temperature
-    # using different sample rate
 
 
 def main():
