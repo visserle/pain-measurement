@@ -11,8 +11,8 @@ element_color = [128, 64, 192]
 marker_color = [192, 64, 128]
 
 [visual_analogue_scale]
+sample_rate = 60
 text_size = 40
-mouse_sampling_rate = 40
 bar_length = 600
 bar_thickness = 30
 bar_position = [0, 0]
@@ -31,8 +31,8 @@ plateau_duration = 20
 n_plateaus = 3
 
 [imotions]
-start_study_mode = "NormalPrompt"
 sample_rate = 30
+start_study_mode = "NormalPrompt"
 
 [dummy_participant]
 time_stamp = "2023-01-01 15:00:00"

@@ -3,6 +3,7 @@
 
 from expyriment import stimuli
 
+from src.expyriment.rate_limiter import RateLimiter
 from src.expyriment.utils import scale_1d_value, scale_2d_tuple
 
 
@@ -10,9 +11,13 @@ class VisualAnalogueScale:
     def __init__(self, experiment, vas_config: dict):
         self.experiment = experiment
         self.screen_size = self.experiment.screen.size
+        
+        self.rate_limiter = RateLimiter(vas_config.get("sample_rate", 60))
+        
         self.bar_length = scale_1d_value(vas_config.get("bar_length", 600), self.screen_size)
         self.bar_thickness = scale_1d_value(vas_config.get("bar_thickness", 30), self.screen_size)
         self.bar_position = scale_2d_tuple(vas_config.get("bar_position", (0, 0)), self.screen_size)
+        
         self.slider_width = scale_1d_value(vas_config.get("slider_width", 10), self.screen_size)
         self.slider_height = scale_1d_value(vas_config.get("slider_height", 90), self.screen_size)
         self.slider_color = vas_config.get("slider_color", (194, 24, 7))
@@ -21,8 +26,7 @@ class VisualAnalogueScale:
         )
         self.slider_min_x = -(self.bar_length / 2)
         self.slider_max_x = self.bar_length / 2
-        self.mouse_sampling_rate = vas_config.get("mouse_sampling_rate", 60)
-        self.mouse_refresh = max(1000 // self.mouse_sampling_rate, 1)
+                
         self.label_text_size = scale_1d_value(
             vas_config.get("label_text_size", 40), self.screen_size
         )
@@ -86,12 +90,8 @@ class VisualAnalogueScale:
             stimulus.preload(inhibit_ogl_compress=True)  # otherwise the text will be blurry
 
     def rate(self, instruction_textbox=None):
-        # NOTE we can easily move the if statement outside of the method if needed in the future
-        if (
-            ((current_time := self.experiment.clock.time) % self.mouse_refresh == 0)
-            and (current_time != self.last_time)  # TODO not needed with low refresh rate
-            # and ((current_x_pos := self.experiment.mouse.position[0]) != last_x_pos) NOTE
-        ):
+        current_time = self.experiment.clock.time
+        if self.rate_limiter.is_allowed(current_time):
             # Adjust slider position based on mouse X-coordinate within boundaries
             current_x_pos = self.experiment.mouse.position[0]
             slider_x = max(min(current_x_pos, self.slider_max_x), self.slider_min_x)
@@ -120,8 +120,7 @@ class VisualAnalogueScale:
                 stimulus.plot(composition)
             composition.present()
 
-            # Update time and position
-            self.last_time = current_time
+            # Update position
             self.last_x_pos = current_x_pos
 
             self.rating = rating
