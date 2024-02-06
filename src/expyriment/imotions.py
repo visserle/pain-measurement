@@ -291,6 +291,15 @@ class EventRecievingiMotions:
         if debug:
             logger.debug("Received rating: %s.", rating)
 
+    def send_data(self, temperature, rating, debug=False):
+        """
+        Send temperature and rating data to iMotions in one go. 
+        """
+        imotions_data = f"E;1;CustomCurves;1;;;;CustomCurves;{temperature};{rating}\r\n"
+        self.send_messages(imotions_data)
+        if debug:
+            logger.debug("Received temperature: %s, rating: %s.", temperature, rating)
+
     def send_event_x_y(self, x, y):
         """
         Shows up as two seperate data streams in iMotions, based on a generic xml class.
