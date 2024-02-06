@@ -166,8 +166,12 @@ def prepare_complex_time_course(stimulus_obj: StimulusFunction, thermoino_config
 def run_measurement_trial():
     vas_slider.rate()
     if event_limiter.is_allowed(current_time=exp.clock.time):
-        imotions_event.send_ratings(rating=vas_slider.rating)
-    # send temperature
+        imotions_event.send_data(
+            temperature=stimuli_functions[seed].wave[
+                round(exp.clock.time / 1000 * STIMULUS["sample_rate"])
+            ],
+            rating=vas_slider.rating,
+        )
 
 
 def main():

@@ -1,0 +1,6 @@
+  <EventSource Id="CustomCurves" Version="1" Name="CustomCurves">
+    <Sample Id="CustomCurves" Name="CustomCurves">
+      <Field Id="Temperature" Range="Variable"></Field>
+      <Field Id="Rating" Range="Fixed" Min="0" Max="100"></Field>
+    </Sample>
+  </EventSource>
