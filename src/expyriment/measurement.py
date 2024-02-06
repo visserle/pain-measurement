@@ -55,12 +55,12 @@ VAS = config["visual_analogue_scale"]
 
 # Create an argument parser
 parser = argparse.ArgumentParser(description="Run the pain-measurement experiment.")
-parser.add_argument("--imotions", action="store_true", help="Enable iMotions integration")
-parser.add_argument("--thermoino", action="store_true", help="Enable Thermoino device")
-parser.add_argument("--participant", action="store_true", help="Use real participant data")
-parser.add_argument("--full_screen", action="store_true", help="Run in full screen mode")
-parser.add_argument("--full_stimuli", action="store_true", help="Use full stimuli duration")
-parser.add_argument("--all", action="store_true", help="Enable all features")
+parser.add_argument("-i", "--imotions", action="store_true", help="Enable iMotions integration")
+parser.add_argument("-t", "--thermoino", action="store_true", help="Enable Thermoino device")
+parser.add_argument("-p", "--participant", action="store_true", help="Use real participant data")
+parser.add_argument("-f", "--full_screen", action="store_true", help="Run in full screen mode")
+parser.add_argument("-s", "--full_stimuli", action="store_true", help="Use full stimuli duration")
+parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
 args = parser.parse_args()
 
 # Adjust settings
@@ -80,7 +80,7 @@ if not args.participant:
     read_last_participant = lambda x: config["dummy_participant"]
     logging.info("Using dummy participant data.")
 if not args.full_screen:
-    control.defaults.window_size = (800, 600)
+    control.defaults.window_size = (1600, 900)
     control.set_develop_mode(True)
 if not args.full_stimuli:
     # TODO add short stimuli
@@ -156,7 +156,7 @@ def prepare_complex_time_course(stimulus_obj: StimulusFunction, thermoino_config
     thermoino.flush_ctc()
     thermoino.init_ctc(bin_size_ms=thermoino_config["bin_size_ms"])
     thermoino.create_ctc(temp_course=stimulus_obj.wave, sample_rate=stimulus_obj.sample_rate)
-    thermoino.load_ctc()  # This takes some time NOTE TODO
+    thermoino.load_ctc()  # This takes some time NOTE TODO add waiting screen
     thermoino.trigger()
     prep_duration_ms = thermoino.prep_ctc()
     imotions_event.send_prep_markers()
@@ -203,14 +203,13 @@ def main():
         )
         # Measurement
         exp.clock.wait_seconds(
-            time_sec=1,  # stimuli_functions[STIMULUS["seeds"][0]].duration,
+            time_sec=stimuli_functions[STIMULUS["seeds"][0]].duration,
             callback_function=run_measurement_trial,
         )
         # End of trial
         duration, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
         exp.clock.wait(duration, callback_function=lambda: vas_slider.rate())
         imotions_event.send_prep_markers()
-
         if idx == len(STIMULUS["seeds"]) - 1:
             break
         SCRIPT["next_trial"].present()
