@@ -12,13 +12,14 @@ marker_color = [192, 64, 128]
 
 [visual_analogue_scale]
 sample_rate = 60
-text_size = 40
-bar_length = 600
-bar_thickness = 30
+bar_length = 800
+bar_thickness = 20
 bar_position = [0, 0]
 slider_width = 10
-slider_height = 90
+slider_height = 60
 slider_color = [194, 24, 7]
+label_text_size = 40
+label_text_box_size = [250, 100]
 
 [stimulus]
 seeds = [280, 43, 242, 320, 43, 242, 320, 43, 242, 320, 43, 242]
@@ -35,7 +36,7 @@ sample_rate = 10
 start_study_mode = "NormalPrompt"
 
 [dummy_participant]
-time_stamp = "2023-01-01 15:00:00"
+time_stamp = "2024-01-01 15:00:00"
 id = "dummy"
 age = 20
 gender = "Female"

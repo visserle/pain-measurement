@@ -191,14 +191,16 @@ def main():
         logging.info("Preexposure was not painful.")
     exp.clock.wait(1000)
 
-    # VAS 70 estimation TODO restructe script
-    SCRIPT["info_vas70"][1].present()
-    exp.keyboard.wait(K_SPACE)
-    vas_picture.present(clear=True, update=False)
-    SCRIPT["info_vas70"][2].present(clear=False, update=True)
-    exp.keyboard.wait(K_SPACE)
-    SCRIPT["info_vas70"][3].present()
-    exp.keyboard.wait(K_SPACE)
+    # VAS 70 estimation
+    for key, text in SCRIPT["info_vas70"].items():
+        # Show VAS picture
+        if key == 2:
+            vas_picture.present(clear=True, update=False)
+            text.present(clear=False, update=True)
+            exp.keyboard.wait(K_SPACE)
+            continue
+        text.present()
+        exp.keyboard.wait(K_SPACE)
 
     estimator_vas70 = BayesianEstimatorVAS(
         vas_value=70,
@@ -214,6 +216,7 @@ def main():
 
     # Pain threshold (VAS 0) estimation
     SCRIPT["info_vas0"].present()
+    exp.keyboard.wait(K_SPACE)
     estimator_vas0 = BayesianEstimatorVAS(
         vas_value=0,
         temp_start=estimator_vas70.get_estimate() - ESTIMATOR["temp_start_vas0_offset"],
@@ -229,7 +232,7 @@ def main():
     if participant_info["vas70"] - participant_info["vas0"] < 1:
         logging.warning("VAS 70 and VAS 0 are too close together.")
         warn_signal()
-        pass
+        pass # TODO
 
     # End of Experiment
     SCRIPT["bye"].present()
