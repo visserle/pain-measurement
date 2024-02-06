@@ -11,13 +11,13 @@ class VisualAnalogueScale:
     def __init__(self, experiment, vas_config: dict):
         self.experiment = experiment
         self.screen_size = self.experiment.screen.size
-        
+
         self.rate_limiter = RateLimiter(vas_config.get("sample_rate", 60))
-        
-        self.bar_length = scale_1d_value(vas_config.get("bar_length", 600), self.screen_size)
+
+        self.bar_length = scale_1d_value(vas_config.get("bar_length", 800), self.screen_size)
         self.bar_thickness = scale_1d_value(vas_config.get("bar_thickness", 30), self.screen_size)
         self.bar_position = scale_2d_tuple(vas_config.get("bar_position", (0, 0)), self.screen_size)
-        
+
         self.slider_width = scale_1d_value(vas_config.get("slider_width", 10), self.screen_size)
         self.slider_height = scale_1d_value(vas_config.get("slider_height", 90), self.screen_size)
         self.slider_color = vas_config.get("slider_color", (194, 24, 7))
@@ -26,7 +26,7 @@ class VisualAnalogueScale:
         )
         self.slider_min_x = -(self.bar_length / 2)
         self.slider_max_x = self.bar_length / 2
-                
+
         self.label_text_size = scale_1d_value(
             vas_config.get("label_text_size", 40), self.screen_size
         )
@@ -35,7 +35,7 @@ class VisualAnalogueScale:
         )
         self.label_right_position = vas_config.get(
             "label_position",
-            (self.slider_max_x, self.bar_position[1] - scale_1d_value(100, self.screen_size)),
+            (self.slider_max_x, self.bar_position[1] - scale_1d_value(150, self.screen_size)),
         )
         self.label_left_position = (
             self.label_right_position[0] - self.bar_length,
@@ -87,17 +87,16 @@ class VisualAnalogueScale:
             self.label_left,
             self.label_right,
         ]:
-            stimulus.preload(inhibit_ogl_compress=True)  # otherwise the text will be blurry
+            stimulus.preload(inhibit_ogl_compress=True)
 
     def rate(self, instruction_textbox=None):
+        # Check if the rate limiter allows a new rating
         current_time = self.experiment.clock.time
         if self.rate_limiter.is_allowed(current_time):
             # Adjust slider position based on mouse X-coordinate within boundaries
             current_x_pos = self.experiment.mouse.position[0]
             slider_x = max(min(current_x_pos, self.slider_max_x), self.slider_min_x)
-            rating = int(
-                (slider_x - self.slider_min_x) / (self.slider_max_x - self.slider_min_x) * 100
-            )
+            rating = (slider_x - self.slider_min_x) / (self.slider_max_x - self.slider_min_x) * 100
 
             # Create a composition to show multiple elements simultaneously
             composition = stimuli.BlankScreen()
@@ -111,9 +110,9 @@ class VisualAnalogueScale:
                 self.label_right,
             ]
 
-            # Conditionally add the optional textbox
+            # Add optional textbox if provided (OpenGL must be inhibited)
             if instruction_textbox:
-                stimuli_list.append(instruction_textbox)
+                stimuli_list.append(instruction_textbox) 
 
             # Plot all stimuli
             for stimulus in stimuli_list:
@@ -122,5 +121,27 @@ class VisualAnalogueScale:
 
             # Update position
             self.last_x_pos = current_x_pos
-
             self.rating = rating
+
+
+if __name__ == "__main__":
+    from expyriment import control, design, stimuli
+
+    control.defaults.window_size = (800, 600)
+    control.set_develop_mode(True)
+    exp = design.Experiment()
+    control.initialize(exp)
+
+    # Default VAS configuration
+    vas_config = {}
+    vas_slider = VisualAnalogueScale(exp, vas_config)
+    print(vas_slider.rate_limiter.rate)
+
+    # Start the experiment
+    control.start(skip_ready_screen=True)
+
+    # Rating loop
+    exp.clock.wait(3000, callback_function=lambda: vas_slider.rate())
+
+    # End the experiment
+    control.end()
