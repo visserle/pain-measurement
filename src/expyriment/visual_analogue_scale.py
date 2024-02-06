@@ -31,11 +31,14 @@ class VisualAnalogueScale:
             vas_config.get("label_text_size", 40), self.screen_size
         )
         self.label_text_box_size = scale_2d_tuple(
-            vas_config.get("label_text_box_size", (250, 100)), self.screen_size
+            vas_config.get(
+                "label_text_box_size", (self.label_text_size * 14, self.label_text_size * 6)
+            ),  # scaled to the text size
+            self.screen_size,
         )
-        self.label_right_position = vas_config.get(
-            "label_position",
-            (self.slider_max_x, self.bar_position[1] - scale_1d_value(150, self.screen_size)),
+        self.label_right_position = (
+            self.slider_max_x,
+            self.bar_position[1] - scale_1d_value(150, self.screen_size),
         )
         self.label_left_position = (
             self.label_right_position[0] - self.bar_length,
@@ -50,7 +53,7 @@ class VisualAnalogueScale:
         self.rating = 50
 
     def create_slider_elements(self):
-        # Create the bar, ends, and slider
+        # Create the bar, ends, slider and labels
         self.bar = stimuli.Rectangle(
             (self.bar_length, self.bar_thickness), position=self.bar_position
         )
@@ -78,7 +81,7 @@ class VisualAnalogueScale:
             text_size=self.label_text_size,
         )
 
-        # Preload stimuli for efficiency
+        # Preload stimuli for efficiency (OpenGL compression needs to be inhibited)
         for stimulus in [
             self.bar,
             self.bar_end_left,
@@ -112,7 +115,7 @@ class VisualAnalogueScale:
 
             # Add optional textbox if provided (OpenGL must be inhibited)
             if instruction_textbox:
-                stimuli_list.append(instruction_textbox) 
+                stimuli_list.append(instruction_textbox)
 
             # Plot all stimuli
             for stimulus in stimuli_list:
@@ -127,6 +130,7 @@ class VisualAnalogueScale:
 if __name__ == "__main__":
     from expyriment import control, design, stimuli
 
+    # Initialize the experiment
     control.defaults.window_size = (800, 600)
     control.set_develop_mode(True)
     exp = design.Experiment()

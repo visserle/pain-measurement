@@ -49,11 +49,11 @@ JITTER = random.randint(0, STIMULUS["iti_max_jitter"])
 
 # Create an argument parser
 parser = argparse.ArgumentParser(description="Run the pain-calibration experiment.")
-parser.add_argument("--thermoino", action="store_true", help="Enable Thermoino device")
-parser.add_argument("--participant", action="store_true", help="Use real participant data")
-parser.add_argument("--full_screen", action="store_true", help="Run in full screen mode")
-parser.add_argument("--full_stimuli", action="store_true", help="Use full stimuli duration")
-parser.add_argument("--all", action="store_true", help="Enable all features")
+parser.add_argument("-t", "--thermoino", action="store_true", help="Enable Thermoino device")
+parser.add_argument("-p", "--participant", action="store_true", help="Use real participant data")
+parser.add_argument("-f", "--full_screen", action="store_true", help="Run in full screen mode")
+parser.add_argument("-s", "--full_stimuli", action="store_true", help="Use full stimuli duration")
+parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
 args = parser.parse_args()
 
 # Adjust settings
