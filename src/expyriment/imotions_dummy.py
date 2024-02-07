@@ -2,6 +2,8 @@ import itertools
 import logging
 from datetime import datetime
 
+from src.expyriment.rate_limiter import RateLimiter
+
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
@@ -64,9 +66,11 @@ class EventRecievingiMotionsDummy:
         ["M;2;;;thermode_ramp_on;start;D;\r\n", "M;2;;;thermode_ramp_off;end;D;\r\n"]
     )
 
-    def __init__(self):
+    def __init__(self, imotions_config: dict):
         self.connected = False
         logger.warning("+++ iMotions Event Receiver running in dummy mode +++")
+        self.sample_rate = imotions_config.get("sample_rate", 6)
+        self.rate_limiter = RateLimiter(self.sample_rate)
 
     @property
     def time_stamp(self):
@@ -116,13 +120,15 @@ class EventRecievingiMotionsDummy:
         if self.connected:
             logger.debug("Received rating: %s", rating)
             
-    def send_data(self, temperature, rating, debug=True):
+    def send_data_rate_limited(self, timestamp, temperature, rating, debug=True):
         """
         Send temperature and rating data to iMotions in one go. 
         """
-        # imotions_data = f"E;1;CustomCurves;1;;;;CustomCurves;{temperature};{rating}\r\n"
-        if debug:
-            logger.debug("Received temperature: %s, rating: %s.", temperature, rating)
+        if self.rate_limiter.is_allowed(timestamp):
+            imotions_data = f"E;1;CustomCurves;1;;;;CustomCurves;{temperature};{rating}\r\n"
+            self._send_message(imotions_data)
+            if debug:
+                logger.debug("Received temperature: %s, rating: %s.", temperature, rating)
 
     def send_event_x_y(self, x, y):
         if self.connected:

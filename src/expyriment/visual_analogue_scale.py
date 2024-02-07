@@ -12,7 +12,7 @@ class VisualAnalogueScale:
         self.experiment = experiment
         self.screen_size = self.experiment.screen.size
 
-        self.rate_limiter = RateLimiter(vas_config.get("sample_rate", 60))
+        self.rate_limiter = RateLimiter(vas_config.get("sample_rate", float("inf")))
 
         self.bar_length = scale_1d_value(vas_config.get("bar_length", 800), self.screen_size)
         self.bar_thickness = scale_1d_value(vas_config.get("bar_thickness", 30), self.screen_size)
@@ -47,9 +47,8 @@ class VisualAnalogueScale:
 
         self.create_slider_elements()
 
-        self.last_time = -1
+        # Initialize the last x position and the rating
         self.last_x_pos = -1
-
         self.rating = 50
 
     def create_slider_elements(self):
@@ -92,10 +91,14 @@ class VisualAnalogueScale:
         ]:
             stimulus.preload(inhibit_ogl_compress=True)
 
-    def rate(self, instruction_textbox=None):
+    def rate(self, instruction_textbox=None, timestamp=None):
+        # Use the provided timestamp if given, otherwise, retrieve from experiment
+        if timestamp is None:
+            timestamp = self.experiment.clock.time
+
         # Check if the rate limiter allows a new rating
-        current_time = self.experiment.clock.time
-        if self.rate_limiter.is_allowed(current_time):
+        timestamp = self.experiment.clock.time
+        if self.rate_limiter.is_allowed(timestamp):
             # Adjust slider position based on mouse X-coordinate within boundaries
             current_x_pos = self.experiment.mouse.position[0]
             slider_x = max(min(current_x_pos, self.slider_max_x), self.slider_min_x)
@@ -125,6 +128,7 @@ class VisualAnalogueScale:
             # Update position
             self.last_x_pos = current_x_pos
             self.rating = rating
+            return rating
 
 
 if __name__ == "__main__":
@@ -139,13 +143,12 @@ if __name__ == "__main__":
     # Default VAS configuration
     vas_config = {}
     vas_slider = VisualAnalogueScale(exp, vas_config)
-    print(vas_slider.rate_limiter.rate)
 
     # Start the experiment
     control.start(skip_ready_screen=True)
 
     # Rating loop
-    exp.clock.wait(3000, callback_function=lambda: vas_slider.rate())
+    exp.clock.wait(3000, callback_function=lambda: print("Rating:",vas_slider.rate()))
 
     # End the experiment
     control.end()

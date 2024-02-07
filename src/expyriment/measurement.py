@@ -33,11 +33,10 @@ from src.expyriment.visual_analogue_scale import VisualAnalogueScale
 from src.log_config import close_root_logging, configure_logging
 
 # Constants
-NAME = "measurement"
-EXP_NAME = f"pain-{NAME}"
-CONFIG_PATH = Path(f"src/expyriment/{NAME}_config.toml")
-SCRIPT_PATH = Path(f"src/expyriment/{NAME}_script.yaml")
-LOG_DIR = Path(f"runs/expyriment/{NAME}/")
+EXP_NAME = "pain-measurement"
+CONFIG_PATH = Path("src/expyriment/measurement_config.toml")
+SCRIPT_PATH = Path("src/expyriment/measurement_script.yaml")
+LOG_DIR = Path("runs/expyriment/measurement/")
 PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
 
 # Configure logging
@@ -54,13 +53,13 @@ IMOTIONS = config["imotions"]
 VAS = config["visual_analogue_scale"]
 
 # Create an argument parser
-parser = argparse.ArgumentParser(description="Run the pain-measurement experiment.")
-parser.add_argument("-i", "--imotions", action="store_true", help="Enable iMotions integration")
-parser.add_argument("-t", "--thermoino", action="store_true", help="Enable Thermoino device")
-parser.add_argument("-p", "--participant", action="store_true", help="Use real participant data")
+parser = argparse.ArgumentParser(description="Run the pain-measurement experiment. Dry by default.")
+parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
 parser.add_argument("-f", "--full_screen", action="store_true", help="Run in full screen mode")
 parser.add_argument("-s", "--full_stimuli", action="store_true", help="Use full stimuli duration")
-parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
+parser.add_argument("-p", "--participant", action="store_true", help="Use real participant data")
+parser.add_argument("-t", "--thermoino", action="store_true", help="Enable Thermoino device")
+parser.add_argument("-i", "--imotions", action="store_true", help="Enable iMotions integration")
 args = parser.parse_args()
 
 # Adjust settings
@@ -68,24 +67,23 @@ if args.all:
     for flag in vars(args).keys():
         setattr(args, flag, True)
 
+if not args.full_screen:
+    control.defaults.window_size = (1600, 900)
+    control.set_develop_mode(True)
+if not args.full_stimuli:
+    # TODO add short stimuli
+    logging.info("Using short stimuli.")
+if not args.participant:
+    read_last_participant = lambda x: config["dummy_participant"]
+    logging.info("Using dummy participant data.")
+if not args.thermoino:
+    ThermoinoComplexTimeCourses = ThermoinoComplexTimeCoursesDummy
 if not args.imotions:
     EventRecievingiMotions = EventRecievingiMotionsDummy
     RemoteControliMotions = RemoteControliMotionsDummy
     ask_for_measurement_start = lambda: logging.info(
         "Skip asking for measurement start because of dummy iMotions."
     )
-if not args.thermoino:
-    ThermoinoComplexTimeCourses = ThermoinoComplexTimeCoursesDummy
-if not args.participant:
-    read_last_participant = lambda x: config["dummy_participant"]
-    logging.info("Using dummy participant data.")
-if not args.full_screen:
-    control.defaults.window_size = (1600, 900)
-    control.set_develop_mode(True)
-if not args.full_stimuli:
-    # TODO add short stimuli
-    logging.info("Using short stimulus and ITI durations.")
-
 
 # Expyriment defaults
 design.defaults.experiment_background_colour = C_DARKGREY
@@ -103,7 +101,7 @@ participant_info = read_last_participant(PARTICIPANTS_EXCEL_PATH)
 imotions_control = RemoteControliMotions(study=EXP_NAME, participant_info=participant_info)
 imotions_control.connect()
 event_limiter = RateLimiter(rate=IMOTIONS["sample_rate"])
-imotions_event = EventRecievingiMotions()
+imotions_event = EventRecievingiMotions(imotions_config=IMOTIONS)
 imotions_event.connect()
 
 ask_for_measurement_start()
@@ -164,14 +162,16 @@ def prepare_complex_time_course(stimulus_obj: StimulusFunction, thermoino_config
 
 
 def run_measurement_trial():
-    vas_slider.rate()
-    if event_limiter.is_allowed(current_time=exp.clock.time):
-        imotions_event.send_data(
-            temperature=stimuli_functions[seed].wave[
-                round(exp.clock.time / 1000 * STIMULUS["sample_rate"])
-            ],
-            rating=vas_slider.rating,
-        )
+    # Runs rate limited in the callback function
+    current_time = exp.clock.time
+    vas_slider.rate(timestamp=current_time)
+    imotions_event.send_data_rate_limited(
+        timestamp=current_time,
+        temperature=stimuli_functions[seed].wave[
+            round(exp.clock.time / 1000 * STIMULUS["sample_rate"])
+        ],
+        rating=vas_slider.rating,
+    )
 
 
 def main():
@@ -200,14 +200,12 @@ def main():
     for idx, seed in enumerate(STIMULUS["seeds"]):
         # Preperation
         exp.clock.wait(
-            waiting_time=prepare_complex_time_course(
-                stimuli_functions[STIMULUS["seeds"][0]], THERMOINO
-            ),
+            waiting_time=prepare_complex_time_course(stimuli_functions[seed], THERMOINO),
             callback_function=lambda: vas_slider.rate(),
         )
         # Measurement
         exp.clock.wait_seconds(
-            time_sec=stimuli_functions[STIMULUS["seeds"][0]].duration,
+            time_sec=stimuli_functions[seed].duration,
             callback_function=run_measurement_trial,
         )
         # End of trial

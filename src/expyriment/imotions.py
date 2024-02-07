@@ -13,6 +13,8 @@ import socket
 import time
 from datetime import datetime
 
+from src.expyriment.rate_limiter import RateLimiter
+
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
@@ -220,13 +222,15 @@ class EventRecievingiMotions:
     HOST = "localhost"
     PORT = 8089  # default port for iMotions event recieving
 
-    def __init__(self):
+    def __init__(self, imotions_config: dict):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._time_stamp = self.time_stamp  # use self.time_stamp to get the current time stamp
         self.seed_cycles = {}  # class variable to keep track of seed cycles (start and end stimulus markers)
         self.prep_cycle = itertools.cycle(
             ["M;2;;;thermode_ramp_on;;D;\r\n", "M;2;;;thermode_ramp_off;;D;\r\n"]
         )
+        self.sampling_rate = imotions_config.get("sampling_rate", 60)
+        self.rate_limiter = RateLimiter(self.sampling_rate)
 
     @property
     def time_stamp(self):
@@ -291,14 +295,15 @@ class EventRecievingiMotions:
         if debug:
             logger.debug("Received rating: %s.", rating)
 
-    def send_data(self, temperature, rating, debug=False):
+    def send_data_rate_limited(self, timestamp, temperature, rating, debug=False):
         """
-        Send temperature and rating data to iMotions in one go. 
+        Send temperature and rating data to iMotions in one go.
         """
-        imotions_data = f"E;1;CustomCurves;1;;;;CustomCurves;{temperature};{rating}\r\n"
-        self.send_messages(imotions_data)
-        if debug:
-            logger.debug("Received temperature: %s, rating: %s.", temperature, rating)
+        if self.rate_limiter.is_allowed(timestamp):
+            imotions_data = f"E;1;CustomCurves;1;;;;CustomCurves;{temperature};{rating}\r\n"
+            self._send_message(imotions_data)
+            if debug:
+                logger.debug("Received temperature: %s, rating: %s.", temperature, rating)
 
     def send_event_x_y(self, x, y):
         """
