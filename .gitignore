@@ -17,17 +17,8 @@ Events
 # excluded for now
 /runs
 notebooks/_stuff.ipynb
-references/psychopy/devices.md
-references/psychopy/SOP.md
-references/psychopy/modules.md
 notebooks/10_skorch_doctor.ipynb
-references/psychopy/scripts.md
-src/psychopy/calibration/+++ DO NOT IMPROVE CODE +++
-src/psychopy/measurement/+++ DO NOT IMPROVE CODE +++
 plan.md
-run_psychopy_calibration.bat
-run_psychopy_measurement.bat
-
 
 # exclude data from source control by default
 /data/external

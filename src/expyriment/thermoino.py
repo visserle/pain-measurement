@@ -3,7 +3,6 @@
 
 # TODO
 # - Fix query function
-# - fix prep_ctc, and set_temp
 
 import math
 import logging
@@ -559,7 +558,6 @@ class ThermoinoComplexTimeCourses(Thermoino):
     def prep_ctc(self) -> float:
         """
         Prepare the CTC for the execution by setting the starting temperature. It returns the duration for the temperature to be reached but does not wait.
-        This is seperate from exec_ctc to be able to use exec_ctc in a psychopy routine and control the exact length of the stimulation.
         
         Returns the duration in ms from the set_temp function.
         """

@@ -26,11 +26,10 @@ from src.expyriment.utils import (
 from src.log_config import close_root_logging, configure_logging
 
 # Constants
-NAME = "calibration"
-EXP_NAME = f"pain-{NAME}"
-CONFIG_PATH = Path(f"src/expyriment/{NAME}_config.toml")
-SCRIPT_PATH = Path(f"src/expyriment/{NAME}_script.yaml")
-LOG_DIR = Path(f"runs/expyriment/{NAME}/")
+EXP_NAME = "pain-calibration"
+CONFIG_PATH = Path("src/expyriment/calibration_config.toml")
+SCRIPT_PATH = Path("src/expyriment/calibration_script.yaml")
+LOG_DIR = Path("runs/expyriment/calibration/")
 PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
 VAS_PICTURE_PATH = Path("src/expyriment/vas_picture.png").as_posix()
 
@@ -48,12 +47,12 @@ STIMULUS = config["stimulus"]
 JITTER = random.randint(0, STIMULUS["iti_max_jitter"])
 
 # Create an argument parser
-parser = argparse.ArgumentParser(description="Run the pain-calibration experiment.")
-parser.add_argument("-t", "--thermoino", action="store_true", help="Enable Thermoino device")
-parser.add_argument("-p", "--participant", action="store_true", help="Use real participant data")
+parser = argparse.ArgumentParser(description="Run the pain-calibration experiment. Dry by default.")
+parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
 parser.add_argument("-f", "--full_screen", action="store_true", help="Run in full screen mode")
 parser.add_argument("-s", "--full_stimuli", action="store_true", help="Use full stimuli duration")
-parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
+parser.add_argument("-p", "--participant", action="store_true", help="Record and save participant data")
+parser.add_argument("-t", "--thermoino", action="store_true", help="Enable Thermoino device")
 args = parser.parse_args()
 
 # Adjust settings
@@ -61,11 +60,6 @@ if args.all:
     for flag in vars(args).keys():
         setattr(args, flag, True)
 
-if not args.thermoino:
-    Thermoino = ThermoinoDummy
-if not args.participant:
-    ask_for_participant_info = lambda: config["dummy_participant"]
-    logging.info("Using dummy participant data.")
 if not args.full_screen:
     control.defaults.window_size = (800, 600)
     control.set_develop_mode(True)
@@ -74,6 +68,12 @@ if not args.full_stimuli:
     STIMULUS["stimulus_duration"] = 200
     JITTER = 0
     logging.info("Using short stimulus and ITI durations.")
+if not args.participant:
+    ask_for_participant_info = lambda: config["dummy_participant"]
+    add_participant_info = lambda *args, **kwargs: None
+    logging.info("Using dummy participant data.")
+if not args.thermoino:
+    Thermoino = ThermoinoDummy
 
 # Expyriment defaults
 design.defaults.experiment_background_colour = C_DARKGREY
@@ -132,12 +132,12 @@ def run_preexposure_trials():
         iti_duration = STIMULUS["iti_duration"] if idx != 0 else STIMULUS["iti_duration_short"]
         exp.clock.wait(iti_duration + JITTER)
         thermoino.trigger()
-        time_for_ramp_up, _ = thermoino.set_temp(temp)
+        time_to_ramp_up, _ = thermoino.set_temp(temp)
         cross["pain"].present()
-        exp.clock.wait(STIMULUS["stimulus_duration"] + time_for_ramp_up)
-        time_for_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
+        exp.clock.wait(STIMULUS["stimulus_duration"] + time_to_ramp_up)
+        time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
         cross["idle"].present()
-        exp.clock.wait(time_for_ramp_down)
+        exp.clock.wait(time_to_ramp_down)
 
 
 def run_estimation_trials(estimator: BayesianEstimatorVAS):
@@ -146,12 +146,12 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
         cross["idle"].present()
         exp.clock.wait(STIMULUS["iti_duration"] + JITTER)
         thermoino.trigger()
-        time_for_ramp_up, _ = thermoino.set_temp(estimator.get_estimate())
+        time_to_ramp_up, _ = thermoino.set_temp(estimator.get_estimate())
         cross["pain"].present()
-        exp.clock.wait(STIMULUS["stimulus_duration"] + time_for_ramp_up)
-        time_for_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
+        exp.clock.wait(STIMULUS["stimulus_duration"] + time_to_ramp_up)
+        time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
         cross["idle"].present()
-        exp.clock.wait(time_for_ramp_down)
+        exp.clock.wait(time_to_ramp_down)
 
         SCRIPT[f"question_vas{estimator.vas_value}"].present()
         found, _ = exp.keyboard.wait(keys=[K_y, K_n])

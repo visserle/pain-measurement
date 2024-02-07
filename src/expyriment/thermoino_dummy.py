@@ -81,7 +81,9 @@ class ThermoinoComplexTimeCoursesDummy(ThermoinoDummy):
 
     def load_ctc(self, debug=False):
         # Simulate loading CTC into the device
-        logger.debug("Loading CTC into Thermoino (dummy).")
+        logger.debug("Loading CTC into Thermoino (dummy).... (sleep 1s)")
+        time.sleep(1)
+        logger.debug("Loaded CTC into Thermoino (dummy).")
         return self._send_command("LOADCTC\n", debug)
 
     def query_ctc(self, queryLvl, statAbort):

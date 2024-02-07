@@ -26,7 +26,7 @@ class RemoteControliMotions:
     """
     This class provides an interface to control the iMotions software remotely based on the iMotions Remote Control API.
 
-    The class is designed to be integrated within a PsychoPy experiment, allowing for the initiation of studies, sending of commands, and receiving responses from the iMotions software.
+    The class is designed to be integrated within an experiment, allowing for the initiation of studies, sending of commands, and receiving responses from the iMotions software.
 
     Methods:
     --------
@@ -43,12 +43,11 @@ class RemoteControliMotions:
     Example Usage:
     --------------
     ```python
-    from src.experiments.imotions import RemoteControliMotions
+    from src.experyment.imotions import RemoteControliMotions
 
     imotions = RemoteControliMotions(
         study="StudyName", participant_info={"participant": "P001", "age": 20, "gender": "Female"
     )
-    # in a psychopy experiment use expName and expInfo['participant']
     imotions.connect()
     imotions.start_study()
     # run the experiment ...
@@ -202,16 +201,12 @@ class EventRecievingiMotions:
     Notes:
     ------
     - The class interfaces with iMotions using either a UDP or TCP network connection. For this class TCP is used.
-    - Event reception in iMotions is enabled using the Global Settings dialog within the API tab.
-    - The incoming data packet must conform to a specific specification. When a packet is received, it's processed and checked against the registry of configured event sources.
     - iMotions can receive data from many event sources, and each event source can support multiple sample types. An additional event source definition file (XML text file) is used to describe the samples that can be received from a source.
-    - This class does not work as a context manager, because we need to send events every frame in the psychopy experiment. The connection to iMotions should be managed manually using the connect() and close() methods.
-
 
     Example Usage:
     --------------
     ```python
-    imotions_events = EventRecievingiMotions()
+    imotions_events = EventRecievingiMotions(imotions_config={"sampling_rate": 10})
     imotions_events.connect()
     send_stimulus_markers(seed=9)  # sends a start stimulus marker for seed 9
     send_stimulus_markers(seed=9)  # can be called again to send an end stimulus marker for seed 9

@@ -109,14 +109,6 @@ def _complete_participant_info(participant_info: dict) -> dict:
 def read_last_participant(file_path) -> dict:
     """
     Returns information about the last participant from the participants.xlsx file.
-
-    Example for usage in psychopy:
-    -------
-    ```python
-    from participants import read_last_participant
-
-    participant_info = read_last_participant()
-    ```
     """
     last_row = pd.read_excel(file_path).iloc[-1]
     participant_info = last_row.to_dict()

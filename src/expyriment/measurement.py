@@ -156,12 +156,12 @@ def prepare_complex_time_course(stimulus_obj: StimulusFunction, thermoino_config
     thermoino.create_ctc(temp_course=stimulus_obj.wave, sample_rate=stimulus_obj.sample_rate)
     thermoino.load_ctc()  # This takes some time NOTE TODO add waiting screen
     thermoino.trigger()
-    prep_duration_ms = thermoino.prep_ctc()
+    time_to_ramp_up = thermoino.prep_ctc()
     imotions_event.send_prep_markers()
-    return prep_duration_ms
+    return time_to_ramp_up
 
 
-def run_measurement_trial():
+def get_vas_rating():
     # Runs rate limited in the callback function
     current_time = exp.clock.time
     vas_slider.rate(timestamp=current_time)
@@ -206,11 +206,11 @@ def main():
         # Measurement
         exp.clock.wait_seconds(
             time_sec=stimuli_functions[seed].duration,
-            callback_function=run_measurement_trial,
+            callback_function=get_vas_rating,
         )
         # End of trial
-        duration, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
-        exp.clock.wait(duration, callback_function=lambda: vas_slider.rate())
+        time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
+        exp.clock.wait(time_to_ramp_down, callback_function=lambda: vas_slider.rate())
         imotions_event.send_prep_markers()
         if idx == len(STIMULUS["seeds"]) - 1:
             break

@@ -1,5 +1,6 @@
 # FIXME !
 # work in progress
+# simply use normalization for the temperature range
 
 # TODO
 # fix _check_big_decreases, loc_min, loc_max shape error!

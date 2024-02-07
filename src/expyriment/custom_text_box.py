@@ -1,4 +1,4 @@
-"""Simple expyriment text box with no leading whitespace stripping."""
+"""Simple expyriment text box without leading whitespace stripping."""
 
 import re
 from expyriment.stimuli import TextBox
