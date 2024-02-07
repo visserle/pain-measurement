@@ -204,12 +204,14 @@ class BayesianEstimatorVAS:
                 "Calibration estimate for VAS %s: %s °C.", self.vas_value, self.get_estimate()
             )
             logger.debug("Calibration steps were (°C): %s.", self.steps)
-            if self.validate_steps():
+            if not self.validate_steps():
                 logger.error("Calibration steps were all in the same direction.")
 
     def validate_steps(self) -> bool:
         """
         Validates whether the temperature steps were all in the same direction, which is a sign of a bad estimate.
+
+        True if the steps are not all in the same direction, False otherwise.
         """
         return ~(np.all(self.steps >= 0) or np.all(self.steps <= 0))
 
