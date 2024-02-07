@@ -109,7 +109,7 @@ class Thermoino:
     # List all available serial ports
     list_com_ports()
 
-    port = None  # e.g. "COM12"
+    port = "COM7"
 
     luigi = Thermoino(
         port=port,
@@ -373,7 +373,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     # List all available serial ports
     list_com_ports()
 
-    port = None  # e.g. "COM12"
+    port = "COM7"
     luigi = ThermoinoComplexTimeCourses(
         port=port,
         mms_baseline=32,  # has to be the same as in MMS
@@ -459,7 +459,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         Creates / modifies the following attributes (self.):\n
         `temp_course_duration` : `int`
             Duration of the temperature course [s].
-        `temp_course_resampled` : `np.array`
+        `temp_course_resampled` : `np.array` # TODO update, we only need start and end FIXME all doc strings
             Resampled temperature course (based on bin_size_ms) used to calculate the CTC.
         `rate_of_rise` : `int`
             The rate of rise of temperature [°C/s].
@@ -472,7 +472,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
         # Resample the temperature course according to the bin size:
         # i.e. for a 100 s stimuli with a bin size of 500 ms we'd need 200 bins á 500 ms
         temp_course_resampled = temp_course[:: int(sample_rate / (1000 / self.bin_size_ms))]
-        self.temp_course_resampled = temp_course_resampled
+        self.temp_course_start = round(temp_course_resampled[0], 2)
+        self.temp_course_end = round(temp_course_resampled[-1], 2)
         temp_course_resampled_diff = np.gradient(temp_course_resampled)
 
         if rate_of_rise_option == "adjusted":
@@ -562,7 +563,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         Returns the duration in ms from the set_temp function.
         """
         logger.info("Prepare the starting temperature of the CTC.")
-        prep_duration, success = self.set_temp(self.temp_course_resampled[0])
+        prep_duration, success = self.set_temp(self.temp_course_start)
         # prep_duration += 0.5  # not sure if we really need this TODO
         if not success:
             logger.error("Preparing complex temperature course (CTC) failed.")
@@ -572,7 +573,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         """
         Execute the CTC on the Thermoino device.
         """
-        if self.temp != self.temp_course_resampled[0]:
+        if self.temp != self.temp_course_start:
             logger.error(
                 "Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first."
             )
@@ -584,7 +585,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         output = self._send_command("EXECCTC\n")
         if output in OkCodes.__members__:
             # Update the temperature to the last temperature of the CTC
-            self.temp = round(self.temp_course_resampled[-1], 2)
+            self.temp = self.temp_course_end
             logger.info("Complex temperature course (CTC) executed: %s.", output)
             logger.debug("This will take %s s to finish.", exec_duration)
             logger.debug("Temperature after execution: %s°C.", self.temp)
