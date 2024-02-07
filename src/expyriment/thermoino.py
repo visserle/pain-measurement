@@ -12,6 +12,7 @@ from enum import Enum
 import numpy as np
 import serial
 import serial.tools.list_ports
+from scipy import signal
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -292,7 +293,7 @@ class Thermoino:
         duration : float
             The duration to sleep in seconds.
         """
-        duration_s = duration_ms / 1000
+        duration_s = round(duration_ms / 1000, 2)
         logger.warning("Sleeping for %s s using time.sleep.", duration_s)
         time.sleep(duration_s)
 
@@ -418,7 +419,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
         self.bin_size_ms = None
         self.temp_course = None
         self.temp_course_duration = None
-        self.temp_course_resampled = None
+        self.temp_course_start = None
+        self.temp_course_end = None
         self.ctc = None
 
     def init_ctc(self, bin_size_ms):
@@ -475,29 +477,13 @@ class ThermoinoComplexTimeCourses(Thermoino):
             The created CTC.
         """
 
-        self.temp_course_duration = temp_course.shape[0] / sample_rate
-        # Resample the temperature course according to the bin size:
-        # i.e. for a 100 s stimuli with a bin size of 500 ms we'd need 200 bins á 500 ms
-        temp_course_resampled = temp_course[:: int(sample_rate / (1000 / self.bin_size_ms))]
+        new_sample_rate = (1000 / self.bin_size_ms)
+        resample_ratio = sample_rate / new_sample_rate
+
+        temp_course_resampled = signal.resample(temp_course, int(temp_course.shape[0] / resample_ratio))
         self.temp_course_start = round(temp_course_resampled[0], 2)
         self.temp_course_end = round(temp_course_resampled[-1], 2)
-        temp_course_resampled_diff = np.gradient(temp_course_resampled)
-
-        if rate_of_rise_option == "adjusted":
-            # determine adjusted rate of rise (has to be updated in MMS accordingly)
-            rate_of_rise_adjusted = max(temp_course_resampled_diff * (1000 / self.bin_size_ms))
-            # round up to .1°C precision
-            rate_of_rise_adjusted = np.ceil(rate_of_rise_adjusted * 10) / 10
-            # Update the rate of rise
-            self.mms_rate_of_rise = rate_of_rise_adjusted
-            logger.info("Rate of rise adjusted to %s°C/s.", self.mms_rate_of_rise)
-            logger.warning("Make sure to update the MMS program accordingly.")
-        else:
-            if rate_of_rise_option != "mms_program":
-                raise ValueError(
-                    "Thermoino rate of raise value has to be either mms_program or adjusted."
-                )
-
+        temp_course_resampled_diff = np.diff(temp_course_resampled)
         mms_rate_of_rise_ms = self.mms_rate_of_rise / 1e3
         # scale to mms_rate_of_rise (in milliseconds)
         temp_course_resampled_diff_binned = temp_course_resampled_diff / mms_rate_of_rise_ms
@@ -571,7 +557,6 @@ class ThermoinoComplexTimeCourses(Thermoino):
         """
         logger.info("Prepare the starting temperature of the complex temperature course (CTC).")
         prep_duration, success = self.set_temp(self.temp_course_start)
-        # prep_duration += 0.5  # not sure if we really need this TODO
         if not success:
             logger.error("Preparing complex temperature course (CTC) failed.")
         return prep_duration
@@ -588,13 +573,13 @@ class ThermoinoComplexTimeCourses(Thermoino):
                 "Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first."
             )
 
-        exec_duration_ms = self.temp_course_duration * 1000
+        exec_duration_ms = round(self.temp_course_duration * 1000, 2)
         output = self._send_command("EXECCTC\n")
         if output in OkCodes.__members__:
             # Update the temperature to the last temperature of the CTC
             self.temp = self.temp_course_end
             logger.info("Complex temperature course (CTC) started.")
-            logger.debug("This will take %s s to finish.", exec_duration_ms / 1000)
+            logger.debug("This will take %s s to finish.", round(exec_duration_ms / 1000, 2))
             logger.debug("Temperature after execution: %s°C.", self.temp)
         elif output in ErrorCodes.__members__:
             logger.error("Executing complex temperature course (CTC) failed: %s.", output)
@@ -608,6 +593,6 @@ class ThermoinoComplexTimeCourses(Thermoino):
         """
         output = self._send_command("FLUSHCTC\n")
         if output in OkCodes.__members__:
-            logger.info("Flushed complex temperature course (CTC) from memory.")
+            logger.debug("Flushed complex temperature course (CTC) from memory.")
         elif output in ErrorCodes.__members__:
             logger.error("Flushing complex temperature course (CTC) failed: %s.", output)
