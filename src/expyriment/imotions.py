@@ -130,7 +130,7 @@ class RemoteControliMotions:
         if self._check_status() != 0:
             logger.error("Not ready to start study.")
             raise iMotionsError("Not ready to start study.")
-        start_study_query = f"R;3;;RUN;{self.study};{self.participant_info['id']};Age={self.age} Gender={self.gender};{mode}\r\n"
+        start_study_query = f"R;3;;RUN;{self.study};{self.participant_info['id']};Age={self.participant_info['age']} Gender={self.participant_info['gender']};{mode}\r\n"
         response = self._send_and_receive(start_study_query)
         # e.g. "13;RemoteControl;RUN;;-1;;1;"
         logger.info(
@@ -298,7 +298,12 @@ class EventRecievingiMotions:
             imotions_data = f"E;1;CustomCurves;1;;;;CustomCurves;{temperature};{rating}\r\n"
             self._send_message(imotions_data)
             if debug:
-                logger.debug("Received temperature: %s, rating: %s.", temperature, rating)
+                logger.debug(
+                    "Time: %s. Received temperature: %s, rating: %s.",
+                    timestamp,
+                    temperature,
+                    rating,
+                )
 
     def send_event_x_y(self, x, y):
         """

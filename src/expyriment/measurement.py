@@ -163,15 +163,17 @@ def prepare_complex_time_course(stimulus_obj: StimulusFunction, thermoino_config
 
 def get_vas_rating():
     # Runs rate limited in the callback function
-    current_time = exp.clock.time
-    vas_slider.rate(timestamp=current_time)
+    stopped_time = exp.clock.stopwatch_time
+    vas_slider.rate(timestamp=stopped_time)
     imotions_event.send_data_rate_limited(
-        timestamp=current_time,
+        timestamp=stopped_time,
         temperature=stimuli_functions[seed].wave[
-            round(exp.clock.time / 1000 * STIMULUS["sample_rate"])
+            int(stopped_time / 1000 * STIMULUS["sample_rate"])
         ],
         rating=vas_slider.rating,
     )
+
+    # .wave[min(stimulus.duration * stimulus.sample_rate, int(current_time / 1000 * STIMULUS["sample_rate"])))],
 
 
 def main():
@@ -204,10 +206,15 @@ def main():
             callback_function=lambda: vas_slider.rate(),
         )
         # Measurement
+        thermoino.exec_ctc()
+        exp.clock.reset_stopwatch() # used to get the temperature in the callback function
         exp.clock.wait_seconds(
             time_sec=stimuli_functions[seed].duration,
             callback_function=get_vas_rating,
         )
+        # Account for the exec delay of the thermoino (see thermoino.exec_ctc()
+        exp.clock.wait(500, callback_function=lambda: vas_slider.rate())
+
         # End of trial
         time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
         exp.clock.wait(time_to_ramp_down, callback_function=lambda: vas_slider.rate())

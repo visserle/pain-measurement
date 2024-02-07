@@ -128,7 +128,12 @@ class EventRecievingiMotionsDummy:
             imotions_data = f"E;1;CustomCurves;1;;;;CustomCurves;{temperature};{rating}\r\n"
             self._send_message(imotions_data)
             if debug:
-                logger.debug("Received temperature: %s, rating: %s.", temperature, rating)
+                logger.debug(
+                    "Time: %s. Received temperature: %s, rating: %s.",
+                    timestamp,
+                    temperature,
+                    rating,
+                )
 
     def send_event_x_y(self, x, y):
         if self.connected:
