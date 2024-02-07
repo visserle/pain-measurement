@@ -12,6 +12,7 @@ def configure_logging(
     file_level: int = logging.DEBUG,
     file_path: Path | str | None = None,
     ignore_libs: list[str] | None = None,
+    stream_milliseconds: bool = False,
 ) -> None:
     """
     Configures the root logger for logging messages to the console and optionally to a file.
@@ -23,6 +24,7 @@ def configure_logging(
     - file_level: The logging level for the file handler.
     - file_path: The path to the debug log file for the file handler, logs are only saved to a file if this is provided.
     - ignore_libs: A list of library names whose logs should be ignored.
+    - strean_milliseconds: Whether to include milliseconds in the stream log timestamps (performance impact).
 
     Example usage:
     >>> import logging
@@ -36,8 +38,12 @@ def configure_logging(
     if stream:
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setLevel(stream_level)
+        stream_format = "{asctime}"
+        if stream_milliseconds:
+            stream_format += ".{msecs:03.0f}"
+        stream_format += " | {color}{levelname:8}{reset}| {name} | {message}"
         stream_formatter = ColoredFormatter(
-            "{asctime} | {color}{levelname:8}{reset}| {name} | {message}",
+            stream_format,
             style="{",
             datefmt="%H:%M:%S",
         )
