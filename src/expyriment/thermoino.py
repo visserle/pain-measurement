@@ -107,23 +107,27 @@ class Thermoino:
     from thermoino import Thermoino, list_com_ports
 
     # List all available serial ports
+    from src.expyriment.thermoino import Thermoino, list_com_ports
+
+    # List all available serial ports
     list_com_ports()
 
     port = "COM7"
-
-    luigi = Thermoino(
+    thermoino = Thermoino(
         port=port,
-        mms_baseline=32,  # has to be the same as in MMS
-        mms_rate_of_rise=5,  # has to be the same as in MMS
+        mms_baseline=28,  # has to be the same as in MMS
+        mms_rate_of_rise=10,  # has to be the same as in MMS
     )
 
-    # Use luigi to set temperatures:
-    luigi.connect()
-    luigi.trigger()
-    luigi.set_temp(42)
-    luigi.wait(4)
-    luigi.set_temp(32)
-    luigi.close()
+    # Use thermoino to set temperatures:
+    thermoino.connect()
+    thermoino.trigger()
+    time_to_ramp_up, _ = thermoino.set_temp(42)
+    thermoino.sleep(duration_ms=time_to_ramp_up)
+    thermoino.sleep(8000) # 8 s plateau
+    time_to_ramp_down, _ = thermoino.set_temp(28)
+    thermoino.sleep(time_to_ramp_down)
+    thermoino.close()
     ```
     """
 
@@ -255,7 +259,7 @@ class Thermoino:
         Returns
         -------
         tuple
-            (self, float, bool) - self for chaining, float for the duration in seconds for the temperature change, bool for success
+            (float, bool) - float for the duration in milliseconds for the temperature change, bool for success
         """
 
         move_time_us = round(((temp_target - self.temp) / self.mms_rate_of_rise) * 1e6)
@@ -273,11 +277,11 @@ class Thermoino:
             success = False
         return (duration_ms, success)
 
-    def sleep(self, duration):
+    def sleep(self, duration_ms):
         """
         - NOT RECOMMENDED -
 
-        Sleep for a given duration in seconds.
+        FIXME: Sleep for a given duration in seconds.
         This function delays the execution in Python for a given number of seconds.
 
         It should not be used in a experiment (e.g. for continuous ratings) as this function blocks the execution
@@ -288,9 +292,9 @@ class Thermoino:
         duration : float
             The duration to sleep in seconds.
         """
-
-        logger.warning("Sleeping for %s s using time.sleep.", duration)
-        time.sleep(duration)
+        duration_s = duration_ms / 1000
+        logger.warning("Sleeping for %s s using time.sleep.", duration_s)
+        time.sleep(duration_s)
 
 
 class ThermoinoComplexTimeCourses(Thermoino):
@@ -374,34 +378,37 @@ class ThermoinoComplexTimeCourses(Thermoino):
     list_com_ports()
 
     port = "COM7"
-    luigi = ThermoinoComplexTimeCourses(
+    thermoino = ThermoinoComplexTimeCourses(
         port=port,
-        mms_baseline=32,  # has to be the same as in MMS
-        mms_rate_of_rise=5,  # has to be the same as in MMS
+        mms_baseline=28,  # has to be the same as in MMS
+        mms_rate_of_rise=10,  # has to be the same as in MMS
     )
 
-    # Use luigi for complex temperature courses:
-    luigi.connect()
-    luigi.init_ctc(bin_size_ms=500)
-    luigi.create_ctc(
+    # Use thermoino for complex temperature courses:
+    thermoino.connect()
+    thermoino.init_ctc(bin_size_ms=500)
+    thermoino.create_ctc(
         temp_course=stimulus.wave, sample_rate=stimulus.sample_rate
     )
-    luigi.load_ctc()
-    luigi.trigger()
-    luigi.prep_ctc()
+    thermoino.load_ctc()
+    thermoino.trigger()
+    time_to_ramp_up = thermoino.prep_ctc()
+    thermoino.sleep(duration_ms=time_to_ramp_up)
+    time_to_exec_ctc = thermoino.exec_ctc()
+    thermoino.sleep(time_to_exec_ctc)
+    time_to_ramp_down, _ = thermoino.set_temp(32)
+    thermoino.flush_ctc()
+    thermoino.close()
 
-    luigi.exec_ctc()
-    luigi.set_temp(32)
-    luigi.flush_ctc()
-    luigi.close()
-
-    # Use luigi to set temperatures:
-    luigi.connect()
-    luigi.trigger()
-    luigi.set_temp(42)
-    luigi.sleep(4)
-    luigi.set_temp(32)
-    luigi.close()
+    # Use thermoino to set temperatures:
+    thermoino.connect()
+    thermoino.trigger()
+    time_to_ramp_up, _ = thermoino.set_temp(42)
+    thermoino.sleep(duration_ms=time_to_ramp_up)
+    thermoino.sleep(8000) # 8 s plateau
+    time_to_ramp_down, _ = thermoino.set_temp(28)
+    thermoino.sleep(time_to_ramp_down)
+    thermoino.close()
     ````
     """
 
@@ -562,7 +569,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         
         Returns the duration in ms from the set_temp function.
         """
-        logger.info("Prepare the starting temperature of the CTC.")
+        logger.info("Prepare the starting temperature of the complex temperature course (CTC).")
         prep_duration, success = self.set_temp(self.temp_course_start)
         # prep_duration += 0.5  # not sure if we really need this TODO
         if not success:
@@ -581,17 +588,17 @@ class ThermoinoComplexTimeCourses(Thermoino):
                 "Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first."
             )
 
-        exec_duration = self.temp_course_duration
+        exec_duration_ms = self.temp_course_duration * 1000
         output = self._send_command("EXECCTC\n")
         if output in OkCodes.__members__:
             # Update the temperature to the last temperature of the CTC
             self.temp = self.temp_course_end
-            logger.info("Complex temperature course (CTC) executed: %s.", output)
-            logger.debug("This will take %s s to finish.", exec_duration)
+            logger.info("Complex temperature course (CTC) started.")
+            logger.debug("This will take %s s to finish.", exec_duration_ms / 1000)
             logger.debug("Temperature after execution: %s°C.", self.temp)
         elif output in ErrorCodes.__members__:
             logger.error("Executing complex temperature course (CTC) failed: %s.", output)
-        return exec_duration
+        return exec_duration_ms
 
     def flush_ctc(self):
         """
