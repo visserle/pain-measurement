@@ -68,7 +68,7 @@ if args.all:
         setattr(args, flag, True)
 
 if not args.full_screen:
-    control.defaults.window_size = (1600, 900)
+    control.defaults.window_size = (800, 600)
     control.set_develop_mode(True)
 if not args.full_stimuli:
     # TODO add short stimuli
@@ -118,29 +118,6 @@ prepare_script(
 )
 vas_slider = VisualAnalogueScale(experiment=exp, vas_config=VAS)
 
-# Initalize stimuli functions
-STIMULUS["frequencies"] = 1.0 / np.array(STIMULUS["periods"])
-stimuli_functions = {}
-for seed in STIMULUS["seeds"]:
-    stimulus = (
-        StimulusFunction(
-            minimal_desired_duration=STIMULUS["minimal_desired_duration"],
-            frequencies=STIMULUS["frequencies"],
-            temp_range=participant_info["temp_range"],
-            sample_rate=STIMULUS["sample_rate"],
-            desired_big_decreases=STIMULUS["desired_big_decreases"],
-            random_periods=STIMULUS["random_periods"],
-            seed=seed,
-        )
-        .add_baseline_temp(baseline_temp=participant_info["baseline_temp"])
-        .add_plateaus(
-            plateau_duration=STIMULUS["plateau_duration"], n_plateaus=STIMULUS["n_plateaus"]
-        )
-        .generalize_big_decreases()
-    )
-    stimuli_functions[seed] = stimulus
-
-
 # Initialize Thermoino
 thermoino = ThermoinoComplexTimeCourses(
     port=THERMOINO["port"],
@@ -149,25 +126,14 @@ thermoino = ThermoinoComplexTimeCourses(
 )
 thermoino.connect()
 
-
-def prepare_complex_time_course(stimulus_obj: StimulusFunction, thermoino_config: dict) -> float:
-    thermoino.init_ctc(bin_size_ms=thermoino_config["bin_size_ms"])
-    thermoino.create_ctc(temp_course=stimulus_obj.wave, sample_rate=stimulus_obj.sample_rate)
-    thermoino.load_ctc()  # This takes some time NOTE TODO add waiting screen
-    thermoino.trigger()
-    time_to_ramp_up = thermoino.prep_ctc()
-    imotions_event.send_prep_markers()
-    return time_to_ramp_up
-
-
-def get_vas_rating():
+def get_vas_rating(stimulus_obj: StimulusFunction):
     # Runs rate limited in the callback function
     stopped_time = exp.clock.stopwatch_time
     vas_slider.rate(timestamp=stopped_time)
     imotions_event.send_data_rate_limited(
         timestamp=stopped_time,
-        temperature=stimuli_functions[seed].wave[
-            int(stopped_time / 1000 * STIMULUS["sample_rate"])
+        temperature=stimulus_obj.wave[
+            int((stopped_time / 1000) * stimulus_obj.sample_rate)
         ],
         rating=vas_slider.rating,
     )
@@ -196,31 +162,57 @@ def main():
     exp.keyboard.wait(K_SPACE)
 
     # Trial loop
-    for idx, seed in enumerate(STIMULUS["seeds"]):
+    for trial, seed in enumerate(STIMULUS["seeds"]):
         # Preperation
+        stimulus = (
+            StimulusFunction(
+                minimal_desired_duration=STIMULUS["minimal_desired_duration"],
+                frequencies= 1.0 / np.array(STIMULUS["periods"]),
+                temp_range=participant_info["temp_range"],
+                sample_rate=STIMULUS["sample_rate"],
+                desired_big_decreases=STIMULUS["desired_big_decreases"],
+                random_periods=STIMULUS["random_periods"],
+                seed=seed,
+            )
+            .add_baseline_temp(baseline_temp=participant_info["baseline_temp"])
+            .add_plateaus(
+                plateau_duration=STIMULUS["plateau_duration"], n_plateaus=STIMULUS["n_plateaus"]
+            )
+            .generalize_big_decreases()
+        )
+
+        thermoino.flush_ctc()
+        thermoino.init_ctc(bin_size_ms=THERMOINO["bin_size_ms"])
+        thermoino.create_ctc(temp_course=stimulus.wave, sample_rate=stimulus.sample_rate)
+        thermoino.load_ctc()  # This takes some time NOTE TODO add waiting screen
+        thermoino.trigger()
+        time_to_ramp_up = thermoino.prep_ctc()
+        imotions_event.send_prep_markers()
+
         exp.clock.wait(
-            waiting_time=prepare_complex_time_course(stimuli_functions[seed], THERMOINO),
+            waiting_time=time_to_ramp_up,
             callback_function=lambda: vas_slider.rate(),
         )
+
         # Measurement
         thermoino.exec_ctc()
         exp.clock.reset_stopwatch() # used to get the temperature in the callback function
         imotions_event.send_stimulus_markers(seed)
         exp.clock.wait_seconds(
-            time_sec=stimuli_functions[seed].duration,
-            callback_function=get_vas_rating,
+            time_sec=stimulus.duration,
+            callback_function=lambda stimulus=stimulus: get_vas_rating(stimulus),
         )
         imotions_event.send_stimulus_markers(seed)
 
         # Account for the exec delay of the thermoino (see thermoino.exec_ctc()
-        exp.clock.wait(1000, callback_function=lambda: vas_slider.rate())
+        exp.clock.wait(2000, callback_function=lambda: vas_slider.rate())
 
         # End of trial
         time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
         exp.clock.wait(time_to_ramp_down, callback_function=lambda: vas_slider.rate())
         imotions_event.send_prep_markers()
         thermoino.flush_ctc()
-        if idx == len(STIMULUS["seeds"]) - 1:
+        if trial == len(STIMULUS["seeds"]) - 1:
             break
         SCRIPT["next_trial"].present()
         exp.keyboard.wait(K_SPACE)
