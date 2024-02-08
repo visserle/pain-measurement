@@ -4,15 +4,17 @@
 # TODO
 # - Fix query function
 
-import math
 import logging
+import math
 import time
+import warnings
 from enum import Enum
 
 import numpy as np
 import serial
 import serial.tools.list_ports
-from scipy import signal
+
+warnings.filterwarnings("ignore", "\nPyarrow", DeprecationWarning)
 import pandas as pd
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
@@ -135,7 +137,7 @@ class Thermoino:
 
     BAUD_RATE = 115200
 
-    def __init__(self, port, mms_baseline, mms_rate_of_rise):
+    def __init__(self, port, mms_baseline, mms_rate_of_rise, dummy=False):
         """
         Constructs a Thermoino object.
 
@@ -155,6 +157,9 @@ class Thermoino:
         self.mms_baseline = mms_baseline
         self.temp = mms_baseline  # will get continuous class-internal updates to match the temperature of the Thermode
         self.mms_rate_of_rise = mms_rate_of_rise
+        self.dummy = dummy
+        if self.dummy:
+            logger.critical("+++ RUNNING IN DUMMY MODE +++")
 
     def connect(self):
         """
@@ -167,9 +172,9 @@ class Thermoino:
             The serial object for communication with the device.
         """
         try:
-            self.ser = serial.Serial(self.PORT, self.BAUD_RATE)
+            self.ser = serial.Serial(self.PORT, self.BAUD_RATE) if not self.dummy else DummySerial()
             logger.info("Connection established.")
-            time.sleep(1)
+            time.sleep(1) if not self.dummy else None
         except serial.SerialException:
             logger.error("Connection failed @ %s.", self.PORT)
             logger.info(f"Available serial ports are:\n{list_com_ports()}")
@@ -261,25 +266,25 @@ class Thermoino:
         Returns
         -------
         tuple
-            (float, bool) - float for the duration in milliseconds for the temperature change, bool for success
+            (float, bool) - float for the duration in seconds for the temperature change, bool for success
         """
 
         move_time_us = round(((temp_target - self.temp) / self.mms_rate_of_rise) * 1e6)
         output = self._send_command(f"MOVE;{move_time_us}\n")
-        duration_ms = math.ceil(abs(move_time_us / 1e3))
+        duration = math.ceil(abs(move_time_us / 1e6))
         if output in OkCodes.__members__:
             # Update the current temperature
             self.temp = temp_target
             logger.info(
-                "Change temperature to %s°C in %s s: %s.", temp_target, duration_ms / 1000, output
+                "Change temperature to %s°C in %s s: %s.", temp_target, round(duration, 2), output
             )
             success = True
         elif output in ErrorCodes.__members__:
             logger.error("Setting temperature to %s°C failed: %s.", temp_target, output)
             success = False
-        return (duration_ms, success)
+        return (duration, success)
 
-    def sleep(self, duration_ms):
+    def sleep(self, duration):
         """
         - NOT RECOMMENDED -
 
@@ -294,9 +299,8 @@ class Thermoino:
         duration : float
             The duration to sleep in seconds.
         """
-        duration_s = round(duration_ms / 1000, 2)
-        logger.warning("Sleeping for %s s using time.sleep.", duration_s)
-        time.sleep(duration_s)
+        logger.warning("Sleeping for %s s using time.sleep.", duration)
+        time.sleep(duration)
 
 
 class ThermoinoComplexTimeCourses(Thermoino):
@@ -476,11 +480,6 @@ class ThermoinoComplexTimeCourses(Thermoino):
             The created CTC.
         """
         self.temp_course_duration = temp_course.shape[0] / sample_rate
-
-        new_sample_rate = 1000 / self.bin_size_ms
-        resample_ratio = sample_rate / new_sample_rate
-
-        # temp_course_resampled = signal.resample(temp_course, int(temp_course.shape[0] / resample_ratio))
         temp_course_resampled = (
             pd.DataFrame(
                 {"temp": temp_course},
@@ -491,10 +490,10 @@ class ThermoinoComplexTimeCourses(Thermoino):
             .to_numpy()
             .flatten()
         )
-
-        self.temp_course_start = round(temp_course_resampled[0], 2)
-        self.temp_course_end = round(temp_course_resampled[-1], 2)
-        temp_course_resampled_diff = np.diff(temp_course_resampled) # TODO: or gradient -> Christian
+        self.temp_course_start = temp_course_resampled[0]
+        self.temp_course_end = temp_course_resampled[-1]
+        # TODO: diff or gradient -> Christian
+        temp_course_resampled_diff = np.diff(temp_course_resampled)
         mms_rate_of_rise_ms = self.mms_rate_of_rise / 1e3
         # scale to mms_rate_of_rise (in milliseconds)
         temp_course_resampled_diff_binned = temp_course_resampled_diff / mms_rate_of_rise_ms
@@ -564,7 +563,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         """
         Prepare the CTC for the execution by setting the starting temperature. It returns the duration for the temperature to be reached but does not wait.
 
-        Returns the duration in ms from the set_temp function.
+        Returns the duration in s from the set_temp function.
         """
         logger.info("Prepare the starting temperature of the complex temperature course (CTC).")
         prep_duration, success = self.set_temp(self.temp_course_start)
@@ -584,17 +583,17 @@ class ThermoinoComplexTimeCourses(Thermoino):
                 "Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first."
             )
 
-        exec_duration_ms = self.temp_course_duration * 1000
+        exec_duration_s = self.temp_course_duration
         output = self._send_command("EXECCTC\n")
         if output in OkCodes.__members__:
             # Update the temperature to the last temperature of the CTC
             self.temp = self.temp_course_end
             logger.info("Complex temperature course (CTC) started.")
-            logger.debug("This will take %s s to finish.", round(exec_duration_ms / 1000, 2))
+            logger.debug("This will take %s s to finish.", round(exec_duration_s, 2))
             logger.debug("Temperature after execution: %s°C.", self.temp)
         elif output in ErrorCodes.__members__:
             logger.error("Executing complex temperature course (CTC) failed: %s.", output)
-        return exec_duration_ms
+        return exec_duration_s
 
     def flush_ctc(self):
         """
@@ -607,3 +606,61 @@ class ThermoinoComplexTimeCourses(Thermoino):
             logger.debug("Flushed complex temperature course (CTC) from memory.")
         elif output in ErrorCodes.__members__:
             logger.error("Flushing complex temperature course (CTC) failed: %s.", output)
+
+
+class DummySerial:    
+    def __init__(self, *args, **kwargs):
+        self.response = None
+
+    def write(self, arg):
+        if "START" in arg.decode():
+            self.response = "2"
+        elif "MOVE" in arg.decode():
+            self.response = "3"
+        elif "INITCTC" in arg.decode():
+            self.response = "1"
+        elif "LOADCTC" in arg.decode():
+            self.response = "1"
+        elif "QUERYCTC" in arg.decode():
+            self.response = "1"
+        elif "EXECCTC" in arg.decode():
+            self.response = "1"
+        elif "FLUSHCTC" in arg.decode():
+            self.response = "1"
+        else:
+            self.response = "0"
+
+    def readline(self, *args, **kwargs):
+        return self.response.encode()
+
+    def close(self, *args, **kwargs):
+        pass
+
+
+def main():
+    from src.log_config import configure_logging
+    configure_logging(stream_level=logging.DEBUG)
+    # List all available serial ports
+    print(list_com_ports())
+
+    port = "COM7"
+    thermoino = Thermoino(
+        port=port,
+        mms_baseline=28,  # has to be the same as in MMS
+        mms_rate_of_rise=10,  # has to be the same as in MMS
+        dummy=True
+    )
+
+    # Use thermoino to set temperatures:
+    thermoino.connect()
+    thermoino.trigger()
+    time_to_ramp_up, _ = thermoino.set_temp(42)
+    thermoino.sleep(duration=time_to_ramp_up)
+    thermoino.sleep(8)  # 8 s plateau
+    time_to_ramp_down, _ = thermoino.set_temp(28)
+    thermoino.sleep(time_to_ramp_down)
+    thermoino.close()
+    
+    
+if __name__ == "__main__":
+    main()
