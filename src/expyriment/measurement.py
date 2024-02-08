@@ -56,7 +56,7 @@ VAS = config["visual_analogue_scale"]
 parser = argparse.ArgumentParser(description="Run the pain-measurement experiment. Dry by default.")
 parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
 parser.add_argument("-f", "--full_screen", action="store_true", help="Run in full screen mode")
-parser.add_argument("-s", "--full_stimuli", action="store_true", help="Use full stimuli duration")
+parser.add_argument("-s", "--full_stimuli", action="store_true", help="Use full stimuli duration") # TODO
 parser.add_argument("-p", "--participant", action="store_true", help="Use real participant data")
 parser.add_argument("-t", "--thermoino", action="store_true", help="Enable Thermoino device")
 parser.add_argument("-i", "--imotions", action="store_true", help="Enable iMotions integration")
@@ -66,13 +66,9 @@ args = parser.parse_args()
 if args.all:
     for flag in vars(args).keys():
         setattr(args, flag, True)
-
 if not args.full_screen:
     control.defaults.window_size = (800, 600)
     control.set_develop_mode(True)
-if not args.full_stimuli:
-    # TODO add short stimuli
-    logging.info("Using short stimuli.")
 if not args.participant:
     read_last_participant = lambda x: config["dummy_participant"]
     logging.info("Using dummy participant data.")
@@ -103,6 +99,7 @@ imotions_control.connect()
 event_limiter = RateLimiter(rate=IMOTIONS["sample_rate"])
 imotions_event = EventRecievingiMotions(imotions_config=IMOTIONS)
 imotions_event.connect()
+imotions_control.start_study(mode=IMOTIONS["start_study_mode"])
 
 ask_for_measurement_start()
 
@@ -110,7 +107,6 @@ ask_for_measurement_start()
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
-print(screen_size)
 prepare_script(
     SCRIPT,
     text_box_size=scale_2d_tuple(EXPERIMENT["text_box_size"], screen_size),
@@ -130,18 +126,15 @@ def get_vas_rating(stimulus_obj: StimulusFunction):
     # Runs rate limited in the callback function
     stopped_time = exp.clock.stopwatch_time
     vas_slider.rate(timestamp=stopped_time)
+    index = max(0, int((stopped_time / 1000) * stimulus_obj.sample_rate) - 1)  # TODO check if -1 is necessary
     imotions_event.send_data_rate_limited(
         timestamp=stopped_time,
-        temperature=stimulus_obj.wave[
-            int((stopped_time / 1000) * stimulus_obj.sample_rate)
-        ],
+        temperature=stimulus_obj.wave[index],
         rating=vas_slider.rating,
     )
 
 
 def main():
-    imotions_control.start_study(mode=IMOTIONS["start_study_mode"])
-
     # Start experiment
     control.start(skip_ready_screen=True)
 
@@ -196,6 +189,7 @@ def main():
 
         # Measurement
         thermoino.exec_ctc()
+        vas_slider.rate_limiter.reset()
         exp.clock.reset_stopwatch() # used to get the temperature in the callback function
         imotions_event.send_stimulus_markers(seed)
         exp.clock.wait_seconds(
@@ -204,8 +198,9 @@ def main():
         )
         imotions_event.send_stimulus_markers(seed)
 
+        # NOTE maybe this is fixed by np.diff. TODO check
         # Account for the exec delay of the thermoino (see thermoino.exec_ctc()
-        exp.clock.wait(2000, callback_function=lambda: vas_slider.rate())
+        exp.clock.wait(500, callback_function=lambda: vas_slider.rate())
 
         # End of trial
         time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])

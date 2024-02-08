@@ -6,6 +6,12 @@ class RateLimiter:
         self.rate = rate  # Allowed operations per second
         self.last_checked = None
 
+    def reset(self):
+        """
+        Reset the last checked time.
+        """
+        self.last_checked = None
+
     def is_allowed(self, current_time):
         """
         Execute the operation if the rate limiter allows it.
