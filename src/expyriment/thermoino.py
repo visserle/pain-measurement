@@ -13,6 +13,7 @@ import numpy as np
 import serial
 import serial.tools.list_ports
 from scipy import signal
+import pandas as pd
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -125,7 +126,7 @@ class Thermoino:
     thermoino.trigger()
     time_to_ramp_up, _ = thermoino.set_temp(42)
     thermoino.sleep(duration_ms=time_to_ramp_up)
-    thermoino.sleep(8000) # 8 s plateau
+    thermoino.sleep(8000)  # 8 s plateau
     time_to_ramp_down, _ = thermoino.set_temp(28)
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
@@ -388,9 +389,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     # Use thermoino for complex temperature courses:
     thermoino.connect()
     thermoino.init_ctc(bin_size_ms=500)
-    thermoino.create_ctc(
-        temp_course=stimulus.wave, sample_rate=stimulus.sample_rate
-    )
+    thermoino.create_ctc(temp_course=stimulus.wave, sample_rate=stimulus.sample_rate)
     thermoino.load_ctc()
     thermoino.trigger()
     time_to_ramp_up = thermoino.prep_ctc()
@@ -406,7 +405,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     thermoino.trigger()
     time_to_ramp_up, _ = thermoino.set_temp(42)
     thermoino.sleep(duration_ms=time_to_ramp_up)
-    thermoino.sleep(8000) # 8 s plateau
+    thermoino.sleep(8000)  # 8 s plateau
     time_to_ramp_down, _ = thermoino.set_temp(28)
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
@@ -476,14 +475,26 @@ class ThermoinoComplexTimeCourses(Thermoino):
         `ctc` : `numpy.array`
             The created CTC.
         """
+        self.temp_course_duration = temp_course.shape[0] / sample_rate
 
-        new_sample_rate = (1000 / self.bin_size_ms)
+        new_sample_rate = 1000 / self.bin_size_ms
         resample_ratio = sample_rate / new_sample_rate
 
-        temp_course_resampled = signal.resample(temp_course, int(temp_course.shape[0] / resample_ratio))
+        # temp_course_resampled = signal.resample(temp_course, int(temp_course.shape[0] / resample_ratio))
+        temp_course_resampled = (
+            pd.DataFrame(
+                {"temp": temp_course},
+                index=pd.to_timedelta(np.arange(len(temp_course)) / sample_rate, unit="s"),
+            )
+            .resample(f"{self.bin_size_ms}ms")
+            .ffill()
+            .to_numpy()
+            .flatten()
+        )
+
         self.temp_course_start = round(temp_course_resampled[0], 2)
         self.temp_course_end = round(temp_course_resampled[-1], 2)
-        temp_course_resampled_diff = np.diff(temp_course_resampled)
+        temp_course_resampled_diff = np.diff(temp_course_resampled) # TODO: or gradient -> Christian
         mms_rate_of_rise_ms = self.mms_rate_of_rise / 1e3
         # scale to mms_rate_of_rise (in milliseconds)
         temp_course_resampled_diff_binned = temp_course_resampled_diff / mms_rate_of_rise_ms
@@ -507,7 +518,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         debug : `bool`, optional
             If True, debug information for every bin. Default is False for performance.
         """
-        logger.debug("Complex temperature course (CTC) loading started...")
+        logger.debug("Complex temperature course (CTC) loading started ...")
         for idx, i in enumerate(self.ctc):
             output = self._send_command(f"LOADCTC;{i}\n")
 
@@ -552,7 +563,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     def prep_ctc(self) -> float:
         """
         Prepare the CTC for the execution by setting the starting temperature. It returns the duration for the temperature to be reached but does not wait.
-        
+
         Returns the duration in ms from the set_temp function.
         """
         logger.info("Prepare the starting temperature of the complex temperature course (CTC).")
@@ -573,7 +584,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
                 "Temperature is not set at the starting temperature of the temperature course. Please run prep_ctc first."
             )
 
-        exec_duration_ms = round(self.temp_course_duration * 1000, 2)
+        exec_duration_ms = self.temp_course_duration * 1000
         output = self._send_command("EXECCTC\n")
         if output in OkCodes.__members__:
             # Update the temperature to the last temperature of the CTC
