@@ -14,23 +14,40 @@ class ParticipantConfig:
     best_ecg_channel: str | None = None
 
 
-p_001 = ParticipantConfig(
-    id="001_pilot_bjoern",
+# p_001 = ParticipantConfig(
+#     id="001_pilot_bjoern",
+# )
+
+# p_002 = ParticipantConfig(
+#     id="002_pilot_melis",
+#     not_available_data=["eeg"],
+# )
+
+# p_003 = ParticipantConfig(
+#     id="003_pilot_noah",
+# )
+
+p_004_1 = ParticipantConfig(
+    id="004_zoey1"
 )
 
-p_002 = ParticipantConfig(
-    id="002_pilot_melis",
-    not_available_data=["eeg"],
+p_004_2 = ParticipantConfig(
+    id="004_zoey2"
 )
 
-p_003 = ParticipantConfig(
-    id="003_pilot_noah",
+p_004_3 = ParticipantConfig(
+    id="004_zoey3"
+)
+
+p_004_4 = ParticipantConfig(
+    id="004_zoey4"
 )
 
 PARTICIPANT_LIST = [
-    p_001,
-    p_002,
-    p_003,
+    p_004_1,
+    p_004_2,
+    p_004_3,
+    p_004_4,
 ]
 
 PARTICIPANT_DICT = {participant.id: participant for participant in PARTICIPANT_LIST}

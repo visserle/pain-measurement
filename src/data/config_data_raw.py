@@ -26,16 +26,20 @@ class RawConfig(DataConfigBase):
             [interpolate] if not self.transformations else [] + self.transformations
         )
 
-
-TEMPERATURE = RawConfig(
-    name="temperature",
-    load_columns=["Trial", "Timestamp", "Temperature"],
+HEAT = RawConfig(
+    name="heat",
+    load_columns=["Trial", "Timestamp", "Temperature", "Rating"],#
 )
 
-RATING = RawConfig(
-    name="rating",
-    load_columns=["Trial", "Timestamp", "Rating"],
-)
+# TEMPERATURE = RawConfig(
+#     name="temperature",
+#     load_columns=["Trial", "Timestamp", "Temperature"],
+# )
+
+# RATING = RawConfig(
+#     name="rating",
+#     load_columns=["Trial", "Timestamp", "Rating"],
+# )
 
 EDA = RawConfig(
     name="eda",
@@ -50,8 +54,8 @@ ECG = RawConfig(
         "ECG_LL-RA",
         "ECG_LA-RA",
         "ECG_Vx-RL",
-        "ECG_LL-RA_HeartRate",
-        "ECG_LL-RA_IBI",
+        #"ECG_LL-RA_HeartRate",
+        #"ECG_LL-RA_IBI",
     ],
 )
 
@@ -134,5 +138,6 @@ AFFECTIVA = RawConfig(
 )
 
 
-RAW_LIST = [TEMPERATURE, RATING, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA]
+# RAW_LIST = [TEMPERATURE, RATING, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA]
+RAW_LIST = [HEAT, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA]
 RAW_DICT = {config.name: config for config in RAW_LIST}

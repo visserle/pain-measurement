@@ -39,17 +39,23 @@ TRIAL = iMotionsConfig(
     notes="MarkerDescription contains the stimulus seed and is originally send once at the start and end of each trial.",
 )
 
-TEMPERATURE = iMotionsConfig(
-    name="temperature",
-    name_imotions="TemperatureCurve_TemperatureCurve@1_ET_EventAPI_ExternDevice",
-    load_columns=["Timestamp", "Temperature"],
+HEAT = iMotionsConfig(
+    name="heat",
+    name_imotions="CustomCurves_CustomCurves@1_ET_EventAPI_ExternDevice",
+    load_columns=["Timestamp", "Temperature", "Rating"],
 )
 
-RATING = iMotionsConfig(
-    name="rating",
-    name_imotions="RatingCurve_RatingCurve@1_ET_EventAPI_ExternDevice",
-    load_columns=["Timestamp", "Rating"],
-)
+# TEMPERATURE = iMotionsConfig(
+#     name="temperature",
+#     name_imotions="TemperatureCurve_TemperatureCurve@1_ET_EventAPI_ExternDevice",
+#     load_columns=["Timestamp", "Temperature"],
+# )
+
+# RATING = iMotionsConfig(
+#     name="rating",
+#     name_imotions="RatingCurve_RatingCurve@1_ET_EventAPI_ExternDevice",
+#     load_columns=["Timestamp", "Rating"],
+# )
 
 EDA = iMotionsConfig(
     name="eda",
@@ -77,8 +83,8 @@ ECG = iMotionsConfig(
         "ECG LL-RA CAL",
         "ECG LA-RA CAL",
         "ECG Vx-RL CAL",
-        "Heart Rate ECG LL-RA ALG",
-        "IBI ECG LL-RA ALG",
+        #"Heart Rate ECG LL-RA ALG",
+        #"IBI ECG LL-RA ALG",
         "VSenseBatt CAL",
         "Packet reception rate RAW",
     ],
@@ -89,8 +95,8 @@ ECG = iMotionsConfig(
         "ECG LL-RA CAL": "ECG_LL-RA",
         "ECG LA-RA CAL": "ECG_LA-RA",
         "ECG Vx-RL CAL": "ECG_Vx-RL",
-        "Heart Rate ECG LL-RA ALG": "ECG_LL-RA_HeartRate",
-        "IBI ECG LL-RA ALG": "ECG_LL-RA_IBI",
+        #"Heart Rate ECG LL-RA ALG": "ECG_LL-RA_HeartRate",
+        #"IBI ECG LL-RA ALG": "ECG_LL-RA_IBI",
         "VSenseBatt CAL": "ECG_d_Battery",
         "Packet reception rate RAW": "ECG_d_PacketReceptionRate",
     },
@@ -98,7 +104,7 @@ ECG = iMotionsConfig(
 
 EEG = iMotionsConfig(
     name="eeg",
-    name_imotions="EEG_Enobio-Wifi_ENOBIO-8-NE-Wifi(00_07_80_0D_82_F7)_ET_Lsl_LslSensor",
+    name_imotions="EEG_Enobio-USB_ENOBIO-8-NE-Device_(COM13)_ET_Lsl_LslSensor",
     load_columns=["Timestamp", "Ch1", "Ch2", "Ch3", "Ch4", "Ch5", "Ch6", "Ch7", "Ch8"],
     rename_columns={
         "Ch1": "EEG_RAW_Ch1",
@@ -112,6 +118,24 @@ EEG = iMotionsConfig(
     },
     notes="has no SampleNumber column",
 )
+
+# # Wifi-EEG
+# EEG = iMotionsConfig(
+#     name="eeg",
+#     name_imotions="EEG_Enobio-Wifi_ENOBIO-8-NE-Wifi(00_07_80_0D_82_F7)_ET_Lsl_LslSensor",
+#     load_columns=["Timestamp", "Ch1", "Ch2", "Ch3", "Ch4", "Ch5", "Ch6", "Ch7", "Ch8"],
+#     rename_columns={
+#         "Ch1": "EEG_RAW_Ch1",
+#         "Ch2": "EEG_RAW_Ch2",
+#         "Ch3": "EEG_RAW_Ch3",
+#         "Ch4": "EEG_RAW_Ch4",
+#         "Ch5": "EEG_RAW_Ch5",
+#         "Ch6": "EEG_RAW_Ch6",
+#         "Ch7": "EEG_RAW_Ch7",
+#         "Ch8": "EEG_RAW_Ch8",
+#     },
+#     notes="has no SampleNumber column",
+# )
 
 PUPILLOMETRY = iMotionsConfig(
     name="pupillometry",
@@ -188,5 +212,6 @@ SYSTEM = iMotionsConfig(
 )
 
 
-IMOTIONS_LIST = [TRIAL, TEMPERATURE, RATING, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA, SYSTEM]
+# IMOTIONS_LIST = [TRIAL, TEMPERATURE, RATING, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA, SYSTEM]
+IMOTIONS_LIST = [TRIAL, HEAT, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA, SYSTEM]
 IMOTIONS_DICT = {config.name: config for config in IMOTIONS_LIST}
