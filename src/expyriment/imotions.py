@@ -4,14 +4,11 @@
 # - add export data function, p. 34 onwards for experiment2
 # - set to NoPrompt for data acquisition: TODO: really? maybe figure out best way to handle this
 # - update doc strings
-# - add UPD support
-# - maybe switch to send two events at the same time? send_x_y
 
 import itertools
 import logging
 import socket
 import time
-from datetime import datetime
 
 from src.expyriment.rate_limiter import RateLimiter
 
@@ -22,22 +19,46 @@ class iMotionsError(Exception):
     pass
 
 
+class DummySocket:
+    def __init__(self, *args, **kwargs):
+        self.response = None
+
+    def connect(self, *args, **kwargs):
+        pass
+
+    def settimeout(self, *args, **kwargs):
+        pass
+
+    def sendall(self, command):
+        command = command.decode()
+        if "STATUS" in command:
+            self.response = "1;RemoteControl;STATUS;;-1;;1;;;;;0;;"
+        elif "RUN" in command:
+            self.response = "13;RemoteControl;RUN;;-1;;1;"
+        elif "SLIDESHOWNEXT" in command:
+            self.response = ""
+
+    def recv(self, *args, **kwargs):
+        return self.response.encode()
+
+    def close(self, *args, **kwargs):
+        pass
+
+
 class RemoteControliMotions:
     """
-    This class provides an interface to control the iMotions software remotely based on the iMotions Remote Control API.
+    This class provides an interface to control the iMotions software remotely.
 
     The class is designed to be integrated within an experiment, allowing for the initiation of studies, sending of commands, and receiving responses from the iMotions software.
 
     Methods:
     --------
-    - __init__(self, study, participant_info): Initializes the class with study and participant details.
-    - _send_and_receive(self, query): Sends a query to iMotions and receives a response.
-    - _check_status(self): Checks the status of the iMotions software.
+    - __init__(self, study, participant_info, dummy=False): Initializes the class with study and participant details.
     - connect(self): Establishes a connection to the iMotions software.
     - start_study(self): Initiates a study in iMotions.
     - end_study(self): Ends the current study in iMotions.
     - abort_study(self): Aborts the current study in iMotions.
-    - export_data(self): Exports data from the iMotions software (implementation pending).
+    - export_data(self): Exports data from the iMotions software.
     - close(self): Closes the connection to the iMotions software.
 
     Example Usage:
@@ -45,21 +66,21 @@ class RemoteControliMotions:
     ```python
     from src.experyment.imotions import RemoteControliMotions
 
-    imotions = RemoteControliMotions(
-        study="StudyName", participant_info={"participant": "P001", "age": 20, "gender": "Female"
+    imotions_control = RemoteControliMotions(
+        study="dummy_study",
+        participant_info={"id": "P001", "age": 20, "gender": "Female"},
+        dummy=True,
     )
-    imotions.connect()
-    imotions.start_study()
+    imotions_control.connect()
+    imotions_control.start_study()
     # run the experiment ...
-    imotions.end_study()
-    imotions.close()
+    imotions_control.end_study()
+    imotions_control.close()
     ```
 
     Notes:
     ------
-    - Ensure that the iMotions software is running and the Remote Control API is enabled.
-    - The class does not work as a context manager (because the connection to iMotions has to be open during the whole experiment),
-      so the connection to iMotions should be managed manually using the connect() and close() methods.
+    - Ensure that the iMotions software is running with the Remote Control API enabled.
     - The query structure for communication follows a specific format, e.g., "R;2;TEST;STATUS\\r\\n":
         - R: Represents a specific command or operation.
         - 2: Represent a version or type of the command.
@@ -72,13 +93,18 @@ class RemoteControliMotions:
     HOST = "localhost"
     PORT = 8087  # default port for iMotions remote control
 
-    def __init__(self, study, participant_info: dict):
+    def __init__(self, study, participant_info: dict, dummy=False):
         # Experiment info
         self.study = study
         self.participant_info = participant_info
+        self.dummy = dummy
+        if self.dummy:
+            logger.warning("+++ RUNNING IN DUMMY MODE +++")
 
         # iMotions info
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock = (
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM) if not dummy else DummySocket()
+        )
         # longer timeout to have time to react to iMotions prompts (if enabled via start_study mode)
         self.sock.settimeout(30.0)
         self.connected = None
@@ -177,39 +203,34 @@ class RemoteControliMotions:
 
 class EventRecievingiMotions:
     """
-    This class provides an interface to receive events from the iMotions software.
-
-    The class is designed to interface with external sensors or other third-party applications that can send data to the iMotions software. The received data is treated similarly to data collected from built-in sensors in iMotions, allowing for synchronization, visualization, storage, and export.
-
-    Two message types are supported: 'E' for Sensor Event and 'M' for Discrete Marker.
+    This class provides an interface to send discrete markers / continuous event data to the iMotions software.
 
     Methods:
     --------
     - __init__(self): Initializes the class and sets up the socket connection.
-    - time_stamp(self): Returns the current timestamp.
     - connect(self): Establishes a connection to the iMotions software for event receiving.
-    - _send_message(self, message): Sends a message to iMotions.
     - send_marker(self, marker_name, value): Sends a specific marker with a given value to iMotions.
-    - send_stimulus_markers(self, seed): Sends a start and end stimulus marker for a given seed value of a stimulus function.
-    - send_prep_markers(self): Sends a start and end marker for the preparation phase.
-    - send_marker_with_time_stamp(self, marker_name): Sends a marker with the current timestamp.
-    - send_temperatures(self, temperature): Sends the current temperature reading to iMotions.
-    - send_ratings(self, rating): Sends a rating value to iMotions.
-    - send_event_x_y(self, x, y): Sends x and y values as separate data streams to iMotions.
+    - send_prep_markers(self): Sends a start and end marker for the preparation phase of the heat stimulus (ramp on and off).
+    - send_stimulus_markers(self, seed): Sends a start/end marker for a given seed value of a stimulus function.
+    - send_data_rate_limited(self, timestamp, temperature, rating, debug=False): Sends temperature and rating data from the pain-measurement experiment to iMotions.
     - close(self): Closes the connection to the iMotions software.
 
     Notes:
     ------
-    - The class interfaces with iMotions using either a UDP or TCP network connection. For this class TCP is used.
-    - iMotions can receive data from many event sources, and each event source can support multiple sample types. An additional event source definition file (XML text file) is used to describe the samples that can be received from a source.
+    - The message types are: 'E' for Sensor Event and 'M' for Discrete Marker.
+    - iMotions supports both TCP and UDP network connections for event receiving. In this class, TCP is used (more reliable and ordered data transfer compared to UDP, but slower).
+    - iMotions can receive data from many event sources, and each event source can support multiple sample types.
+    - An additional event source definition file (XML text file) is used to describe the samples that can be received from a source.
 
     Example Usage:
     --------------
     ```python
-    imotions_events = EventRecievingiMotions(imotions_config={"sampling_rate": 10})
+    imotions_events = EventRecievingiMotions(imotions_config={"sample_rate": 10}, dummy=True)
     imotions_events.connect()
-    send_stimulus_markers(seed=9)  # sends a start stimulus marker for seed 9
-    send_stimulus_markers(seed=9)  # can be called again to send an end stimulus marker for seed 9
+    # Send a start stimulus marker for seed 9
+    imotions_events.send_stimulus_markers(seed=9)
+    # Call again to send an end stimulus marker for the same seed
+    imotions_events.send_stimulus_markers(seed=9)
     imotions_events.close()
     ```
     """
@@ -217,21 +238,17 @@ class EventRecievingiMotions:
     HOST = "localhost"
     PORT = 8089  # default port for iMotions event recieving
 
-    def __init__(self, imotions_config: dict):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._time_stamp = self.time_stamp  # use self.time_stamp to get the current time stamp
+    def __init__(self, imotions_config: dict, dummy=False):
+        self.sock = (
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM) if not dummy else DummySocket()
+        )
         self.seed_cycles = {}  # class variable to keep track of seed cycles (start and end stimulus markers)
         self.prep_cycle = itertools.cycle(
             ["M;2;;;thermode_ramp_on;;D;\r\n", "M;2;;;thermode_ramp_off;;D;\r\n"]
         )
-        self.sampling_rate = imotions_config.get("sampling_rate", 60)
-        self.rate_limiter = RateLimiter(self.sampling_rate)
-
-    @property
-    def time_stamp(self):
-        # Use self.time_stamp[11:] to get the time stamp without the date.
-        self._time_stamp = datetime.utcnow().isoformat(sep=" ", timespec="milliseconds")
-        return self._time_stamp
+        self.sample_rate = imotions_config.get("sample_rate", 60)
+        self.rate_limiter = RateLimiter(self.sample_rate)
+        self.dummy = dummy
 
     def connect(self):
         try:
@@ -251,12 +268,21 @@ class EventRecievingiMotions:
         self._send_message(imotions_marker)
         logger.debug("Received marker %s: %s.", marker_name, value)
 
+    def send_prep_markers(self):
+        """
+        Sends a start and end marker for the preparation phase of the heat stimulus (ramp on and off).
+        
+        Uses a cycling state to alternate between the two markers.
+        """
+        self._send_message(next(self.prep_cycle))
+        logger.debug("Received marker for thermode ramp on/off.")
+
     def send_stimulus_markers(self, seed):
         """
-        Alternates between generating 'start of seed' and 'end of seed' stimulus markers for each unique seed value.
+        Sends a start (S) and end (E) marker for a given seed value of a stimulus function.
 
         This function creates and maintains a separate cycling state for each seed, ensuring that each call for a
-        particular seed alternates between 'start' and 'end' markers. A new cycle is initialized for each new seed.
+        particular seed alternates between start and end markers. A new cycle is initialized for each new seed.
         """
         if seed not in self.seed_cycles:  # only create a new cycle if it doesn't exist yet
             self.seed_cycles[seed] = itertools.cycle(
@@ -265,34 +291,12 @@ class EventRecievingiMotions:
         self._send_message(next(self.seed_cycles[seed]))
         logger.debug("Received stimulus marker for seed %s.", seed)
 
-    def send_prep_markers(self):
-        """Marker to indicate the start and end the ramp on/ramp off of the heat stimulus.
-        Directly before and after the prep marker we are at baseline temperature."""
-        self._send_message(next(self.prep_cycle))
-        logger.debug("Received marker for thermode ramp on/off.")
-
-    def send_temperatures(self, temperature, debug=False):
-        """
-        For sending the current temperature to iMotions every frame.
-        See imotions_temperature.xml for the xml structure.
-        """
-        imotions_event = f"E;1;TemperatureCurve;1;;;;TemperatureCurve;{temperature:.2f}\r\n"
-        self._send_message(imotions_event)
-        if debug:
-            logger.debug("Received temperature: %s.", temperature)
-
-    def send_ratings(self, rating, debug=False):
-        """
-        See imotions_rating.xml for the xml structure.
-        """
-        imotions_event = f"E;1;RatingCurve;1;;;;RatingCurve;{rating:.2f}\r\n"
-        self._send_message(imotions_event)
-        if debug:
-            logger.debug("Received rating: %s.", rating)
-
     def send_data_rate_limited(self, timestamp, temperature, rating, debug=False):
         """
-        Send temperature and rating data to iMotions in one go.
+        Send temperature and rating data to iMotions at once.
+
+        This function uses a rate limiter to ensure that the data is sent at a specific sampling rate.
+        See imotions.xml for the xml structure.
         """
         if self.rate_limiter.is_allowed(timestamp):
             imotions_data = f"E;1;CustomCurves;1;;;;CustomCurves;{temperature};{rating}\r\n"
@@ -305,16 +309,41 @@ class EventRecievingiMotions:
                     rating,
                 )
 
-    def send_event_x_y(self, x, y):
-        """
-        Shows up as two seperate data streams in iMotions, based on a generic xml class.
-        """
-        values_imotions = f"E;1;GenericInput;1;0.0;;;GenericInput;{x};{y}\r\n"
-        self._send_message(values_imotions)
-
     def close(self):
         try:
             self.sock.close()
             logger.info("Closed event recieving connection.")
         except socket.error as exc:
             logger.error("Error closing event recieving connection:\n%s", exc)
+
+
+def main():
+    import logging
+
+    # Set up very basic logging
+    logging.basicConfig(level=logging.DEBUG)
+
+    # Remote control example
+    imotions = RemoteControliMotions(
+        study="dummy_study",
+        participant_info={"id": "P001", "age": 20, "gender": "Female"},
+        dummy=True,
+    )
+    imotions.connect()
+    imotions.start_study()
+    # run the experiment ...
+    imotions.end_study()
+    imotions.close()
+    
+    # Event recieving example
+    imotions_events = EventRecievingiMotions(imotions_config={"sample_rate": 10}, dummy=True)
+    imotions_events.connect()
+    # Send a start stimulus marker for seed 9
+    imotions_events.send_stimulus_markers(seed=9)
+    # Call again to send an end stimulus marker for the same seed
+    imotions_events.send_stimulus_markers(seed=9)
+    imotions_events.close()
+
+
+if __name__ == "__main__":
+    main()
