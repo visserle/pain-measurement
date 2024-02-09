@@ -43,7 +43,6 @@ def map_trials(func, trial_column='Trial'):
                 logger.warning("Only one trial found, applying function to the whole DataFrame.")
             # Apply the function to each trial
             result = df.group_by(trial_column, maintain_order=True).map_groups(lambda group: func(group, *args, **kwargs))
-            logger.critical(f"Applying function {func.__name__} to each trial. We still have to find out if order is maintained.")
         else:
             # Apply the function to the whole DataFrame
             logger.warning(f"No '{trial_column}' column found, applying function {func.__name__} to the whole DataFrame instead.")

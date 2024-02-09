@@ -213,7 +213,7 @@ class StimulusFunction:
         self._wave_dot = self.wave_dot
         self.baseline_temp = 0
         logger.debug(
-            f"Succesfully created stimulus function with seed {self.seed} and duration {self.duration}."
+            f"Succesfully created vanilla stimulus function with seed {self.seed} and duration {self.duration}."
         )
         if desired_big_decreases:
             logger.debug(

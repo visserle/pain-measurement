@@ -49,7 +49,7 @@ def check_sample_rate(df, unique_timestamp=False):
         "Sample rate per trial: %s", np.round(sample_rate_per_trial.to_numpy().flatten(), 2)
     )
     logger.info(f"The mean sample rate is {(sample_rate_mean):.2f}.")
-    if coeff_of_variation > 0.5:
+    if coeff_of_variation and coeff_of_variation > 0.5:
         logger.warning(
             f"Sample rate varies more than 0.5% between trials: {coeff_of_variation:.2f}% (coefficient of variation)."
         )
