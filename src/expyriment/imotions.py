@@ -183,7 +183,7 @@ class RemoteControliMotions:
         """
         abort_study_query = "R;1;;SLIDESHOWCANCEL\r\n"
         self._send_and_receive(abort_study_query)
-        logger.info(
+        logger.info( 
             "Aborted recording participant %s (%s)", self.participant_info["id"], self.study
         )
 
@@ -207,7 +207,7 @@ class EventRecievingiMotions:
 
     Methods:
     --------
-    - __init__(self): Initializes the class and sets up the socket connection.
+    - __init__(self, sample_rate, dummy=False): Initializes the class with the sample rate for the rate limiter and a dummy mode.
     - connect(self): Establishes a connection to the iMotions software for event receiving.
     - send_marker(self, marker_name, value): Sends a specific marker with a given value to iMotions.
     - send_prep_markers(self): Sends a start and end marker for the preparation phase of the heat stimulus (ramp on and off).
@@ -225,7 +225,7 @@ class EventRecievingiMotions:
     Example Usage:
     --------------
     ```python
-    imotions_events = EventRecievingiMotions(imotions_config={"sample_rate": 10}, dummy=True)
+    imotions_events = EventRecievingiMotions(sample_rate, dummy=True)
     imotions_events.connect()
     # Send a start stimulus marker for seed 9
     imotions_events.send_stimulus_markers(seed=9)
@@ -238,7 +238,10 @@ class EventRecievingiMotions:
     HOST = "localhost"
     PORT = 8089  # default port for iMotions event recieving
 
-    def __init__(self, imotions_config: dict, dummy=False):
+    def __init__(self, sample_rate, dummy=False):
+        """
+        Initialize the class with the sample rate for the rate limiter and optional dummy mode.
+        """
         self.sock = (
             socket.socket(socket.AF_INET, socket.SOCK_STREAM) if not dummy else DummySocket()
         )
@@ -246,8 +249,7 @@ class EventRecievingiMotions:
         self.prep_cycle = itertools.cycle(
             ["M;2;;;thermode_ramp_on;;D;\r\n", "M;2;;;thermode_ramp_off;;D;\r\n"]
         )
-        self.sample_rate = imotions_config.get("sample_rate", 60)
-        self.rate_limiter = RateLimiter(self.sample_rate)
+        self.rate_limiter = RateLimiter(sample_rate)
         self.dummy = dummy
 
     def connect(self):
@@ -336,7 +338,7 @@ def main():
     imotions.close()
     
     # Event recieving example
-    imotions_events = EventRecievingiMotions(imotions_config={"sample_rate": 10}, dummy=True)
+    imotions_events = EventRecievingiMotions(sample_rate=10, dummy=True)
     imotions_events.connect()
     # Send a start stimulus marker for seed 9
     imotions_events.send_stimulus_markers(seed=9)
