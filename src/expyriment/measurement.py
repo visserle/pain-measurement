@@ -17,7 +17,6 @@ from expyriment.misc.constants import C_DARKGREY, K_SPACE
 
 from src.expyriment.imotions import EventRecievingiMotions, RemoteControliMotions
 from src.expyriment.participant_data import read_last_participant
-from src.expyriment.rate_limiter import RateLimiter
 from src.expyriment.stimulus_function import StimulusFunction
 from src.expyriment.thermoino import ThermoinoComplexTimeCourses
 from src.expyriment.tkinter_windows import ask_for_measurement_start
@@ -55,7 +54,7 @@ VAS = config["visual_analogue_scale"]
 parser = argparse.ArgumentParser(description="Run the pain-measurement experiment. Dry by default.")
 parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
 parser.add_argument("-f", "--full_screen", action="store_true", help="Run in full screen mode")
-#  TODO
+# TODO
 parser.add_argument("-s", "--full_stimuli", action="store_true", help="Use full stimuli duration")
 parser.add_argument("-p", "--participant", action="store_true", help="Use real participant data")
 parser.add_argument("-t", "--thermoino", action="store_true", help="Enable Thermoino device")
@@ -94,8 +93,9 @@ imotions_control = RemoteControliMotions(
     study=EXP_NAME, participant_info=participant_info, dummy=not args.imotions
 )
 imotions_control.connect()
-event_limiter = RateLimiter(rate=IMOTIONS["sample_rate"])
-imotions_event = EventRecievingiMotions(imotions_config=IMOTIONS, dummy=not args.imotions)
+imotions_event = EventRecievingiMotions(
+    sample_rate=IMOTIONS["sample_rate"], dummy=not args.imotions
+)
 imotions_event.connect()
 imotions_control.start_study(mode=IMOTIONS["start_study_mode"])
 
@@ -125,7 +125,7 @@ thermoino.connect()
 def get_vas_rating(stimulus_obj: StimulusFunction):
     # Runs rate limited in the callback function
     stopped_time = exp.clock.stopwatch_time
-    vas_slider.rate(timestamp=stopped_time)
+    vas_slider.rate()
     index = max(
         0, int((stopped_time / 1000) * stimulus_obj.sample_rate) - 1
     )  # TODO check if -1 is necessary
@@ -192,7 +192,8 @@ def main():
 
         # Measurement
         thermoino.exec_ctc()
-        vas_slider.rate_limiter.reset()
+        # vas_slider.rate_limiter.reset()
+        imotions_event.rate_limiter.reset()
         exp.clock.reset_stopwatch()  # used to get the temperature in the callback function
         imotions_event.send_stimulus_markers(seed)
         exp.clock.wait_seconds(
