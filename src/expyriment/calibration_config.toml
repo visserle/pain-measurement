@@ -1,5 +1,5 @@
 [thermoino]
-port = "COM3" # COM7 on the experiment computer
+port = "COM12" # COM7 for Luigi, COM12 for Mario
 mms_baseline = 28.0  # must be the same as in MMS
 mms_rate_of_rise = 10.0  # must be the same as in MMS
 

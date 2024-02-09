@@ -14,7 +14,6 @@ from expyriment.misc.constants import C_DARKGREY, K_SPACE, K_n, K_y
 from src.expyriment.estimator import BayesianEstimatorVAS
 from src.expyriment.participant_data import add_participant_info, ask_for_participant_info
 from src.expyriment.thermoino import Thermoino
-from src.expyriment.thermoino_dummy import ThermoinoDummy
 from src.expyriment.utils import (
     load_configuration,
     load_script,
@@ -72,8 +71,6 @@ if not args.participant:
     ask_for_participant_info = lambda: config["dummy_participant"]
     add_participant_info = lambda *args, **kwargs: None
     logging.info("Using dummy participant data.")
-if not args.thermoino:
-    Thermoino = ThermoinoDummy
 
 # Expyriment defaults
 design.defaults.experiment_background_colour = C_DARKGREY
@@ -120,6 +117,7 @@ thermoino = Thermoino(
     port=THERMOINO["port"],
     mms_baseline=THERMOINO["mms_baseline"],
     mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
+    dummy=not args.thermoino,
 )
 thermoino.connect()
 

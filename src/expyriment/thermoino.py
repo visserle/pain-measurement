@@ -191,7 +191,7 @@ class Thermoino:
         self.mms_rate_of_rise = mms_rate_of_rise
         self.dummy = dummy
         if self.dummy:
-            logger.critical("+++ RUNNING IN DUMMY MODE +++")
+            logger.warning("+++ RUNNING IN DUMMY MODE +++")
 
     def connect(self):
         """
@@ -273,7 +273,7 @@ class Thermoino:
         if output in OkCodes.__members__:
             logger.debug("Triggered.")
         elif output in ErrorCodes.__members__:
-            logger.critical("Triggering failed: %s.", output)
+            logger.error("Triggering failed: %s.", output)
 
     def set_temp(self, temp_target):
         """
@@ -295,13 +295,13 @@ class Thermoino:
         if output in OkCodes.__members__:
             # Update the current temperature
             self.temp = temp_target
+            success = True
             logger.info(
                 "Change temperature to %s°C in %s s: %s.", temp_target, round(duration, 2), output
             )
-            success = True
         elif output in ErrorCodes.__members__:
-            logger.error("Setting temperature to %s°C failed: %s.", temp_target, output)
             success = False
+            logger.error("Setting temperature to %s°C failed: %s.", temp_target, output)
         return (duration, success)
 
     def sleep(self, duration):
@@ -399,6 +399,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     # List all available serial ports
     list_com_ports()
 
+    # Set up thermoino
     port = "COM7"
     thermoino = ThermoinoComplexTimeCourses(
         port=port,
@@ -486,6 +487,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             The created CTC.
         """
         self.temp_course_duration = temp_course.shape[0] / sample_rate
+        # Resample the temperature course to the bin size using pandas (very reliable way to resample time series data)
         temp_course_resampled = (
             pd.DataFrame(
                 {"temp": temp_course},
@@ -499,7 +501,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         self.temp_course_start = temp_course_resampled[0]
         self.temp_course_end = temp_course_resampled[-1]
         # TODO: diff or gradient -> Christian
-        temp_course_resampled_diff = np.diff(temp_course_resampled)
+        temp_course_resampled_diff = np.gradient(temp_course_resampled)
         mms_rate_of_rise_ms = self.mms_rate_of_rise / 1e3
         # scale to mms_rate_of_rise (in milliseconds)
         temp_course_resampled_diff_binned = temp_course_resampled_diff / mms_rate_of_rise_ms
@@ -583,6 +585,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
     def exec_ctc(self):
         """
         Execute the CTC on the Thermoino device.
+        
+        Returns the duration in s of the CTC.
         """
         if self.temp != self.temp_course_start:
             logger.error(
@@ -599,7 +603,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             self.temp = self.temp_course_end
             logger.info("Complex temperature course (CTC) started.")
             logger.debug("This will take %s s to finish.", round(exec_duration_s, 2))
-            logger.debug("Temperature after execution: %s°C.", self.temp)
+            logger.debug("Temperature after execution: %s°C.", round(self.temp, 2))
         elif output in ErrorCodes.__members__:
             logger.error("Executing complex temperature course (CTC) failed: %s.", output)
         return exec_duration_s
@@ -627,7 +631,8 @@ def main():
 
     # List all available serial ports
     print(list_com_ports())
-
+    
+    # Set up the Thermoino in dummy mode
     port = "COM7"
     thermoino = Thermoino(
         port=port,
@@ -644,6 +649,31 @@ def main():
     # 4 s plateau of 42°C
     thermoino.sleep(4)
     time_to_ramp_down, _ = thermoino.set_temp(28)
+    thermoino.sleep(time_to_ramp_down)
+    thermoino.close()
+    
+    # Use thermoino for complex temperature courses:
+    temp_course = -np.cos(np.linspace(0, 2*np.pi, 50)) * 4 + 40
+    sample_rate = 10
+    
+    thermoino = ThermoinoComplexTimeCourses(
+        port=port,
+        mms_baseline=28,  # has to be the same as in MMS
+        mms_rate_of_rise=10,  # has to be the same as in MMS
+        dummy=True,
+    )
+    
+    thermoino.connect()
+    thermoino.flush_ctc()  # to be sure that no old CTC is loaded
+    thermoino.init_ctc(bin_size_ms=500)
+    thermoino.create_ctc(temp_course=temp_course, sample_rate=sample_rate)
+    thermoino.load_ctc()
+    thermoino.trigger()
+    time_to_ramp_up = thermoino.prep_ctc()
+    thermoino.sleep(duration=time_to_ramp_up)
+    time_to_exec_ctc = thermoino.exec_ctc()
+    thermoino.sleep(time_to_exec_ctc)
+    time_to_ramp_down, _ = thermoino.set_temp(28)  # back to baseline
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
 
