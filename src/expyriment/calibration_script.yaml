@@ -196,3 +196,14 @@ answer_no: |-
 
 
   Ihre Antwort war: Nein.
+fail: |-
+
+
+
+
+
+
+
+  Die Kalibrierung konnte nicht abgeschlossen werden.
+
+  Bitte melden Sie sich bei der Versuchsleitung.

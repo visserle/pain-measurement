@@ -15,7 +15,7 @@ cross_line_width = 20
 stimulus_duration = 8000
 iti_duration = 8000
 iti_max_jitter = 3000
-iti_duration_short = 2000
+iti_duration_short = 1000
 preexposure_temperatures = [35.0, 36.0, 37.0]
 preexposure_correction = 2.0  # we subtract this from the vas70 estimate if preexposure was painful
 

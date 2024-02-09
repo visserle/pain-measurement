@@ -1,6 +1,5 @@
 # TODO
 # fix formatting in script
-# maybe add error that calibration failed in the experiment slides
 
 import argparse
 import logging
@@ -58,7 +57,6 @@ args = parser.parse_args()
 if args.all:
     for flag in vars(args).keys():
         setattr(args, flag, True)
-
 if not args.full_screen:
     control.defaults.window_size = (800, 600)
     control.set_develop_mode(True)
@@ -83,7 +81,6 @@ io.defaults.mouse_show_cursor = False
 
 # Experiment setup
 participant_info = ask_for_participant_info()
-
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
@@ -107,7 +104,7 @@ for name, color in zip(
     cross[name].preload()
 
 
-# Load VAS picture, move it a bit up and scale it (empirically determined)
+# Load VAS picture, move it a bit up and scale it for a nice fit
 vas_picture = stimuli.Picture(VAS_PICTURE_PATH, position=(0, scale_1d_value(100, screen_size)))
 vas_picture.scale(scale_1d_value(0.72, screen_size))
 vas_picture.preload()
@@ -160,8 +157,12 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
             estimator.conduct_trial(response="n", trial=trial)
             SCRIPT["answer_no"].present()
         exp.clock.wait(1000)
-    # Only returns a false if all steps were in the same direction
-    return estimator.validate_steps()
+    success = estimator.validate_steps()
+    if not success:
+        logging.error("Please exit the experiment and repeat the calibration if applicable.")
+        warn_signal()
+        SCRIPT["fail"].present()
+        exp.keyboard.wait(K_SPACE)
 
 
 # Experiment procedure
@@ -206,10 +207,7 @@ def main():
         temp_std=ESTIMATOR["temp_std_vas70"],
         trials=ESTIMATOR["trials_vas70"],
     )
-    success = run_estimation_trials(estimator=estimator_vas70)
-    if not success:
-        warn_signal()
-        pass  # TODO
+    run_estimation_trials(estimator=estimator_vas70)
     participant_info["vas70"] = estimator_vas70.get_estimate()
 
     # Pain threshold (VAS 0) estimation
@@ -221,18 +219,15 @@ def main():
         temp_std=ESTIMATOR["temp_std_vas0"],
         trials=ESTIMATOR["trials_vas0"],
     )
-    success = run_estimation_trials(estimator=estimator_vas0)
-    if not success:
-        warn_signal()
-        pass  # TODO
+    run_estimation_trials(estimator=estimator_vas0)
     participant_info["vas0"] = estimator_vas0.get_estimate()
 
     if participant_info["vas70"] - participant_info["vas0"] < 1:
-        logging.warning("VAS 70 and VAS 0 are too close together.")
+        logging.error("VAS 70 and VAS 0 are too close together. Please repeat the calibration.")
         warn_signal()
-        pass # TODO
 
     # End of Experiment
+    logging.info("Calibration finished.")
     SCRIPT["bye"].present()
     exp.keyboard.wait(K_SPACE)
 

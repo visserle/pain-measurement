@@ -1,10 +1,10 @@
 # TODO
-# use callback_function to handle event sending
-# + some mod of time to avoid sending too many events
-# note that callback functions are called sub 1ms, not in accordance with frame rate
-# add coluntdown to rating phase
+# short stimulus
+# diff vs gradient for thermoino
+# index of the wave (-1 or not)
 # add randomization of stimulus order using expyriment
-# adujst stimulus sample rate to the rest of the sample rates
+# adujst stimulus sample rate to the rest of the sample rates, should always be the same as for imotions because we send both at the same time
+
 
 import argparse
 import logging
@@ -123,7 +123,7 @@ thermoino.connect()
 
 
 def get_vas_rating(stimulus_obj: StimulusFunction):
-    # Runs rate limited in the callback function
+    # Runs rate-limited in the callback function
     stopped_time = exp.clock.stopwatch_time
     vas_slider.rate()
     index = max(
@@ -159,7 +159,8 @@ def main():
 
     # Trial loop
     for trial, seed in enumerate(STIMULUS["seeds"]):
-        # Preperation
+        # Start with a waiting screen for the initalization of the complex time course
+        SCRIPT["wait"].present()
         stimulus = (
             StimulusFunction(
                 minimal_desired_duration=STIMULUS["minimal_desired_duration"],
@@ -176,11 +177,10 @@ def main():
             )
             .generalize_big_decreases()
         )
-
         thermoino.flush_ctc()
         thermoino.init_ctc(bin_size_ms=THERMOINO["bin_size_ms"])
         thermoino.create_ctc(temp_course=stimulus.wave, sample_rate=stimulus.sample_rate)
-        thermoino.load_ctc()  # This takes some time NOTE TODO add waiting screen
+        thermoino.load_ctc()
         thermoino.trigger()
         time_to_ramp_up = thermoino.prep_ctc()
         imotions_event.send_prep_markers()
@@ -192,7 +192,6 @@ def main():
 
         # Measurement
         thermoino.exec_ctc()
-        # vas_slider.rate_limiter.reset()
         imotions_event.rate_limiter.reset()
         exp.clock.reset_stopwatch()  # used to get the temperature in the callback function
         imotions_event.send_stimulus_markers(seed)
@@ -202,7 +201,7 @@ def main():
         )
         imotions_event.send_stimulus_markers(seed)
 
-        # NOTE maybe this is fixed by np.diff. TODO check
+        # NOTE maybe this could fixed by np.diff. TODO check
         # Account for the exec delay of the thermoino (see thermoino.exec_ctc()
         exp.clock.wait_seconds(0.5, callback_function=lambda: vas_slider.rate())
 

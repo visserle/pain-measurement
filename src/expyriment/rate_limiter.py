@@ -2,7 +2,7 @@ class RateLimiter:
     """
     Rate limiter class to limit the number of operations per second.
 
-    Has an optional interval-based limiting feature to enforce operation execution at precise, predefined intervals.
+    With an optional interval-based limiting feature to enforce operation execution at precise, predefined intervals.
     This feature allows for more granular control over the timing of operations, making it ideal for scenarios
     where it's crucial to maintain a consistent rate of operation execution over time. When enabled, this mode
     ensures operations are initiated only at specific, regular intervals (e.g., every 100 ms), as opposed to

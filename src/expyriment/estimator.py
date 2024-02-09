@@ -203,9 +203,9 @@ class BayesianEstimatorVAS:
             logger.info(
                 "Calibration estimate for VAS %s: %s °C.", self.vas_value, self.get_estimate()
             )
-            logger.debug("Calibration steps were (°C): %s.", self.steps)
+            logger.debug("Calibration steps for VAS %s were (°C): %s.", self.vas_value, self.steps)
             if not self.validate_steps():
-                logger.error("Calibration steps were all in the same direction.")
+                logger.error("Calibration steps for VAS %s were all in the same direction.", self.vas_value)
 
     def validate_steps(self) -> bool:
         """
