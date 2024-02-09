@@ -249,7 +249,7 @@ class EventRecievingiMotions:
         self.prep_cycle = itertools.cycle(
             ["M;2;;;thermode_ramp_on;;D;\r\n", "M;2;;;thermode_ramp_off;;D;\r\n"]
         )
-        self.rate_limiter = RateLimiter(sample_rate)
+        self.rate_limiter = RateLimiter(sample_rate, use_intervals=True)
         self.dummy = dummy
 
     def connect(self):
@@ -297,7 +297,7 @@ class EventRecievingiMotions:
         """
         Send temperature and rating data to iMotions at once.
 
-        This function uses a rate limiter to ensure that the data is sent at a specific sampling rate.
+        This function uses an interval-based rate limiter to ensure that the data is sent at a specific sampling rate.
         See imotions.xml for the xml structure.
         """
         if self.rate_limiter.is_allowed(timestamp):
