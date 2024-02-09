@@ -4,6 +4,7 @@
 # note that callback functions are called sub 1ms, not in accordance with frame rate
 # add coluntdown to rating phase
 # add randomization of stimulus order using expyriment
+# adujst stimulus sample rate to the rest of the sample rates
 
 import argparse
 import logging
@@ -15,12 +16,10 @@ from expyriment import control, design, io, stimuli
 from expyriment.misc.constants import C_DARKGREY, K_SPACE
 
 from src.expyriment.imotions import EventRecievingiMotions, RemoteControliMotions
-from src.expyriment.imotions_dummy import EventRecievingiMotionsDummy, RemoteControliMotionsDummy
 from src.expyriment.participant_data import read_last_participant
 from src.expyriment.rate_limiter import RateLimiter
 from src.expyriment.stimulus_function import StimulusFunction
 from src.expyriment.thermoino import ThermoinoComplexTimeCourses
-from src.expyriment.thermoino_dummy import ThermoinoComplexTimeCoursesDummy
 from src.expyriment.tkinter_windows import ask_for_measurement_start
 from src.expyriment.utils import (
     load_configuration,
@@ -56,7 +55,8 @@ VAS = config["visual_analogue_scale"]
 parser = argparse.ArgumentParser(description="Run the pain-measurement experiment. Dry by default.")
 parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
 parser.add_argument("-f", "--full_screen", action="store_true", help="Run in full screen mode")
-parser.add_argument("-s", "--full_stimuli", action="store_true", help="Use full stimuli duration") # TODO
+#  TODO
+parser.add_argument("-s", "--full_stimuli", action="store_true", help="Use full stimuli duration")
 parser.add_argument("-p", "--participant", action="store_true", help="Use real participant data")
 parser.add_argument("-t", "--thermoino", action="store_true", help="Enable Thermoino device")
 parser.add_argument("-i", "--imotions", action="store_true", help="Enable iMotions integration")
@@ -72,11 +72,7 @@ if not args.full_screen:
 if not args.participant:
     read_last_participant = lambda x: config["dummy_participant"]
     logging.info("Using dummy participant data.")
-if not args.thermoino:
-    ThermoinoComplexTimeCourses = ThermoinoComplexTimeCoursesDummy
 if not args.imotions:
-    EventRecievingiMotions = EventRecievingiMotionsDummy
-    RemoteControliMotions = RemoteControliMotionsDummy
     ask_for_measurement_start = lambda: logging.info(
         "Skip asking for measurement start because of dummy iMotions."
     )
@@ -94,10 +90,12 @@ io.defaults.outputfile_time_stamp = True
 participant_info = read_last_participant(PARTICIPANTS_EXCEL_PATH)
 
 # Initialize iMotions
-imotions_control = RemoteControliMotions(study=EXP_NAME, participant_info=participant_info)
+imotions_control = RemoteControliMotions(
+    study=EXP_NAME, participant_info=participant_info, dummy=not args.imotions
+)
 imotions_control.connect()
 event_limiter = RateLimiter(rate=IMOTIONS["sample_rate"])
-imotions_event = EventRecievingiMotions(imotions_config=IMOTIONS)
+imotions_event = EventRecievingiMotions(imotions_config=IMOTIONS, dummy=not args.imotions)
 imotions_event.connect()
 imotions_control.start_study(mode=IMOTIONS["start_study_mode"])
 
@@ -119,18 +117,23 @@ thermoino = ThermoinoComplexTimeCourses(
     port=THERMOINO["port"],
     mms_baseline=THERMOINO["mms_baseline"],
     mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
+    dummy=not args.thermoino,
 )
 thermoino.connect()
+
 
 def get_vas_rating(stimulus_obj: StimulusFunction):
     # Runs rate limited in the callback function
     stopped_time = exp.clock.stopwatch_time
     vas_slider.rate(timestamp=stopped_time)
-    index = max(0, int((stopped_time / 1000) * stimulus_obj.sample_rate) - 1)  # TODO check if -1 is necessary
+    index = max(
+        0, int((stopped_time / 1000) * stimulus_obj.sample_rate) - 1
+    )  # TODO check if -1 is necessary
     imotions_event.send_data_rate_limited(
         timestamp=stopped_time,
         temperature=stimulus_obj.wave[index],
         rating=vas_slider.rating,
+        debug=not args.imotions,
     )
 
 
@@ -160,7 +163,7 @@ def main():
         stimulus = (
             StimulusFunction(
                 minimal_desired_duration=STIMULUS["minimal_desired_duration"],
-                frequencies= 1.0 / np.array(STIMULUS["periods"]),
+                frequencies=1.0 / np.array(STIMULUS["periods"]),
                 temp_range=participant_info["temp_range"],
                 sample_rate=STIMULUS["sample_rate"],
                 desired_big_decreases=STIMULUS["desired_big_decreases"],
@@ -182,29 +185,29 @@ def main():
         time_to_ramp_up = thermoino.prep_ctc()
         imotions_event.send_prep_markers()
 
-        exp.clock.wait(
-            waiting_time=time_to_ramp_up,
+        exp.clock.wait_seconds(
+            time_to_ramp_up,
             callback_function=lambda: vas_slider.rate(),
         )
 
         # Measurement
         thermoino.exec_ctc()
         vas_slider.rate_limiter.reset()
-        exp.clock.reset_stopwatch() # used to get the temperature in the callback function
+        exp.clock.reset_stopwatch()  # used to get the temperature in the callback function
         imotions_event.send_stimulus_markers(seed)
         exp.clock.wait_seconds(
-            time_sec=stimulus.duration,
+            stimulus.duration,
             callback_function=lambda stimulus=stimulus: get_vas_rating(stimulus),
         )
         imotions_event.send_stimulus_markers(seed)
 
         # NOTE maybe this is fixed by np.diff. TODO check
         # Account for the exec delay of the thermoino (see thermoino.exec_ctc()
-        exp.clock.wait(500, callback_function=lambda: vas_slider.rate())
+        exp.clock.wait_seconds(0.5, callback_function=lambda: vas_slider.rate())
 
         # End of trial
         time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
-        exp.clock.wait(time_to_ramp_down, callback_function=lambda: vas_slider.rate())
+        exp.clock.wait_seconds(time_to_ramp_down, callback_function=lambda: vas_slider.rate())
         imotions_event.send_prep_markers()
         thermoino.flush_ctc()
         if trial == len(STIMULUS["seeds"]) - 1:
