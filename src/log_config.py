@@ -24,7 +24,7 @@ def configure_logging(
     - file_level: The logging level for the file handler.
     - file_path: The path to the debug log file for the file handler, logs are only saved to a file if this is provided.
     - ignore_libs: A list of library names whose logs should be ignored.
-    - strean_milliseconds: Whether to include milliseconds in the stream log timestamps (performance impact).
+    - stream_milliseconds: Whether to include milliseconds in the stream log timestamps (performance impact).
 
     Example usage:
     >>> import logging
