@@ -1,11 +1,13 @@
+# TODO
+# ask PI if hes fine with forcefully going under the expected length, or maybe use random periods with shorter length by default?
+# check for total applied temperature via integral of the stimulus? - how much pain in a given trial? or should it vary?
 # add main for stimuli generation to pickle
 # or add classmethod for loading from numpy and do calibrations and plateaus in the class
 
 import numpy as np
-from numba import jit
 import pandas as pd
 import plotly.graph_objects as go
-
+from numba import jit
 
 # Note that numba RNG support falls back to numpy's RNG so there is no speedup for seed-based RNG.
 
@@ -16,30 +18,14 @@ def nb_median(y):
 
 
 @jit(cache=True, nopython=True)
-def _cosine_half_cycle(period, amplitude, sample_rate):
+def cosine_half_cycle(period, amplitude, y_intercept, t_start, sample_rate):
     frequency = 1 / period
     num_steps = period * sample_rate
     assert num_steps == int(num_steps), "Number of steps must be an integer"
     num_steps = int(num_steps)
     t = np.linspace(0, period, num_steps)
-    y = amplitude * np.cos(np.pi * frequency * t)
-    return t, y
-
-
-@jit(cache=True, nopython=True)
-def increasing_half_cycle(period, amplitude, y_intercept, t_start, sample_rate):
-    t, y = _cosine_half_cycle(period, amplitude, sample_rate)
+    y = amplitude * np.cos(np.pi * frequency * t) + y_intercept - amplitude
     t += t_start
-    y = -y  # negative cosine
-    y += y_intercept + amplitude
-    return t, y
-
-
-@jit(cache=True, nopython=True)
-def decreasing_half_cycle(period, amplitude, y_intercept, t_start, sample_rate):
-    t, y = _cosine_half_cycle(period, amplitude, sample_rate)
-    t += t_start
-    y += y_intercept - amplitude
     return t, y
 
 
@@ -91,9 +77,15 @@ class StimulusGenerator:
         self.expected_length -= self.expected_length % self.sample_rate  # round to nearest sample
 
         # Determine big decreasing half cycle indexes
-        self.big_decreasing_half_cycle_idx = self.rng_numpy.choice(
-            range(1, self.half_cycle_num, 2), self.big_decreasing_half_cycle_num, replace=False
+        self.big_decreasing_half_cycle_idx = np.sort(
+            self.rng_numpy.choice(
+                range(1, self.half_cycle_num, 2), self.big_decreasing_half_cycle_num, replace=False
+            )
         )
+
+        # Get periods and amplidtudes for the random half cycles with the expected length
+        self.periods = self._get_periods()
+        self.amplitudes = self._get_amplitudes()
 
         # Stimulus
         self.generate_stimulus()  # returns self.y
@@ -113,11 +105,8 @@ class StimulusGenerator:
     def y_dot(self):
         return np.gradient(self.y, 1 / self.sample_rate)  # dx in seconds
 
-    def generate_stimulus(self):
-        # pregerated noise + variance check for rAnDoMnEsS
-        retry_limit_per_half_cycle = 5
-
-        # Generate periods for the random half cycles with the expected length
+    def _get_periods(self):
+        # TODO: variance check for rAnDoMnEsS?
         while True:
             periods = self.rng_numpy.integers(
                 self.period_range[0],
@@ -126,58 +115,51 @@ class StimulusGenerator:
             )
             if np.sum(periods) * self.sample_rate == self.expected_length_random_half_cycles:
                 break
+        big_decreasing_half_cycle_idx_for_insert = [
+            i - idx for idx, i in enumerate(self.big_decreasing_half_cycle_idx)
+        ]
+        periods = np.insert(
+            periods, big_decreasing_half_cycle_idx_for_insert, self.big_decreasing_half_cycle_period
+        )
+        return periods
 
+    def _get_amplitudes(self):
         while True:
-            # Assume success until proven otherwise (life motto)
-            success = True
-            yi = []
-            t_start = 0
-            y_intercept = -1
+            amplitudes = self.rng_numpy.uniform(
+                self.amplitude_range[0],
+                self.amplitude_range[1],
+                self.half_cycle_num - self.big_decreasing_half_cycle_num,
+            )
+            big_decreasing_half_cycle_idx_for_insert = [
+                i - idx for idx, i in enumerate(self.big_decreasing_half_cycle_idx)
+            ]
+            amplitudes = np.insert(
+                amplitudes,
+                big_decreasing_half_cycle_idx_for_insert,
+                self.big_decreasing_half_cycle_amplitude,
+            )
+            amplitudes[::2] *= -1  # we start with -cosine for an increasing half cycle
 
-            for i in range(self.half_cycle_num):
-                retries = retry_limit_per_half_cycle
-                while retries > 0:
-                    period = periods[i - sum(i >= self.big_decreasing_half_cycle_idx)]
-                    amplitude = self.rng_numpy.uniform(
-                        self.amplitude_range[0], self.amplitude_range[1]
-                    )
-                    if i % 2 == 0:
-                        t, y = increasing_half_cycle(
-                            period, amplitude, y_intercept, t_start, self.sample_rate
-                        )
-                    else:
-                        if i in self.big_decreasing_half_cycle_idx:
-                            period = self.big_decreasing_half_cycle_period
-                            amplitude = self.big_decreasing_half_cycle_amplitude
-                        t, y = decreasing_half_cycle(
-                            period, amplitude, y_intercept, t_start, self.sample_rate
-                        )
+            # Simulate resulting y amplitudes
+            amplitudes_y = amplitudes.copy() * -2
+            amplitudes_y[0] -= 1  # y_intercept
 
-                    if (
-                        (-self.median_range <= nb_median(y) <= self.median_range)
-                        and np.max(y) <= 1
-                        and np.min(y) >= -1
-                    ):
-                        yi.append(y)
-                        t_start = t[-1]
-                        y_intercept = y[-1]
-                        break  # Exit retry loop on success
-                    else:
-                        retries -= 1
-                        if retries == 0:
-                            success = False
-                            break  # Exit retry loop on failure
+            if np.max(np.abs(np.cumsum(amplitudes_y))) < 1:
+                break
+        return amplitudes
 
-                if not success:
-                    break  # Exit half-cycle loop on failure and retry the whole stimulus
+    def generate_stimulus(self):
+        yi = []
+        t_start = 0
+        y_intercept = -1
 
-            if (
-                success
-                and np.max(np.concatenate(yi)) > 0.95
-            ):
-                break  # Exit while loop if overall success criteria are met
-
-        self.y = np.concatenate(yi)
+        for i in range(self.half_cycle_num):
+            period = self.periods[i]
+            amplitude = self.amplitudes[i]
+            t, y = cosine_half_cycle(period, amplitude, y_intercept, t_start, self.sample_rate)
+            y_intercept = y[-1]
+            t_start = t[-1]
+            yi.append(y)
 
     def add_calibration(self):
         self.y *= self.temperature_range / 2
