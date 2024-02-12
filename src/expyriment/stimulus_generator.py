@@ -18,7 +18,7 @@ def nb_median(y):
 
 
 @jit(cache=True, nopython=True)
-def cosine_half_cycle(period, amplitude, y_intercept, t_start, sample_rate):
+def cosine_half_cycle(period, amplitude, y_intercept=0, t_start=0, sample_rate=10):
     frequency = 1 / period
     num_steps = period * sample_rate
     assert num_steps == int(num_steps), "Number of steps must be an integer"
@@ -30,6 +30,10 @@ def cosine_half_cycle(period, amplitude, y_intercept, t_start, sample_rate):
 
 
 class StimulusGenerator:
+    """
+    Generates a stimulus based on appending half cycle cosine functions (thus the term period refers to 1 pi in this class).
+    """
+
     def __init__(self, config=None, seed=None, debug=False):
         if config is None:
             config = {}
@@ -55,33 +59,17 @@ class StimulusGenerator:
         self.temperature_range = config.get("temperature_range", 3)
 
         # Calculate expected length of the stimulus
-        # NOTE we can make the wave more versatile by forcing the length down from the expected length
-        self.expected_length_random_half_cycles = (
-            ((self.period_range[0] + (self.period_range[1] - 1)) / 2)
-            * (self.half_cycle_num - self.big_decreasing_half_cycle_num)
-            * self.sample_rate
+        # NOTE we can make the wave more versatile by forcing the length down (shorten) from the expected length
+        self.expected_length_random_half_cycles = self._get_expected_length_random_half_cycles(
+            shorten=15
         )
-        self.expected_length_random_half_cycles -= (
-            15 * self.sample_rate
-        )  # remove seconds NOTE remove?
-
         self.expected_length_big_decreasing_half_cycles = (
-            self.big_decreasing_half_cycle_period
-            * self.big_decreasing_half_cycle_num
-            * self.sample_rate
+            self._get_expected_length_big_decreasing_half_cycles()
         )
-        self.expected_length = (
-            self.expected_length_random_half_cycles
-            + self.expected_length_big_decreasing_half_cycles
-        )
-        self.expected_length -= self.expected_length % self.sample_rate  # round to nearest sample
+        self.expected_length = self._get_expected_length()
 
         # Determine big decreasing half cycle indexes
-        self.big_decreasing_half_cycle_idx = np.sort(
-            self.rng_numpy.choice(
-                range(1, self.half_cycle_num, 2), self.big_decreasing_half_cycle_num, replace=False
-            )
-        )
+        self.big_decreasing_half_cycle_idx = self._get_big_decreasing_half_cycle_idx()
 
         # Get periods and amplidtudes for the random half cycles with the expected length
         self.periods = self._get_periods()
@@ -104,6 +92,35 @@ class StimulusGenerator:
     @property
     def y_dot(self):
         return np.gradient(self.y, 1 / self.sample_rate)  # dx in seconds
+
+    def _get_expected_length_random_half_cycles(self, shorten):
+        return (
+            ((self.period_range[0] + (self.period_range[1] - 1)) / 2)
+            * (self.half_cycle_num - self.big_decreasing_half_cycle_num)
+            * self.sample_rate
+        ) - (shorten * self.sample_rate)
+
+    def _get_expected_length_big_decreasing_half_cycles(self):
+        return (
+            self.big_decreasing_half_cycle_period
+            * self.big_decreasing_half_cycle_num
+            * self.sample_rate
+        )
+
+    def _get_expected_length(self):
+        expected_length = (
+            self.expected_length_random_half_cycles
+            + self.expected_length_big_decreasing_half_cycles
+        )
+        expected_length -= expected_length % self.sample_rate  # round to nearest sample
+        return expected_length
+
+    def _get_big_decreasing_half_cycle_idx(self):
+        return np.sort(
+            self.rng_numpy.choice(
+                range(1, self.half_cycle_num, 2), self.big_decreasing_half_cycle_num, replace=False
+            )
+        )
 
     def _get_periods(self):
         # TODO: variance check for rAnDoMnEsS?
@@ -140,7 +157,7 @@ class StimulusGenerator:
             )
             amplitudes[::2] *= -1  # we start with -cosine for an increasing half cycle
 
-            # Simulate resulting y amplitudes
+            # Simulate resulting amplitudes of the stimulus
             amplitudes_y = amplitudes.copy() * -2
             amplitudes_y[0] -= 1  # y_intercept
 
@@ -160,6 +177,8 @@ class StimulusGenerator:
             y_intercept = y[-1]
             t_start = t[-1]
             yi.append(y)
+
+        self.y = np.concatenate(yi)
 
     def add_calibration(self):
         self.y *= self.temperature_range / 2
