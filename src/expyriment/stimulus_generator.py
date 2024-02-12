@@ -1,23 +1,14 @@
 # TODO
 # ask PI if hes fine with forcefully going under the expected length, or maybe use random periods with shorter length by default?
 # check for total applied temperature via integral of the stimulus? - how much pain in a given trial? or should it vary?
-# add main for stimuli generation to pickle
-# or add classmethod for loading from numpy and do calibrations and plateaus in the class
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from numba import jit
 
 # Note that numba RNG support falls back to numpy's RNG so there is no speedup for seed-based RNG.
 
 
-@jit(cache=True, nopython=True)
-def nb_median(y):
-    return np.median(y)
-
-
-@jit(cache=True, nopython=True)
 def cosine_half_cycle(period, amplitude, y_intercept=0, t_start=0, sample_rate=10):
     frequency = 1 / period
     num_steps = period * sample_rate
@@ -35,6 +26,7 @@ class StimulusGenerator:
     """
 
     def __init__(self, config=None, seed=None, debug=False):
+        self.debug = debug
         if config is None:
             config = {}
 
@@ -79,7 +71,8 @@ class StimulusGenerator:
         self.amplitudes = self._get_amplitudes()
 
         # Stimulus
-        self.generate_stimulus()  # returns self.y
+        self.y = None  # Placeholder for the stimulus
+        self.generate_stimulus()
         if not debug:
             self.add_calibration()
             self.add_plateaus()
@@ -130,8 +123,11 @@ class StimulusGenerator:
         return [i - idx for idx, i in enumerate(self.big_decreasing_half_cycle_idx)]
 
     def _get_periods(self):
+        """Get periods for the half cycles (vectorized)."""
         # TODO: variance check for rAnDoMnEsS?
+        counter = 0
         while True:
+            counter += 1
             periods = self.rng_numpy.integers(
                 self.period_range[0],
                 self.period_range[1],
@@ -144,35 +140,61 @@ class StimulusGenerator:
             self.big_decreasing_half_cycle_idx_for_insert,
             self.big_decreasing_half_cycle_period,
         )
+        if self.debug:
+            print(f"Periods: {counter} iterations to converge")
         return periods
 
     def _get_amplitudes(self):
+        """
+        Get amplitudes for the half cycles (interatively).
+
+        Note that this code it much less readable than _get_periods, but for the dependent nature of
+        the amplitudes on the y_intercepts, looping is much more efficient and much faster than vectorized operations.
+        If one value is invalid we do not need to recompute the entire array, just the current value.
+        """
+        retry_limit_per_half_cycle = 5
+
+        amplitudes = []
+        y_intercepts = []
+        y_intercept = -1  # starting intercept
+
+        counter = 0
         while True:
-            amplitudes = self.rng_numpy.uniform(
-                self.amplitude_range[0],
-                self.amplitude_range[1],
-                self.half_cycle_num - self.big_decreasing_half_cycle_num,
-            )
-            amplitudes = np.insert(
-                amplitudes,
-                self.big_decreasing_half_cycle_idx_for_insert,
-                self.big_decreasing_half_cycle_amplitude,
-            )
-            amplitudes[::2] *= -1  # we start with -cosine for an increasing half cycle
+            for i in range(self.half_cycle_num):
+                retries = retry_limit_per_half_cycle
+                valid_amplitude_found = False
 
-            # Simulate resulting amplitudes of the stimulus
-            amplitudes_y = amplitudes.copy() * -2
-            amplitudes_y[0] -= 1  # y_intercept
-            amplitudes_y = np.cumsum(amplitudes_y)
-            amplidudes_y_sequential_averages = (amplitudes_y[:-1] + amplitudes_y[1:]) / 2
+                while retries > 0 and not valid_amplitude_found:
+                    counter += 1
+                    if i in self.big_decreasing_half_cycle_idx:
+                        amplitude = self.big_decreasing_half_cycle_amplitude
+                    else:
+                        amplitude = self.rng_numpy.uniform(
+                            self.amplitude_range[0], self.amplitude_range[1]
+                        )
+                        if i % 2 == 0:
+                            amplitude *= -1  # invert amplitude for increasing half cycles
+                    next_y_intercept = y_intercept + amplitude * -2
 
-            if (
-                np.max(np.abs(amplitudes_y)) < 1
-                and np.any(amplitudes_y[::2] > 0.95)
-                and np.all(amplidudes_y_sequential_averages <= self.median_range)
-                and np.all(amplidudes_y_sequential_averages >= -self.median_range)
-            ):
+                    if (
+                        -1 <= next_y_intercept <= 1
+                        and -self.median_range
+                        <= (next_y_intercept + y_intercept) / 2
+                        <= self.median_range
+                    ):
+                        valid_amplitude_found = True
+                        amplitudes.append(amplitude)
+                        y_intercepts.append(y_intercept)
+                        y_intercept = next_y_intercept
+                    else:
+                        retries -= 1
+
+                if not valid_amplitude_found:
+                    return self._get_amplitudes()
+            if np.max(y_intercepts) > 0.95:
                 break
+        if self.debug:
+            print(f"Amplitudes: {counter} iterations to converge")
         return amplitudes
 
     def generate_stimulus(self):
