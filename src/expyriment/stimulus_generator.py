@@ -69,14 +69,24 @@ class StimulusGenerator:
         self.temperature_range = config.get("temperature_range", 3)
 
         # Calculate expected length of the stimulus
-        self.expected_length = (
+        # NOTE we can make the wave more versatile by forcing the length down from the expected length
+        self.expected_length_random_half_cycles = (
             ((self.period_range[0] + (self.period_range[1] - 1)) / 2)
             * (self.half_cycle_num - self.big_decreasing_half_cycle_num)
             * self.sample_rate
-        ) + (
+        )
+        self.expected_length_random_half_cycles -= (
+            15 * self.sample_rate
+        )  # remove seconds NOTE remove?
+
+        self.expected_length_big_decreasing_half_cycles = (
             self.big_decreasing_half_cycle_period
             * self.big_decreasing_half_cycle_num
             * self.sample_rate
+        )
+        self.expected_length = (
+            self.expected_length_random_half_cycles
+            + self.expected_length_big_decreasing_half_cycles
         )
         self.expected_length -= self.expected_length % self.sample_rate  # round to nearest sample
 
@@ -104,7 +114,18 @@ class StimulusGenerator:
         return np.gradient(self.y, 1 / self.sample_rate)  # dx in seconds
 
     def generate_stimulus(self):
+        # pregerated noise + variance check for rAnDoMnEsS
         retry_limit_per_half_cycle = 5
+
+        # Generate periods for the random half cycles with the expected length
+        while True:
+            periods = self.rng_numpy.integers(
+                self.period_range[0],
+                self.period_range[1],
+                self.half_cycle_num - self.big_decreasing_half_cycle_num,
+            )
+            if np.sum(periods) * self.sample_rate == self.expected_length_random_half_cycles:
+                break
 
         while True:
             # Assume success until proven otherwise (life motto)
@@ -116,7 +137,7 @@ class StimulusGenerator:
             for i in range(self.half_cycle_num):
                 retries = retry_limit_per_half_cycle
                 while retries > 0:
-                    period = self.rng_numpy.integers(self.period_range[0], self.period_range[1])
+                    period = periods[i - sum(i >= self.big_decreasing_half_cycle_idx)]
                     amplitude = self.rng_numpy.uniform(
                         self.amplitude_range[0], self.amplitude_range[1]
                     )
@@ -150,11 +171,9 @@ class StimulusGenerator:
                 if not success:
                     break  # Exit half-cycle loop on failure and retry the whole stimulus
 
-            # Final (costly) checks
             if (
                 success
-                and len(np.concatenate(yi)) == self.expected_length
-                and np.max(np.concatenate(yi)) > 0.925
+                and np.max(np.concatenate(yi)) > 0.95
             ):
                 break  # Exit while loop if overall success criteria are met
 
