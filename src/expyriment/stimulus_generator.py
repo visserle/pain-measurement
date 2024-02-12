@@ -59,7 +59,7 @@ class StimulusGenerator:
         self.temperature_range = config.get("temperature_range", 3)
 
         # Calculate expected length of the stimulus
-        # NOTE we can make the wave more versatile by forcing the length down (shorten) from the expected length
+        # NOTE we can make the wave more versatile by forcing the length down (shorten) from the expected length - sampling from under the expected value
         self.expected_length_random_half_cycles = self._get_expected_length_random_half_cycles(
             shorten=15
         )
@@ -70,6 +70,9 @@ class StimulusGenerator:
 
         # Determine big decreasing half cycle indexes
         self.big_decreasing_half_cycle_idx = self._get_big_decreasing_half_cycle_idx()
+        self.big_decreasing_half_cycle_idx_for_insert = (
+            self._get_big_decreasing_half_cycle_idx_for_insert()
+        )
 
         # Get periods and amplidtudes for the random half cycles with the expected length
         self.periods = self._get_periods()
@@ -122,6 +125,10 @@ class StimulusGenerator:
             )
         )
 
+    def _get_big_decreasing_half_cycle_idx_for_insert(self):
+        """Indices for np.insert"""
+        return [i - idx for idx, i in enumerate(self.big_decreasing_half_cycle_idx)]
+
     def _get_periods(self):
         # TODO: variance check for rAnDoMnEsS?
         while True:
@@ -132,11 +139,10 @@ class StimulusGenerator:
             )
             if np.sum(periods) * self.sample_rate == self.expected_length_random_half_cycles:
                 break
-        big_decreasing_half_cycle_idx_for_insert = [
-            i - idx for idx, i in enumerate(self.big_decreasing_half_cycle_idx)
-        ]
         periods = np.insert(
-            periods, big_decreasing_half_cycle_idx_for_insert, self.big_decreasing_half_cycle_period
+            periods,
+            self.big_decreasing_half_cycle_idx_for_insert,
+            self.big_decreasing_half_cycle_period,
         )
         return periods
 
@@ -147,12 +153,9 @@ class StimulusGenerator:
                 self.amplitude_range[1],
                 self.half_cycle_num - self.big_decreasing_half_cycle_num,
             )
-            big_decreasing_half_cycle_idx_for_insert = [
-                i - idx for idx, i in enumerate(self.big_decreasing_half_cycle_idx)
-            ]
             amplitudes = np.insert(
                 amplitudes,
-                big_decreasing_half_cycle_idx_for_insert,
+                self.big_decreasing_half_cycle_idx_for_insert,
                 self.big_decreasing_half_cycle_amplitude,
             )
             amplitudes[::2] *= -1  # we start with -cosine for an increasing half cycle
@@ -160,8 +163,15 @@ class StimulusGenerator:
             # Simulate resulting amplitudes of the stimulus
             amplitudes_y = amplitudes.copy() * -2
             amplitudes_y[0] -= 1  # y_intercept
+            amplitudes_y = np.cumsum(amplitudes_y)
+            amplidudes_y_sequential_averages = (amplitudes_y[:-1] + amplitudes_y[1:]) / 2
 
-            if np.max(np.abs(np.cumsum(amplitudes_y))) < 1:
+            if (
+                np.max(np.abs(amplitudes_y)) < 1
+                and np.any(amplitudes_y[::2] > 0.95)
+                and np.all(amplidudes_y_sequential_averages <= self.median_range)
+                and np.all(amplidudes_y_sequential_averages >= -self.median_range)
+            ):
                 break
         return amplitudes
 
