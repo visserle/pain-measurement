@@ -25,8 +25,9 @@ from src.log_config import close_root_logging, configure_logging
 
 # Constants
 EXP_NAME = "pain-calibration"
-CONFIG_PATH = Path("src/expyriment/calibration_config.toml")
 SCRIPT_PATH = Path("src/expyriment/calibration_script.yaml")
+CONFIG_PATH = Path("src/expyriment/calibration_config.toml")
+THERMOINO_CONFIG_PATH = Path("src/expyriment/thermoino_config.toml")
 LOG_DIR = Path("runs/expyriment/calibration/")
 PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
 VAS_PICTURE_PATH = Path("src/expyriment/vas_picture.png").as_posix()
@@ -38,7 +39,7 @@ configure_logging(stream_level=logging.DEBUG, file_path=log_file)
 # Load configurations and script
 config = load_configuration(CONFIG_PATH)
 SCRIPT = load_script(SCRIPT_PATH)
-THERMOINO = config["thermoino"]
+THERMOINO = load_configuration(THERMOINO_CONFIG_PATH)
 EXPERIMENT = config["experiment"]
 ESTIMATOR = config["estimator"]
 STIMULUS = config["stimulus"]

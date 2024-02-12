@@ -2,7 +2,6 @@ import logging
 import tkinter as tk
 import warnings
 from datetime import datetime
-from tkinter import messagebox, ttk
 
 from src.expyriment.tkinter_windows import ParticipantDataApp, center_tk_window
 
@@ -19,8 +18,8 @@ COLUMN_HEADERS = [
     "gender",
     "vas0",
     "vas70",
-    "baseline_temp",
-    "temp_range",
+    "temperature_baseline",
+    "temperature_range",
 ]
 
 
@@ -88,8 +87,8 @@ def _complete_participant_info(participant_info: dict) -> dict:
     """
     Add additional information to the participant_info dict:
     - time_stamp
-    - baseline_temp
-    - temp_range
+    - temperature_baseline
+    - temperature_range
 
     Note that the participant_info dict must contain the following keys:
     - id
@@ -99,10 +98,10 @@ def _complete_participant_info(participant_info: dict) -> dict:
     - vas70.
     """
     participant_info["time_stamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    participant_info["baseline_temp"] = round(
+    participant_info["temperature_baseline"] = round(
         (participant_info["vas0"] + participant_info["vas70"]) / 2, 1
     )
-    participant_info["temp_range"] = round(participant_info["vas70"] - participant_info["vas0"], 1)
+    participant_info["temperature_range"] = round(participant_info["vas70"] - participant_info["vas0"], 1)
     return participant_info
 
 

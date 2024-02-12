@@ -1,8 +1,3 @@
-[thermoino]
-port = "COM12" # COM7 for Luigi, COM12 for Mario
-mms_baseline = 28.0  # must be the same as in MMS
-mms_rate_of_rise = 10.0  # must be the same as in MMS
-
 [experiment]
 text_size = 40
 text_box_size = [1500, 900]
