@@ -5,19 +5,19 @@
 # add randomization of stimulus order using expyriment
 # adujst stimulus sample rate to the rest of the sample rates, should always be the same as for imotions because we send both at the same time
 
+# move costly operations to end of trial? pregenerate stimuli?
 
 import argparse
 import logging
 from datetime import datetime
 from pathlib import Path
 
-import numpy as np
 from expyriment import control, design, io, stimuli
 from expyriment.misc.constants import C_DARKGREY, K_SPACE
 
 from src.expyriment.imotions import EventRecievingiMotions, RemoteControliMotions
 from src.expyriment.participant_data import read_last_participant
-from src.expyriment.stimulus_function import StimulusFunction
+from src.expyriment.stimulus_generator import StimulusGenerator
 from src.expyriment.thermoino import ThermoinoComplexTimeCourses
 from src.expyriment.tkinter_windows import ask_for_measurement_start
 from src.expyriment.utils import (
@@ -32,8 +32,9 @@ from src.log_config import close_root_logging, configure_logging
 
 # Constants
 EXP_NAME = "pain-measurement"
-CONFIG_PATH = Path("src/expyriment/measurement_config.toml")
 SCRIPT_PATH = Path("src/expyriment/measurement_script.yaml")
+CONFIG_PATH = Path("src/expyriment/measurement_config.toml")
+THERMOINO_CONFIG_PATH = Path("src/expyriment/thermoino_config.toml")
 LOG_DIR = Path("runs/expyriment/measurement/")
 PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
 
@@ -44,7 +45,7 @@ configure_logging(stream_level=logging.DEBUG, file_path=log_file)
 # Load configurations and script
 config = load_configuration(CONFIG_PATH)
 SCRIPT = load_script(SCRIPT_PATH)
-THERMOINO = config["thermoino"]
+THERMOINO = load_configuration(THERMOINO_CONFIG_PATH)
 EXPERIMENT = config["experiment"]
 STIMULUS = config["stimulus"]
 IMOTIONS = config["imotions"]
@@ -85,8 +86,9 @@ io.defaults.eventfile_directory = (LOG_DIR / "events").as_posix()
 io.defaults.datafile_directory = (LOG_DIR / "data").as_posix()
 io.defaults.outputfile_time_stamp = True
 
-# Load participant info
+# Load participant info and update stimulus config with calibration data
 participant_info = read_last_participant(PARTICIPANTS_EXCEL_PATH)
+STIMULUS.update(participant_info)
 
 # Initialize iMotions
 imotions_control = RemoteControliMotions(
@@ -122,16 +124,16 @@ thermoino = ThermoinoComplexTimeCourses(
 thermoino.connect()
 
 
-def get_vas_rating(stimulus_obj: StimulusFunction):
+def get_vas_rating(temp_course):
     # Runs rate-limited in the callback function
     stopped_time = exp.clock.stopwatch_time
     vas_slider.rate()
     index = max(
-        0, int((stopped_time / 1000) * stimulus_obj.sample_rate) - 1
+        0, int((stopped_time / 1000) * STIMULUS["sample_rate"]) - 1
     )  # TODO check if -1 is necessary
     imotions_event.send_data_rate_limited(
         timestamp=stopped_time,
-        temperature=stimulus_obj.wave[index],
+        temperature=temp_course[index],
         rating=vas_slider.rating,
         debug=not args.imotions,
     )
@@ -158,28 +160,15 @@ def main():
     exp.keyboard.wait(K_SPACE)
 
     # Trial loop
+    total_trials = len(STIMULUS["seeds"])
     for trial, seed in enumerate(STIMULUS["seeds"]):
+        logging.info(f"Started trial {trial + 1}/{total_trials} with seed {seed}.")
         # Start with a waiting screen for the initalization of the complex time course
         SCRIPT["wait"].present()
-        stimulus = (
-            StimulusFunction(
-                minimal_desired_duration=STIMULUS["minimal_desired_duration"],
-                frequencies=1.0 / np.array(STIMULUS["periods"]),
-                temp_range=participant_info["temp_range"],
-                sample_rate=STIMULUS["sample_rate"],
-                desired_big_decreases=STIMULUS["desired_big_decreases"],
-                random_periods=STIMULUS["random_periods"],
-                seed=seed,
-            )
-            .add_baseline_temp(baseline_temp=participant_info["baseline_temp"])
-            .add_plateaus(
-                plateau_duration=STIMULUS["plateau_duration"], n_plateaus=STIMULUS["n_plateaus"]
-            )
-            .generalize_big_decreases()
-        )
+        stimulus = StimulusGenerator(config=STIMULUS, seed=seed)
         thermoino.flush_ctc()
         thermoino.init_ctc(bin_size_ms=THERMOINO["bin_size_ms"])
-        thermoino.create_ctc(temp_course=stimulus.wave, sample_rate=stimulus.sample_rate)
+        thermoino.create_ctc(temp_course=stimulus.y, sample_rate=STIMULUS["sample_rate"])
         thermoino.load_ctc()
         thermoino.trigger()
         time_to_ramp_up = thermoino.prep_ctc()
@@ -197,7 +186,7 @@ def main():
         imotions_event.send_stimulus_markers(seed)
         exp.clock.wait_seconds(
             stimulus.duration,
-            callback_function=lambda stimulus=stimulus: get_vas_rating(stimulus),
+            callback_function=lambda: get_vas_rating(temp_course=stimulus.y),
         )
         imotions_event.send_stimulus_markers(seed)
 
@@ -208,16 +197,17 @@ def main():
         # End of trial
         time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
         exp.clock.wait_seconds(time_to_ramp_down, callback_function=lambda: vas_slider.rate())
+        logging.info(f"Finished trial {trial + 1}/{total_trials}.")
         imotions_event.send_prep_markers()
         thermoino.flush_ctc()
-        if trial == len(STIMULUS["seeds"]) - 1:
+        if trial == total_trials - 1:
             break
         SCRIPT["next_trial"].present()
         exp.keyboard.wait(K_SPACE)
         SCRIPT["approve"].present()
         exp.keyboard.wait(K_SPACE)
 
-    #  End of Experiment
+    # End of Experiment
     SCRIPT["bye"].present()
     exp.keyboard.wait(K_SPACE)
 
@@ -225,6 +215,7 @@ def main():
     imotions_event.close()
     imotions_control.end_study()
     imotions_control.close()
+    logging.info("Experiment finished. Good job!")
     close_root_logging()
 
 
