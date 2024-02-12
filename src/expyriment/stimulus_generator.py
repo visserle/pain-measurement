@@ -64,16 +64,21 @@ class StimulusGenerator:
         )
         self.plateau_num = config.get("plateau_num", 3)
         self.plateau_duration = config.get("plateau_duration", 20)
-        
+
         self.temperature_baseline = config.get("temperature_baseline", 40)
         self.temperature_range = config.get("temperature_range", 3)
 
         # Calculate expected length of the stimulus
         self.expected_length = (
-            ((self.period_range[0] + self.period_range[1]) / 2)
-            * self.half_cycle_num
+            ((self.period_range[0] + (self.period_range[1] - 1)) / 2)
+            * (self.half_cycle_num - self.big_decreasing_half_cycle_num)
+            * self.sample_rate
+        ) + (
+            self.big_decreasing_half_cycle_period
+            * self.big_decreasing_half_cycle_num
             * self.sample_rate
         )
+        self.expected_length -= self.expected_length % self.sample_rate  # round to nearest sample
 
         # Determine big decreasing half cycle indexes
         self.big_decreasing_half_cycle_idx = self.rng_numpy.choice(
@@ -154,7 +159,6 @@ class StimulusGenerator:
                 break  # Exit while loop if overall success criteria are met
 
         self.y = np.concatenate(yi)
-
 
     def add_calibration(self):
         self.y *= self.temperature_range / 2
@@ -247,8 +251,8 @@ def stimulus_extra(stimulus, s_RoC, display_stats=True):
         #     n:=min(stimulus.y) if np.sign(min(stimulus.y)) +1 else min(min(stimulus.y), -1),
         #     max(stimulus.y) if np.sign(n) + 1 else abs(n),
         # ]
-    )    
-    
+    )
+
     func = [stimulus.y, stimulus.y_dot, labels, labels_alt]
     func_names = "f(x)", "f'(x)", "Label", "Label (alt)"
     colors = "royalblue", "skyblue", "springgreen", "violet"
