@@ -22,7 +22,7 @@ def center_tk_window(window: tk.Tk):
 class ChecklistDialog:
     def __init__(self, root, items):
         self.root = root
-        self.root.title("Alles startklar?")
+        self.root.title("Ready to Start?")
         self.items = items
         self.response = False
         self.setup_ui()
@@ -61,9 +61,23 @@ class ChecklistDialog:
         return self.response
 
 
+def ask_for_eyetracker_calibration() -> bool:
+    root = tk.Tk()
+    root.withdraw()
+    root.title("iMotions Calibration")
+    label = tk.Label(root, text="Start eye-tracking calibration?")
+    label.pack(pady=10)
+    proceed_button = tk.Button(root, text="Proceed", command=lambda: root.destroy())
+    proceed_button.pack(padx=80, pady=20)
+    proceed_button.pack(pady=20)
+    center_tk_window(root)
+    root.deiconify()
+    root.mainloop()
+
+
 def ask_for_measurement_start() -> bool:
     """Custom confirmation dialog window with checkboxes for each item."""
-    items = ["MMS Programm umgestellt?", "Sensor Preview geöffnet?"]
+    items = ["MMS Programm umgestellt?", "MMS Trigger-ready?", "Sensor Preview geöffnet?"]
     root = tk.Tk()
     root.withdraw()
     dialog = ChecklistDialog(root, items)
@@ -153,4 +167,4 @@ class ParticipantDataApp:
 
 
 if __name__ == "__main__":
-    ask_for_measurement_start()
+    ask_for_eyetracker_calibration()

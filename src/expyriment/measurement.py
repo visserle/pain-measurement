@@ -5,10 +5,11 @@
 # add randomization of stimulus order using expyriment
 # adujst stimulus sample rate to the rest of the sample rates, should always be the same as for imotions because we send both at the same time
 
-# move costly operations to end of trial? pregenerate stimuli?
+# move costly operations to end of trial
 
 import argparse
 import logging
+import random
 from datetime import datetime
 from pathlib import Path
 
@@ -19,7 +20,7 @@ from src.expyriment.imotions import EventRecievingiMotions, RemoteControliMotion
 from src.expyriment.participant_data import read_last_participant
 from src.expyriment.stimulus_generator import StimulusGenerator
 from src.expyriment.thermoino import ThermoinoComplexTimeCourses
-from src.expyriment.tkinter_windows import ask_for_measurement_start
+from src.expyriment.tkinter_windows import ask_for_measurement_start, ask_for_eyetracker_calibration
 from src.expyriment.utils import (
     load_configuration,
     load_script,
@@ -40,7 +41,7 @@ PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
-configure_logging(stream_level=logging.DEBUG, file_path=log_file)
+configure_logging(stream_level=logging.DEBUG, file_path=log_file, ignore_libs=["numba"])
 
 # Load configurations and script
 config = load_configuration(CONFIG_PATH)
@@ -50,6 +51,8 @@ EXPERIMENT = config["experiment"]
 STIMULUS = config["stimulus"]
 IMOTIONS = config["imotions"]
 VAS = config["visual_analogue_scale"]
+StimulusGenerator(config=STIMULUS, debug=True)  # Initialize chached JIT compilation # NOTE
+random.shuffle(STIMULUS["seeds"])
 
 # Create an argument parser
 parser = argparse.ArgumentParser(description="Run the pain-measurement experiment. Dry by default.")
@@ -73,6 +76,9 @@ if not args.participant:
     read_last_participant = lambda x: config["dummy_participant"]
     logging.info("Using dummy participant data.")
 if not args.imotions:
+    ask_for_eyetracker_calibration = lambda: logging.info(
+        "Skip asking for eye-tracker calibration because of dummy iMotions."
+    )
     ask_for_measurement_start = lambda: logging.info(
         "Skip asking for measurement start because of dummy iMotions."
     )
@@ -99,6 +105,7 @@ imotions_event = EventRecievingiMotions(
     sample_rate=IMOTIONS["sample_rate"], dummy=not args.imotions
 )
 imotions_event.connect()
+ask_for_eyetracker_calibration()
 imotions_control.start_study(mode=IMOTIONS["start_study_mode"])
 
 ask_for_measurement_start()
@@ -142,6 +149,7 @@ def get_vas_rating(temp_course):
 def main():
     # Start experiment
     control.start(skip_ready_screen=True)
+    logging.info(f"Experiment started with seed order {STIMULUS['seeds']}.")
 
     # Introduction
     for text in SCRIPT["welcome"].values():
