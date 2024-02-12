@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-# Note that numba RNG support falls back to numpy's RNG so there is no speedup for seed-based RNG.
-
 
 def cosine_half_cycle(period, amplitude, y_intercept=0, t_start=0, sample_rate=10):
     frequency = 1 / period
@@ -148,18 +146,18 @@ class StimulusGenerator:
         """
         Get amplitudes for the half cycles (interatively).
 
-        Note that this code it much less readable than _get_periods, but for the dependent nature of
+        Note that this code it less readable than the vectorized _get_periods, but for the dependent nature of
         the amplitudes on the y_intercepts, looping is much more efficient and much faster than vectorized operations.
         If one value is invalid we do not need to recompute the entire array, just the current value.
         """
         retry_limit_per_half_cycle = 5
-
-        amplitudes = []
-        y_intercepts = []
-        y_intercept = -1  # starting intercept
-
         counter = 0
         while True:
+            success = True
+            amplitudes = []
+            y_intercepts = []
+            y_intercept = -1  # starting intercept
+
             for i in range(self.half_cycle_num):
                 retries = retry_limit_per_half_cycle
                 valid_amplitude_found = False
@@ -190,8 +188,9 @@ class StimulusGenerator:
                         retries -= 1
 
                 if not valid_amplitude_found:
-                    return self._get_amplitudes()
-            if np.max(y_intercepts) > 0.95:
+                    success = False
+                    break
+            if success and np.max(y_intercepts) > 0.95:
                 break
         if self.debug:
             print(f"Amplitudes: {counter} iterations to converge")
