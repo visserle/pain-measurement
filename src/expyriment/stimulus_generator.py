@@ -123,7 +123,12 @@ class StimulusGenerator:
         return [i - idx for idx, i in enumerate(self.big_decreasing_half_cycle_idx)]
 
     def _get_periods(self):
-        """Get periods for the half cycles (vectorized)."""
+        """
+        Get periods for the half cycles.
+
+        Constraints:
+        - The sum of the periods must equal expected_length.
+        """
         # TODO: variance check for rAnDoMnEsS?
         counter = 0
         while True:
@@ -151,6 +156,11 @@ class StimulusGenerator:
         Note that this code it less readable than the vectorized _get_periods, but for the dependent nature of
         the amplitudes on the y_intercepts, looping is much more efficient and much faster than vectorized operations.
         If one intercept is invalid we do not need to recompute the entire array, just the current value.
+
+        Contraints:
+        - The stimulus must be within -1 and 1.
+        - The maximum y_intercept must be greater than 0.95.
+        - The inflection point (median index) of each cosine segment must be within the median_range.
         """
         retry_limit_per_half_cycle = 5
         counter = 0
@@ -199,6 +209,7 @@ class StimulusGenerator:
         return amplitudes
 
     def generate_stimulus(self):
+        """Generates the stimulus based on the periods and amplitudes."""
         yi = []
         t_start = 0
         y_intercept = -1
@@ -214,6 +225,7 @@ class StimulusGenerator:
         self.y = np.concatenate(yi)
 
     def add_calibration(self):
+        """Scales the stimulus to the temperature range and baseline using calibrated values."""
         self.y *= self.temperature_range / 2
         self.y += self.temperature_baseline
         return self
@@ -268,12 +280,8 @@ def stimulus_extra(stimulus, s_RoC, display_stats=True):
 
     Parameters
     ----------
-    f : array_like
-        The function values at each time point.
-    stimulus.y_dot : array_like
-        The derivative of the function at each time point.
-    sample_rate : int
-        The sample rate of the data.
+    stimulus : StimulusGenerator
+        The stimulus object.
     s_RoC : float
         The rate of change threshold (°C/s) for alternative labels.
         For more information about thresholds, also see: http://www.scholarpedia.org/article/Thermal_touch#Thermal_thresholds
