@@ -77,7 +77,12 @@ def ask_for_eyetracker_calibration() -> bool:
 
 def ask_for_measurement_start() -> bool:
     """Custom confirmation dialog window with checkboxes for each item."""
-    items = ["MMS Programm umgestellt?", "MMS Trigger-ready?", "Sensor Preview geöffnet?"]
+    items = [
+        "MMS Programm umgestellt?",
+        "MMS Trigger-ready?",
+        "iMotions' Kalibrierung bestätigt?",
+        "Sensor Preview geöffnet?",
+    ]
     root = tk.Tk()
     root.withdraw()
     dialog = ChecklistDialog(root, items)
