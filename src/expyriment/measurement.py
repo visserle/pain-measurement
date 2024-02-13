@@ -5,7 +5,6 @@
 # add randomization of stimulus order using expyriment
 # adujst stimulus sample rate to the rest of the sample rates, should always be the same as for imotions because we send both at the same time
 
-# move costly operations to end of trial
 
 import argparse
 import logging
@@ -51,8 +50,6 @@ EXPERIMENT = config["experiment"]
 STIMULUS = config["stimulus"]
 IMOTIONS = config["imotions"]
 VAS = config["visual_analogue_scale"]
-StimulusGenerator(config=STIMULUS, debug=True)  # Initialize chached JIT compilation # NOTE
-random.shuffle(STIMULUS["seeds"])
 
 # Create an argument parser
 parser = argparse.ArgumentParser(description="Run the pain-measurement experiment. Dry by default.")
@@ -95,6 +92,7 @@ io.defaults.outputfile_time_stamp = True
 # Load participant info and update stimulus config with calibration data
 participant_info = read_last_participant(PARTICIPANTS_EXCEL_PATH)
 STIMULUS.update(participant_info)
+random.shuffle(STIMULUS["seeds"])
 
 # Initialize iMotions
 imotions_control = RemoteControliMotions(
@@ -149,7 +147,7 @@ def get_vas_rating(temp_course):
 def main():
     # Start experiment
     control.start(skip_ready_screen=True)
-    logging.info(f"Experiment started with seed order {STIMULUS['seeds']}.")
+    logging.info(f"Started experiment with seed order {STIMULUS['seeds']}.")
 
     # Introduction
     for text in SCRIPT["welcome"].values():
@@ -169,8 +167,9 @@ def main():
 
     # Trial loop
     total_trials = len(STIMULUS["seeds"])
+
     for trial, seed in enumerate(STIMULUS["seeds"]):
-        logging.info(f"Started trial {trial + 1}/{total_trials} with seed {seed}.")
+        logging.info(f"Started trial ({trial + 1}/{total_trials}) with seed {seed}.")
         # Start with a waiting screen for the initalization of the complex time course
         SCRIPT["wait"].present()
         stimulus = StimulusGenerator(config=STIMULUS, seed=seed)
@@ -205,7 +204,7 @@ def main():
         # End of trial
         time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
         exp.clock.wait_seconds(time_to_ramp_down, callback_function=lambda: vas_slider.rate())
-        logging.info(f"Finished trial {trial + 1}/{total_trials}.")
+        logging.info(f"Finished trial ({trial + 1}/{total_trials}).")
         imotions_event.send_prep_markers()
         thermoino.flush_ctc()
         if trial == total_trials - 1:
@@ -223,7 +222,7 @@ def main():
     imotions_event.close()
     imotions_control.end_study()
     imotions_control.close()
-    logging.info("Experiment finished. Good job!")
+    logging.info("Finished experiment. Good job!")
     close_root_logging()
 
 

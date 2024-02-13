@@ -1,6 +1,7 @@
 # TODO
 # ask PI if hes fine with forcefully going under the expected length, or maybe use random periods with shorter length by default?
 # check for total applied temperature via integral of the stimulus? - how much pain in a given trial? or should it vary?
+# best plateau percentile range
 
 import numpy as np
 import pandas as pd
@@ -44,6 +45,7 @@ class StimulusGenerator:
         )
         self.plateau_num = config.get("plateau_num", 3)
         self.plateau_duration = config.get("plateau_duration", 20)
+        self.plateau_percentile_range = config.get("plateau_percentile_range", [25, 75])
 
         self.temperature_baseline = config.get("temperature_baseline", 40)
         self.temperature_range = config.get("temperature_range", 3)
@@ -148,7 +150,7 @@ class StimulusGenerator:
 
         Note that this code it less readable than the vectorized _get_periods, but for the dependent nature of
         the amplitudes on the y_intercepts, looping is much more efficient and much faster than vectorized operations.
-        If one value is invalid we do not need to recompute the entire array, just the current value.
+        If one intercept is invalid we do not need to recompute the entire array, just the current value.
         """
         retry_limit_per_half_cycle = 5
         counter = 0
@@ -170,7 +172,7 @@ class StimulusGenerator:
                         amplitude = self.rng_numpy.uniform(
                             self.amplitude_range[0], self.amplitude_range[1]
                         )
-                        if i % 2 == 0:
+                        if not i & 1:
                             amplitude *= -1  # invert amplitude for increasing half cycles
                     next_y_intercept = y_intercept + amplitude * -2
 
@@ -219,15 +221,20 @@ class StimulusGenerator:
     def add_plateaus(self):
         """
         Adds plateaus to the stimulus at random positions, but only when the temperature is rising
-        and the temperature is between the 25th and 75th percentile. The distance between the
+        and the temperature is between given percentile range. The distance between the
         plateaus is at least 1.5 times the plateau_duration.
         """
         if self.y is None:
-            raise ValueError("Waveform not generated. Please run generate_stimulus() first.")
+            raise ValueError("Stimulus not generated. Please run generate_stimulus() first.")
 
-        # Get indices of values within the 25th and 75th percentile and with a rising temperature
-        q25, q75 = np.percentile(self.y, 25), np.percentile(self.y, 75)
-        idx_iqr_values = np.where((self.y > q25) & (self.y < q75) & (self.y_dot > 0.07))[0]
+        # Get indices of values within the given percentile range and with a rising temperature
+        percentile_low = np.percentile(self.y, self.plateau_percentile_range[0])
+        percetile_high = np.percentile(self.y, self.plateau_percentile_range[1])
+        idx_iqr_values = np.where(
+            (self.y > percentile_low)
+            & (self.y < percetile_high)
+            & (self.y_dot > 0.07)  # 0.07 FIXME TODO
+        )[0]
 
         # Find suitable positions for the plateaus
         counter = 0
