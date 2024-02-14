@@ -62,24 +62,41 @@ class ChecklistDialog:
 
 
 def ask_for_eyetracker_calibration() -> bool:
+    user_choice = {"proceed": False}  # Dictionary to store user's choice
+
+    def on_proceed():
+        user_choice["proceed"] = True
+        root.destroy()
+
+    def on_abort():
+        user_choice["proceed"] = False
+        root.destroy()
+
     root = tk.Tk()
     root.withdraw()
-    root.title("iMotions Calibration")
-    label = tk.Label(root, text="Start eye-tracking calibration?")
-    label.pack(pady=10)
-    proceed_button = tk.Button(root, text="Proceed", command=lambda: root.destroy())
-    proceed_button.pack(padx=80, pady=20)
-    proceed_button.pack(pady=20)
+    root.title("iMotions")
+
+    label = tk.Label(root, text="Kalibrierung für Eye-Tracking starten?")
+    label.pack(pady=10, padx=10)
+
+    abort_button = tk.Button(root, text="Nein", command=on_abort)
+    abort_button.pack(side=tk.LEFT, padx=20, pady=20)
+
+    proceed_button = tk.Button(root, text="Ja", command=on_proceed)
+    proceed_button.pack(side=tk.RIGHT, padx=20, pady=20)
+
     center_tk_window(root)
     root.deiconify()
     root.mainloop()
+
+    return user_choice["proceed"]
 
 
 def ask_for_measurement_start() -> bool:
     """Custom confirmation dialog window with checkboxes for each item."""
     items = [
         "MMS Programm umgestellt?",
-        "MMS Trigger-ready?",
+        "MMS Trigger-bereit?",
         "iMotions' Kalibrierung bestätigt?",
         "Sensor Preview geöffnet?",
     ]
@@ -173,3 +190,4 @@ class ParticipantDataApp:
 
 if __name__ == "__main__":
     ask_for_eyetracker_calibration()
+    # ask_for_measurement_start()

@@ -73,6 +73,7 @@ if not args.participant:
     read_last_participant = lambda x: config["dummy_participant"]
     logging.info("Using dummy participant data.")
 if not args.imotions:
+    proceed_with_eyetracker_calibration = True
     ask_for_eyetracker_calibration = lambda: logging.info(
         "Skip asking for eye-tracker calibration because of dummy iMotions."
     )
@@ -103,7 +104,9 @@ imotions_event = EventRecievingiMotions(
     sample_rate=IMOTIONS["sample_rate"], dummy=not args.imotions
 )
 imotions_event.connect()
-ask_for_eyetracker_calibration()
+proceed_with_eyetracker_calibration = ask_for_eyetracker_calibration()
+if not proceed_with_eyetracker_calibration:
+    raise SystemExit("Eye-tracker calibration denied.")
 imotions_control.start_study(mode=IMOTIONS["start_study_mode"])
 
 ask_for_measurement_start()
