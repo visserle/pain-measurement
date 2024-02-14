@@ -51,14 +51,13 @@ class StimulusGenerator:
         self.temperature_range = config.get("temperature_range", 3)
 
         # Calculate expected length of the stimulus
-        # NOTE we can make the wave more versatile by forcing the length down (shorten) from the expected length - sampling from under the expected value
-        self.expected_length_random_half_cycles = self._get_expected_length_random_half_cycles(
+        self.desired_length_random_half_cycles = self._get_desired_length_random_half_cycles(
             shorten=15
         )
-        self.expected_length_big_decreasing_half_cycles = (
-            self._get_expected_length_big_decreasing_half_cycles()
+        self.desired_length_big_decreasing_half_cycles = (
+            self._get_desired_length_big_decreasing_half_cycles()
         )
-        self.expected_length = self._get_expected_length()
+        self.desired_length = self._get_desired_length()
 
         # Determine big decreasing half cycle indexes
         self.big_decreasing_half_cycle_idx = self._get_big_decreasing_half_cycle_idx()
@@ -89,27 +88,31 @@ class StimulusGenerator:
     def y_dot(self):
         return np.gradient(self.y, 1 / self.sample_rate)  # dx in seconds
 
-    def _get_expected_length_random_half_cycles(self, shorten):
+    def _get_desired_length_random_half_cycles(self, shorten):
+        """
+        Get the desired length for the random half cycles.
+
+        Note that shorten [s] is used to force the length down by sampling from under the expected value in the _get_periods method.
+        """
         return (
             ((self.period_range[0] + (self.period_range[1] - 1)) / 2)
             * (self.half_cycle_num - self.big_decreasing_half_cycle_num)
             * self.sample_rate
         ) - (shorten * self.sample_rate)
 
-    def _get_expected_length_big_decreasing_half_cycles(self):
+    def _get_desired_length_big_decreasing_half_cycles(self):
         return (
             self.big_decreasing_half_cycle_period
             * self.big_decreasing_half_cycle_num
             * self.sample_rate
         )
 
-    def _get_expected_length(self):
-        expected_length = (
-            self.expected_length_random_half_cycles
-            + self.expected_length_big_decreasing_half_cycles
+    def _get_desired_length(self):
+        desired_length = (
+            self.desired_length_random_half_cycles + self.desired_length_big_decreasing_half_cycles
         )
-        expected_length -= expected_length % self.sample_rate  # round to nearest sample
-        return expected_length
+        desired_length -= desired_length % self.sample_rate  # round to nearest sample
+        return desired_length
 
     def _get_big_decreasing_half_cycle_idx(self):
         return np.sort(
@@ -127,7 +130,7 @@ class StimulusGenerator:
         Get periods for the half cycles.
 
         Constraints:
-        - The sum of the periods must equal expected_length.
+        - The sum of the periods must equal desired_length.
         """
         # TODO: variance check for rAnDoMnEsS?
         counter = 0
@@ -138,7 +141,7 @@ class StimulusGenerator:
                 self.period_range[1],
                 self.half_cycle_num - self.big_decreasing_half_cycle_num,
             )
-            if np.sum(periods) * self.sample_rate == self.expected_length_random_half_cycles:
+            if np.sum(periods) * self.sample_rate == self.desired_length_random_half_cycles:
                 break
         periods = np.insert(
             periods,

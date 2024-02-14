@@ -191,7 +191,7 @@ class Thermoino:
         self.mms_rate_of_rise = mms_rate_of_rise
         self.dummy = dummy
         if self.dummy:
-            logger.warning("+++ RUNNING IN DUMMY MODE +++")
+            logger.warning("Running in dummy mode.")
 
     def connect(self):
         """
@@ -452,7 +452,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         """
         output = self._send_command(f"INITCTC;{bin_size_ms}\n")
         if output in OkCodes.__members__:
-            logger.debug("Complex temperature course (CTC)) initialized.")
+            logger.debug("Complex temperature course (CTC) initialized.")
             self.bin_size_ms = bin_size_ms
         elif output in ErrorCodes.__members__:
             logger.error("Initializing complex temperature course (CTC) failed: %s.", output)
@@ -576,7 +576,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
 
         Returns the duration in s from the set_temp function.
         """
-        logger.info("Prepare the starting temperature of the complex temperature course (CTC).")
+        logger.info("Preparing the starting temperature of the complex temperature course (CTC).")
         prep_duration, success = self.set_temp(self.temp_course_start)
         if not success:
             logger.error("Preparing complex temperature course (CTC) failed.")
@@ -585,7 +585,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     def exec_ctc(self):
         """
         Execute the CTC on the Thermoino device.
-        
+
         Returns the duration in s of the CTC.
         """
         if self.temp != self.temp_course_start:
@@ -631,7 +631,7 @@ def main():
 
     # List all available serial ports
     print(list_com_ports())
-    
+
     # Set up the Thermoino in dummy mode
     port = "COM7"
     thermoino = Thermoino(
@@ -648,21 +648,21 @@ def main():
     thermoino.sleep(duration=time_to_ramp_up)
     # 4 s plateau of 42°C
     thermoino.sleep(4)
-    time_to_ramp_down, _ = thermoino.set_temp(28)
+    time_to_ramp_down, _ = thermoino.set_temp(28)  # updates the class-internal temperature
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
-    
+
     # Use thermoino for complex temperature courses:
-    temp_course = -np.cos(np.linspace(0, 2*np.pi, 50)) * 4 + 40
+    temp_course = -np.cos(np.linspace(0, 2 * np.pi, 50)) * 4 + 40
     sample_rate = 10
-    
+
     thermoino = ThermoinoComplexTimeCourses(
         port=port,
         mms_baseline=28,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
         dummy=True,
     )
-    
+
     thermoino.connect()
     thermoino.flush_ctc()  # to be sure that no old CTC is loaded
     thermoino.init_ctc(bin_size_ms=500)

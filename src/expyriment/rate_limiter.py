@@ -12,9 +12,9 @@ class RateLimiter:
     def __init__(self, rate, use_intervals=False):
         """
         Initialize the rate limiter with the specified rate and interval-based limiting option.
-        
-        rate is the allowed number of operations per second.
-        use_intervals is a flag to enable interval-based limiting.
+
+        - rate is the allowed number of operations per second.
+        - use_intervals is a flag to enable interval-based limiting.
         """
         self.rate = rate  # Allowed operations per second
         self.use_intervals = use_intervals  # Whether to use interval-based limiting
@@ -37,7 +37,7 @@ class RateLimiter:
         """
         Check if the operation is allowed at the current time, optionally considering specific intervals.
 
-        current_time is expected to be in milliseconds.
+        - current_time is expected to be in milliseconds.
         """
         if self.use_intervals:
             if current_time >= self.next_allowed_time:
