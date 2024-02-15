@@ -73,9 +73,9 @@ if not args.participant:
     read_last_participant = lambda x: config["dummy_participant"]
     logging.info("Using dummy participant data.")
 if not args.imotions:
-    proceed_with_eyetracker_calibration = True
-    ask_for_eyetracker_calibration = lambda: logging.info(
-        "Skip asking for eye-tracker calibration because of dummy iMotions."
+    ask_for_eyetracker_calibration = (
+        lambda: logging.info("Skip asking for eye-tracker calibration because of dummy iMotions.")
+        or True  # hack to return True
     )
     ask_for_measurement_start = lambda: logging.info(
         "Skip asking for measurement start because of dummy iMotions."
@@ -108,7 +108,6 @@ proceed_with_eyetracker_calibration = ask_for_eyetracker_calibration()
 if not proceed_with_eyetracker_calibration:
     raise SystemExit("Eye-tracker calibration denied.")
 imotions_control.start_study(mode=IMOTIONS["start_study_mode"])
-
 ask_for_measurement_start()
 
 # Experiment setup
@@ -221,6 +220,7 @@ def main():
     SCRIPT["bye"].present()
     exp.keyboard.wait(K_SPACE)
 
+    control.end()
     thermoino.close()
     imotions_event.close()
     imotions_control.end_study()
