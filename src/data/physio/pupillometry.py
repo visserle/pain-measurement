@@ -24,23 +24,20 @@ def ensure_list(to_list: str | list[str]) -> list[str]:
 
 
 @map_trials
-def process_pupillometry(df: pl.DataFrame, sampling_rate=60, cutoff_frequency=0.5) -> pl.DataFrame:
-    df = values_below_x_are_considered_blinks(df)
-    df = remove_periods_around_blinks(df)
-    df = interpolate_pupillometry(df)
-    df = low_pass_filter_pupillometry(df, sampling_rate, cutoff_frequency)
-    df = mean_pupil_size(df, EYE_COLUMNS)
+def process_pupillometry(
+    df: pl.DataFrame, eye_columns=EYE_COLUMNS, sampling_rate=60, cutoff_frequency=0.5
+) -> pl.DataFrame:
+    df = values_below_x_are_considered_blinks(df, eye_columns)
+    df = remove_periods_around_blinks(df, eye_columns)
+    df = interpolate_pupillometry(df, eye_columns)
+    df = low_pass_filter_pupillometry(df, eye_columns, sampling_rate, cutoff_frequency)
+    df = mean_pupil_size(df, eye_columns)
     return df
 
 
 def values_below_x_are_considered_blinks(df: pl.DataFrame, eye_columns, x=1.5) -> pl.DataFrame:
     for eye in ensure_list(eye_columns):
-        df = df.with_columns(
-            pl.when(pl.col(eye) < x)
-            .then(-1)
-            .otherwise(pl.col(eye))
-            .alias(eye)
-        )
+        df = df.with_columns(pl.when(pl.col(eye) < x).then(-1).otherwise(pl.col(eye)).alias(eye))
     return df
 
 
@@ -98,9 +95,10 @@ def _get_blink_segments(df: pl.DataFrame, eye_columns: str | list[str]) -> pl.Da
     # Add a duration column if there are any segments, else create an empty DataFrame with the expected schema
     return (
         blink_segments_df.with_columns(
-        (blink_segments_df["end_timestamp"] - blink_segments_df["start_timestamp"])
-        .alias("duration"))
-        .sort("start_timestamp")
+            (blink_segments_df["end_timestamp"] - blink_segments_df["start_timestamp"]).alias(
+                "duration"
+            )
+        ).sort("start_timestamp")
         if not blink_segments_df.is_empty()
         else pl.DataFrame([], schema=["eye", "start_timestamp", "end_timestamp", "duration"])
     )
@@ -152,20 +150,15 @@ def remove_periods_around_blinks(
             mask = mask | df[time_column].is_between(start, end)
 
         # Replace the values in the DataFrame with None
-        df = df.with_columns(
-            pl.when(mask)
-            .then(None)
-            .otherwise(df[eye])
-            .alias(eye)
-        )
+        df = df.with_columns(pl.when(mask).then(None).otherwise(df[eye]).alias(eye))
 
     return df
 
 
-def interpolate_pupillometry(df: pl.DataFrame, eye: str) -> pl.DataFrame:
+def interpolate_pupillometry(df: pl.DataFrame, eye_columns) -> pl.DataFrame:
     # Linearly interpolate and fill edge cases when the first or last value is null
     # NOTE: cubic spline?
-    for eye in ensure_list(eye):
+    for eye in ensure_list(eye_columns):
         df = df.with_columns(
             pl.col(eye)
             .interpolate()
@@ -177,20 +170,24 @@ def interpolate_pupillometry(df: pl.DataFrame, eye: str) -> pl.DataFrame:
     return df
 
 
-def low_pass_filter_pupillometry(df, eye, sampling_rate, cutoff_frequency=2.0):
-    pupil_low_pass_filtered = _low_pass_filter(df[eye], sampling_rate, cutoff_frequency=0.5)
-    return df.with_columns(pl.Series(eye, pupil_low_pass_filtered))
+def low_pass_filter_pupillometry(df, eye_columns, sampling_rate, cutoff_frequency=2.0):
+    for eye in ensure_list(eye_columns):
+        pupil_low_pass_filtered = _low_pass_filter(df[eye], sampling_rate, cutoff_frequency=0.5)
+        df = df.with_columns(pl.Series(eye, pupil_low_pass_filtered))
+    return df
 
 
 def _low_pass_filter(data: pl.Series, sampling_rate, cutoff_frequency=2.0) -> np.ndarray:
     """
     Apply a low-pass filter to smooth the data.
+
     - data: numpy array of pupil size measurements.
     - sampling_rate: rate at which data was sampled (Hz).
     - cutoff_frequency: frequency at which to cut off the high-frequency signal.
+
     Returns the filtered data as a numpy array.
     """
-    # Normalize the frequency to Nyquist frequency
+    # Normalize the frequency to Nyquist frequency and avoid aliasing
     normalized_cutoff = cutoff_frequency / (0.5 * sampling_rate)
 
     # Create filter
