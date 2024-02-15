@@ -1,7 +1,5 @@
 """
-For processing raw data.
-
-Note that TRIAL and SYSTEM are not included as data classes.
+For processing interim (already cleaned) data.
 """
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -12,7 +10,7 @@ from src.data.transform_data import interpolate  # resample
 
 
 @dataclass
-class RawConfig(DataConfigBase):
+class InterimConfig(DataConfigBase):
     name: str
     load_columns: list[str]
     transformations: list[callable] = field(default_factory=list)
@@ -27,12 +25,12 @@ class RawConfig(DataConfigBase):
         )
 
 
-HEAT = RawConfig(
+HEAT = InterimConfig(
     name="heat",
-    load_columns=["Trial", "Timestamp", "Temperature", "Rating"],
+    load_columns=["Trial", "Timestamp", "Temperature", "Rating"],  #
 )
 
-EEG = RawConfig(
+EEG = InterimConfig(
     name="eeg",
     load_columns=[
         "Trial",
@@ -48,12 +46,12 @@ EEG = RawConfig(
     ],
 )
 
-EDA = RawConfig(
+EDA = InterimConfig(
     name="eda",
     load_columns=["Trial", "Timestamp", "EDA_RAW"],
 )
 
-PPG = RawConfig(
+PPG = InterimConfig(
     name="ppg",
     load_columns=[
         "Trial",
@@ -64,7 +62,7 @@ PPG = RawConfig(
     ],
 )
 
-PUPILLOMETRY = RawConfig(
+PUPILLOMETRY = InterimConfig(
     name="pupillometry",
     load_columns=[
         "Trial",
@@ -78,7 +76,7 @@ PUPILLOMETRY = RawConfig(
     sampling_rate=60,
 )
 
-AFFECTIVA = RawConfig(
+AFFECTIVA = InterimConfig(
     name="affectiva",
     load_columns=[
         "Trial",
@@ -127,5 +125,5 @@ AFFECTIVA = RawConfig(
 )
 
 
-RAW_LIST = [HEAT, EEG, EDA, PPG, PUPILLOMETRY, AFFECTIVA]
-RAW_DICT = {config.name: config for config in RAW_LIST}
+INTERIM_LIST = [HEAT, EEG, EDA, PPG, PUPILLOMETRY, AFFECTIVA]
+INTERIM_DICT = {config.name: config for config in INTERIM_LIST}

@@ -45,22 +45,11 @@ HEAT = iMotionsConfig(
     load_columns=["Timestamp", "Temperature", "Rating"],
 )
 
-# TEMPERATURE = iMotionsConfig(
-#     name="temperature",
-#     name_imotions="TemperatureCurve_TemperatureCurve@1_ET_EventAPI_ExternDevice",
-#     load_columns=["Timestamp", "Temperature"],
-# )
-
-# RATING = iMotionsConfig(
-#     name="rating",
-#     name_imotions="RatingCurve_RatingCurve@1_ET_EventAPI_ExternDevice",
-#     load_columns=["Timestamp", "Rating"],
-# )
-
 EDA = iMotionsConfig(
     name="eda",
     name_imotions="Shimmer3_GSR+_&_EDA_(D200)_Shimmer3_GSR+_&_EDA_(D200)_ET_Shimmer_ShimmerDevice",
     load_columns=[
+        "RowNumber",
         "SampleNumber",
         "Timestamp",
         "GSR Conductance CAL",
@@ -74,31 +63,25 @@ EDA = iMotionsConfig(
     },
 )
 
-ECG = iMotionsConfig(
-    name="ecg",
-    name_imotions="Shimmer3_ECG_(68BF)_Shimmer3_ECG_(68BF)_ET_Shimmer_ShimmerDevice",
+PPG = iMotionsConfig(
+    name="ppg",
+    name_imotions="Shimmer3_GSR+_&_EDA_(D200)_Shimmer3_GSR+_&_EDA_(D200)_ET_Shimmer_ShimmerDevice",
     load_columns=[
+        "RowNumber",
         "SampleNumber",
         "Timestamp",
-        "ECG LL-RA CAL",
-        "ECG LA-RA CAL",
-        "ECG Vx-RL CAL",
-        #"Heart Rate ECG LL-RA ALG",
-        #"IBI ECG LL-RA ALG",
+        "Internal ADC A13 PPG CAL",
+        "Heart Rate PPG ALG",
+        "IBI PPG ALG",
         "VSenseBatt CAL",
         "Packet reception rate RAW",
     ],
-    dtypes={
-        "IBI ECG LL-RA ALG": pl.Float64,
-    },
     rename_columns={
-        "ECG LL-RA CAL": "ECG_LL-RA",
-        "ECG LA-RA CAL": "ECG_LA-RA",
-        "ECG Vx-RL CAL": "ECG_Vx-RL",
-        #"Heart Rate ECG LL-RA ALG": "ECG_LL-RA_HeartRate",
-        #"IBI ECG LL-RA ALG": "ECG_LL-RA_IBI",
-        "VSenseBatt CAL": "ECG_d_Battery",
-        "Packet reception rate RAW": "ECG_d_PacketReceptionRate",
+        "Internal ADC A13 PPG CAL": "PPG_RAW",
+        "Heart Rate PPG ALG": "PPG_HeartRate",
+        "IBI PPG ALG": "PPG_IBI",
+        "VSenseBatt CAL": "PPG_d_Battery",
+        "Packet reception rate RAW": "PPG_d_PacketReceptionRate",
     },
 )
 
@@ -212,6 +195,5 @@ SYSTEM = iMotionsConfig(
 )
 
 
-# IMOTIONS_LIST = [TRIAL, TEMPERATURE, RATING, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA, SYSTEM]
-IMOTIONS_LIST = [TRIAL, HEAT, EDA, ECG, EEG, PUPILLOMETRY, AFFECTIVA, SYSTEM]
+IMOTIONS_LIST = [TRIAL, HEAT, EEG, EDA, PPG, PUPILLOMETRY, AFFECTIVA, SYSTEM]
 IMOTIONS_DICT = {config.name: config for config in IMOTIONS_LIST}
