@@ -1,6 +1,6 @@
 [experiment]
 text_size = 40
-text_box_size = [1500, 900] 
+text_box_size = [1500, 900]
 element_color = [128, 64, 192]
 marker_color = [192, 64, 128]
 
@@ -15,13 +15,18 @@ slider_color = [194, 24, 7]
 label_text_size = 40
 label_text_box_size = [250, 100]
 
+[imotions]
+sample_rate = 10
+start_study_mode = "NormalPrompt"
+
 [stimulus]
 seeds = [786, 539, 589, 869, 431, 340, 395, 211, 909, 827, 405, 119]
-half_cycle_num = 10
 sample_rate = 10
+half_cycle_num = 10
 period_range = [5, 20]
-amplitude_range = [0.1, 0.9]
-median_range = 0.3
+amplitude_range = [0.3, 1.0]  # TODO find good values, should be random, not too small not too big to resamble big decreases
+inflection_point_range = [-0.3, 0.3]
+shorten_expected_duration = 15  # [s]
 big_decreasing_half_cycle_num = 3
 big_decreasing_half_cycle_period = 20
 big_decreasing_half_cycle_amplitude = 0.85
@@ -29,9 +34,14 @@ plateau_num = 3
 plateau_duration = 20
 plateau_percentile_range = [25, 75]
 
-[imotions]
-sample_rate = 10
-start_study_mode = "NormalPrompt"
+[dummy_stimulus]
+seeds = [1, 2, 3]
+half_cycle_num = 2
+period_range = [2, 3]
+big_decreasing_half_cycle_num = 0
+shorten_expected_duration = 0
+amplitude_range = [0.9, 1.0]
+plateau_num = 0
 
 [dummy_participant]
 time_stamp = "2024-01-01 15:00:00"

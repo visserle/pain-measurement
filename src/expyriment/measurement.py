@@ -5,13 +5,13 @@
 # add randomization of stimulus order using expyriment
 # adujst stimulus sample rate to the rest of the sample rates, should always be the same as for imotions because we send both at the same time
 
-
 import argparse
 import logging
 import random
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 from expyriment import control, design, io, stimuli
 from expyriment.misc.constants import C_DARKGREY, K_SPACE
 
@@ -19,7 +19,10 @@ from src.expyriment.imotions import EventRecievingiMotions, RemoteControliMotion
 from src.expyriment.participant_data import read_last_participant
 from src.expyriment.stimulus_generator import StimulusGenerator
 from src.expyriment.thermoino import ThermoinoComplexTimeCourses
-from src.expyriment.tkinter_windows import ask_for_measurement_start, ask_for_eyetracker_calibration
+from src.expyriment.tkinter_windows import (
+    ask_for_eyetracker_calibration,
+    ask_for_measurement_start,
+)
 from src.expyriment.utils import (
     load_configuration,
     load_script,
@@ -40,7 +43,12 @@ PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
-configure_logging(stream_level=logging.DEBUG, file_path=log_file, ignore_libs=["numba"])
+configure_logging(
+    stream_level=logging.DEBUG,
+    file_path=log_file,
+    ignore_libs=["numba"],
+    stream_milliseconds=True,
+)
 
 # Load configurations and script
 config = load_configuration(CONFIG_PATH)
@@ -52,14 +60,25 @@ IMOTIONS = config["imotions"]
 VAS = config["visual_analogue_scale"]
 
 # Create an argument parser
-parser = argparse.ArgumentParser(description="Run the pain-measurement experiment. Dry by default.")
+parser = argparse.ArgumentParser(
+    description="Run the pain-measurement experiment. Dry by default."
+)
 parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
-parser.add_argument("-f", "--full_screen", action="store_true", help="Run in full screen mode")
-# TODO
-parser.add_argument("-s", "--full_stimuli", action="store_true", help="Use full stimuli duration")
-parser.add_argument("-p", "--participant", action="store_true", help="Use real participant data")
-parser.add_argument("-t", "--thermoino", action="store_true", help="Enable Thermoino device")
-parser.add_argument("-i", "--imotions", action="store_true", help="Enable iMotions integration")
+parser.add_argument(
+    "-f", "--full_screen", action="store_true", help="Run in full screen mode"
+)
+parser.add_argument(
+    "-s", "--full_stimulus", action="store_true", help="Use full stimulus duration"
+)
+parser.add_argument(
+    "-p", "--participant", action="store_true", help="Use real participant data"
+)
+parser.add_argument(
+    "-t", "--thermoino", action="store_true", help="Enable Thermoino device"
+)
+parser.add_argument(
+    "-i", "--imotions", action="store_true", help="Enable iMotions integration"
+)
 args = parser.parse_args()
 
 # Adjust settings
@@ -69,15 +88,20 @@ if args.all:
 if not args.full_screen:
     control.defaults.window_size = (800, 600)
     control.set_develop_mode(True)
+if not args.full_stimulus:
+    STIMULUS.update(config["dummy_stimulus"])
+    logging.warning("Using dummy stimulus.")
 if not args.participant:
-    read_last_participant = lambda x: config["dummy_participant"]
-    logging.info("Using dummy participant data.")
+    read_last_participant = lambda x: config["dummy_participant"]  # noqa: E731
+    logging.warning("Using dummy participant data.")
 if not args.imotions:
-    ask_for_eyetracker_calibration = (
-        lambda: logging.info("Skip asking for eye-tracker calibration because of dummy iMotions.")
+    ask_for_eyetracker_calibration = (  # noqa: E731
+        lambda: logging.debug(
+            "Skip asking for eye-tracker calibration because of dummy iMotions."
+        )
         or True  # hack to return True
     )
-    ask_for_measurement_start = lambda: logging.info(
+    ask_for_measurement_start = lambda: logging.debug(  # noqa: E731
         "Skip asking for measurement start because of dummy iMotions."
     )
 
@@ -131,13 +155,15 @@ thermoino = ThermoinoComplexTimeCourses(
 thermoino.connect()
 
 
-def get_vas_rating(temp_course):
+def get_data_points(temp_course):
+    """Get rating and temperature data points and send them to iMotions."""
     # Runs rate-limited in the callback function
+    # TODO maybe use a higher layer for the rate limiting?
     stopped_time = exp.clock.stopwatch_time
     vas_slider.rate()
-    index = max(
-        0, int((stopped_time / 1000) * STIMULUS["sample_rate"]) - 1
-    )  # TODO check if -1 is necessary
+    index = int(
+        (stopped_time / 1000) * STIMULUS["sample_rate"]
+    )  # NOTE TODO this is now exact in dev mode
     imotions_event.send_data_rate_limited(
         timestamp=stopped_time,
         temperature=temp_course[index],
@@ -148,6 +174,7 @@ def get_vas_rating(temp_course):
 
 def main():
     # Start experiment
+    reward = 0
     control.start(skip_ready_screen=True)
     logging.info(f"Started experiment with seed order {STIMULUS['seeds']}.")
 
@@ -160,7 +187,9 @@ def main():
     for text in SCRIPT["instruction"].values():
         exp.keyboard.wait(
             K_SPACE,
-            callback_function=lambda text=text: vas_slider.rate(instruction_textbox=text),
+            callback_function=lambda text=text: vas_slider.rate(
+                instruction_textbox=text
+            ),
         )
 
     # Ready
@@ -169,46 +198,69 @@ def main():
 
     # Trial loop
     total_trials = len(STIMULUS["seeds"])
-
     for trial, seed in enumerate(STIMULUS["seeds"]):
         logging.info(f"Started trial ({trial + 1}/{total_trials}) with seed {seed}.")
+
         # Start with a waiting screen for the initalization of the complex time course
         SCRIPT["wait"].present()
         stimulus = StimulusGenerator(config=STIMULUS, seed=seed)
         thermoino.flush_ctc()
         thermoino.init_ctc(bin_size_ms=THERMOINO["bin_size_ms"])
-        thermoino.create_ctc(temp_course=stimulus.y, sample_rate=STIMULUS["sample_rate"])
+        thermoino.create_ctc(
+            temp_course=stimulus.y, sample_rate=STIMULUS["sample_rate"]
+        )
         thermoino.load_ctc()
         thermoino.trigger()
+
+        # Present the VAS slider and wait for the temperature to ramp up
         time_to_ramp_up = thermoino.prep_ctc()
         imotions_event.send_prep_markers()
-
         exp.clock.wait_seconds(
-            time_to_ramp_up,
+            time_to_ramp_up + 1.5,  # give participant time to prepare
             callback_function=lambda: vas_slider.rate(),
         )
 
-        # Measurement
+        # Measure temperature and rating
         thermoino.exec_ctc()
         imotions_event.rate_limiter.reset()
         exp.clock.reset_stopwatch()  # used to get the temperature in the callback function
         imotions_event.send_stimulus_markers(seed)
         exp.clock.wait_seconds(
             stimulus.duration,
-            callback_function=lambda: get_vas_rating(temp_course=stimulus.y),
+            callback_function=lambda: get_data_points(temp_course=stimulus.y),
         )
         imotions_event.send_stimulus_markers(seed)
+        logging.info("Complex temperature course (CTC) finished.")
 
         # NOTE maybe this could fixed by np.diff. TODO check
         # Account for the exec delay of the thermoino (see thermoino.exec_ctc()
         exp.clock.wait_seconds(0.5, callback_function=lambda: vas_slider.rate())
 
-        # End of trial
+        # Ramp down temperature
         time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
-        exp.clock.wait_seconds(time_to_ramp_down, callback_function=lambda: vas_slider.rate())
-        logging.info(f"Finished trial ({trial + 1}/{total_trials}).")
+        exp.clock.wait_seconds(
+            time_to_ramp_down, callback_function=lambda: vas_slider.rate()
+        )
+        logging.info(f"Finished trial ({trial + 1}/{total_trials}) with seed {seed}.")
         imotions_event.send_prep_markers()
-        thermoino.flush_ctc()
+
+        # Correlation check for reward
+        data_points = pd.DataFrame(imotions_event.data_points)
+        data_points.set_index("timestamp", inplace=True)
+        corr = data_points.corr()["temperature"]["rating"]
+        logging.info(f"Correlation between temperature and rating: {corr:.2f}.")
+        if corr > 0.6:
+            reward += 1
+            logging.debug("Rewarding participant.")
+            SCRIPT["reward"].present()
+            exp.clock.wait(1500)
+        elif corr < 0.3:
+            logging.warning(
+                "Correlation is too low. Is the participant paying attention?"
+            )
+        imotions_event.clear_data_points()
+
+        # End of trial
         if trial == total_trials - 1:
             break
         SCRIPT["next_trial"].present()
@@ -221,11 +273,11 @@ def main():
     exp.keyboard.wait(K_SPACE)
 
     control.end()
-    thermoino.close()
-    imotions_event.close()
     imotions_control.end_study()
-    imotions_control.close()
-    logging.info("Finished experiment. Good job!")
+    for instance in [thermoino, imotions_event, imotions_control]:
+        instance.close()
+    logging.info("Experiment finished. Good job!")
+    logging.info(f"Participant reward: {reward} €.")
     close_root_logging()
 
 

@@ -23,6 +23,9 @@ welcome:
     
 
     (Leertaste drücken, um fortzufahren)
+# Um Ihre Schmerzen objektiv zu messen, brauchen wir von Ihnen Ihre eigene Schmerzbewertung. Dafür bewegen Sie fortlaufen einen Zeiger auf einer Schmerzbewertungs-Skala von 0 bis 100. Es ist äußerst wichtig, dass sie Ihre Schmerzbewertung so genau wie nur möglich mitteilen.
+# Im Folgenden erhalten Sie Hitzeschmerzen mit schwankender Intensität. Die Intensitäten sind zufällig gewählt, sodass Sie nicht wissen, welche Schmerzintensität Sie as nächstes erwartet.
+# Nach jedem Durchlauf erhalten Sie eine kurze Rückmeldung, ob Ihre Schmerbewertungen präzise genug waren. Falls ja, erhalten Sie pro Durchlauf + 1 € Belohnung. Insgesamt können Sie sich so zusätzlich zur Aufwandsentschädigung + 12 € an Belohnung verdienen.
   3: |-
 
 
@@ -150,6 +153,18 @@ wait: |-
 
 
   ...
+reward: |-
+  
+  
+  
+  
+  
+
+
+
+  Ihre Schmerzbewertung war präzise.
+  
+  Sie erhalten 1 € Belohnung!
 approve : |-
 
 
