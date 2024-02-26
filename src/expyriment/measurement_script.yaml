@@ -19,7 +19,8 @@ welcome:
 
 
 
-    In diesem Experiment möchten wir den schwankenden Verlauf von Schmerzen objektiv messen.
+    In diesem Experiment möchten wir den schwankenden Verlauf von Schmerzen
+    objektiv messen.
 
 
     (Leertaste drücken, um fortzufahren)
@@ -29,9 +30,9 @@ welcome:
 
 
     Dazu erhalten Sie im Folgenden Schmerzen mit unterschiedlicher Intensität.
-    Ihre Aufgabe ist es, Ihren Schmerz durchgehend - also ohne Unterbrechung - zu bewerten.
-    Die Schmerzintensität variiert zufällig, sodass Sie die nächste Intensität nicht vorhersehen können.
-       
+
+    Ihre Aufgabe ist es, Ihren erlebten Schmerz durchgehend - also ohne Unterbrechung - zu bewerten. Die Schmerzintensität variiert dabei zufällig, sodass Sie die nächste Intensität nicht vorhersehen können.
+
 
     (Leertaste drücken, um fortzufahren)
   4: |-
@@ -39,10 +40,9 @@ welcome:
 
 
 
-    Nach jedem Block erhalten Sie eine kurze Rückmeldung, ob Ihre Schmerzbewertung präzise genug war. 
-    Falls ja, erhalten Sie pro Block + 1 € Belohnung.
+    Insgesamt besteht das Experiment aus 12 Blöcken, die jeweils 3 Minuten lang sind.
 
-    So können Sie sich zusätzlich zur Aufwandsentschädigung bis zu + 12 € an Belohnung verdienen.
+    Falls Ihre Schmerzbewertung in einem Block präzise genug war, erhalten Sie eine Belohnung von 1 €. So können Sie sich zusätzlich zur Aufwandsentschädigung eine Belohnung von bis zu 12 € verdienen.
 
 
     (Leertaste drücken, um fortzufahren)
@@ -52,10 +52,10 @@ welcome:
 
 
 
-    Es ist wichtig, dass Sie Ihre Bewertung so genau wie möglich vornehmen.
 
+    Es ist wichtig, dass Sie Ihre Schmerzbewertung so genau wie nur möglich mitteilen.
 
-    Die Schmerzbewertung erfolgt mithilfe einer visuellen Skala, die Sie auf der nächsten Seite sehen.
+    Die Bewertung erfolgt mithilfe einer visuellen Skala, die Sie auf der nächsten Seite sehen.
     
 
     (Leertaste drücken, um fortzufahren)
@@ -64,7 +64,7 @@ instruction:
 
 
 
-    Mit Hilfe des roten Schiebers geben Sie die von Ihnen empfundene Schmerzstärke an.
+    Mit Hilfe des Schiebereglers geben Sie die von Ihnen erlebte Schmerzstärke an.
     Bewegen Sie dazu Ihren Mauszeiger auf der Skala hin und her. Probieren Sie es aus!
 
 
@@ -77,14 +77,13 @@ instruction:
 
 
 
+
     (Leertaste drücken, um fortzufahren)
-# Um Ihre Schmerzen objektiv zu messen, brauchen wir von Ihnen Ihre eigene Schmerzbewertung. Dafür bewegen Sie fortlaufen einen Zeiger auf einer Schmerzbewertungs-Skala von 0 bis 100. Es ist äußerst wichtig, dass sie Ihre Schmerzbewertung so genau wie nur möglich mitteilen.
   2: |-
 
 
 
     Während des Experiments haben Sie die Aufgabe, Ihren Schmerz kontinuierlich, also ohne Pausen, zu bewerten.
-    Das Experiment besteht aus 12 Blöcken, die jeweils 3 Minuten lang sind. Nach jeden Block wechseln wir die Haustelle.
 
 
 
@@ -142,11 +141,11 @@ wait: |-
 
   ...
 reward: |-
-  
-  
-  
-  
-  
+
+
+
+
+
 
 
 
