@@ -61,10 +61,16 @@ class BayesianEstimatorVAS:
     - VAS70 (M = 40.5°C, SD = 3.2°C, Min = 32.8°C, Max = 46.9°C) pain levels
     """
 
-    MAX_TEMP = 48.0
+    MAX_TEMP = 47.0
 
     def __init__(
-        self, vas_value, temp_start, temp_std=3.5, trials=7, likelihood_std=1, reduction_factor=0.95
+        self,
+        vas_value,
+        temp_start,
+        temp_std=3.5,
+        trials=7,
+        likelihood_std=1,
+        reduction_factor=0.95,
     ):
         """
         Initialize the VAS_Estimator object for recursive Bayesian estimation of temperature based on VAS values.
@@ -119,7 +125,9 @@ class BayesianEstimatorVAS:
         num = int((self.max_temp - self.min_temp) / 0.1) + 1
         self.range_temp = np.linspace(self.min_temp, self.max_temp, num)
 
-        self.prior = stats.norm.pdf(self.range_temp, loc=self.temp_start, scale=self.temp_std)
+        self.prior = stats.norm.pdf(
+            self.range_temp, loc=self.temp_start, scale=self.temp_std
+        )
         self.prior /= np.sum(self.prior)  # normalize
 
         self._current_temp = self.temp_start
@@ -201,11 +209,20 @@ class BayesianEstimatorVAS:
 
         if trial == self.trials - 1:  # last trial
             logger.info(
-                "Calibration estimate for VAS %s: %s °C.", self.vas_value, self.get_estimate()
+                "Calibration estimate for VAS %s: %s °C.",
+                self.vas_value,
+                self.get_estimate(),
             )
-            logger.debug("Calibration steps for VAS %s were (°C): %s.", self.vas_value, self.steps)
+            logger.debug(
+                "Calibration steps for VAS %s were (°C): %s.",
+                self.vas_value,
+                self.steps,
+            )
             if not self.validate_steps():
-                logger.error("Calibration steps for VAS %s were all in the same direction.", self.vas_value)
+                logger.error(
+                    "Calibration steps for VAS %s were all in the same direction.",
+                    self.vas_value,
+                )
 
     def validate_steps(self) -> bool:
         """

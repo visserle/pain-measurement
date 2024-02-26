@@ -9,6 +9,7 @@ import itertools
 import logging
 import socket
 import time
+from collections import namedtuple
 
 from src.expyriment.rate_limiter import RateLimiter
 
@@ -103,7 +104,9 @@ class RemoteControliMotions:
 
         # iMotions info
         self.sock = (
-            socket.socket(socket.AF_INET, socket.SOCK_STREAM) if not dummy else DummySocket()
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if not dummy
+            else DummySocket()
         )
         # longer timeout to have time to react to iMotions prompts (if enabled via start_study mode)
         self.sock.settimeout(30.0)
@@ -136,7 +139,9 @@ class RemoteControliMotions:
                 time.sleep(0.1)
             logger.debug("Ready for remote control.")
         except socket.error as exc:
-            logger.error("Not ready for remote control. Error connecting to server:\n%s", exc)
+            logger.error(
+                "Not ready for remote control. Error connecting to server:\n%s", exc
+            )
             raise iMotionsError(
                 "Not ready for remote control. Error connecting to server:\n%s", exc
             ) from exc
@@ -160,10 +165,14 @@ class RemoteControliMotions:
         response = self._send_and_receive(start_study_query)
         # e.g. "13;RemoteControl;RUN;;-1;;1;"
         logger.info(
-            "Started recording participant %s (%s)", self.participant_info["id"], self.study
+            "Started recording participant %s (%s)",
+            self.participant_info["id"],
+            self.study,
         )
         response_msg = response.split(";")[-1]
-        if len(response_msg) > 0:  # if there is a response message, something went wrong
+        if (
+            len(response_msg) > 0
+        ):  # if there is a response message, something went wrong
             logger.error("iMotions error code: %s", response_msg)
             raise iMotionsError("iMotions error code: %s", response_msg)
 
@@ -174,7 +183,9 @@ class RemoteControliMotions:
         end_study_query = "R;1;;SLIDESHOWNEXT\r\n"
         self._send_and_receive(end_study_query)
         logger.info(
-            "Stopped recording participant %s (%s)", self.participant_info["id"], self.study
+            "Stopped recording participant %s (%s)",
+            self.participant_info["id"],
+            self.study,
         )
 
     def abort_study(self):
@@ -183,12 +194,16 @@ class RemoteControliMotions:
         """
         abort_study_query = "R;1;;SLIDESHOWCANCEL\r\n"
         self._send_and_receive(abort_study_query)
-        logger.info( 
-            "Aborted recording participant %s (%s)", self.participant_info["id"], self.study
+        logger.info(
+            "Aborted recording participant %s (%s)",
+            self.participant_info["id"],
+            self.study,
         )
 
     def export_data(self, path):
-        logger.debug("Exported data for participant %s to %s", self.participant_info["id"], path)
+        logger.debug(
+            "Exported data for participant %s to %s", self.participant_info["id"], path
+        )
         pass
 
     def close(self):
@@ -199,6 +214,9 @@ class RemoteControliMotions:
             logger.error("Error closing remote control connection:\n%s", exc)
         finally:
             self.connected = None
+
+
+DataPoint = namedtuple("DataPoint", ["timestamp", "temperature", "rating"])
 
 
 class EventRecievingiMotions:
@@ -243,7 +261,9 @@ class EventRecievingiMotions:
         Initialize the class with the sample rate for the rate limiter and optional dummy mode.
         """
         self.sock = (
-            socket.socket(socket.AF_INET, socket.SOCK_STREAM) if not dummy else DummySocket()
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if not dummy
+            else DummySocket()
         )
         self.seed_cycles = {}  # class variable to keep track of seed cycles (start and end stimulus markers)
         self.prep_cycle = itertools.cycle(
@@ -252,12 +272,16 @@ class EventRecievingiMotions:
         self.rate_limiter = RateLimiter(sample_rate, use_intervals=True)
         self.dummy = dummy
 
+        self.data_points = []
+
     def connect(self):
         try:
             self.sock.connect((self.HOST, self.PORT))
             logger.debug("Ready for event recieving.")
         except socket.error as exc:
-            logger.error("Not ready for event recieving. Error connecting to server:\n%s", exc)
+            logger.error(
+                "Not ready for event recieving. Error connecting to server:\n%s", exc
+            )
             raise iMotionsError(
                 f"Not ready for event recieving. Error connecting to server:\n{exc}"
             ) from exc
@@ -273,7 +297,7 @@ class EventRecievingiMotions:
     def send_prep_markers(self):
         """
         Sends a start and end marker for the preparation phase of the heat stimulus (ramp on and off).
-        
+
         Uses a cycling state to alternate between the two markers.
         """
         self._send_message(next(self.prep_cycle))
@@ -286,9 +310,14 @@ class EventRecievingiMotions:
         This function creates and maintains a separate cycling state for each seed, ensuring that each call for a
         particular seed alternates between start and end markers. A new cycle is initialized for each new seed.
         """
-        if seed not in self.seed_cycles:  # only create a new cycle if it doesn't exist yet
+        if (
+            seed not in self.seed_cycles
+        ):  # only create a new cycle if it doesn't exist yet
             self.seed_cycles[seed] = itertools.cycle(
-                [f"M;2;;;heat_stimulus;{seed};S;\r\n", f"M;2;;;heat_stimulus;{seed};E;\r\n"]
+                [
+                    f"M;2;;;heat_stimulus;{seed};S;\r\n",
+                    f"M;2;;;heat_stimulus;{seed};E;\r\n",
+                ]
             )
         self._send_message(next(self.seed_cycles[seed]))
         logger.debug("Received stimulus marker for seed %s.", seed)
@@ -301,8 +330,13 @@ class EventRecievingiMotions:
         See imotions.xml for the xml structure.
         """
         if self.rate_limiter.is_allowed(timestamp):
-            imotions_data = f"E;1;CustomCurves;1;;;;CustomCurves;{temperature};{rating}\r\n"
+            imotions_data = (
+                f"E;1;CustomCurves;1;;;;CustomCurves;{temperature};{rating}\r\n"
+            )
             self._send_message(imotions_data)
+
+            data_point = DataPoint(timestamp, temperature, rating)
+            self.data_points.append(data_point)
             if debug:
                 logger.debug(
                     "Time: %s. Received temperature: %s, rating: %s.",
@@ -311,10 +345,13 @@ class EventRecievingiMotions:
                     rating,
                 )
 
+    def clear_data_points(self):
+        self.data_points = []
+
     def close(self):
         try:
             self.sock.close()
-            logger.info("Closed event recieving connection.")
+            logger.debug("Closed event recieving connection.")
         except socket.error as exc:
             logger.error("Error closing event recieving connection:\n%s", exc)
 
@@ -336,7 +373,7 @@ def main():
     # run the experiment ...
     imotions.end_study()
     imotions.close()
-    
+
     # Event recieving example
     imotions_events = EventRecievingiMotions(sample_rate=10, dummy=True)
     imotions_events.connect()

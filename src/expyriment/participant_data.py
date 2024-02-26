@@ -1,12 +1,10 @@
 import logging
 import tkinter as tk
-import warnings
 from datetime import datetime
 
-from src.expyriment.tkinter_windows import ParticipantDataApp, center_tk_window
-
-warnings.filterwarnings("ignore", "\nPyarrow", DeprecationWarning)
 import pandas as pd
+
+from src.expyriment.tkinter_windows import ParticipantDataApp, center_tk_window
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -47,15 +45,19 @@ def init_excel_file(file_path):
 
 def add_participant_info(file_path, participant_info: dict) -> dict:
     """
-    Adds a participant to the participants.xlsx file.
+    Add a participant to the participants.xlsx file.
 
-    Example usage:
-    -------
-    ```python
-    from participants import add_participant
+    Note that the participant_info dict must contain the following keys:
+        - id
+        - age
+        - gender
+        - vas0
+        - vas70
 
-    add_participant(file_path, participant_info)
-    ```
+    The following key will be added:
+        - time_stamp
+        - temperature_baseline
+        - temperature_range
     """
     # Add additional information to the participant_info dict
     if "time_stamp" not in participant_info:
@@ -75,10 +77,12 @@ def add_participant_info(file_path, participant_info: dict) -> dict:
             logger.critical(
                 f"Participant {participant_info['id']} already exists as the last entry."
             )
-        participants_xlsx = pd.concat([participants_xlsx, participant_info_df], ignore_index=True)
+        participants_xlsx = pd.concat(
+            [participants_xlsx, participant_info_df], ignore_index=True
+        )
     # Save the updated participants.xlsx file
     participants_xlsx.to_excel(file_path, index=False)
-    logger.info(f"Added participant {participant_info['id']} to {file_path}")
+    logger.info(f"Added participant {participant_info['id']} to {file_path}.")
 
     return participant_info
 
@@ -89,19 +93,14 @@ def _complete_participant_info(participant_info: dict) -> dict:
     - time_stamp
     - temperature_baseline
     - temperature_range
-
-    Note that the participant_info dict must contain the following keys:
-    - id
-    - age
-    - gender
-    - vas0
-    - vas70.
     """
     participant_info["time_stamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     participant_info["temperature_baseline"] = round(
         (participant_info["vas0"] + participant_info["vas70"]) / 2, 1
     )
-    participant_info["temperature_range"] = round(participant_info["vas70"] - participant_info["vas0"], 1)
+    participant_info["temperature_range"] = round(
+        participant_info["vas70"] - participant_info["vas0"], 1
+    )
     return participant_info
 
 

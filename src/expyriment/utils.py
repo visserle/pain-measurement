@@ -2,7 +2,6 @@ import logging
 
 import toml
 import yaml
-from expyriment import stimuli
 
 from src.expyriment.custom_text_box import CustomTextBox
 
@@ -44,11 +43,6 @@ def prepare_script(script, text_size, text_box_size, parent_key=None):
                 script[key].preload()
             else:
                 script[key].preload(inhibit_ogl_compress=True)
-
-
-def warn_signal():
-    """Play a warn signal."""
-    stimuli.Tone(duration=500, frequency=440).play()
 
 
 def _scale_ratio(screen_size, base_screen_size=BASE_SCREEN_SIZE) -> float:
@@ -101,5 +95,8 @@ def scale_2d_tuple(
     - scaled_value: tuple, scaled value based on the current screen size
     """
     scale_factor = _scale_ratio(screen_size, base_screen_size)
-    scaled_value = (int(base_value[0] * scale_factor), int(base_value[1] * scale_factor))
+    scaled_value = (
+        int(base_value[0] * scale_factor),
+        int(base_value[1] * scale_factor),
+    )
     return scaled_value

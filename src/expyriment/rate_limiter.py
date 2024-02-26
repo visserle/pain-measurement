@@ -19,10 +19,13 @@ class RateLimiter:
         self.rate = rate  # Allowed operations per second
         self.use_intervals = use_intervals  # Whether to use interval-based limiting
         if use_intervals:
-            self.interval = 1000 / rate  # Interval in milliseconds for allowed operations
+            # Interval in milliseconds for allowed operations
+            self.interval = 1000 / rate
             self.next_allowed_time = 0  # Track the next allowed time directly
         else:
-            self.last_checked = None  # Track the last checked time for simple rate limiting
+            self.last_checked = (
+                None  # Track the last checked time for simple rate limiting
+            )
 
     def reset(self):
         """
@@ -47,7 +50,10 @@ class RateLimiter:
                 return True
             return False
         else:
-            if self.last_checked is None or current_time - self.last_checked >= 1000 / self.rate:
+            if (
+                self.last_checked is None
+                or current_time - self.last_checked >= 1000 / self.rate
+            ):
                 self.last_checked = current_time
                 return True
             return False

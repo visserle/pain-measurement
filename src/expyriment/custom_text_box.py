@@ -1,7 +1,9 @@
-"""Simple expyriment text box without leading whitespace stripping."""
+"""Expyriment text box without leading whitespace stripping."""
 
 import re
+
 from expyriment.stimuli import TextBox
+
 
 class CustomTextBox(TextBox):
     """
@@ -9,7 +11,7 @@ class CustomTextBox(TextBox):
     with the only difference that it does not strip leading whitespace from the text.
     This allows simpler text formatting of the script file using a constant text box size.
 
-    This code has been commented out twice:
+    This code has been commented out twice below:
     # while lines and not lines[0]:
     #     del lines[0]
     """

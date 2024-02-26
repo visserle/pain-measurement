@@ -11,7 +11,10 @@ from expyriment import control, design, io, stimuli
 from expyriment.misc.constants import C_DARKGREY, K_SPACE, K_n, K_y
 
 from src.expyriment.estimator import BayesianEstimatorVAS
-from src.expyriment.participant_data import add_participant_info, ask_for_participant_info
+from src.expyriment.participant_data import (
+    add_participant_info,
+    ask_for_participant_info,
+)
 from src.expyriment.thermoino import Thermoino
 from src.expyriment.utils import (
     load_configuration,
@@ -19,7 +22,6 @@ from src.expyriment.utils import (
     prepare_script,
     scale_1d_value,
     scale_2d_tuple,
-    warn_signal,
 )
 from src.log_config import close_root_logging, configure_logging
 
@@ -46,12 +48,22 @@ STIMULUS = config["stimulus"]
 JITTER = random.randint(0, STIMULUS["iti_max_jitter"])
 
 # Create an argument parser
-parser = argparse.ArgumentParser(description="Run the pain-calibration experiment. Dry by default.")
+parser = argparse.ArgumentParser(
+    description="Run the pain-calibration experiment. Dry by default."
+)
 parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
-parser.add_argument("-f", "--full_screen", action="store_true", help="Run in full screen mode")
-parser.add_argument("-s", "--full_stimuli", action="store_true", help="Use full stimuli duration")
-parser.add_argument("-p", "--participant", action="store_true", help="Record and save participant data")
-parser.add_argument("-t", "--thermoino", action="store_true", help="Enable Thermoino device")
+parser.add_argument(
+    "-f", "--full_screen", action="store_true", help="Run in full screen mode"
+)
+parser.add_argument(
+    "-s", "--full_stimuli", action="store_true", help="Use full stimuli duration"
+)
+parser.add_argument(
+    "-p", "--participant", action="store_true", help="Record and save participant data"
+)
+parser.add_argument(
+    "-t", "--thermoino", action="store_true", help="Enable Thermoino device"
+)
 args = parser.parse_args()
 
 # Adjust settings
@@ -65,11 +77,11 @@ if not args.full_stimuli:
     STIMULUS["iti_duration"] = 300
     STIMULUS["stimulus_duration"] = 200
     JITTER = 0
-    logging.info("Using short stimulus and ITI durations.")
+    logging.warning("Using dummy stimulus.")
 if not args.participant:
-    ask_for_participant_info = lambda: config["dummy_participant"]
-    add_participant_info = lambda *args, **kwargs: None
-    logging.info("Using dummy participant data.")
+    ask_for_participant_info = lambda: config["dummy_participant"]  # noqa: E731
+    add_participant_info = lambda *args, **kwargs: None  # noqa: E731
+    logging.warning("Using dummy participant data.")
 
 # Expyriment defaults
 design.defaults.experiment_background_colour = C_DARKGREY
@@ -104,9 +116,10 @@ for name, color in zip(
     )
     cross[name].preload()
 
-
 # Load VAS picture, move it a bit up and scale it for a nice fit
-vas_picture = stimuli.Picture(VAS_PICTURE_PATH, position=(0, scale_1d_value(100, screen_size)))
+vas_picture = stimuli.Picture(
+    VAS_PICTURE_PATH, position=(0, scale_1d_value(100, screen_size))
+)
 vas_picture.scale(scale_1d_value(0.72, screen_size))
 vas_picture.preload()
 
@@ -118,22 +131,6 @@ thermoino = Thermoino(
     dummy=not args.thermoino,
 )
 thermoino.connect()
-
-
-# Trial functions
-def run_preexposure_trials():
-    """Run pre-exposure trials with different temperatures."""
-    for idx, temp in enumerate(STIMULUS["preexposure_temperatures"]):
-        cross["idle"].present()
-        iti_duration = STIMULUS["iti_duration"] if idx != 0 else STIMULUS["iti_duration_short"]
-        exp.clock.wait(iti_duration + JITTER)
-        thermoino.trigger()
-        time_to_ramp_up, _ = thermoino.set_temp(temp)
-        cross["pain"].present()
-        exp.clock.wait(STIMULUS["stimulus_duration"] + time_to_ramp_up)
-        time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
-        cross["idle"].present()
-        exp.clock.wait(time_to_ramp_down)
 
 
 def run_estimation_trials(estimator: BayesianEstimatorVAS):
@@ -160,16 +157,17 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
         exp.clock.wait(1000)
     success = estimator.validate_steps()
     if not success:
-        logging.error("Please exit the experiment and repeat the calibration if applicable.")
-        warn_signal()
+        logging.error("Please repeat the calibration if applicable.")
         SCRIPT["fail"].present()
         exp.keyboard.wait(K_SPACE)
+        control.end()
 
 
 # Experiment procedure
 def main():
     # Start experiment
     control.start(skip_ready_screen=True)
+    logging.info("Started calibration.")
 
     # Introduction
     for text in SCRIPT["welcome"].values():
@@ -177,7 +175,20 @@ def main():
         exp.keyboard.wait(K_SPACE)
 
     # Pre-exposure Trials
-    run_preexposure_trials()
+    logging.info("Started pre-exposure trials.")
+    for idx, temp in enumerate(STIMULUS["preexposure_temperatures"]):
+        cross["idle"].present()
+        iti_duration = (
+            STIMULUS["iti_duration"] if idx != 0 else STIMULUS["iti_duration_short"]
+        )
+        exp.clock.wait(iti_duration + JITTER)
+        thermoino.trigger()
+        time_to_ramp_up, _ = thermoino.set_temp(temp)
+        cross["pain"].present()
+        exp.clock.wait(STIMULUS["stimulus_duration"] + time_to_ramp_up)
+        time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
+        cross["idle"].present()
+        exp.clock.wait(time_to_ramp_down)
 
     # Pre-exposure Feedback
     SCRIPT["question_preexposure"].present()
@@ -185,10 +196,10 @@ def main():
     if found == K_y:
         ESTIMATOR["temp_start_vas70"] -= STIMULUS["preexposure_correction"]
         SCRIPT["answer_yes"].present()
-        logging.info("Preexposure was painful.")
+        logging.info("Pre-exposure was painful.")
     elif found == K_n:
         SCRIPT["answer_no"].present()
-        logging.info("Preexposure was not painful.")
+        logging.info("Pre-exposure was not painful.")
     exp.clock.wait(1000)
 
     # VAS 70 estimation
@@ -208,6 +219,7 @@ def main():
         temp_std=ESTIMATOR["temp_std_vas70"],
         trials=ESTIMATOR["trials_vas70"],
     )
+    logging.info("Started VAS 70 estimation.")
     run_estimation_trials(estimator=estimator_vas70)
     participant_info["vas70"] = estimator_vas70.get_estimate()
 
@@ -220,22 +232,26 @@ def main():
         temp_std=ESTIMATOR["temp_std_vas0"],
         trials=ESTIMATOR["trials_vas0"],
     )
+    logging.info("Started VAS 0 (pain threshold) estimation.")
     run_estimation_trials(estimator=estimator_vas0)
     participant_info["vas0"] = estimator_vas0.get_estimate()
 
     if participant_info["vas70"] - participant_info["vas0"] < 1:
-        logging.error("VAS 70 and VAS 0 are too close together. Please repeat the calibration.")
-        warn_signal()
+        logging.error(
+            "VAS 70 and VAS 0 are too close together. Please repeat the calibration."
+        )
+        SCRIPT["fail"].present()
+        exp.keyboard.wait(K_SPACE)
+        control.end()
 
     # End of Experiment
-    logging.info("Calibration finished.")
     SCRIPT["bye"].present()
     exp.keyboard.wait(K_SPACE)
 
-    # Close and clean up
     control.end()
     thermoino.close()
     add_participant_info(PARTICIPANTS_EXCEL_PATH, participant_info)
+    logging.info("Calibration successfully finished.")
     close_root_logging()
 
 

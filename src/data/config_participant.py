@@ -27,27 +27,20 @@ class ParticipantConfig:
 #     id="003_pilot_noah",
 # )
 
-p_004_1 = ParticipantConfig(
-    id="004_zoey1"
-)
+p_004_1 = ParticipantConfig(id="004_zoey1")
 
-p_004_2 = ParticipantConfig(
-    id="004_zoey2"
-)
+p_004_2 = ParticipantConfig(id="004_zoey2")
 
-p_004_3 = ParticipantConfig(
-    id="004_zoey3"
-)
+p_004_3 = ParticipantConfig(id="004_zoey3")
 
-p_004_4 = ParticipantConfig(
-    id="004_zoey4"
+p_004_4 = ParticipantConfig(id="004_zoey4")
+
+p_005 = ParticipantConfig(
+    id="005_leo",
 )
 
 PARTICIPANT_LIST = [
-    p_004_1,
-    p_004_2,
-    p_004_3,
-    p_004_4,
+    p_005,
 ]
 
 PARTICIPANT_DICT = {participant.id: participant for participant in PARTICIPANT_LIST}

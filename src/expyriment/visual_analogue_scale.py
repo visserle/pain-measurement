@@ -14,15 +14,26 @@ class VisualAnalogueScale:
 
         self.rate_limiter = RateLimiter(vas_config.get("sample_rate", 60))
 
-        self.bar_length = scale_1d_value(vas_config.get("bar_length", 800), self.screen_size)
-        self.bar_thickness = scale_1d_value(vas_config.get("bar_thickness", 30), self.screen_size)
-        self.bar_position = scale_2d_tuple(vas_config.get("bar_position", (0, 0)), self.screen_size)
+        self.bar_length = scale_1d_value(
+            vas_config.get("bar_length", 800), self.screen_size
+        )
+        self.bar_thickness = scale_1d_value(
+            vas_config.get("bar_thickness", 30), self.screen_size
+        )
+        self.bar_position = scale_2d_tuple(
+            vas_config.get("bar_position", (0, 0)), self.screen_size
+        )
 
-        self.slider_width = scale_1d_value(vas_config.get("slider_width", 10), self.screen_size)
-        self.slider_height = scale_1d_value(vas_config.get("slider_height", 90), self.screen_size)
+        self.slider_width = scale_1d_value(
+            vas_config.get("slider_width", 10), self.screen_size
+        )
+        self.slider_height = scale_1d_value(
+            vas_config.get("slider_height", 90), self.screen_size
+        )
         self.slider_color = vas_config.get("slider_color", (194, 24, 7))
         self.slider_initial_position = scale_2d_tuple(
-            vas_config.get("slider_initial_position", (0, self.bar_position[1])), self.screen_size
+            vas_config.get("slider_initial_position", (0, self.bar_position[1])),
+            self.screen_size,
         )
         self.slider_min_x = -(self.bar_length / 2)
         self.slider_max_x = self.bar_length / 2
@@ -32,7 +43,8 @@ class VisualAnalogueScale:
         )
         self.label_text_box_size = scale_2d_tuple(
             vas_config.get(
-                "label_text_box_size", (self.label_text_size * 14, self.label_text_size * 6)
+                "label_text_box_size",
+                (self.label_text_size * 14, self.label_text_size * 6),
             ),  # scaled to the text size
             self.screen_size,
         )
@@ -57,10 +69,12 @@ class VisualAnalogueScale:
             (self.bar_length, self.bar_thickness), position=self.bar_position
         )
         self.bar_end_left = stimuli.Rectangle(
-            (5, self.bar_thickness * 3), position=(self.slider_min_x, self.bar_position[1])
+            (5, self.bar_thickness * 3),
+            position=(self.slider_min_x, self.bar_position[1]),
         )
         self.bar_end_right = stimuli.Rectangle(
-            (5, self.bar_thickness * 3), position=(self.slider_max_x, self.bar_position[1])
+            (5, self.bar_thickness * 3),
+            position=(self.slider_max_x, self.bar_position[1]),
         )
         self.slider = stimuli.Rectangle(
             (self.slider_width, self.slider_height),
@@ -101,7 +115,11 @@ class VisualAnalogueScale:
             # Adjust slider position based on mouse X-coordinate within boundaries
             current_x_pos = self.experiment.mouse.position[0]
             slider_x = max(min(current_x_pos, self.slider_max_x), self.slider_min_x)
-            rating = (slider_x - self.slider_min_x) / (self.slider_max_x - self.slider_min_x) * 100
+            rating = (
+                (slider_x - self.slider_min_x)
+                / (self.slider_max_x - self.slider_min_x)
+                * 100
+            )
 
             # Create a composition to show multiple elements simultaneously
             composition = stimuli.BlankScreen()

@@ -44,7 +44,9 @@ class ChecklistDialog:
 
     def _create_proceed_button(self):
         """Creates the proceed button."""
-        self.proceed_button = ttk.Button(self.root, text="Proceed", command=self.on_proceed)
+        self.proceed_button = ttk.Button(
+            self.root, text="Proceed", command=self.on_proceed
+        )
         self.proceed_button.pack(pady=20)
 
     def on_proceed(self):
@@ -53,7 +55,9 @@ class ChecklistDialog:
             self.response = True
             self.root.destroy()
         else:
-            messagebox.showwarning("Warning", "Please confirm all items before proceeding.")
+            messagebox.showwarning(
+                "Warning", "Please confirm all items before proceeding."
+            )
 
     def show(self):
         """Displays the dialog and returns the user's response."""

@@ -4,7 +4,7 @@ import numpy as np
 def reshape_features_to_2D(X):
     """
     This function is a wrapper around np.reshape. It is intended to be used as a FunctionTransformer in sklearn/skorch pipelines.
-    
+
     It reshapes a 3D array to 2D by concatenating the second and third dimensions of the input array. The order of the elements in the reshaped array is preserved using Fortran-like index ordering.
 
     Parameters
@@ -32,14 +32,17 @@ def reshape_features_to_2D(X):
     from sklearn.preprocessing import FunctionTransformer
 
     mlp_pipe = make_pipeline(
-        StandardScaler3D(),
-        FunctionTransformer(reshape_features_to_2D), 
-        mlp)
+        StandardScaler3D(), FunctionTransformer(reshape_features_to_2D), mlp
+    )
     ```
     """
     if len(X.shape) != 3:
         raise ValueError("Input array should be a 3D array.")
-    return np.reshape(X, (
-        X.shape[0],
-        X.shape[1]*X.shape[2] # same as -1
-    ), order="F")
+    return np.reshape(
+        X,
+        (
+            X.shape[0],
+            X.shape[1] * X.shape[2],  # same as -1
+        ),
+        order="F",
+    )

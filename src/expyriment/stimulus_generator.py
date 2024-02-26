@@ -21,7 +21,7 @@ def cosine_half_cycle(period, amplitude, y_intercept=0, t_start=0, sample_rate=1
 
 class StimulusGenerator:
     """
-    Generates a stimulus based on appending half cycle cosine functions (thus the term period refers to 1 pi in this class).
+    Generates a stimulus by appending half cycle cosine functions (thus the term `period` refers to 1 pi in this class).
     """
 
     def __init__(self, config=None, seed=None, debug=False):
@@ -33,13 +33,18 @@ class StimulusGenerator:
         self.seed = seed if seed is not None else np.random.randint(0, 1000)
         self.rng_numpy = np.random.default_rng(self.seed)
 
-        self.half_cycle_num = config.get("half_cycle_num", 10)
         self.sample_rate = config.get("sample_rate", 10)
+        self.half_cycle_num = config.get("half_cycle_num", 10)
         self.period_range = config.get("period_range", [1, 5])
         self.amplitude_range = config.get("amplitude_range", [0.1, 0.9])
-        self.median_range = config.get("median_range", 0.3)
-        self.big_decreasing_half_cycle_num = config.get("big_decreasing_half_cycle_num", 3)
-        self.big_decreasing_half_cycle_period = config.get("big_decreasing_half_cycle_period", 5)
+        self.inflection_point_range = config.get("inflection_point_range", [-0.3, 0.3])
+        self.shorten_expected_duration = config.get("shorten_expected_duration", 15)
+        self.big_decreasing_half_cycle_num = config.get(
+            "big_decreasing_half_cycle_num", 3
+        )
+        self.big_decreasing_half_cycle_period = config.get(
+            "big_decreasing_half_cycle_period", 5
+        )
         self.big_decreasing_half_cycle_amplitude = config.get(
             "big_decreasing_half_cycle_amplitude", 0.85
         )
@@ -50,9 +55,11 @@ class StimulusGenerator:
         self.temperature_baseline = config.get("temperature_baseline", 40)
         self.temperature_range = config.get("temperature_range", 3)
 
-        # Calculate expected length of the stimulus
-        self.desired_length_random_half_cycles = self._get_desired_length_random_half_cycles(
-            shorten=15
+        # Calculate length of the stimulus
+        self.desired_length_random_half_cycles = (
+            self._get_desired_length_random_half_cycles(
+                shorten=self.shorten_expected_duration
+            )
         )
         self.desired_length_big_decreasing_half_cycles = (
             self._get_desired_length_big_decreasing_half_cycles()
@@ -65,13 +72,13 @@ class StimulusGenerator:
             self._get_big_decreasing_half_cycle_idx_for_insert()
         )
 
-        # Get periods and amplidtudes for the random half cycles with the expected length
+        # Get periods and amplitudes for the random half cycles with the expected length
         self.periods = self._get_periods()
         self.amplitudes = self._get_amplitudes()
 
         # Stimulus
         self.y = None  # Placeholder for the stimulus
-        self.generate_stimulus()
+        self._generate_stimulus()
         if not debug:
             self.add_calibration()
             self.add_plateaus()
@@ -109,7 +116,8 @@ class StimulusGenerator:
 
     def _get_desired_length(self):
         desired_length = (
-            self.desired_length_random_half_cycles + self.desired_length_big_decreasing_half_cycles
+            self.desired_length_random_half_cycles
+            + self.desired_length_big_decreasing_half_cycles
         )
         desired_length -= desired_length % self.sample_rate  # round to nearest sample
         return desired_length
@@ -117,7 +125,9 @@ class StimulusGenerator:
     def _get_big_decreasing_half_cycle_idx(self):
         return np.sort(
             self.rng_numpy.choice(
-                range(1, self.half_cycle_num, 2), self.big_decreasing_half_cycle_num, replace=False
+                range(1, self.half_cycle_num, 2),
+                self.big_decreasing_half_cycle_num,
+                replace=False,
             )
         )
 
@@ -125,7 +135,7 @@ class StimulusGenerator:
         """Indices for np.insert"""
         return [i - idx for idx, i in enumerate(self.big_decreasing_half_cycle_idx)]
 
-    def _get_periods(self):
+    def _get_periods(self) -> np.ndarray:
         """
         Get periods for the half cycles.
 
@@ -141,7 +151,10 @@ class StimulusGenerator:
                 self.period_range[1],
                 self.half_cycle_num - self.big_decreasing_half_cycle_num,
             )
-            if np.sum(periods) * self.sample_rate == self.desired_length_random_half_cycles:
+            if (
+                np.sum(periods) * self.sample_rate
+                == self.desired_length_random_half_cycles
+            ):
                 break
         periods = np.insert(
             periods,
@@ -152,18 +165,18 @@ class StimulusGenerator:
             print(f"Periods: {counter} iterations to converge")
         return periods
 
-    def _get_amplitudes(self):
+    def _get_amplitudes(self) -> np.ndarray:
         """
-        Get amplitudes for the half cycles (interatively).
+        Get amplitudes for the half cycles (iteratively).
 
         Note that this code it less readable than the vectorized _get_periods, but for the dependent nature of
         the amplitudes on the y_intercepts, looping is much more efficient and much faster than vectorized operations.
         If one intercept is invalid we do not need to recompute the entire array, just the current value.
 
         Contraints:
-        - The stimulus must be within -1 and 1.
+        - The resulting function must be within -1 and 1.
         - The maximum y_intercept must be greater than 0.95.
-        - The inflection point (median index) of each cosine segment must be within the median_range.
+        - The inflection point of each cosine segment must be within inflection_point_range.
         """
         retry_limit_per_half_cycle = 5
         counter = 0
@@ -186,14 +199,16 @@ class StimulusGenerator:
                             self.amplitude_range[0], self.amplitude_range[1]
                         )
                         if not i & 1:
-                            amplitude *= -1  # invert amplitude for increasing half cycles
+                            amplitude *= (
+                                -1
+                            )  # invert amplitude for increasing half cycles
                     next_y_intercept = y_intercept + amplitude * -2
 
                     if (
                         -1 <= next_y_intercept <= 1
-                        and -self.median_range
+                        and self.inflection_point_range[0]
                         <= (next_y_intercept + y_intercept) / 2
-                        <= self.median_range
+                        <= self.inflection_point_range[1]
                     ):
                         valid_amplitude_found = True
                         amplitudes.append(amplitude)
@@ -211,7 +226,7 @@ class StimulusGenerator:
             print(f"Amplitudes: {counter} iterations to converge")
         return amplitudes
 
-    def generate_stimulus(self):
+    def _generate_stimulus(self):
         """Generates the stimulus based on the periods and amplitudes."""
         yi = []
         t_start = 0
@@ -220,7 +235,9 @@ class StimulusGenerator:
         for i in range(self.half_cycle_num):
             period = self.periods[i]
             amplitude = self.amplitudes[i]
-            t, y = cosine_half_cycle(period, amplitude, y_intercept, t_start, self.sample_rate)
+            t, y = cosine_half_cycle(
+                period, amplitude, y_intercept, t_start, self.sample_rate
+            )
             y_intercept = y[-1]
             t_start = t[-1]
             yi.append(y)
@@ -239,16 +256,13 @@ class StimulusGenerator:
         and the temperature is between given percentile range. The distance between the
         plateaus is at least 1.5 times the plateau_duration.
         """
-        if self.y is None:
-            raise ValueError("Stimulus not generated. Please run generate_stimulus() first.")
-
         # Get indices of values within the given percentile range and with a rising temperature
         percentile_low = np.percentile(self.y, self.plateau_percentile_range[0])
-        percetile_high = np.percentile(self.y, self.plateau_percentile_range[1])
-        idx_iqr_values = np.where(
+        percentile_high = np.percentile(self.y, self.plateau_percentile_range[1])
+        idx_between_values = np.where(
             (self.y > percentile_low)
-            & (self.y < percetile_high)
-            & (self.y_dot > 0.07)  # 0.07 FIXME TODO
+            & (self.y < percentile_high)
+            & (self.y_dot > 0.07)  # 0.07 FIXME TODO do we need this?
         )[0]
 
         # Find suitable positions for the plateaus
@@ -262,10 +276,14 @@ class StimulusGenerator:
                     "relative to the plateau_duration of the wave.\n"
                     "Try again with a different seed or change the parameters of the add_plateaus method."
                 )
-            idx_plateaus = self.rng_numpy.choice(idx_iqr_values, self.plateau_num, replace=False)
+            idx_plateaus = self.rng_numpy.choice(
+                idx_between_values, self.plateau_num, replace=False
+            )
             idx_plateaus = np.sort(idx_plateaus)
             # The distance between the plateaus should be at least 1.5 plateau_duration
-            if np.all(np.diff(idx_plateaus) > 1.5 * self.plateau_duration * self.sample_rate):
+            if np.all(
+                np.diff(idx_plateaus) > 1.5 * self.plateau_duration * self.sample_rate
+            ):
                 break
 
         y_new = []
@@ -312,7 +330,9 @@ def stimulus_extra(stimulus, s_RoC, display_stats=True):
 
     # Plot functions and labels
     fig = go.Figure()
-    fig.update_layout(autosize=True, height=300, width=900, margin=dict(l=20, r=20, t=40, b=20))
+    fig.update_layout(
+        autosize=True, height=300, width=900, margin=dict(l=20, r=20, t=40, b=20)
+    )
     fig.update_xaxes(title_text="Time (s)", tickmode="linear", tick0=0, dtick=10)
     fig.update_yaxes(
         title_text=r"Temperature (°C) \ RoC (°C/s)",
@@ -327,9 +347,15 @@ def stimulus_extra(stimulus, s_RoC, display_stats=True):
     colors = "royalblue", "skyblue", "springgreen", "violet"
 
     for idx, i in enumerate(func):
-        visible = "legendonly" if idx != 0 else True  # only show the first function by default
+        visible = (
+            "legendonly" if idx != 0 else True
+        )  # only show the first function by default
         fig.add_scatter(
-            x=time, y=i, name=func_names[idx], line=dict(color=colors[idx]), visible=visible
+            x=time,
+            y=i,
+            name=func_names[idx],
+            line=dict(color=colors[idx]),
+            visible=visible,
         )
     fig.show()
 

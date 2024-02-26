@@ -6,7 +6,7 @@ from pathlib import Path
 import polars as pl
 
 from src.data.config_data import DataConfigBase
-from src.data.transform_data import create_trials, interpolate_to_marker_timestamps
+from src.features.transformations import create_trials, interpolate_to_marker_timestamps
 
 # - add schemas for csv (for now dtype keyword only)
 # -> no need for infer_schema_length then (quite costly)

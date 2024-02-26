@@ -7,8 +7,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from src.data.config_data import DataConfigBase
-from src.data.physio.pupillometry import process_pupillometry
-from src.data.transform_data import interpolate  # resample
+from src.features.pupillometry import process_pupillometry
+from src.features.transformations import interpolate  # resample
 
 
 @dataclass
