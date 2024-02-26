@@ -253,9 +253,9 @@ def main():
             reward += 1
             logging.debug("Rewarding participant.")
             SCRIPT["reward"].present()
-            exp.clock.wait(1500)
+            exp.clock.wait_seconds(2)
         elif corr < 0.3:
-            logging.warning(
+            logging.error(
                 "Correlation is too low. Is the participant paying attention?"
             )
         imotions_event.clear_data_points()
