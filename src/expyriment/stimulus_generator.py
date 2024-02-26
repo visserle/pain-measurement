@@ -21,7 +21,9 @@ def cosine_half_cycle(period, amplitude, y_intercept=0, t_start=0, sample_rate=1
 
 class StimulusGenerator:
     """
-    Generates a stimulus by appending half cycle cosine functions (thus the term `period` refers to 1 pi in this class).
+    Generates a stimulus by appending half cycle cosine functions
+
+    Note that the term `period` refers to 1 pi in this class.
     """
 
     def __init__(self, config=None, seed=None, debug=False):
@@ -99,13 +101,18 @@ class StimulusGenerator:
         """
         Get the desired length for the random half cycles.
 
-        Note that shorten [s] is used to force the length down by sampling from under the expected value in the _get_periods method.
+        Note that shorten [s] is used to force the length down by sampling from
+        under the expected value in the _get_periods method.
         """
-        return (
-            ((self.period_range[0] + (self.period_range[1] - 1)) / 2)
+        desired_length_random_half_cycles = (
+            ((self.period_range[0] + (self.period_range[1])) / 2)
             * (self.half_cycle_num - self.big_decreasing_half_cycle_num)
             * self.sample_rate
         ) - (shorten * self.sample_rate)
+        desired_length_random_half_cycles -= (
+            desired_length_random_half_cycles % self.sample_rate
+        )  # necessary for even boundaries, round to nearest sample
+        return desired_length_random_half_cycles
 
     def _get_desired_length_big_decreasing_half_cycles(self):
         return (
@@ -150,6 +157,7 @@ class StimulusGenerator:
                 self.period_range[0],
                 self.period_range[1],
                 self.half_cycle_num - self.big_decreasing_half_cycle_num,
+                endpoint=True,
             )
             if (
                 np.sum(periods) * self.sample_rate
@@ -169,14 +177,16 @@ class StimulusGenerator:
         """
         Get amplitudes for the half cycles (iteratively).
 
-        Note that this code it less readable than the vectorized _get_periods, but for the dependent nature of
-        the amplitudes on the y_intercepts, looping is much more efficient and much faster than vectorized operations.
-        If one intercept is invalid we do not need to recompute the entire array, just the current value.
+        Note that this code it less readable than the vectorized _get_periods,
+        but for the dependent nature of the amplitudes on the y_intercepts,
+        looping is much more efficient and much faster than vectorized operations.
+        If one intercept is invalid we do not need to recompute the entire array,
+        just the current value.
 
         Contraints:
         - The resulting function must be within -1 and 1.
-        - The maximum y_intercept must be greater than 0.95.
-        - The inflection point of each cosine segment must be within inflection_point_range.
+        - The maximum y_intercept is greater than 0.95.
+        - The inflection point of each cosine segment is within inflection_point_range.
         """
         retry_limit_per_half_cycle = 5
         counter = 0
@@ -245,16 +255,16 @@ class StimulusGenerator:
         self.y = np.concatenate(yi)
 
     def add_calibration(self):
-        """Scales the stimulus to the temperature range and baseline using calibrated values."""
+        """Calibrates temperature range and baseline using participant data."""
         self.y *= self.temperature_range / 2
         self.y += self.temperature_baseline
         return self
 
     def add_plateaus(self):
         """
-        Adds plateaus to the stimulus at random positions, but only when the temperature is rising
-        and the temperature is between given percentile range. The distance between the
-        plateaus is at least 1.5 times the plateau_duration.
+        Adds plateaus to the stimulus at random positions, but only when the
+        temperature is rising and the temperature is between given percentile range.
+        The distance between the plateaus is at least 1.5 times the plateau_duration.
         """
         # Get indices of values within the given percentile range and with a rising temperature
         percentile_low = np.percentile(self.y, self.plateau_percentile_range[0])
