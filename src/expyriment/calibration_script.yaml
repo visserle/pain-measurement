@@ -5,7 +5,6 @@ welcome:
 
 
 
-
     Herzlich willkommen zum Experiment!
 
     Wir beginnen das Experiment mit einer kurzen Schmerz-Kalibrierung.
@@ -18,7 +17,6 @@ welcome:
 
 
 
-
     Mit der Schmerz-Kalibrierung möchten wir herausfinden, ab wann Sie leichte und starke Schmerzen verspüren.
 
     Diese Informationen helfen uns, die Schmerzreize im Hauptexperiment besser zu steuern.
@@ -26,7 +24,6 @@ welcome:
 
     (Leertaste drücken, um fortzufahren)
   3: |-
-
 
 
 
@@ -55,7 +52,6 @@ question_preexposure: |-
   (Drücken Sie "y" für Ja oder "n" für Nein.)
 info_vas70:
   1: |-
-
 
 
 
@@ -95,7 +91,6 @@ info_vas70:
 
 
 
-
     Da wir Ihre erlebten Schmerzen so genau wie möglich bestimmen möchten, bekommen Sie mehrfach Schmerzreize von ca. 10 Sekunden Dauer zu spüren.
 
     Nach jedem Durchgang fragen wir Sie nach einem kurzen Feedback und passen die Temperatur graduell an Ihre Empfindung an.
@@ -108,7 +103,6 @@ info_vas70:
 
 
 
-
     Aufgrund der Capsaicin-Creme ist Ihre Schmerzschwelle dabei nach unten verlagert. Dadurch verspüren Sie schneller starken Schmerz. 
     
     Aber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.
@@ -116,7 +110,6 @@ info_vas70:
 
     (Leertaste drücken, um fortzufahren)
   6: |-
-
 
 
 
@@ -143,11 +136,22 @@ question_vas70: |-
   War dieser Reiz mindestens eine 7 von 10 (starker / sehr starker Schmerz)?
 
   (y/n)
+excellent: |-
+
+
+
+
+
+
+
+
+
+
+  Ausgezeichnet!
 info_vas0: |-
   
 
 
-  Ausgezeichnet!
 
 
   Als Nächstes möchten wir bestimmen, wo Ihre Schmerzschwelle liegt - also ab wann Sie erste Schmerzen verspüren.
@@ -171,7 +175,6 @@ question_vas0: |-
   (y/n)
 bye: |-
   
-
 
 
 
@@ -209,6 +212,7 @@ answer_no: |-
 
   Ihre Antwort war: Nein.
 fail: |-
+
 
 
 

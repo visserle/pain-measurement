@@ -24,10 +24,8 @@ welcome:
     In diesem Experiment möchten wir schwankende Schmerzen objektiv messen.
 
 
-
     (Leertaste drücken, um fortzufahren)
   3: |-
-
 
 
 
@@ -45,7 +43,6 @@ welcome:
 
 
 
-
     Insgesamt besteht das Experiment aus 12 Blöcken, die jeweils 3 Minuten lang sind.
 
     Falls Ihre Schmerzbewertung in einem Block präzise genug war, erhalten Sie eine Belohnung von 1 €. So können Sie sich zusätzlich zur Aufwandsentschädigung eine Belohnung von bis zu 12 € verdienen.
@@ -54,7 +51,6 @@ welcome:
     (Leertaste drücken, um fortzufahren)
   
   5: |-
-
 
 
 
@@ -106,7 +102,6 @@ instruction:
 
     (Leertaste drücken, um fortzufahren)
 ready_set_go: |-
-
 
 
 
