@@ -6,6 +6,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import scipy
 
 
 def cosine_half_cycle(period, amplitude, y_intercept=0, t_start=0, sample_rate=10):
@@ -37,15 +38,15 @@ class StimulusGenerator:
 
         self.sample_rate = config.get("sample_rate", 10)
         self.half_cycle_num = config.get("half_cycle_num", 10)
-        self.period_range = config.get("period_range", [1, 5])
-        self.amplitude_range = config.get("amplitude_range", [0.1, 0.9])
-        self.inflection_point_range = config.get("inflection_point_range", [-0.3, 0.3])
-        self.shorten_expected_duration = config.get("shorten_expected_duration", 15)
+        self.period_range = config.get("period_range", [5, 20])
+        self.amplitude_range = config.get("amplitude_range", [0.3, 0.9])
+        self.inflection_point_range = config.get("inflection_point_range", [-0.5, 0.3])
+        self.shorten_expected_duration = config.get("shorten_expected_duration", 17)
         self.big_decreasing_half_cycle_num = config.get(
             "big_decreasing_half_cycle_num", 3
         )
         self.big_decreasing_half_cycle_period = config.get(
-            "big_decreasing_half_cycle_period", 5
+            "big_decreasing_half_cycle_period", 20
         )
         self.big_decreasing_half_cycle_amplitude = config.get(
             "big_decreasing_half_cycle_amplitude", 0.85
@@ -53,6 +54,9 @@ class StimulusGenerator:
         self.plateau_num = config.get("plateau_num", 3)
         self.plateau_duration = config.get("plateau_duration", 20)
         self.plateau_percentile_range = config.get("plateau_percentile_range", [25, 75])
+
+        self.prolonged_minima_num = config.get("prolonged_minima_num", 2)
+        self.prolonged_minima_duration = config.get("prolonged_minima_duration", 5)
 
         self.temperature_baseline = config.get("temperature_baseline", 40)
         self.temperature_range = config.get("temperature_range", 3)
@@ -84,6 +88,7 @@ class StimulusGenerator:
         if not debug:
             self.add_calibration()
             self.add_plateaus()
+            self.add_prolonged_minima()
 
     @property
     def duration(self):  # in seconds
@@ -258,12 +263,12 @@ class StimulusGenerator:
         """Calibrates temperature range and baseline using participant data."""
         self.y *= self.temperature_range / 2
         self.y += self.temperature_baseline
-        return self
 
     def add_plateaus(self):
         """
-        Adds plateaus to the stimulus at random positions, but only when the
-        temperature is rising and the temperature is between given percentile range.
+        Adds plateaus to the stimulus at random positions.
+
+        For each plateau, the temperature is rising and between the given percentile range.
         The distance between the plateaus is at least 1.5 times the plateau_duration.
         """
         # Get indices of values within the given percentile range and with a rising temperature
@@ -272,7 +277,7 @@ class StimulusGenerator:
         idx_between_values = np.where(
             (self.y > percentile_low)
             & (self.y < percentile_high)
-            & (self.y_dot > 0.07)  # 0.07 FIXME TODO do we need this?
+            & (self.y_dot > 0.2)  # prevent plateaus during the initial rise/fall
         )[0]
 
         # Find suitable positions for the plateaus
@@ -302,7 +307,24 @@ class StimulusGenerator:
             if idx in idx_plateaus:
                 y_new.extend(np.full(self.plateau_duration * self.sample_rate, val))
         self.y = np.array(y_new)
-        return self
+
+    def add_prolonged_minima(self):
+        """Prologue some of the minima in the stimulus to make it less predictable."""
+        loc_minima, _ = scipy.signal.find_peaks(-self.y, prominence=0.5)
+
+        # TODO: add cutoff value for the minima to be considered
+        loc_minima_chosen = self.rng_numpy.choice(
+            loc_minima, self.prolonged_minima_num, replace=False
+        )
+        print(loc_minima_chosen)
+
+        y_new = []
+        for idx, i in enumerate(self.y):
+            y_new.append(i)
+            if idx in loc_minima_chosen:
+                y_new.extend([i] * self.prolonged_minima_duration * self.sample_rate)
+
+        self.y = np.array(y_new)
 
 
 def stimulus_extra(stimulus, s_RoC, display_stats=True):
@@ -391,3 +413,8 @@ def stimulus_extra(stimulus, s_RoC, display_stats=True):
         print((label_0_sizes / stimulus.sample_rate).describe().apply("{:,.2f}".format))
 
     return labels, labels_alt, fig
+
+
+if __name__ == "__main__":
+    stimulus = StimulusGenerator()
+    _ = stimulus_extra(stimulus, s_RoC=0.2)
