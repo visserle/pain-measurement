@@ -42,6 +42,7 @@ class StimulusGenerator:
         self.amplitude_range = config.get("amplitude_range", [0.3, 0.9])
         self.inflection_point_range = config.get("inflection_point_range", [-0.5, 0.3])
         self.shorten_expected_duration = config.get("shorten_expected_duration", 17)
+
         self.big_decreasing_half_cycle_num = config.get(
             "big_decreasing_half_cycle_num", 3
         )
@@ -51,6 +52,7 @@ class StimulusGenerator:
         self.big_decreasing_half_cycle_amplitude = config.get(
             "big_decreasing_half_cycle_amplitude", 0.85
         )
+
         self.plateau_num = config.get("plateau_num", 3)
         self.plateau_duration = config.get("plateau_duration", 20)
         self.plateau_percentile_range = config.get("plateau_percentile_range", [25, 75])
@@ -301,30 +303,39 @@ class StimulusGenerator:
             ):
                 break
 
-        y_new = []
-        for idx, val in enumerate(self.y):
-            y_new.append(val)
-            if idx in idx_plateaus:
-                y_new.extend(np.full(self.plateau_duration * self.sample_rate, val))
-        self.y = np.array(y_new)
+        self.y = self._extend_y_at_indices(self.y, self.plateau_duration, idx_plateaus)
 
     def add_prolonged_minima(self):
         """Prologue some of the minima in the stimulus to make it less predictable."""
         loc_minima, _ = scipy.signal.find_peaks(-self.y, prominence=0.5)
-
-        # TODO: add cutoff value for the minima to be considered
         loc_minima_chosen = self.rng_numpy.choice(
-            loc_minima, self.prolonged_minima_num, replace=False
+            loc_minima,
+            size=min(self.prolonged_minima_num, len(loc_minima)),
+            replace=False,
         )
-        print(loc_minima_chosen)
 
-        y_new = []
-        for idx, i in enumerate(self.y):
-            y_new.append(i)
-            if idx in loc_minima_chosen:
-                y_new.extend([i] * self.prolonged_minima_duration * self.sample_rate)
+        self.y = self._extend_y_at_indices(
+            self.y,
+            self.prolonged_minima_duration,
+            loc_minima_chosen,
+        )
 
-        self.y = np.array(y_new)
+    def _extend_y_at_indices(self, y, duration, indices):
+        """Extend the stimulus at specific indices by repeating their values."""
+        y_new = np.array([], dtype=y.dtype)
+        last_idx = 0
+        for idx in sorted(indices):
+            repeat_count = int(duration * self.sample_rate)
+            # Append everything up to the current index
+            y_new = np.concatenate((y_new, y[last_idx:idx]))
+            # Append the repeated value
+            y_new = np.concatenate(
+                (y_new, np.full(repeat_count, y[idx], dtype=y.dtype))
+            )
+            last_idx = idx
+        # Append any remaining values after the last index
+        y_new = np.concatenate((y_new, y[last_idx:]))
+        return y_new
 
 
 def stimulus_extra(stimulus, s_RoC, display_stats=True):
