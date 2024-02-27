@@ -79,9 +79,9 @@ if not args.full_stimuli:
     JITTER = 0
     logging.warning("Using dummy stimulus.")
 if not args.participant:
+    logging.warning("Using dummy participant data.")
     ask_for_participant_info = lambda: config["dummy_participant"]  # noqa: E731
     add_participant_info = lambda *args, **kwargs: None  # noqa: E731
-    logging.warning("Using dummy participant data.")
 
 # Expyriment defaults
 design.defaults.experiment_background_colour = C_DARKGREY
@@ -98,7 +98,7 @@ exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
 
-# Prepare stimuli
+# Prepare stimuli objects
 prepare_script(
     SCRIPT,
     text_size=scale_1d_value(EXPERIMENT["text_size"], screen_size),
@@ -137,14 +137,14 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
     """Run estimation trials and return the final estimate."""
     for trial in range(estimator.trials):
         cross["idle"].present()
-        exp.clock.wait(STIMULUS["iti_duration"] + JITTER)
+        exp.clock.wait_seconds(STIMULUS["iti_duration"] + JITTER)
         thermoino.trigger()
         time_to_ramp_up, _ = thermoino.set_temp(estimator.get_estimate())
         cross["pain"].present()
-        exp.clock.wait(STIMULUS["stimulus_duration"] + time_to_ramp_up)
+        exp.clock.wait_seconds(STIMULUS["stimulus_duration"] + time_to_ramp_up)
         time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
         cross["idle"].present()
-        exp.clock.wait(time_to_ramp_down)
+        exp.clock.wait_seconds(time_to_ramp_down)
 
         SCRIPT[f"question_vas{estimator.vas_value}"].present()
         found, _ = exp.keyboard.wait(keys=[K_y, K_n])
@@ -154,7 +154,7 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
         elif found == K_n:
             estimator.conduct_trial(response="n", trial=trial)
             SCRIPT["answer_no"].present()
-        exp.clock.wait(1000)
+        exp.clock.wait_seconds(1)
     success = estimator.validate_steps()
     if not success:
         logging.error("Please repeat the calibration if applicable.")
@@ -181,14 +181,14 @@ def main():
         iti_duration = (
             STIMULUS["iti_duration"] if idx != 0 else STIMULUS["iti_duration_short"]
         )
-        exp.clock.wait(iti_duration + JITTER)
+        exp.clock.wait_seconds(iti_duration + JITTER)
         thermoino.trigger()
         time_to_ramp_up, _ = thermoino.set_temp(temp)
         cross["pain"].present()
-        exp.clock.wait(STIMULUS["stimulus_duration"] + time_to_ramp_up)
+        exp.clock.wait_seconds(STIMULUS["stimulus_duration"] + time_to_ramp_up)
         time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
         cross["idle"].present()
-        exp.clock.wait(time_to_ramp_down)
+        exp.clock.wait_seconds(time_to_ramp_down)
 
     # Pre-exposure Feedback
     SCRIPT["question_preexposure"].present()
@@ -200,7 +200,7 @@ def main():
     elif found == K_n:
         SCRIPT["answer_no"].present()
         logging.info("Pre-exposure was not painful.")
-    exp.clock.wait(1000)
+    exp.clock.wait_seconds(1)
 
     # VAS 70 estimation
     for key, text in SCRIPT["info_vas70"].items():
