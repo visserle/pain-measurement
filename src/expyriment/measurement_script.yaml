@@ -19,8 +19,10 @@ welcome:
 
 
 
-    In diesem Experiment möchten wir den schwankenden Verlauf von Schmerzen
-    objektiv messen.
+
+
+    In diesem Experiment möchten wir schwankende Schmerzen objektiv messen.
+
 
 
     (Leertaste drücken, um fortzufahren)
@@ -29,13 +31,17 @@ welcome:
 
 
 
+
+
     Dazu erhalten Sie im Folgenden Schmerzen mit unterschiedlicher Intensität.
 
-    Ihre Aufgabe ist es, Ihren erlebten Schmerz durchgehend - also ohne Unterbrechung - zu bewerten. Die Schmerzintensität variiert dabei zufällig, sodass Sie die nächste Intensität nicht vorhersehen können.
+    Ihre Aufgabe wird es sein, Ihren erlebten Schmerz durchgehend - also ohne Unterbrechung - zu bewerten. Die Schmerzintensität variiert dabei zufällig, sodass Sie die nächste Intensität nicht vorhersehen können.
 
 
     (Leertaste drücken, um fortzufahren)
   4: |-
+
+
 
 
 
@@ -53,6 +59,8 @@ welcome:
 
 
 
+
+
     Es ist wichtig, dass Sie Ihre Schmerzbewertung so genau wie nur möglich mitteilen.
 
     Die Bewertung erfolgt mithilfe einer visuellen Skala, die Sie auf der nächsten Seite sehen.
@@ -65,8 +73,8 @@ instruction:
 
 
     Mit Hilfe des Schiebereglers geben Sie die von Ihnen erlebte Schmerzstärke an.
-    Bewegen Sie dazu Ihren Mauszeiger auf der Skala hin und her. Probieren Sie es aus!
-
+    Bewegen Sie dazu Ihren Mauszeiger auf der Skala hin und her.
+    Probieren Sie es aus!
 
 
 
@@ -83,8 +91,8 @@ instruction:
 
 
 
-    Während des Experiments haben Sie die Aufgabe, Ihren Schmerz kontinuierlich, also ohne Pausen, zu bewerten.
 
+    Während des Experiments haben Sie die Aufgabe, Ihren Schmerz mittels der Skala kontinuierlich zu bewerten.
 
 
 
@@ -105,6 +113,7 @@ ready_set_go: |-
 
 
 
+
   Als Nächstes startet das Experiment.
   
   Sollten Sie noch Fragen haben, richten Sie sich bitte jetzt an die Versuchsleitung.
@@ -112,8 +121,6 @@ ready_set_go: |-
   
   (Leertaste drücken, um fortzufahren)
 next_trial: |-
-
-
 
 
 
@@ -138,9 +145,9 @@ wait: |-
 
 
 
-
   ...
 reward: |-
+
 
 
 
@@ -160,11 +167,14 @@ approve : |-
 
 
 
+
+
   Sind Sie bereit für den nächsten Block?
 
 
   (Leertaste drücken, um fortzufahren)
 bye: |-
+
 
 
 
