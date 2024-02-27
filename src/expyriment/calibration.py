@@ -33,6 +33,7 @@ THERMOINO_CONFIG_PATH = Path("src/expyriment/thermoino_config.toml")
 LOG_DIR = Path("runs/expyriment/calibration/")
 PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
 VAS_PICTURE_PATH = Path("src/expyriment/vas_picture.png").as_posix()
+VAS70_PICTURE_PATH = Path("src/expyriment/vas70_picture.png").as_posix()
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
@@ -74,8 +75,8 @@ if not args.full_screen:
     control.defaults.window_size = (800, 600)
     control.set_develop_mode(True)
 if not args.full_stimuli:
-    STIMULUS["iti_duration"] = 300
-    STIMULUS["stimulus_duration"] = 200
+    STIMULUS["iti_duration"] = 0.2
+    STIMULUS["stimulus_duration"] = 0.2
     JITTER = 0
     logging.warning("Using dummy stimulus.")
 if not args.participant:
@@ -116,12 +117,17 @@ for name, color in zip(
     )
     cross[name].preload()
 
-# Load VAS picture, move it a bit up and scale it for a nice fit
+# Load VAS pictures, move it a bit up and scale it for a nice fit
 vas_picture = stimuli.Picture(
     VAS_PICTURE_PATH, position=(0, scale_1d_value(100, screen_size))
 )
-vas_picture.scale(scale_1d_value(0.72, screen_size))
+vas_picture.scale(scale_1d_value(1.5, screen_size))
 vas_picture.preload()
+vas70_picture = stimuli.Picture(
+    VAS70_PICTURE_PATH, position=(0, scale_1d_value(100, screen_size))
+)
+vas70_picture.scale(scale_1d_value(1.5, screen_size))
+vas70_picture.preload()
 
 # Initialize Thermoino
 thermoino = Thermoino(
@@ -163,7 +169,6 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
         control.end()
 
 
-# Experiment procedure
 def main():
     # Start experiment
     control.start(skip_ready_screen=True)
@@ -204,11 +209,16 @@ def main():
 
     # VAS 70 estimation
     for key, text in SCRIPT["info_vas70"].items():
-        # Show VAS picture
-        if key == 2:
-            vas_picture.present(clear=True, update=False)
-            text.present(clear=False, update=True)
-            exp.keyboard.wait(K_SPACE)
+        # Show VAS picture (NOTE: bad code, but it works for now)
+        if "picture" in str(key):
+            if "wait" in str(key):  # show vanilla VAS picture
+                vas_picture.present(clear=True, update=False)
+                text.present(clear=False, update=True)
+                exp.clock.wait_seconds(3)
+            else:  # show VAS picture with marked 70 value
+                vas70_picture.present(clear=True, update=False)
+                text.present(clear=False, update=True)
+                exp.keyboard.wait(K_SPACE)
             continue
         text.present()
         exp.keyboard.wait(K_SPACE)
