@@ -19,7 +19,6 @@ welcome:
 
 
 
-
     Mit der Schmerz-Kalibrierung möchten wir herausfinden, ab wann Sie leichte und starke Schmerzen verspüren.
 
     Diese Informationen helfen uns, die Schmerzreize im Hauptexperiment besser zu steuern.
@@ -34,6 +33,7 @@ welcome:
 
 
 
+
     Als Erstes wärmen wir Ihre Haustelle auf.
 
     Hierbei müssen Sie nichts weiter tun.
@@ -41,6 +41,8 @@ welcome:
 
     (Leertaste drücken, um fortzufahren)
 question_preexposure: |-
+
+
 
 
 
@@ -121,6 +123,7 @@ info_vas70:
 
 
 
+
     Als Nächstes startet die Schmerz-Kalibrierung.
 
     Sollten Sie noch Fragen haben, richten Sie sich bitte jetzt an die Versuchsleitung.
@@ -144,10 +147,6 @@ info_vas0: |-
   
 
 
-
-
-
-
   Ausgezeichnet!
 
 
@@ -159,6 +158,7 @@ info_vas0: |-
   (Leertaste drücken, um fortzufahren)
 question_vas0: |-
   
+
 
 
 
