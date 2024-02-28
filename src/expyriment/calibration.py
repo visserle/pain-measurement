@@ -1,6 +1,3 @@
-# TODO
-# fix formatting in script
-
 import argparse
 import logging
 import random
@@ -32,8 +29,6 @@ CONFIG_PATH = Path("src/expyriment/calibration_config.toml")
 THERMOINO_CONFIG_PATH = Path("src/expyriment/thermoino_config.toml")
 LOG_DIR = Path("runs/expyriment/calibration/")
 PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
-VAS_PICTURE_PATH = Path("src/expyriment/vas_picture.png").as_posix()
-VAS70_PICTURE_PATH = Path("src/expyriment/vas70_picture.png").as_posix()
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
@@ -118,16 +113,14 @@ for name, color in zip(
     cross[name].preload()
 
 # Load VAS pictures, move it a bit up and scale it for a nice fit
-vas_picture = stimuli.Picture(
-    VAS_PICTURE_PATH, position=(0, scale_1d_value(100, screen_size))
-)
-vas_picture.scale(scale_1d_value(1.5, screen_size))
-vas_picture.preload()
-vas70_picture = stimuli.Picture(
-    VAS70_PICTURE_PATH, position=(0, scale_1d_value(100, screen_size))
-)
-vas70_picture.scale(scale_1d_value(1.5, screen_size))
-vas70_picture.preload()
+vas_pictures = {}
+for pic in ["unmarked", "marked"]:
+    vas_pictures[pic] = stimuli.Picture(
+        Path(f"src/expyriment/vas_picture_{pic}.png").as_posix(),
+        position=(0, scale_1d_value(100, screen_size)),
+    )
+    vas_pictures[pic].scale(scale_1d_value(1.5, screen_size))
+    vas_pictures[pic].preload()
 
 # Initialize Thermoino
 thermoino = Thermoino(
@@ -209,14 +202,13 @@ def main():
 
     # VAS 70 estimation
     for key, text in SCRIPT["info_vas70"].items():
-        # Show VAS picture (NOTE: bad code, but it works for now)
+        # Show VAS picture, first the unmarked one for 3 seconds, then the marked one
         if "picture" in str(key):
-            if "wait" in str(key):  # show vanilla VAS picture
-                vas_picture.present(clear=True, update=False)
-                text.present(clear=False, update=True)
+            if "wait" in str(key):
+                vas_pictures["unmarked"].present(clear=True, update=True)
                 exp.clock.wait_seconds(3)
-            else:  # show VAS picture with marked 70 value
-                vas70_picture.present(clear=True, update=False)
+            else:
+                vas_pictures["marked"].present(clear=True, update=False)
                 text.present(clear=False, update=True)
                 exp.keyboard.wait(K_SPACE)
             continue
@@ -232,6 +224,8 @@ def main():
     logging.info("Started VAS 70 estimation.")
     run_estimation_trials(estimator=estimator_vas70)
     participant_info["vas70"] = estimator_vas70.get_estimate()
+    SCRIPT["excellent"].present()  # say something nice to the participant
+    exp.clock.wait_seconds(1.5)
 
     # Pain threshold (VAS 0) estimation
     SCRIPT["info_vas0"].present()
@@ -246,10 +240,17 @@ def main():
     run_estimation_trials(estimator=estimator_vas0)
     participant_info["vas0"] = estimator_vas0.get_estimate()
 
-    if participant_info["vas70"] - participant_info["vas0"] < 1:
-        logging.error(
-            "VAS 70 and VAS 0 are too close together. Please repeat the calibration."
-        )
+    # Check if the temperature range is reasonable
+    temperature_range = participant_info["vas70"] - participant_info["vas0"]
+    if not 1 <= temperature_range <= 5:
+        if temperature_range < 1:
+            logging.error(
+                "VAS 70 and VAS 0 are too close together. Please repeat the calibration."
+            )
+        else:
+            logging.error(
+                "VAS 70 and VAS 0 are too far apart. Please repeat the calibration."
+            )
         SCRIPT["fail"].present()
         exp.keyboard.wait(K_SPACE)
         control.end()
