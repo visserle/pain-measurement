@@ -26,6 +26,6 @@ temp_start_vas0_offset = 3.0  # vas0 = vas70 - offset
 temp_std_vas0 = 1.5
 
 [dummy_participant]
-id = "000"
+id = 0
 age = 20
 gender = "Female"

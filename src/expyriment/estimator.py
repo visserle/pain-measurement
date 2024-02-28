@@ -1,4 +1,6 @@
-"""Baysian estimation of pain VAS value. See calibration notebook for more details and visualizations."""
+"""Baysian estimation of pain VAS value. 
+
+See calibration notebook for more details and visualizations."""
 
 import logging
 import math
@@ -15,7 +17,7 @@ class BayesianEstimatorVAS:
     1. Continually update beliefs regarding the temperature corresponding to a specific VAS value.
     2. Decide the temperature for the succeeding trial based on the updated belief.
 
-    This class has a class attribute MAX_TEMP, which is set to 48°C (maximum temperature considered by the estimator).
+    This class has a class attribute MAX_TEMP, which is set to 47°C (maximum temperature considered by the estimator).
 
     Methods
     -------
@@ -152,7 +154,7 @@ class BayesianEstimatorVAS:
     def steps(self):
         return np.diff(self.temps)
 
-    def conduct_trial(self, response, trial) -> None:
+    def conduct_trial(self, response: str, trial: int) -> None:
         """
         Conducts a single estimation trial and updates internal states based on the response.
 
@@ -232,5 +234,5 @@ class BayesianEstimatorVAS:
         """
         return ~(np.all(self.steps >= 0) or np.all(self.steps <= 0))
 
-    def get_estimate(self):
+    def get_estimate(self) -> float:
         return self.temps[-1]

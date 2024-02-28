@@ -1,6 +1,7 @@
 import argparse
 import logging
 import random
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -73,6 +74,8 @@ if not args.full_stimuli:
     STIMULUS["iti_duration"] = 0.2
     STIMULUS["stimulus_duration"] = 0.2
     JITTER = 0
+    ESTIMATOR["trials_vas70"] = 2
+    ESTIMATOR["trials_vas0"] = 2
     logging.warning("Using dummy stimulus.")
 if not args.participant:
     logging.warning("Using dummy participant data.")
@@ -87,6 +90,7 @@ io.defaults.eventfile_directory = (LOG_DIR / "events").as_posix()
 io.defaults.datafile_directory = (LOG_DIR / "data").as_posix()
 io.defaults.outputfile_time_stamp = True
 io.defaults.mouse_show_cursor = False
+control.defaults.initialize_delay = 3
 
 # Experiment setup
 participant_info = ask_for_participant_info()
@@ -158,8 +162,9 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
     if not success:
         logging.error("Please repeat the calibration if applicable.")
         SCRIPT["fail"].present()
-        exp.keyboard.wait(K_SPACE)
+        exp.clock.wait_seconds(3)
         control.end()
+        sys.exit(1)
 
 
 def main():
@@ -202,11 +207,14 @@ def main():
 
     # VAS 70 estimation
     for key, text in SCRIPT["info_vas70"].items():
-        # Show VAS picture, first the unmarked one for 3 seconds, then the marked one
+        # Show VAS picture, first the unmarked, then the marked one
         if "picture" in str(key):
             if "wait" in str(key):
-                vas_pictures["unmarked"].present(clear=True, update=True)
+                vas_pictures["unmarked"].present()
                 exp.clock.wait_seconds(3)
+                text.present(clear=True, update=False)
+                vas_pictures["unmarked"].present(clear=False, update=True)
+                exp.keyboard.wait(K_SPACE)
             else:
                 vas_pictures["marked"].present(clear=True, update=False)
                 text.present(clear=False, update=True)
@@ -252,12 +260,13 @@ def main():
                 "VAS 70 and VAS 0 are too far apart. Please repeat the calibration."
             )
         SCRIPT["fail"].present()
-        exp.keyboard.wait(K_SPACE)
+        exp.clock.wait_seconds(3)
         control.end()
+        sys.exit(1)
 
     # End of Experiment
     SCRIPT["bye"].present()
-    exp.keyboard.wait(K_SPACE)
+    exp.clock.wait_seconds(3)
 
     control.end()
     thermoino.close()

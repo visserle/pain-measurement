@@ -88,9 +88,9 @@ class StimulusGenerator:
         self.y = None  # Placeholder for the stimulus
         self._generate_stimulus()
         if not debug:
-            self.add_calibration()
             self.add_plateaus()
             self.add_prolonged_minima()
+            self.add_calibration()
 
     @property
     def duration(self):  # in seconds

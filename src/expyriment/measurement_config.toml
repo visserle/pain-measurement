@@ -48,7 +48,7 @@ prolonged_minima_num = 0
 
 [dummy_participant]
 time_stamp = "2024-01-01 15:00:00"
-id = "000"
+id = 0
 age = 20
 gender = "Female"
 temperature_baseline = 40.0

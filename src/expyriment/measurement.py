@@ -108,6 +108,7 @@ stimuli.defaults.rectangle_colour = EXPERIMENT["element_color"]
 io.defaults.eventfile_directory = (LOG_DIR / "events").as_posix()
 io.defaults.datafile_directory = (LOG_DIR / "data").as_posix()
 io.defaults.outputfile_time_stamp = True
+control.defaults.initialize_delay = 3
 
 # Load participant info and update stimulus config with calibration data
 participant_info = read_last_participant(PARTICIPANTS_EXCEL_PATH)

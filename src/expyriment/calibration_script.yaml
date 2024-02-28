@@ -65,6 +65,25 @@ info_vas70:
     (Leertaste drücken, um fortzufahren)
   2_picture_wait: |-
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    (Leertaste drücken, um fortzufahren)
   3_picture: |-
 
 
@@ -81,7 +100,7 @@ info_vas70:
 
 
 
-    Wir möchten herauszufinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.
+    Wir möchten herausfinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.
 
 
     (Leertaste drücken, um fortzufahren)
@@ -91,9 +110,9 @@ info_vas70:
 
 
 
-    Da wir Ihre erlebten Schmerzen so genau wie möglich bestimmen möchten, bekommen Sie mehrfach Schmerzreize von ca. 10 Sekunden Dauer zu spüren.
+    Da wir Ihre erlebten Schmerzen so genau wie möglich bestimmen möchten, bekommen Sie die Schmerzreize von ca. 8 Sekunden Dauer mehrfach zu spüren.
 
-    Nach jedem Durchgang fragen wir Sie nach einem kurzen Feedback und passen die Temperatur graduell an Ihre Empfindung an.
+    Nach jedem Durchgang fragen wir Sie nach einem kurzen Feedback und passen die Temperatur graduell an Ihre Schmerzempfindung an.
 
 
     (Leertaste drücken, um fortzufahren)
@@ -103,7 +122,7 @@ info_vas70:
 
 
 
-    Aufgrund der Capsaicin-Creme ist Ihre Schmerzschwelle dabei nach unten verlagert. Dadurch verspüren Sie schneller starken Schmerz. 
+    Aufgrund der Capsaicin-Creme verspüren Sie dabei starke Schmerzen schneller als gewöhnlich.
     
     Aber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.
 
@@ -154,9 +173,9 @@ info_vas0: |-
 
 
 
-  Als Nächstes möchten wir bestimmen, wo Ihre Schmerzschwelle liegt - also ab wann Sie erste Schmerzen verspüren.
+  Als Nächstes möchten wir bestimmen, ab wann Sie erste, leichte Schmerzen verspüren.
 
-  Wichtig: Erste Schmerzen erkennen Sie daran, dass Sie zusätzlich zu den eventuellen Wirkungen der Capsaicin-Creme ein leichtes Stechen verspüren.
+  Wichtig: Erste Schmerzen erkennen Sie daran, dass Sie zusätzlich zu den eventuellen Wirkungen der Capsaicin-Creme eine "neue Qualität" wie z. B. ein leichtes Stechen wahrnehmen.
 
 
   (Leertaste drücken, um fortzufahren)
@@ -180,13 +199,13 @@ bye: |-
 
 
 
-  Vielen Dank!
+
+
+
+  Vielen Dank! Die Schmerz-Kalibrierung ist erfolgreich abgeschlossen.
 
   Als Nächstes geht es mit dem Hauptexperiment weiter.
   Bitte melden Sie sich bei der Versuchsleitung.
-
-
-  (Leertaste drücken, um Kalibrierung zu beenden)
 answer_yes: |-
   
 
