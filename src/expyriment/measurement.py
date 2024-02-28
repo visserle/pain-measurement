@@ -1,5 +1,4 @@
 # TODO
-# short stimulus
 # diff vs gradient for thermoino
 # index of the wave (-1 or not)
 # add randomization of stimulus order using expyriment
@@ -11,6 +10,7 @@ import random
 from datetime import datetime
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from expyriment import control, design, io, stimuli
 from expyriment.misc.constants import C_DARKGREY, K_SPACE
@@ -43,12 +43,7 @@ PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
-configure_logging(
-    stream_level=logging.DEBUG,
-    file_path=log_file,
-    ignore_libs=["numba"],
-    stream_milliseconds=True,
-)
+configure_logging(stream_level=logging.DEBUG, file_path=log_file)
 
 # Load configurations and script
 config = load_configuration(CONFIG_PATH)
@@ -175,7 +170,7 @@ def get_data_points(temp_course):
 def main():
     # Start experiment
     reward = 0
-    control.start(skip_ready_screen=True)
+    control.start(skip_ready_screen=True, subject_id=participant_info["id"])
     logging.info(f"Started experiment with seed order {STIMULUS['seeds']}.")
 
     # Introduction
@@ -253,8 +248,8 @@ def main():
             reward += 1
             logging.debug("Rewarding participant.")
             SCRIPT["reward"].present()
-            exp.clock.wait_seconds(2)
-        elif corr < 0.3:
+            exp.clock.wait_seconds(3)
+        elif corr < 0.3 or np.isnan(corr):
             logging.error(
                 "Correlation is too low. Is the participant paying attention?"
             )

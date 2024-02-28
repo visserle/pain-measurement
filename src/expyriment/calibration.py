@@ -55,7 +55,7 @@ parser.add_argument(
     "-s", "--full_stimuli", action="store_true", help="Use full stimuli duration"
 )
 parser.add_argument(
-    "-p", "--participant", action="store_true", help="Record and save participant data"
+    "-p", "--participant", action="store_true", help="Use participant data"
 )
 parser.add_argument(
     "-t", "--thermoino", action="store_true", help="Enable Thermoino device"
@@ -164,7 +164,7 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS):
 
 def main():
     # Start experiment
-    control.start(skip_ready_screen=True)
+    control.start(skip_ready_screen=True, subject_id=participant_info["id"])
     logging.info("Started calibration.")
 
     # Introduction

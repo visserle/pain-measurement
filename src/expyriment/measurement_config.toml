@@ -19,7 +19,7 @@ label_text_box_size = [250, 100]
 sample_rate = 10
 start_study_mode = "NormalPrompt"
 
-[stimulus]
+[stimulus]  # TODO: update!
 seeds = [786, 539, 589, 869, 431, 340, 395, 211, 909, 827, 405, 119]
 sample_rate = 10
 half_cycle_num = 10
@@ -33,19 +33,22 @@ big_decreasing_half_cycle_amplitude = 0.85
 plateau_num = 3
 plateau_duration = 20
 plateau_percentile_range = [25, 75]
+prolonged_minima_num = 2
+prolonged_minima_duration = 5
 
 [dummy_stimulus]
 seeds = [1, 2, 3]
 half_cycle_num = 2
-period_range = [2, 3]
+period_range = [2, 2]
 big_decreasing_half_cycle_num = 0
 shorten_expected_duration = 0
 amplitude_range = [0.9, 1.0]
 plateau_num = 0
+prolonged_minima_num = 0
 
 [dummy_participant]
 time_stamp = "2024-01-01 15:00:00"
-id = "dummy"
+id = "000"
 age = 20
 gender = "Female"
 temperature_baseline = 40.0

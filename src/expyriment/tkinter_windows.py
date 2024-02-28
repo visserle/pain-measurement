@@ -1,4 +1,9 @@
-# Note that the apps have to be called before an expyriment experiment is initialized or bad things will happen.
+# TODO: show windows on second non-primary screen if available
+
+"""Custom dialog windows for expyriment experiments.
+
+Note that the apps have to be called before experiment initialization or bad things will happen.
+"""
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -177,16 +182,18 @@ class ParticipantDataApp:
             if not value:
                 messagebox.showwarning("Missing Information", f"{field} is required.")
                 return False
-            if field == "Age":
+            if field in ["ID", "Age"]:
                 if not value.isdigit():
-                    messagebox.showwarning("Invalid Input", "Age must be a number.")
+                    messagebox.showwarning(
+                        "Invalid Input", f"{field} must be a number."
+                    )
                     return False
         return True
 
     def _extract_data(self):
         """Extracts and processes data from the input fields."""
         self.participant_info = {
-            "id": self.entries["ID"].get().strip(),
+            "id": int(self.entries["ID"].get().strip()),
             "age": int(self.entries["Age"].get()),
             "gender": self.entries["Gender"].get(),
         }
