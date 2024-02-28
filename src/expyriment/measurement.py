@@ -2,7 +2,7 @@
 # diff vs gradient for thermoino
 # index of the wave (-1 or not)
 # add randomization of stimulus order using expyriment
-# adujst stimulus sample rate to the rest of the sample rates, should always be the same as for imotions because we send both at the same time
+# adujst stimulus sample rate to the rest of the sample rates, should always be the same for imotions because we send both at the same time
 
 import argparse
 import logging
@@ -19,7 +19,7 @@ from src.expyriment.imotions import EventRecievingiMotions, RemoteControliMotion
 from src.expyriment.participant_data import read_last_participant
 from src.expyriment.stimulus_generator import StimulusGenerator
 from src.expyriment.thermoino import ThermoinoComplexTimeCourses
-from src.expyriment.tkinter_windows import (
+from src.expyriment.tkinter_window import (
     ask_for_eyetracker_calibration,
     ask_for_measurement_start,
 )

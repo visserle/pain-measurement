@@ -1,10 +1,12 @@
+# TODO: add warning for overwriting participant data
+
 import logging
 import tkinter as tk
 from datetime import datetime
 
 import pandas as pd
 
-from src.expyriment.tkinter_windows import ParticipantDataApp, center_tk_window
+from src.expyriment.tkinter_window import ParticipantDataApp, center_tk_window
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
