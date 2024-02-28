@@ -52,6 +52,8 @@ def configure_logging(
 
     # FileHandler for file logging, added only if file path is provided
     if file_path:
+        file_path = Path(file_path)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(file_path)
         file_handler.setLevel(file_level)
         file_formatter = logging.Formatter(
