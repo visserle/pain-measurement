@@ -89,8 +89,8 @@ class StimulusGenerator:
         self._generate_stimulus()
         if not debug:
             self.add_plateaus()
-            self.add_prolonged_minima()
             self.add_calibration()
+            self.add_prolonged_minima()
 
     @property
     def duration(self):  # in seconds
@@ -279,7 +279,7 @@ class StimulusGenerator:
         idx_between_values = np.where(
             (self.y > percentile_low)
             & (self.y < percentile_high)
-            & (self.y_dot > 0.2)  # prevent plateaus during the initial rise/fall
+            & (self.y_dot > 0.05)  # only rising temperatures
         )[0]
 
         # Find suitable positions for the plateaus
@@ -309,16 +309,20 @@ class StimulusGenerator:
         )
 
     def add_prolonged_minima(self):
-        """Prologue some of the minima in the stimulus to make it less predictable."""
-        loc_minima, _ = scipy.signal.find_peaks(-self.y, prominence=0.5)
-        loc_minima_chosen = self.rng_numpy.choice(
-            loc_minima,
-            size=min(self.prolonged_minima_num, len(loc_minima)),
-            replace=False,
-        )
+        """
+        Prologue some of the minima in the stimulus to make it more relexaed, less predictable and slightly longer.
+
+        Otherwise, the stimulus can feel like a non-stop series of ups and downs.
+        """
+        minima_indices, _ = scipy.signal.find_peaks(-self.y, prominence=0.5)
+        minima_values = self.y[minima_indices]
+        # Find the indices of the smallest minima values
+        # (argsort returns indices that would sort the array, and we take the first `self.prolonged_minima_num` ones)
+        smallest_minima_indices = np.argsort(minima_values)[: self.prolonged_minima_num]
+        prolonged_minima_indices = minima_indices[smallest_minima_indices]
 
         self.y = self._extend_stimulus_at_indices(
-            indices=loc_minima_chosen,
+            indices=prolonged_minima_indices,
             duration=self.prolonged_minima_duration,
         )
 
