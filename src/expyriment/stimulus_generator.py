@@ -156,7 +156,7 @@ class StimulusGenerator:
         Constraints:
         - The sum of the periods must equal desired_length.
         """
-        # TODO: variance check for rAnDoMnEsS?
+        # TODO: add variance check for rAnDoMnEsS?
         counter = 0
         while True:
             counter += 1
@@ -303,7 +303,10 @@ class StimulusGenerator:
             ):
                 break
 
-        self.y = self._extend_y_at_indices(self.y, self.plateau_duration, idx_plateaus)
+        self.y = self._extend_stimulus_at_indices(
+            indices=idx_plateaus,
+            duration=self.plateau_duration,
+        )
 
     def add_prolonged_minima(self):
         """Prologue some of the minima in the stimulus to make it less predictable."""
@@ -314,27 +317,26 @@ class StimulusGenerator:
             replace=False,
         )
 
-        self.y = self._extend_y_at_indices(
-            self.y,
-            self.prolonged_minima_duration,
-            loc_minima_chosen,
+        self.y = self._extend_stimulus_at_indices(
+            indices=loc_minima_chosen,
+            duration=self.prolonged_minima_duration,
         )
 
-    def _extend_y_at_indices(self, y, duration, indices):
+    def _extend_stimulus_at_indices(self, indices, duration):
         """Extend the stimulus at specific indices by repeating their values."""
-        y_new = np.array([], dtype=y.dtype)
+        y_new = np.array([], dtype=self.y.dtype)
         last_idx = 0
         for idx in sorted(indices):
             repeat_count = int(duration * self.sample_rate)
             # Append everything up to the current index
-            y_new = np.concatenate((y_new, y[last_idx:idx]))
+            y_new = np.concatenate((y_new, self.y[last_idx:idx]))
             # Append the repeated value
             y_new = np.concatenate(
-                (y_new, np.full(repeat_count, y[idx], dtype=y.dtype))
+                (y_new, np.full(repeat_count, self.y[idx], dtype=self.y.dtype))
             )
             last_idx = idx
         # Append any remaining values after the last index
-        y_new = np.concatenate((y_new, y[last_idx:]))
+        y_new = np.concatenate((y_new, self.y[last_idx:]))
         return y_new
 
 
