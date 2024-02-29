@@ -30,8 +30,7 @@ class CustomTextBox(TextBox):
         """
 
         # Separate block into lines
-        # lines = str(block).split('\n')
-        lines = block.split("\n")
+        lines = str(block).splitlines()
 
         # Remove leading/trailing empty lines
         # while lines and not lines[0]:

@@ -8,7 +8,7 @@ from src.expyriment.custom_text_box import CustomTextBox
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-BASE_SCREEN_SIZE = (1920, 1200)
+BASE_SCREEN_SIZE = (1920, 1080)
 
 
 def load_configuration(file_path):
@@ -36,13 +36,17 @@ def prepare_script(script, text_size, text_box_size, parent_key=None):
         else:
             # Convert strings to CustomTextBox stimuli
             script[key] = CustomTextBox(
-                text=value, size=text_box_size, position=[0, 0], text_size=text_size
+                text=value,
+                size=text_box_size,
+                position=[0, 0],
+                text_font="timesnewroman",
+                text_size=text_size,
             )
-            # Preload the stimuli
-            if parent_key != "instruction":
-                script[key].preload()
-            else:
+            # Special preloading for 'instruction' which contains the visual analogue scale composition
+            if parent_key == "instruction":
                 script[key].preload(inhibit_ogl_compress=True)
+            else:
+                script[key].preload()
 
 
 def _scale_ratio(screen_size, base_screen_size=BASE_SCREEN_SIZE) -> float:

@@ -17,6 +17,7 @@ welcome:
 
 
 
+
     Mit der Schmerz-Kalibrierung möchten wir herausfinden, ab wann Sie leichte und starke Schmerzen verspüren.
 
     Diese Informationen helfen uns, die Schmerzreize im Hauptexperiment besser zu steuern.
@@ -100,6 +101,7 @@ info_vas70:
 
 
 
+
     Wir möchten herausfinden, ab wann Sie eine 7 von 10 (starke / sehr starke Schmerzen) verspüren.
 
 
@@ -117,6 +119,7 @@ info_vas70:
 
     (Leertaste drücken, um fortzufahren)
   5: |-
+
 
 
 
@@ -173,6 +176,7 @@ info_vas0: |-
 
 
 
+
   Als Nächstes möchten wir bestimmen, ab wann Sie erste, leichte Schmerzen verspüren.
 
   Wichtig: Erste Schmerzen erkennen Sie daran, dass Sie zusätzlich zu den eventuellen Wirkungen der Capsaicin-Creme eine "neue Qualität" wie z. B. ein leichtes Stechen wahrnehmen.
@@ -201,10 +205,11 @@ bye: |-
 
 
 
-
   Vielen Dank! Die Schmerz-Kalibrierung ist erfolgreich abgeschlossen.
 
+  
   Als Nächstes geht es mit dem Hauptexperiment weiter.
+
   Bitte melden Sie sich bei der Versuchsleitung.
 answer_yes: |-
   

@@ -1,6 +1,3 @@
-# TODO
-# - find out if we need exp.mouse.track_motion_events = True or not -> probably not
-
 from expyriment import stimuli
 
 from src.expyriment.rate_limiter import RateLimiter
@@ -50,7 +47,7 @@ class VisualAnalogueScale:
         )
         self.label_right_position = (
             self.slider_max_x,
-            self.bar_position[1] - scale_1d_value(150, self.screen_size),
+            self.bar_position[1] - scale_1d_value(110, self.screen_size),
         )
         self.label_left_position = (
             self.label_right_position[0] - self.bar_length,
@@ -86,12 +83,14 @@ class VisualAnalogueScale:
             size=self.label_text_box_size,
             position=self.label_left_position,
             text_size=self.label_text_size,
+            text_font="timesnewroman",
         )
         self.label_right = stimuli.TextBox(
             "Sehr starke\nSchmerzen",
             size=self.label_text_box_size,
             position=self.label_right_position,
             text_size=self.label_text_size,
+            text_font="timesnewroman",
         )
 
         # Preload stimuli for efficiency (OpenGL compression needs to be inhibited)
