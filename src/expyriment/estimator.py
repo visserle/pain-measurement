@@ -1,3 +1,7 @@
+# TODO: find best values
+# add MIN TEMP
+# update docs
+
 """Baysian estimation of pain VAS value. 
 
 See calibration notebook for more details and visualizations."""
@@ -121,9 +125,19 @@ class BayesianEstimatorVAS:
         self.reduction_factor = reduction_factor
         self.trials = trials
 
-        # Define the range of temperatures to consider
-        self.min_temp = self.temp_start - math.ceil(self.temp_std * 1.5)
-        self.max_temp = self.temp_start + math.ceil(self.temp_std * 1.5)
+        # Define the range of temperatures to consider based on the initial temperature and standard deviation
+        if int(self.temp_std) == 0:
+            range_width = 1
+        elif int(self.temp_std) == 1:
+            range_width = 2
+        elif int(self.temp_std) == 2:
+            range_width = 3
+        elif int(self.temp_std) == 3:
+            range_width = 5
+        else:
+            raise ValueError("int(temp_std) must be 0, 1, 2, or 3 (or add more cases).")
+        self.min_temp = int(self.temp_start - range_width)
+        self.max_temp = int(self.temp_start + range_width)
         num = int((self.max_temp - self.min_temp) / 0.1) + 1
         self.range_temp = np.linspace(self.min_temp, self.max_temp, num)
 
