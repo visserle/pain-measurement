@@ -8,19 +8,30 @@ import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from screeninfo import get_monitors
+
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 def center_tk_window(window: tk.Tk):
-    """Center a window on the primary screen."""
+    """Center a window on the first available non-primary screen if available, otherwise on the primary screen."""
     window.update_idletasks()
     width = window.winfo_width()
     height = window.winfo_height()
-    screen_width = window.winfo_screenwidth()
-    screen_height = window.winfo_screenheight()
-    center_x = int(screen_width / 2 - width / 2)
-    center_y = int(screen_height / 2 - height / 2)
+
+    # Get list of monitors and sort them
+    monitors = sorted(get_monitors(), key=lambda m: m.is_primary)
+    # Bools are sorted as False < True, so the non-primary monitor comes first (if available)
+    target_monitor = monitors[0]
+
+    screen_width = target_monitor.width
+    screen_height = target_monitor.height
+    center_x = int(target_monitor.x + (screen_width / 2 - width / 2))
+    center_y = int(target_monitor.y + (screen_height / 2 - height / 2))
+
+    # Move window to the center of the chosen monitor
     window.geometry(f"+{center_x}+{center_y}")
+
     return (center_x, center_y)
 
 
