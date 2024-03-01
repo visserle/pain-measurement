@@ -1,5 +1,3 @@
-# TODO: add warning for overwriting participant data
-
 import logging
 import tkinter as tk
 from datetime import datetime
@@ -23,19 +21,35 @@ COLUMN_HEADERS = [
 ]
 
 
-def ask_for_participant_info():
+def ask_for_participant_info(file_path):
     root = tk.Tk()
     root.withdraw()
     app = ParticipantDataApp(root)
     center_tk_window(root)
     root.deiconify()
     root.mainloop()
+
     if app.participant_info:
         participant_info = app.participant_info
+        # Check if the participant ID already exists in the file
+        if file_path.exists():
+            existing_data = pd.read_excel(file_path)
+            if participant_info["id"] in existing_data["id"].values:
+                response = tk.messagebox.askyesno(
+                    "Duplicate Participant ID",
+                    "This participant ID already exists. Do you want to re-enter the participant information?",
+                )
+                if response:
+                    return ask_for_participant_info(file_path)
+                else:
+                    overwrite_id = True
         logger.info(f"Participant ID: {participant_info['id']}")
         logger.info(f"Participant Age: {participant_info['age']}")
         logger.info(f"Participant Gender: {participant_info['gender']}")
+        if overwrite_id:
+            logger.warning("Overwriting existing participant data.")
         return participant_info
+    logger.warning("No participant information entered.")
     return None
 
 
