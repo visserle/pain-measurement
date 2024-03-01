@@ -1,13 +1,8 @@
-# TODO: find best values
-# add MIN TEMP
-# update docs
-
 """Baysian estimation of pain VAS value.
 
 See calibration notebook for more details and visualizations."""
 
 import logging
-import math
 
 import numpy as np
 from scipy import stats
@@ -25,7 +20,7 @@ class BayesianEstimatorVAS:
 
     Methods
     -------
-    conduct_trial(response: str, trial: Optional[int]) -> None:
+    conduct_trial(response: str, trial: int) -> None:
         Conducts a single estimation trial and updates internal states based on the response.
 
     get_estimate() -> float:
@@ -34,13 +29,15 @@ class BayesianEstimatorVAS:
     Example
     -------
     ```python
+    import logging  # Set logging level to DEBUG for detailed output
     from src.expyriment.estimator import BayesianEstimatorVAS
 
     # Get estimate for VAS 50
-    temp_start_vas50 = 40.0
-    trials = 7
     estimator_vas50 = BayesianEstimatorVAS(
-        vas_value=50, temp_start=temp_start_vas50, temp_std=3.5, trials=trials
+        vas_value=50,
+        trials=7,
+        temp_start=40.0,
+        temp_std=3.5,
     )
 
     for trial in range(estimator_vas50.trials):

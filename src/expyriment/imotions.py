@@ -2,7 +2,6 @@
 
 # TODO
 # - add export data function, p. 34 onwards for experiment2
-# - set to NoPrompt for data acquisition: TODO: really? maybe figure out best way to handle this
 # - update doc strings
 
 import itertools

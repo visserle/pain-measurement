@@ -111,10 +111,13 @@ class VisualAnalogueScale:
             # Adjust slider position based on mouse X-coordinate within boundaries
             current_x_pos = self.experiment.mouse.position[0]
             slider_x = max(min(current_x_pos, self.slider_max_x), self.slider_min_x)
-            rating = (
-                (slider_x - self.slider_min_x)
-                / (self.slider_max_x - self.slider_min_x)
-                * 100
+            rating = round(
+                (
+                    (slider_x - self.slider_min_x)
+                    / (self.slider_max_x - self.slider_min_x)
+                    * 100
+                ),
+                3,
             )
 
             # Create a composition to show multiple elements simultaneously
@@ -141,9 +144,6 @@ class VisualAnalogueScale:
             # Update position
             self.last_x_pos = current_x_pos
             self.rating = rating
-
-            # Return the timestamp and the rating
-            # print(f"Timestamp: {timestamp}, Rating: {rating}")
 
 
 if __name__ == "__main__":

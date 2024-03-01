@@ -35,9 +35,7 @@ def ask_for_participant_info(file_path):
         if file_path.exists():
             existing_data = pd.read_excel(file_path)
             if participant_info["id"] in existing_data["id"].values:
-                logger.critical(
-                    f"Participant ID already exists in {file_path}."
-                )
+                logger.critical(f"Participant ID already exists in {file_path}.")
         logger.info(f"Participant ID: {participant_info['id']}")
         logger.info(f"Participant Age: {participant_info['age']}")
         logger.info(f"Participant Gender: {participant_info['gender']}")

@@ -80,7 +80,7 @@ if not args.full_stimuli:
     logging.warning("Using dummy stimulus.")
 if not args.participant:
     logging.warning("Using dummy participant data.")
-    ask_for_participant_info = lambda: config["dummy_participant"]  # noqa: E731
+    ask_for_participant_info = lambda *args, **kwargs: config["dummy_participant"]  # noqa: E731
     add_participant_info = lambda *args, **kwargs: None  # noqa: E731
 
 # Expyriment defaults
@@ -94,7 +94,7 @@ io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 
 # Experiment setup
-participant_info = ask_for_participant_info()
+participant_info = ask_for_participant_info(PARTICIPANTS_EXCEL_PATH)
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size

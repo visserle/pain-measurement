@@ -1,9 +1,8 @@
-# TODO: show windows on second non-primary screen if available
-
 """Custom dialog windows for expyriment experiments.
 
 Note that the apps have to be called before experiment initialization or bad things will happen.
 """
+
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
