@@ -1,9 +1,3 @@
-# TODO
-# diff vs gradient for thermoino
-# index of the wave (-1 or not)
-# add randomization of stimulus order using expyriment
-# adujst stimulus sample rate to the rest of the sample rates, should always be the same for imotions because we send both at the same time
-
 import argparse
 import logging
 import random
@@ -154,14 +148,10 @@ thermoino.connect()
 
 
 def get_data_points(temp_course):
-    """Get rating and temperature data points and send them to iMotions."""
-    # Runs rate-limited in the callback function
-    # TODO maybe use a higher layer for the rate limiting?
+    """Get rating and temperature data points and send them to iMotions (run in callback)."""
     stopped_time = exp.clock.stopwatch_time
     vas_slider.rate()
-    index = int(
-        (stopped_time / 1000) * STIMULUS["sample_rate"]
-    )  # NOTE TODO this is now exact in dev mode
+    index = int((stopped_time / 1000) * STIMULUS["sample_rate"])
     imotions_event.send_data_rate_limited(
         timestamp=stopped_time,
         temperature=temp_course[index],
@@ -230,8 +220,7 @@ def main():
         imotions_event.send_stimulus_markers(seed)
         logging.info("Complex temperature course (CTC) finished.")
 
-        # NOTE maybe this could fixed by np.diff. TODO check
-        # Account for the exec delay of the thermoino (see thermoino.exec_ctc()
+        # Account for some delay at the end of the complex time course (see Thermoino documentation)
         exp.clock.wait_seconds(0.5, callback_function=lambda: vas_slider.rate())
 
         # Ramp down temperature

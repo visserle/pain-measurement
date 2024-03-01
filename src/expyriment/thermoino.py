@@ -1,11 +1,8 @@
-"""Module for communication with the Thermoino (Arduino to control a thermode)."""
-
 # TODO
 # - Fix query function
-# TODO: diff or gradient -> Christian
-
 
 import logging
+import math
 import time
 from enum import Enum
 
@@ -154,6 +151,7 @@ class Thermoino:
     thermoino.sleep(duration=time_to_ramp_up)
     # 4 s plateau of 42°C
     thermoino.sleep(4)
+    # make sure to always update the temperature in the thermoino object
     time_to_ramp_down, _ = thermoino.set_temp(28)
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
@@ -288,12 +286,9 @@ class Thermoino:
         tuple
             (float, bool) - float for the duration [s] for the temperature change, bool for success
         """
-
         move_time_us = round(((temp_target - self.temp) / self.mms_rate_of_rise) * 1e6)
         output = self._send_command(f"MOVE;{move_time_us}\n")
-        duration = (
-            abs(move_time_us / 1e6) + 0.1
-        )  # NOTE TODO do we really need 0.1, test it
+        duration = math.ceil(abs(move_time_us / 1e6) * 1000) / 1000
         if output in OkCodes.__members__:
             # Update the current temperature
             self.temp = temp_target
@@ -314,7 +309,7 @@ class Thermoino:
         Sleep for a given duration in seconds. This function delays the execution in
         Python for a given number of seconds.
 
-        - CAUTION:
+        NOTE:
         This function should not be called in a time-critical experiment (e.g. for continuous ratings) as it blocks the execution
         of anything else in the same thread.
         """
@@ -330,6 +325,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
     It provides methods to initialize the device, set target temperatures,
     create and load complex temperature courses (CTC) on the Thermoino, and execute these courses.
 
+    NOTE: The resulting temperature course won't be millisecond-precise due to the resampling and binning.
+    The CTC will be 1 bin shorter than the original temperature course and thus the last temperature will be the same as the second last.
 
     Attributes
     ----------
@@ -496,7 +493,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             The created CTC.
         """
         self.temp_course_duration = temp_course.shape[0] / sample_rate
-        # Resample the temperature course to the bin size using pandas (very reliable way to resample time series data)
+        # Resample the temperature course to the bin size using pandas (reliable way to resample time series data)
         temp_course_resampled = (
             pd.DataFrame(
                 {"temp": temp_course},
@@ -504,15 +501,14 @@ class ThermoinoComplexTimeCourses(Thermoino):
                     np.arange(len(temp_course)) / sample_rate, unit="s"
                 ),
             )
-            .resample(f"{self.bin_size_ms}ms")
+            .resample(f"{self.bin_size_ms}ms", closed="right")
             .ffill()
             .to_numpy()
             .flatten()
         )
         self.temp_course_start = temp_course_resampled[0]
         self.temp_course_end = temp_course_resampled[-1]
-        # TODO: diff or gradient -> Christian
-        temp_course_resampled_diff = np.gradient(temp_course_resampled)
+        temp_course_resampled_diff = np.diff(temp_course_resampled)
         mms_rate_of_rise_ms = self.mms_rate_of_rise / 1e3
         # scale to mms_rate_of_rise (in milliseconds)
         temp_course_resampled_diff_binned = (
@@ -660,12 +656,12 @@ def main():
     print(list_com_ports())
 
     # Set up the Thermoino in dummy mode
-    port = "COM7"
+    port = "COM3"
     thermoino = Thermoino(
         port=port,
         mms_baseline=28,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
-        dummy=True,
+        dummy=False,
     )
 
     # Use thermoino to set temperatures:
@@ -675,9 +671,8 @@ def main():
     thermoino.sleep(duration=time_to_ramp_up)
     # 4 s plateau of 42°C
     thermoino.sleep(4)
-    time_to_ramp_down, _ = thermoino.set_temp(
-        28
-    )  # updates the class-internal temperature
+    # make sure to always update the temperature in the thermoino object
+    time_to_ramp_down, _ = thermoino.set_temp(28)
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
 
@@ -689,7 +684,7 @@ def main():
         port=port,
         mms_baseline=28,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
-        dummy=True,
+        dummy=False,
     )
 
     thermoino.connect()
