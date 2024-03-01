@@ -2,7 +2,7 @@
 # add MIN TEMP
 # update docs
 
-"""Baysian estimation of pain VAS value. 
+"""Baysian estimation of pain VAS value.
 
 See calibration notebook for more details and visualizations."""
 
@@ -72,11 +72,11 @@ class BayesianEstimatorVAS:
     def __init__(
         self,
         vas_value,
+        trials,
         temp_start,
-        temp_std=3.5,
-        trials=7,
+        temp_std,
         likelihood_std=1,
-        reduction_factor=0.95,
+        reduction_factor=0.9,
     ):
         """
         Initialize the VAS_Estimator object for recursive Bayesian estimation of temperature based on VAS values.
@@ -86,20 +86,20 @@ class BayesianEstimatorVAS:
         vas_value : int or float
             VAS value to be estimated.
 
-        temp_start : float, optional, default=38
+        trials : int
+            Number of trials for the estimation process.
+
+        temp_start : float
             Initial temperature for estimation in degrees Celsius.
             Defaults to 38 degrees Celsius for VAS 0 (pain threshold) with Capsaicin.
 
-        temp_std : float, optional, default=3.5
+        temp_std : float
             Standard deviation of the initial Gaussian prior distribution for temperature.
-
-        trials : int, optional, default=7
-            Number of trials for the estimation process.
 
         likelihood_std : float, optional, default=1
             Standard deviation of the likelihood function used in Bayesian updating.
 
-        reduction_factor : float, optional, default=0.95
+        reduction_factor : float, optional, default=0.9
             Factor to reduce the standard deviation of the likelihood function after each trial.
             This allows the model to become more confident in its estimates as more data is collected.
 
@@ -119,11 +119,11 @@ class BayesianEstimatorVAS:
             Lists to store temperature, prior distributions, likelihood functions, and posterior distributions for each trial, respectively.
         """
         self.vas_value = vas_value
+        self.trials = trials
         self.temp_start = temp_start
         self.temp_std = temp_std
         self.likelihood_std = likelihood_std
         self.reduction_factor = reduction_factor
-        self.trials = trials
 
         # Define the range of temperatures to consider based on the initial temperature and standard deviation
         if int(self.temp_std) == 0:
@@ -153,9 +153,9 @@ class BayesianEstimatorVAS:
         self.likelihoods = []
         self.posteriors = []
 
-    # Make sure the current temperature is never above MAX_TEMP
     @property
     def current_temp(self):
+        """Ensure the current temperature is never above MAX_TEMP."""
         return min(self._current_temp, self.MAX_TEMP)
 
     @current_temp.setter
@@ -181,25 +181,16 @@ class BayesianEstimatorVAS:
             Trial number (0-indexed).
         """
         # Collect the subject's response and define a cdf likelihood function based on it
+        trial_type = "over" if response == "y" else "under"
+        logger.info(
+            f"Calibration trial ({trial + 1}/{self.trials}): {self.current_temp} °C was {trial_type} VAS {self.vas_value}."
+        )
+
         if response == "y":
-            logger.info(
-                "Calibration trial (%s/%s): %s °C was over VAS %s.",
-                trial + 1,
-                self.trials,
-                self.current_temp,
-                self.vas_value,
-            )
             likelihood = 1 - stats.norm.cdf(
                 self.range_temp, loc=self.current_temp, scale=self.likelihood_std
             )
         else:
-            logger.info(
-                "Calibration trial (%s/%s): %s °C was under VAS %s.",
-                trial + 1,
-                self.trials,
-                self.current_temp,
-                self.vas_value,
-            )
             likelihood = stats.norm.cdf(
                 self.range_temp, loc=self.current_temp, scale=self.likelihood_std
             )

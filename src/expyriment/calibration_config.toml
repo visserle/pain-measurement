@@ -19,11 +19,14 @@ preexposure_correction = 2.0  # we subtract this from the vas70 estimate if pree
 trials_vas70 = 7
 temp_start_vas70 = 42.0
 temp_std_vas70 = 3.5
+likelihood_std_vas70 = 0.8
+
 # VAS 0
 trials_vas0 = 5
 temp_start_vas0 = inf  # will be set after VAS 70 estimate
-temp_start_vas0_offset = 3.0  # vas0 = vas70 - offset
+temp_start_vas0_offset = 2.5  # vas0 = vas70 - offset
 temp_std_vas0 = 1.5
+likelihood_std_vas0 = 0.5
 
 [dummy_participant]
 id = 0
