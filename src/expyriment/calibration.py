@@ -65,6 +65,7 @@ args = parser.parse_args()
 
 # Adjust settings
 if args.all:
+    logging.debug("Run full experiment.")
     for flag in vars(args).keys():
         setattr(args, flag, True)
 if not args.full_screen:
@@ -97,7 +98,6 @@ participant_info = ask_for_participant_info()
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
-
 # Prepare stimuli objects
 prepare_script(
     SCRIPT,
@@ -207,7 +207,7 @@ def main():
 
     # VAS 70 estimation
     for key, text in SCRIPT["info_vas70"].items():
-        # Show VAS picture, first the unmarked, then the marked one
+        # Show VAS pictures, first the unmarked, then the marked one
         if "picture" in str(key):
             if "wait" in str(key):
                 vas_pictures["unmarked"].present()
@@ -225,9 +225,10 @@ def main():
 
     estimator_vas70 = BayesianEstimatorVAS(
         vas_value=70,
+        trials=ESTIMATOR["trials_vas70"],
         temp_start=ESTIMATOR["temp_start_vas70"],
         temp_std=ESTIMATOR["temp_std_vas70"],
-        trials=ESTIMATOR["trials_vas70"],
+        likelihood_std=ESTIMATOR["likelihood_std_vas70"],
     )
     logging.info("Started VAS 70 estimation.")
     run_estimation_trials(estimator=estimator_vas70)
@@ -240,9 +241,10 @@ def main():
     exp.keyboard.wait(K_SPACE)
     estimator_vas0 = BayesianEstimatorVAS(
         vas_value=0,
+        trials=ESTIMATOR["trials_vas0"],
         temp_start=estimator_vas70.get_estimate() - ESTIMATOR["temp_start_vas0_offset"],
         temp_std=ESTIMATOR["temp_std_vas0"],
-        trials=ESTIMATOR["trials_vas0"],
+        likelihood_std=ESTIMATOR["likelihood_std_vas0"],
     )
     logging.info("Started VAS 0 (pain threshold) estimation.")
     run_estimation_trials(estimator=estimator_vas0)
@@ -251,14 +253,10 @@ def main():
     # Check if the temperature range is reasonable
     temperature_range = participant_info["vas70"] - participant_info["vas0"]
     if not 1 <= temperature_range <= 5:
-        if temperature_range < 1:
-            logging.error(
-                "VAS 70 and VAS 0 are too close together. Please repeat the calibration."
-            )
-        else:
-            logging.error(
-                "VAS 70 and VAS 0 are too far apart. Please repeat the calibration."
-            )
+        range_error = "close together" if temperature_range < 1 else "far apart"
+        logging.error(
+            f"VAS 70 and VAS 0 are too {range_error}. Please repeat the calibration."
+        )
         SCRIPT["fail"].present()
         exp.clock.wait_seconds(3)
         control.end()

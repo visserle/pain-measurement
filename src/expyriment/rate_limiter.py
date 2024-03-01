@@ -1,6 +1,6 @@
 class RateLimiter:
     """
-    Rate limiter class to limit the number of operations per second.
+    Rate limiter to limit the number of operations per second.
 
     With an optional interval-based limiting feature to enforce operation execution at precise, predefined intervals.
     This feature allows for more granular control over the timing of operations, making it ideal for scenarios

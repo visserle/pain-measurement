@@ -1,8 +1,3 @@
-# TODO
-# ask PI if hes fine with forcefully going under the expected length, or maybe use random periods with shorter length by default?
-# check for total applied temperature via integral of the stimulus? - how much pain in a given trial? or should it vary?
-# best plateau percentile range
-
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -41,7 +36,7 @@ class StimulusGenerator:
         self.period_range = config.get("period_range", [5, 20])
         self.amplitude_range = config.get("amplitude_range", [0.3, 0.9])
         self.inflection_point_range = config.get("inflection_point_range", [-0.5, 0.3])
-        self.shorten_expected_duration = config.get("shorten_expected_duration", 17)
+        self.shorten_expected_duration = config.get("shorten_expected_duration", 7)
 
         self.big_decreasing_half_cycle_num = config.get(
             "big_decreasing_half_cycle_num", 3
@@ -53,9 +48,9 @@ class StimulusGenerator:
             "big_decreasing_half_cycle_amplitude", 0.85
         )
 
-        self.plateau_num = config.get("plateau_num", 3)
-        self.plateau_duration = config.get("plateau_duration", 20)
-        self.plateau_percentile_range = config.get("plateau_percentile_range", [25, 75])
+        self.plateau_num = config.get("plateau_num", 2)
+        self.plateau_duration = config.get("plateau_duration", 15)
+        self.plateau_percentile_range = config.get("plateau_percentile_range", [25, 50])
 
         self.prolonged_minima_num = config.get("prolonged_minima_num", 2)
         self.prolonged_minima_duration = config.get("prolonged_minima_duration", 5)

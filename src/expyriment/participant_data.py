@@ -112,6 +112,7 @@ def read_last_participant(file_path) -> dict:
     """
     last_row = pd.read_excel(file_path).iloc[-1]
     participant_info = last_row.to_dict()
+    participant_info["id"] = int(participant_info["id"])
     logger.info(
         f"Participant data from {participant_info['id']} ({participant_info['time_stamp']}) loaded."
     )

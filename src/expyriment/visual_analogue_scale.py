@@ -39,10 +39,7 @@ class VisualAnalogueScale:
             vas_config.get("label_text_size", 40), self.screen_size
         )
         self.label_text_box_size = scale_2d_tuple(
-            vas_config.get(
-                "label_text_box_size",
-                (self.label_text_size * 14, self.label_text_size * 6),
-            ),  # scaled to the text size
+            vas_config.get("label_text_box_size", [250, 100]),
             self.screen_size,
         )
         self.label_right_position = (

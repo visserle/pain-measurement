@@ -8,7 +8,7 @@ from src.expyriment.custom_text_box import CustomTextBox
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-BASE_SCREEN_SIZE = (1920, 1080)
+BASE_SCREEN_SIZE = (1920, 1200)
 
 
 def load_configuration(file_path):

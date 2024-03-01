@@ -78,6 +78,7 @@ args = parser.parse_args()
 
 # Adjust settings
 if args.all:
+    logging.debug("Run full experiment.")
     for flag in vars(args).keys():
         setattr(args, flag, True)
 if not args.full_screen:
@@ -108,6 +109,7 @@ stimuli.defaults.rectangle_colour = EXPERIMENT["element_color"]
 io.defaults.eventfile_directory = (LOG_DIR / "events").as_posix()
 io.defaults.datafile_directory = (LOG_DIR / "data").as_posix()
 io.defaults.outputfile_time_stamp = True
+io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 
 # Load participant info and update stimulus config with calibration data
@@ -249,7 +251,7 @@ def main():
             reward += 1
             logging.debug("Rewarding participant.")
             SCRIPT["reward"].present()
-            exp.clock.wait_seconds(3)
+            exp.clock.wait_seconds(2.5)
         elif corr < 0.3 or np.isnan(corr):
             logging.error(
                 "Correlation is too low. Is the participant paying attention?"
