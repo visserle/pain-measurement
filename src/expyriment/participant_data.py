@@ -35,19 +35,12 @@ def ask_for_participant_info(file_path):
         if file_path.exists():
             existing_data = pd.read_excel(file_path)
             if participant_info["id"] in existing_data["id"].values:
-                response = tk.messagebox.askyesno(
-                    "Duplicate Participant ID",
-                    "This participant ID already exists. Do you want to re-enter the participant information?",
+                logger.critical(
+                    f"Participant ID already exists in {file_path}."
                 )
-                if response:
-                    return ask_for_participant_info(file_path)
-                else:
-                    overwrite_id = True
         logger.info(f"Participant ID: {participant_info['id']}")
         logger.info(f"Participant Age: {participant_info['age']}")
         logger.info(f"Participant Gender: {participant_info['gender']}")
-        if overwrite_id:
-            logger.warning("Overwriting existing participant data.")
         return participant_info
     logger.warning("No participant information entered.")
     return None
@@ -90,7 +83,7 @@ def add_participant_info(file_path, participant_info: dict) -> dict:
         # Check if the last participant is the same as the one you want to add
         last_participant = participants_xlsx.iloc[-1]["id"]
         if last_participant == participant_info["id"]:
-            logger.critical(
+            logger.warning(
                 f"Participant {participant_info['id']} already exists as the last entry."
             )
         participants_xlsx = pd.concat(
