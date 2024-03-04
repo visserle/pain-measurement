@@ -11,12 +11,12 @@ from expyriment.misc.constants import C_DARKGREY, K_SPACE
 
 from src.expyriment.imotions import EventRecievingiMotions, RemoteControliMotions
 from src.expyriment.participant_data import read_last_participant
-from src.expyriment.stimulus_generator import StimulusGenerator
-from src.expyriment.thermoino import ThermoinoComplexTimeCourses
-from src.expyriment.tkinter_window import (
+from src.expyriment.pop_ups import (
     ask_for_eyetracker_calibration,
     ask_for_measurement_start,
 )
+from src.expyriment.stimulus_generator import StimulusGenerator
+from src.expyriment.thermoino import ThermoinoComplexTimeCourses
 from src.expyriment.utils import (
     load_configuration,
     load_script,

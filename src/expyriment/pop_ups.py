@@ -1,5 +1,4 @@
-"""Custom dialog windows for expyriment experiments.
-
+"""
 Note that the apps have to be called before experiment initialization or bad things will happen.
 """
 
@@ -211,4 +210,4 @@ class ParticipantDataApp:
 
 if __name__ == "__main__":
     ask_for_eyetracker_calibration()
-    # ask_for_measurement_start()
+    ask_for_measurement_start()
