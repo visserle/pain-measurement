@@ -214,7 +214,7 @@ def main():
         exp.clock.reset_stopwatch()  # used to get the temperature in the callback function
         imotions_event.send_stimulus_markers(seed)
         exp.clock.wait_seconds(
-            stimulus.duration,
+            stimulus.duration - 0.001,  # prevent index out of range error
             callback_function=lambda: get_data_points(temp_course=stimulus.y),
         )
         imotions_event.send_stimulus_markers(seed)
@@ -228,8 +228,8 @@ def main():
         exp.clock.wait_seconds(
             time_to_ramp_down, callback_function=lambda: vas_slider.rate()
         )
-        logging.info(f"Finished trial ({trial + 1}/{total_trials}) with seed {seed}.")
         imotions_event.send_prep_markers()
+        logging.info(f"Finished trial ({trial + 1}/{total_trials}) with seed {seed}.")
 
         # Correlation check for reward
         data_points = pd.DataFrame(imotions_event.data_points)
