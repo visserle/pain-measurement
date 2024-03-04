@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BDI-II Survey</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>BDI-II Survey</h1>
+    <form action="" method="post">
+        {% for question in questions %}
+            <fieldset>
+                <legend>{{ question.text }}</legend>
+                {% for option in question.options %}
+                    <div>
+                        <input type="radio" id="{{ question.id }}_{{ loop.index }}" name="q{{ question.id }}" value="{{ option.score }}" required>
+                        <label for="{{ question.id }}_{{ loop.index }}">{{ option.text }}</label>
+                    </div>
+                {% endfor %}
+            </fieldset>
+        {% endfor %}
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
