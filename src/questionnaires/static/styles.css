@@ -2,18 +2,45 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 20px;
-    background-color: #ffffff;
+    background-color: #f4f4f4;
+    display: flex;
+    justify-content: center;
 }
+
+.container {
+    width: 80%;
+    max-width: 800px;
+}
+
 h1 {
-    color: #2ebb46;
+    color: #333;
+    text-align: center;
 }
+
 form {
     background: white;
     padding: 20px;
     border-radius: 8px;
 }
+
 fieldset {
     border: 1px solid #ddd;
     padding: 10px;
     margin-bottom: 20px;
+}
+
+
+legend {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+label {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+button {
+    display: block;
+    margin: 20px auto;
 }

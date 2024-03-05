@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>{{ title }}</h1>
+        <p>{{ instructions }}</p>
+        <form action="" method="post">
+            {% for question in questions %}
+                <fieldset>
+                    <legend>{{ question.text }}</legend>
+                    {% for option in question.options %}
+                        <div>
+                            <input type="radio" id="{{ question.id }}_{{ loop.index }}" name="q{{ question.id }}" value="{{ option.score }}" required>
+                            <label for="{{ question.id }}_{{ loop.index }}">{{ option.text }}</label>
+                        </div>
+                    {% endfor %}
+                </fieldset>
+            {% endfor %}
+            <button type="submit">Abschicken</button>
+        </form>
+    </div>
+</body>
+</html>
