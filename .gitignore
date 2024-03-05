@@ -11,8 +11,7 @@ src/models/mlp.py
 src/models/model.ipynb
 src/models/models.py
 src/models/models_2.py
-data
-Events
+/events
 
 # excluded for now
 /runs
@@ -25,9 +24,7 @@ plan.md
 /data/imotions
 /data/interim
 /data/processed
-data/trial
 /data/raw
-/data/_test
 
 
 
@@ -119,3 +116,5 @@ target/
 # Mypy cache
 .mypy_cache/
 
+src/questionnaires/inventory/bdi.yaml
+src/questionnaires/inventory/pcs.yaml
