@@ -4,7 +4,8 @@ from datetime import datetime
 
 import pandas as pd
 
-from src.expyriment.pop_ups import ParticipantDataApp, center_tk_window
+from src.expyriment.pop_ups import ParticipantDataApp
+from src.helpers import center_tk_window
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 

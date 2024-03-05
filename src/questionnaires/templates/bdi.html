@@ -16,8 +16,8 @@
                     <legend>{{ question.text }}</legend>
                     {% for option in question.options %}
                         <div>
-                            <input type="radio" id="{{ question.id }}_{{ loop.index }}" name="q{{ question.id }}" value="{{ option.score }}" required>
-                            <label for="{{ question.id }}_{{ loop.index }}">{{ option.text }}</label>
+                            <input type="radio" id="q{{ question.id }}_option{{ option.score }}" name="q{{ question.id }}" value="{{ option.score }}" required>
+                            <label for="q{{ question.id }}_option{{ option.score }}">{{ option.text }}</label>
                         </div>
                     {% endfor %}
                 </fieldset>
