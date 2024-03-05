@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <h1>{{ title }}</h1>
-        <p>{{ instructions | replace('\n\n', '<br><br>') | safe }}</p>
+        <p>{{ instructions | replace('\n\n', '<br><br>') | safe }}</p>  <!-- adds a paragraph break after each double line break -->
         <form method="post">
             {% for question in questions %}
             <div>

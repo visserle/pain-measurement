@@ -1,16 +1,14 @@
-from datetime import datetime
 from pathlib import Path
 
 import yaml
 from flask import Flask, redirect, render_template, request, url_for
 
 from src.log_config import configure_logging
-from src.questionnaires.save_results import save_bdi, save_pcs
-from src.questionnaires.score_results import score_bdi, score_pcs
+from src.questionnaires.functions import save_results, score_results
 
 configure_logging()
 
-scale = "pcs"
+scale = "bdi"
 
 app = Flask(__name__)
 
@@ -22,8 +20,8 @@ with open(f"src/questionnaires/inventory/{scale}.yaml", "r") as file:
 def survey():
     if request.method == "POST":
         answers = request.form
-        score = score_pcs(answers)
-        save_pcs(questionnaire, answers, score)
+        score = score_results(scale, answers)
+        save_results(scale, questionnaire, answers, score)
         return redirect(url_for("thank_you"))
     return render_template(
         f"{scale}.html",
