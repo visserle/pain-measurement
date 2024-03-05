@@ -1,0 +1,42 @@
+# This is an example of how to structure a questionnaire yaml file.
+
+# The bdi.yaml is structured as follows:
+title: "BDI-II"
+instructions: "TEXT"
+questions:
+  - id: 1
+    text: "Negativ Feeling 1"
+    options:
+      - score: 0
+        text: "I feel not negative"
+      - score: 1  # alternative options like 1a and 1b are supported
+        text: "I often feel negative"
+      - score: 2
+        text: "I always feel negative"
+      - score: 3
+        text: "I feel so negative that I can't stand it"
+  - id: 2
+    text: "Negativ Feeling 2"
+    ...
+
+# The pcs.yaml is structured as follows:
+title: "PCS"
+instructions: "TEXT"  # paragraphs are supported using \n\n
+options:
+  - score: 0
+    text: "does not apply at all"
+  - score: 1
+    text: "does not really apply"
+  - score: 2
+    text: "partly-partly"
+  - score: 3
+    text: "applies rather"
+  - score: 4
+    text: "always applies"
+questions:
+  - id: 1
+    text: "I do not like to feel pain."
+  - id: 2
+    text: "It is unbearable for me to feel pain."
+  - id: 3
+    text: ...
