@@ -5,7 +5,7 @@ import yaml
 from flask import Flask, redirect, render_template, request, url_for
 
 from src.log_config import configure_logging
-from src.questionnaires.functions import save_results, score_results
+from src.questionnaires.evaluation import save_results, score_results
 
 configure_logging(ignore_libs=["werkzeug", "participant_data"])
 
