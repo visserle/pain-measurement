@@ -40,7 +40,7 @@ def questionnaire_handler(scale):
             return redirect(url_for("thank_you"))
 
     return render_template(
-        f"{scale}.html",
+        f"{scale}.html.j2",
         title=current_questionnaire["title"],
         instructions=current_questionnaire["instructions"]
         if "instructions" in current_questionnaire
@@ -58,7 +58,7 @@ def thank_you():
 
 
 if __name__ == "__main__":
-    QUESTIONNAIRES = ["bdi", "pcs"]
+    QUESTIONNAIRES = ["bdi", "maia", "pcs"]
 
     parser = argparse.ArgumentParser(
         description="Run the app with selected questionnaires."

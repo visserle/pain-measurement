@@ -118,3 +118,4 @@ target/
 
 src/questionnaires/inventory/bdi.yaml
 src/questionnaires/inventory/pcs.yaml
+src/questionnaires/inventory/maia.yaml

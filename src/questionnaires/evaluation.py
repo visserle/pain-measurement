@@ -29,6 +29,21 @@ SCORING_SCHEMAS = {
         "alert_threshold": 30,
         "alert_message": "a clinically significant level of catastrophizing",
     },
+    "maia": {
+        "components": {
+            "noticing": [1, 2, 3, 4],
+            "not_distracting": [5, 6, 7, 8, 9, 10],  # items are reverse-scored
+            "not_worrying": [11, 12, 13, 14, 15],  # some items are reverse-scored
+            "attention_regulation": [16, 17, 18, 19, 20, 21, 22],
+            "emotional_awareness": [23, 24, 25, 26, 27],
+            "self_regulation": [28, 29, 30, 31],
+            "body_listening": [32, 33, 34],
+            "trusting": [35, 36, 37],
+        },
+        "reverse_scored": [5, 6, 7, 8, 9, 10, 11, 12, 15],
+        "max_item_score": 5,
+        # No alert_threshold or alert_message provided in the document
+    },
 }
 
 
@@ -41,10 +56,17 @@ def _extract_number(s):
 def score_results(scale, answers):
     score = {}
     schema = SCORING_SCHEMAS[scale]
-
     for component, questions in schema["components"].items():
-        score[component] = sum(_extract_number(answers[f"q{qid}"]) for qid in questions)
+        component_score = 0
+        for qid in questions:
+            item_score = _extract_number(answers.get(f"q{qid}"))
+            # Reverse score if necessary
+            if qid in schema.get("reverse_scored", []):
+                item_score = schema["max_item_score"] - item_score
+            component_score += item_score
+        score[component] = component_score
 
+    # Calculate total score
     score["total"] = sum(score.values())
     logger.info(f"{scale.upper()} score: {score['total']}")
 
@@ -61,7 +83,8 @@ def save_results(scale, questionnaire, answers, score):
     # Basic fieldnames include timestamp, participant ID, and total score
     fieldnames = ["timestamp", "id", "total_score"]
     # Extend the fieldnames with scale-specific components and question IDs
-    fieldnames.extend(SCORING_SCHEMAS[scale]["components"].keys())
+    if len(SCORING_SCHEMAS[scale]["components"]) > 1:
+        fieldnames.extend(SCORING_SCHEMAS[scale]["components"].keys())
     fieldnames.extend([f"q{q['id']}" for q in questionnaire["questions"]])
 
     with open(filename, mode="a", newline="") as csvfile:
