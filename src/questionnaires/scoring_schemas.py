@@ -1,11 +1,4 @@
 SCORING_SCHEMAS = {
-    "bdi-ii": {
-        "components": {
-            "total": range(1, 22),
-        },
-        "alert_threshold": 14,
-        "alert_message": "depression",
-    },
     "pcs": {
         "components": {
             "total": range(1, 14),
@@ -16,30 +9,14 @@ SCORING_SCHEMAS = {
         "alert_threshold": 30,
         "alert_message": "a clinically significant level of catastrophizing",
     },
-    "lot-r": {
+    "bdi-ii": {
         "components": {
-            # following two-dimensional model of indepentent optimism and pessimism
-            "pessimism": [3, 7, 9],
-            "optimism": [1, 4, 10],
+            "total": range(1, 22),
         },
-        "filler_items": [2, 5, 6, 8],
+        "alert_threshold": 14,
+        "alert_message": "depression",
     },
-    "erq": {
-        "components": {
-            "reappraisal": [1, 3, 5, 7, 8, 10],
-            "suppression": [2, 4, 6, 9],
-        },
-        "metric": "mean",
-    },
-    "iri-s": {
-        "components": {
-            "fantasy": [2, 7, 12, 15],
-            "empathic_concern": [1, 5, 9, 11],
-            "perspective_taking": [4, 10, 14, 16],
-            "personal_distress": [3, 6, 8, 13],
-        },
-    },
-    "ffmq-d": {
+    "ffmq": {
         "components": {
             "nonjudging": [3, 10, 14, 17, 25, 30, 35, 39],
             "describing": [2, 7, 12, 16, 22, 27, 32, 37],
@@ -71,6 +48,23 @@ SCORING_SCHEMAS = {
         "min_item_score": 1,
         "max_item_score": 6,
     },
+    "brs": {
+        "components": {
+            "total": range(1, 7),
+        },
+        "reverse_items": [2, 4, 6],
+        "min_item_score": 1,
+        "max_item_score": 5,
+        "metric": "mean",
+    },
+    "lot-r": {
+        "components": {
+            # following two-dimensional model of indepentent optimism and pessimism
+            "pessimism": [3, 7, 9],
+            "optimism": [1, 4, 10],
+        },
+        "filler_items": [2, 5, 6, 8],
+    },
     "stai-t-10": {
         "components": {
             "total": range(1, 11),
@@ -80,13 +74,19 @@ SCORING_SCHEMAS = {
         "max_item_score": 8,
         "metric": "percentage",
     },
-    "brs-d": {
+    "iri-s": {
         "components": {
-            "total": range(1, 7),
+            "fantasy": [2, 7, 12, 15],
+            "empathic_concern": [1, 5, 9, 11],
+            "perspective_taking": [4, 10, 14, 16],
+            "personal_distress": [3, 6, 8, 13],
         },
-        "reverse_items": [2, 4, 6],
-        "min_item_score": 1,
-        "max_item_score": 5,
+    },
+    "erq": {
+        "components": {
+            "reappraisal": [1, 3, 5, 7, 8, 10],
+            "suppression": [2, 4, 6, 9],
+        },
         "metric": "mean",
     },
 }
