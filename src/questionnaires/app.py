@@ -10,13 +10,13 @@ from src.questionnaires.evaluation import save_results, score_results
 
 configure_logging(ignore_libs=["werkzeug", "participant_data"])
 
-QUESTIONNAIRES = ["maia-2", "pcs", "bdi-ii", "fmi-14"]
+QUESTIONNAIRES = ["pcs", "bdi-ii", "erq", "ffmq", "lot-r", "iri-s", "stai-t-10", "brs"]
 
 app = Flask(__name__)
 
 
 def load_questionnaire(scale):
-    with open(f"src/questionnaires/inventory/{scale}.yaml", "r") as file:
+    with open(f"src/questionnaires/inventory/{scale}.yaml", "r", encoding="utf-8") as file:
         current_questionnaire = yaml.safe_load(file)
 
     if "instructions" in current_questionnaire:
