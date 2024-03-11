@@ -1,6 +1,7 @@
 import argparse
 import webbrowser
 
+import markdown
 import yaml
 from flask import Flask, redirect, render_template, request, url_for
 
@@ -9,12 +10,20 @@ from src.questionnaires.evaluation import save_results, score_results
 
 configure_logging(ignore_libs=["werkzeug", "participant_data"])
 
+QUESTIONNAIRES = ["maia-2", "pcs", "bdi-ii", "fmi-14"]
+
 app = Flask(__name__)
 
 
 def load_questionnaire(scale):
     with open(f"src/questionnaires/inventory/{scale}.yaml", "r") as file:
         current_questionnaire = yaml.safe_load(file)
+
+    if "instructions" in current_questionnaire:
+        current_questionnaire["instructions"] = markdown.markdown(
+            current_questionnaire["instructions"]
+        )
+
     return current_questionnaire
 
 
@@ -37,10 +46,10 @@ def questionnaire_handler(scale):
                 url_for("questionnaire_handler", scale=questionnaires[next_index])
             )
         else:
-            return redirect(url_for("thank_you"))
+            return redirect(url_for("thanks"))
 
     return render_template(
-        f"{scale}.html.j2",
+        f"{current_questionnaire['layout']}.html.j2",
         title=current_questionnaire["title"],
         instructions=current_questionnaire["instructions"]
         if "instructions" in current_questionnaire
@@ -52,14 +61,15 @@ def questionnaire_handler(scale):
     )
 
 
-@app.route("/thank_you")
-def thank_you():
-    return "Vielen Dank für das Ausfüllen der Fragebögen!"
+@app.route("/thanks")
+def thanks():
+    return render_template(
+        "thanks.html.j2",
+        text="Vielen Dank für das Ausfüllen der Fragebögen!",
+    )
 
 
 if __name__ == "__main__":
-    QUESTIONNAIRES = ["bdi", "maia", "pcs"]
-
     parser = argparse.ArgumentParser(
         description="Run the app with selected questionnaires."
     )
@@ -75,4 +85,4 @@ if __name__ == "__main__":
     questionnaires = args.questionnaire
 
     webbrowser.open_new("http://localhost:5000")
-    app.run(debug=False)
+    app.run(debug=True)
