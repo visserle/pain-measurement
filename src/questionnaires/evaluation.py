@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.expyriment.participant_data import read_last_participant
-from src.questionnaires.scoring_schemasschemas import SCORING_SCHEMAS
+from src.questionnaires.scoring_schemas import SCORING_SCHEMAS
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -41,12 +41,19 @@ def score_results(scale, answers):
             component_score += item_score
         score[component] = component_score
 
-    # Modify the total score based on specific metric
+    # Recalculate scores based on special metric
     if schema.get("metric") == "mean":
-        score["total"] = round(score["total"] / len(questions), 2)
+        if "total" in score:
+            score["total"] = round(
+                score["total"] / len(schema["components"]["total"]), 2
+            )
+        else:  # if there is no "total" component, apply metric to all components
+            for key, value in score.items():
+                score[key] = round(value / len(schema["components"][key]), 2)
     elif schema.get("metric") == "percentage":
-        min_score = schema["min_item_score"] * len(questions)
-        max_score = schema["max_item_score"] * len(questions)
+        # only used for STAI-T-10 on the total score
+        min_score = schema["min_item_score"] * len(schema["components"]["total"])
+        max_score = schema["max_item_score"] * len(schema["components"]["total"])
         score["total"] = round(
             (score["total"] - min_score) / (max_score - min_score) * 100, 2
         )
