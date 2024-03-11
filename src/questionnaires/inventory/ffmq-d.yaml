@@ -1,0 +1,97 @@
+title: "FFMQ-D"
+name: "Five Facet Mindfulness Questionnaire, deutsche Version"
+url: "https://www.uni-wh.de/fileadmin/user_upload/03_G/09_Psychologie/05_Lehrstuehle/Klinische_Psychologie_II/Five_Facet_Mindfulness_Questionnaire__FFMQ-D__Infos_zum_DownloadenJM.pdf"
+layout: single-statement
+instructions: 
+  Bitte schätzen Sie jede der folgenden Aussagen anhand der vorgegebenen Skala ein. 
+  Kreuzen Sie an, wie stark die Aussage nach Ihrer Meinung im Allgemeinen auf Sie zutrifft.
+options:
+  - score: 1
+    text: "Nie oder sehr selten zutreffend"
+  - score: 2
+    text: "Selten zutreffend"
+  - score: 3
+    text: "Manchmal zutreffend"
+  - score: 4
+    text: "Oft zutreffend"
+  - score: 5
+    text: "Sehr oft oder immer zutreffend"
+questions:
+  - id: 1
+    text: "Wenn ich gehe, dann nehme ich ganz bewusst wahr, wie sich die Bewegungen meines Körpers anfühlen."
+  - id: 2
+    text: "Ich kann meine Gefühle gut in Worte fassen."
+  - id: 3
+    text: "Ich kritisiere mich dafür, irrationale oder unangebrachte Geühle zu haben."
+  - id: 4
+    text: "Ich nehme meine Gefühle und Empfindungen wahr, ohne auf sie reagieren zu müssen."
+  - id: 5
+    text: "Wenn ich etwas tue, dann schweifen meine Gedanken ab und ich bin leicht abzulenken."
+  - id: 6
+    text: "Wenn ich dusche oder bade, bin ich mir des Gefühls des Wassers auf meinem Körper bewusst."
+  - id: 7
+    text: "Es fällt mir leicht, meine Überzeugungen, Meinungen und Erwartungen in Worte zu fassen."
+  - id: 8 
+    text: "Ich achte nicht darauf, was ich tue, da ich tagträume, mir Sorgen mache oder anderweitig abgelenkt bin."
+  - id: 9
+    text: "Ich beobachte meine Gefühle, ohne mich in ihnen zu verlieren."
+  - id: 10
+    text: "Ich sage mir, dass ich nicht das fühlen sollte, was ich fühle."
+  - id: 11
+    text: "Ich bemerke, wie Lebensmittel und Getränke meine Gedanken, meine Körperempfindungen und meine Gefühle beeinflussen."
+  - id: 12
+    text: "Es fällt mir schwer, das, was ich denke, in Worte zu fassen."
+  - id: 13
+    text: "Ich bin leicht abgelenkt."
+  - id: 14
+    text: "Ich glaube, dass einige meiner Gedanken unnormal sind, und dass ich nicht so denken sollte."
+  - id: 15
+    text: "Ich achte auf Empfindungen, wie zum Beispiel Wind in meinem Haar oder Sonnenschein auf meinem Gesicht."
+  - id: 16
+    text: "Ich habe Schwierigkeiten, die richtigen Worte zu finden, um meine Gefühle auszudrücken."
+  - id: 17
+    text: "Ich urteile darüber, ob meine Gedanken gut oder schlecht sind."
+  - id: 18
+    text: "Ich finde es schwierig, auf das konzentriert zu bleiben, was im gegenwärtigen Augenblick passiert."
+  - id: 19
+    text: "Wenn ich belastende Gedanken oder Vorstellungen habe, kann ich von diesen Abstand nehmen und bin mir der Gedanken oder Vorstellungen bewusst, ohne dass ich von ihnen überwältigt werde."
+  - id: 20
+    text: "Ich achte auf Geräusche, wie beispielsweise das Ticken von Uhren, Vogelzwitschern oder das Geräusch vorüber fahrender Autos."
+  - id: 21
+    text: "In schwierigen Situationen kann ich innehalten, ohne sofort zu reagieren."
+  - id: 22
+    text: "Körperliche Empfindungen sind für mich schwer zu beschreiben, weil mir die richtigen Worte dazu fehlen."
+  - id: 23
+    text: "Es sieht so aus, als würde ich ,automatisch funktionieren“, ohne viel Bewusstsein für das, was ich tue."
+  - id: 24
+    text: "Wenn ich belastende Gedanken oder Vorstellungen habe, beruhige ich mich kurz danach wieder."
+  - id: 25
+    text: "Ich sage mir, dass ich nicht so denken sollte, wie ich denke."
+  - id: 26
+    text: "Ich nehme Gerüche und Düfte der Dinge wahr."
+  - id: 27
+    text: "Sogar wenn ich schrecklich verärgert bin, kann ich das in Worte fassen."
+  - id: 28
+    text: "Ich hetze durch Aktivitäten, ohne wirklich aufmerksam für sie zu sein."
+  - id: 29
+    text: "Wenn ich belastende Gedanken oder Vorstellungen habe, kann ich sie einfach nur wahrnehmen, ohne auf sie zu reagieren."
+  - id: 30
+    text: "Ich denke, dass manche meiner Gefühle schlecht oder unangebracht sind, und dass ich sie nicht haben sollte."
+  - id: 31
+    text: "Ich bemerke visuelle Elemente sowohl in der Kunst als auch in der Natur, zum Beispiel Farben, Formen, Strukturen oder Muster aus Licht und Schatten."
+  - id: 32
+    text: "Ich habe die natürliche Tendenz, meine Erfahrungen in Worte zu fassen."
+  - id: 33
+    text: "Wenn ich belastende Gedanken oder Vorstellungen habe, registriere ich sie nur und lasse sie wieder ziehen."
+  - id: 34
+    text: "Ich erledige Aufträge oder Aufgaben automatisch, ohne mir bewusst zu sein, was ich tue."
+  - id: 35
+    text: "Wenn ich belastende Gedanken oder Vorstellungen habe, bewerte ich mich selbst entweder als gut oder schlecht, abhängig vom Inhalt des Gedankens/ der Vorstellung."
+  - id: 36
+    text: "Ich achte darauf, wie sich meine Gefühle auf meine Gedanken und mein Verhalten auswirken."
+  - id: 37
+    text: "Ich kann ziemlich genau beschreiben, wie ich mich im Moment gerade fühle."
+  - id: 38
+    text: "Ich merke, wie ich Dinge tue, ohne auf sie zu achten."
+  - id: 39
+    text: "Ich missbillige mich, wenn ich unvernünftige Ideen habe."

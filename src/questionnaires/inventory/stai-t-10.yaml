@@ -1,0 +1,37 @@
+title: "STAI-T-10"
+name: "State-Trait-Angst Inventory (STAI) - Trait"
+url: "https://empcom.univie.ac.at/fileadmin/user_upload/p_empcom/pdfs/Grimm2009_StateTraitAngst_MFWorkPaper2009-02.pdf"
+layout: single-statement_almost-never-always
+instructions: 
+  Bitte geben Sie an, wie oft folgende Aussagen auf Sie zutreffen. Bei "fast nie" kreuzen Sie ganz
+  links, bei "fast immer" ganz rechts an. Mit den Kästchen dazwischen können Sie abstufen.
+options:
+  - score: 1
+  - score: 2
+  - score: 3
+  - score: 4
+  - score: 5
+  - score: 6
+  - score: 7
+  - score: 8
+questions:
+  - id: 1
+    text: "Ich werde schnell müde"
+  - id: 2
+    text: "Ich verpasse günstige Gelegenheiten, weil ich mich nicht schnell genug entscheiden kann"
+  - id: 3
+    text: "Ich bin ruhig und gelassen"
+  - id: 4
+    text: "Ich bin glücklich"
+  - id: 5
+    text: "Ich neige dazu, alles schwer zu nehmen"
+  - id: 6
+    text: "Mir fehlt es an Selbstvertrauen"
+  - id: 7
+    text: "Ich fühle mich geborgen"
+  - id: 8
+    text: "Ich fühle mich niedergeschlagen"
+  - id: 9
+    text: "Unwichtige Gedanken gehen mir durch den Kopf und bedrücken mich"
+  - id: 10
+    text: "Ich werde nervös und unruhig, wenn ich an meine derzeitigen Angelegenheiten denke"

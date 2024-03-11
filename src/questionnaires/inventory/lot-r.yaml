@@ -1,0 +1,37 @@
+title: "LOT-R"
+name: "Deutsche Version der Revision des Life-Orientation-Tests (LOT-R)"
+url: "https://ssl.psych.tu-dresden.de/detect/Instrumente/LOT_R_Websiteinfo.pdf, https://econtent.hogrefe.com/doi/10.1026/0943-8149.16.1.26"
+layout: single-statement
+instructions: "Bitte geben Sie an, inwieweit Ihre Meinung mit den folgenden Aussagen übereinstimmt."
+options:
+  - score: 4
+    text: trifft ausgesprochen zu
+  - score: 3
+    text: trifft etwas zu
+  - score: 2
+    text: teils/teils
+  - score: 1
+    text: trifft kaum zu
+  - score: 0
+    text: trifft überhaupt nicht zu
+questions:
+  - id: 1
+    text: "Auch in ungewissen Zeiten erwarte ich normalerweise das Beste."
+  - id: 2
+    text: "Es fällt mir leicht, mich zu entspannen."
+  - id: 3
+    text: "Wenn bei mir etwas schief laufen kann, dann tut es das auch."
+  - id: 4
+    text: "Meine Zukunft sehe ich immer optimistisch."
+  - id: 5
+    text: "In meinem Freundeskreis fühle ich mich wohl."
+  - id: 6
+    text: "Es ist wichtig für mich, ständig beschäftigt zu sein."
+  - id: 7
+    text: "Fast nie entwickeln sich die Dinge nach meinen Vorstellungen."
+  - id: 8
+    text: "Ich bin nicht allzu leicht aus der Fassung zu bringen."
+  - id: 9
+    text: "Ich zähle selten darauf, dass mir etwas Gutes widerfährt."
+  - id: 10
+    text: "Alles in allem erwarte ich, dass mir mehr gute als schlechte Dinge widerfahren."
