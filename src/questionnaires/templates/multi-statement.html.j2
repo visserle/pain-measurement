@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <h1>{{ title }}</h1>
-        <p>{{ instructions }}</p>
+        <p>{{ instructions|safe }}</p>
         <form action="" method="post">
             {% for question in questions %}
                 <fieldset>

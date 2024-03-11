@@ -9,8 +9,8 @@
 <body>
     <div class="container">
         <h1>{{ title }}</h1>
-        <p>{{ instructions }}</p>
-        <form method="post">
+        <p>{{ instructions|safe }}</p>
+        <form action="" method="post">
             {% for question in questions %}
             <div>
                 <p><strong>{{ question.id }}:</strong> {{ question.text }}</p>

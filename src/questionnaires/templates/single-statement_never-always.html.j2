@@ -26,12 +26,13 @@
             <div class="question">
                 <p><strong>{{ question.id }}:</strong> {{ question.text }}</p>
                 <br>
-                <div>Nie
-                    {% for i in range(6) %}
-                    <input type="radio" id="q{{ question.id }}_option{{ i }}" name="q{{ question.id }}" value="{{ i }}" required>
-                    <label for="q{{ question.id }}_option{{ i }}">{{ i }}</label>
+                <div>
+                    Niemals  <!-- Never -->
+                    {% for i in options %}
+                    <input type="radio" id="q{{ question.id }}_option{{ i.score }}" name="q{{ question.id }}" value="{{ i.score }}" required>
+                    <label for="q{{ question.id }}_option{{ i.score }}">{{ i.score }}</label>
                     {% endfor %}
-                    Immer
+                    Immer  <!-- Always -->
                 </div>
                 <br>
             </div>
