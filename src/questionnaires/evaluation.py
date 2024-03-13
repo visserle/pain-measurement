@@ -1,7 +1,3 @@
-# TODO
-# add full names of the scales, authors, and references
-# add schema validation
-
 import csv
 import logging
 import os

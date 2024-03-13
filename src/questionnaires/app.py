@@ -1,5 +1,19 @@
+# TODO
+# add readme to inventory
+# add full names of the scales, authors, and references
+# add schema validation
+# add age and gender to the results
+# improve radio buttons
+# add progress bar
+# add fragebogen für allgemeines
+# meditationserfahrungen abfragen, händigkeit, sehvermögen, hornhautverkrümmung, botox
+
+
 import argparse
+import logging
 import webbrowser
+from datetime import datetime
+from pathlib import Path
 
 import markdown
 import yaml
@@ -8,7 +22,15 @@ from flask import Flask, redirect, render_template, request, url_for
 from src.log_config import configure_logging
 from src.questionnaires.evaluation import save_results, score_results
 
-configure_logging(ignore_libs=["werkzeug", "participant_data"])
+# Configure logging
+LOG_DIR = Path("runs/questionnaires/logs/")
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+log_file = LOG_DIR / datetime.now().strftime(r"%Y_%m_%d__%H_%M_%S.log")
+configure_logging(
+    stream_level=logging.DEBUG,
+    file_path=log_file,
+    ignore_libs=["werkzeug", "participant_data"],
+)
 
 QUESTIONNAIRES = ["pcs", "bdi-ii", "ffmq", "brs", "lot-r", "stai-t-10", "iri-s", "erq"]
 
@@ -64,6 +86,7 @@ def questionnaire_handler(scale):
 
 @app.route("/thanks")
 def thanks():
+    logging.info("The questionnaires have been completed.")
     return render_template(
         "thanks.html.j2",
         text="Vielen Dank für das Ausfüllen der Fragebögen!",
@@ -85,5 +108,6 @@ if __name__ == "__main__":
     global questionnaires
     questionnaires = args.questionnaire
 
+    logging.info(f"Running the app with the following questionnaires: {questionnaires}")
     webbrowser.open_new("http://localhost:5000")
     app.run(debug=False)
