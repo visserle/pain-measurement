@@ -122,9 +122,9 @@ class BayesianEstimatorVAS:
         self.likelihood_std = likelihood_std
         self.reduction_factor = reduction_factor
 
-        # Define the range of temperatures to consider based on the initial temperature and standard deviation
+        # Define the range of temperatures to consider based on the given standard deviation
         if int(self.temp_std) == 0:
-            range_width = 1
+            range_width = 1  # e.g., 38.0 ± 1.0
         elif int(self.temp_std) == 1:
             range_width = 2
         elif int(self.temp_std) == 2:
@@ -132,7 +132,9 @@ class BayesianEstimatorVAS:
         elif int(self.temp_std) == 3:
             range_width = 5
         else:
-            raise ValueError("int(temp_std) must be 0, 1, 2, or 3 (or add more cases).")
+            raise ValueError(
+                "int(temp_std) must be 0, 1, 2, or 3 (or add more cases for other ranges)."
+            )
         self.min_temp = int(self.temp_start - range_width)
         self.max_temp = int(self.temp_start + range_width)
         num = int((self.max_temp - self.min_temp) / 0.1) + 1
