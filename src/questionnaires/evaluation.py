@@ -66,9 +66,9 @@ def save_results(scale, questionnaire, answers, score):
     filename = RESULTS_DIRECTORY / f"{scale}_results.csv"
     file_exists = os.path.isfile(filename)
 
-    # Basic fieldnames include timestamp and participant ID
+    # Basic fieldnames
     fieldnames = ["timestamp", "id", "age", "gender"]
-    # Extend the fieldnames with scale-specific components and question IDs
+    # Extend the fieldnames with scale-specific components and question IDs (raw answers)
     fieldnames.extend(SCORING_SCHEMAS[scale]["components"].keys())
     fieldnames.extend([f"q{q['id']}" for q in questionnaire["questions"]])
 

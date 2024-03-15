@@ -2,12 +2,11 @@
 # add readme to inventory
 # add full names of the scales, authors, and references
 # add schema validation
-# add age and gender to the results
 # improve radio buttons
 # add progress bar
 # add fragebogen für allgemeines
-# meditationserfahrungen abfragen, händigkeit, sehvermögen, hornhautverkrümmung, botox
-
+# meditationserfahrungen abfragen, händigkeit, sehvermögen, hornhautverkrümmung, botox, demographiscshe daten (gerne doppelt), sozioökonomischer status, bildung, beruf, einkommen
+# freitext für pcs an welchen schmerz gedacht wurde?
 
 import argparse
 import logging
@@ -32,7 +31,17 @@ configure_logging(
     ignore_libs=["werkzeug", "participant_data"],
 )
 
-QUESTIONNAIRES = ["pcs", "bdi-ii", "ffmq", "brs", "lot-r", "stai-t-10", "iri-s", "erq"]
+QUESTIONNAIRES = [
+    "maia-2",
+    "pcs",
+    "pvaq",
+    "lot-r",
+    "bdi-ii",
+    "brs",
+    "stai-t-10",
+    "erq",
+    "maas",
+]
 
 app = Flask(__name__)
 
