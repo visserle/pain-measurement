@@ -67,7 +67,7 @@ def save_results(scale, questionnaire, answers, score):
     file_exists = os.path.isfile(filename)
 
     # Basic fieldnames include timestamp and participant ID
-    fieldnames = ["timestamp", "id"]
+    fieldnames = ["timestamp", "id", "age", "gender"]
     # Extend the fieldnames with scale-specific components and question IDs
     fieldnames.extend(SCORING_SCHEMAS[scale]["components"].keys())
     fieldnames.extend([f"q{q['id']}" for q in questionnaire["questions"]])
