@@ -78,9 +78,12 @@ def save_results(scale, questionnaire, answers, score):
             writer.writeheader()
 
         # Construct and write the row directly in the CSV file
+        participant_info = read_last_participant(PARTICIPANT_DATA)
         row = {
             "timestamp": str(datetime.now())[0:19],
-            "id": read_last_participant(PARTICIPANT_DATA)["id"],
+            "id": participant_info["id"],
+            "age": participant_info["age"],
+            "gender": "M" if participant_info["gender"] == "Male" else "F",
         }
         row.update({component: score[component] for component in score})
         row.update(
