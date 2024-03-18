@@ -29,8 +29,8 @@ from src.log_config import close_root_logging, configure_logging
 # Constants
 EXP_NAME = "pain-calibration"
 EXP_DIR = Path("src/experiments/calibration")
-SCRIPT_PATH = EXP_DIR / "script.yaml"
-CONFIG_PATH = EXP_DIR / "config.toml"
+SCRIPT_PATH = EXP_DIR / "calibration_script.yaml"
+CONFIG_PATH = EXP_DIR / "calibration_config.toml"
 THERMOINO_CONFIG_PATH = EXP_DIR.parent / "thermoino_config.toml"
 LOG_DIR = Path("runs/experiments/calibration/logs/")
 LOG_DIR.mkdir(parents=True, exist_ok=True)

@@ -36,8 +36,8 @@ from src.log_config import close_root_logging, configure_logging
 # Constants
 EXP_NAME = "pain-measurement"
 EXP_DIR = Path("src/experiments/measurement")
-SCRIPT_PATH = EXP_DIR / "script.yaml"
-CONFIG_PATH = EXP_DIR / "config.toml"
+SCRIPT_PATH = EXP_DIR / "measurement_script.yaml"
+CONFIG_PATH = EXP_DIR / "measurement_config.toml"
 THERMOINO_CONFIG_PATH = EXP_DIR.parent / "thermoino_config.toml"
 LOG_DIR = Path("runs/experiments/measurement/logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
