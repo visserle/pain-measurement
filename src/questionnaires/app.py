@@ -19,6 +19,12 @@ import markdown
 import yaml
 from flask import Flask, redirect, render_template, request, url_for
 
+from src.expyriment.participant_data import (
+    PARTICIPANTS_PATH,
+    add_participant_info,
+    ask_for_participant_info,
+    read_last_participant,
+)
 from src.log_config import configure_logging
 from src.questionnaires.evaluation import (
     save_results,
@@ -39,7 +45,7 @@ QUESTIONNAIRES = [
 ]
 
 parser = argparse.ArgumentParser(
-    description="Run the app with selected questionnaires. Debug mode is enabled by default."
+    description="Run the app with selected questionnaires."
 )
 parser.add_argument(
     "questionnaire",
@@ -48,10 +54,17 @@ parser.add_argument(
     help=f"Select the questionnaires to run: {', '.join(QUESTIONNAIRES)}.",
 )
 parser.add_argument(
-    "--release",
-    action="store_false",
-    help="Run the app in release mode. Debug mode is enabled by default.",
-    dest="debug",
+    "-p",
+    "--participant",
+    action="store_true",
+    help="Create a new participant entry in the main participants.csv file.",
+)
+
+parser.add_argument(
+    "-d",
+    "--debug",
+    action="store_true",
+    help="Enable debug mode.",
 )
 
 args = parser.parse_args()
@@ -64,10 +77,17 @@ log_file = LOG_DIR / datetime.now().strftime(r"%Y_%m_%d__%H_%M_%S.log")
 configure_logging(
     stream_level=logging.DEBUG,
     file_path=log_file,
-    ignore_libs=["werkzeug", "participant_data"],
+    ignore_libs=["werkzeug"],  # , "participant_data"],
 )
-if args.debug:
+
+if args.participant and not args.debug:
+    participant_info = ask_for_participant_info(PARTICIPANTS_PATH)
+    add_participant_info(PARTICIPANTS_PATH, participant_info)
+elif not args.debug:
+    participant_info = read_last_participant()
+else:
     logging.warning("Debug mode is enabled.")
+    participant_info = {"id": 0, "age": 0, ", gender": "f"}
 
 app = Flask(__name__)
 
@@ -98,10 +118,11 @@ def questionnaire_handler(scale):
         logging.debug(f"Received answers: {answers}") if args.debug else None
         score = score_results(scale, answers) if scale != "general" else None
         save_results(
+            participant_info,
             scale,
             current_questionnaire,
             answers,
-            score=score if scale != "general" else None,
+            score,
         ) if not args.debug else None
 
         next_index = questionnaires.index(scale) + 1

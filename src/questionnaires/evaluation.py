@@ -1,16 +1,12 @@
-import csv
 import logging
-import os
 import re
-from datetime import datetime
 from pathlib import Path
 
-from src.participants import add_participant_info, read_last_participant
+from src.expyriment.participant_data import add_participant_info
 from src.questionnaires.scoring_schemas import SCORING_SCHEMAS
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
-PARTICIPANT_PATH = Path("runs/experiment/participants.csv")
 RESULTS_DIR = Path("data/questionnaires")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -58,7 +54,7 @@ def score_results(scale, answers):
     return score
 
 
-def save_results(scale, questionnaire, answers, score):
+def save_results(participant_info, scale, questionnaire, answers, score):
     filename = RESULTS_DIR / f"{scale}_results.csv"
 
     # Basic fieldnames
@@ -68,16 +64,10 @@ def save_results(scale, questionnaire, answers, score):
         fieldnames.extend(SCORING_SCHEMAS[scale]["components"].keys())
     fieldnames.extend([f"q{q['id']}" for q in questionnaire["questions"]])
 
-    participant_info = read_last_participant(PARTICIPANT_PATH)
-    participant_info_dict = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-
     if scale != "general":
-        participant_info_dict.update(participant_info)  # TODO: is this necessary?
-        participant_info_dict.update(
-            {component: score[component] for component in score}
-        )
-    participant_info_dict.update(
+        participant_info.update({component: score[component] for component in score})
+    participant_info.update(
         {f'q{q["id"]}': answers[f'q{q["id"]}'] for q in questionnaire["questions"]}
     )
 
-    add_participant_info(filename, participant_info_dict)
+    add_participant_info(filename, participant_info)
