@@ -31,8 +31,10 @@ from src.experiments.questionnaires.evaluation import (
 )
 from src.log_config import configure_logging
 
+INVENTORY_DIR = Path("src/experiments/questionnaires/inventory/")
 QUESTIONNAIRES = [
-    "general",
+    "general",  # without scoring
+    "panas",
     "maia-2",
     "pcs",
     "pvaq",
@@ -86,16 +88,13 @@ if args.participant and not args.debug:
 elif not args.debug:
     participant_info = read_last_participant()
 else:
-    logging.warning("Debug mode is enabled.")
-    participant_info = {"id": 0, "age": 0, ", gender": "f"}
+    logging.warning("Debug mode is enabled. Participant data will not be saved.")
 
 app = Flask(__name__)
 
 
 def load_questionnaire(scale):
-    with open(
-        f"src/questionnaires/inventory/{scale}.yaml", "r", encoding="utf-8"
-    ) as file:
+    with open(f"{INVENTORY_DIR / scale}.yaml", "r", encoding="utf-8") as file:
         current_questionnaire = yaml.safe_load(file)
 
     if "instructions" in current_questionnaire:

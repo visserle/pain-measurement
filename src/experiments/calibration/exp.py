@@ -28,10 +28,11 @@ from src.log_config import close_root_logging, configure_logging
 
 # Constants
 EXP_NAME = "pain-calibration"
-SCRIPT_PATH = Path("src/experiments/calibration/script.yaml")
-CONFIG_PATH = Path("src/experiments/calibration/config.toml")
-THERMOINO_CONFIG_PATH = Path("src/experiments/thermoino_config.toml")
-LOG_DIR = Path("runs/experiment/calibration/logs/")
+EXP_DIR = Path("src/experiments/calibration")
+SCRIPT_PATH = EXP_DIR / "script.yaml"
+CONFIG_PATH = EXP_DIR / "config.toml"
+THERMOINO_CONFIG_PATH = EXP_DIR.parent / "thermoino_config.toml"
+LOG_DIR = Path("runs/experiments/calibration/logs/")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 CALIBRATION_DATA_PATH = LOG_DIR.parent / "calibration.csv"
 
@@ -124,7 +125,7 @@ for name, color in zip(
 vas_pictures = {}
 for pic in ["unmarked", "marked"]:
     vas_pictures[pic] = stimuli.Picture(
-        Path(f"src/expyriment/vas_picture_{pic}.png").as_posix(),
+        Path(EXP_DIR / f"vas_{pic}.png").as_posix(),
         position=(0, scale_1d_value(100, screen_size)),
     )
     vas_pictures[pic].scale(scale_1d_value(1.5, screen_size))

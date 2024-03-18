@@ -9,7 +9,7 @@ from src.helpers import center_tk_window
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
-PARTICIPANTS_PATH = Path("runs/experiment/participants.csv")
+PARTICIPANTS_PATH = Path("runs/experiments/participants.csv")
 
 
 def ask_for_participant_info(file_path: Path = PARTICIPANTS_PATH) -> dict:
