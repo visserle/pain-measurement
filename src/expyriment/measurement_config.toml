@@ -47,7 +47,7 @@ plateau_num = 0
 prolonged_minima_num = 0
 
 [dummy_participant]
-time_stamp = "2024-01-01 15:00:00"
+timestamp = "2024-01-01 15:00:00"
 id = 0
 age = 20
 gender = "Female"

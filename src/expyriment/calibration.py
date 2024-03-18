@@ -1,3 +1,5 @@
+#    ask_for_participant_info = lambda *args, **kwargs: config["dummy_participant"]  # noqa: E731
+
 import argparse
 import logging
 import random
@@ -10,8 +12,9 @@ from expyriment.misc.constants import C_DARKGREY, K_SPACE, K_n, K_y
 
 from src.expyriment.estimator import BayesianEstimatorVAS
 from src.expyriment.participant_data import (
+    PARTICIPANTS_PATH,
     add_participant_info,
-    ask_for_participant_info,
+    read_last_participant,
 )
 from src.expyriment.thermoino import Thermoino
 from src.expyriment.utils import (
@@ -28,8 +31,9 @@ EXP_NAME = "pain-calibration"
 SCRIPT_PATH = Path("src/expyriment/calibration_script.yaml")
 CONFIG_PATH = Path("src/expyriment/calibration_config.toml")
 THERMOINO_CONFIG_PATH = Path("src/expyriment/thermoino_config.toml")
-LOG_DIR = Path("runs/expyriment/calibration/")
-PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
+LOG_DIR = Path("runs/experiment/calibration/logs/")
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+CALIBRATION_DATA_PATH = LOG_DIR.parent / "calibration.csv"
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
@@ -80,7 +84,7 @@ if not args.full_stimuli:
     logging.warning("Using dummy stimulus.")
 if not args.participant:
     logging.warning("Using dummy participant data.")
-    ask_for_participant_info = lambda *args, **kwargs: config["dummy_participant"]  # noqa: E731
+    read_last_participant = lambda x: config["dummy_participant"]  # noqa: E731
     add_participant_info = lambda *args, **kwargs: None  # noqa: E731
 
 # Expyriment defaults
@@ -94,7 +98,7 @@ io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 
 # Experiment setup
-participant_info = ask_for_participant_info(PARTICIPANTS_EXCEL_PATH)
+participant_info = read_last_participant(PARTICIPANTS_PATH)
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
@@ -262,13 +266,22 @@ def main():
         control.end()
         sys.exit(1)
 
+    # Save participant data
+    participant_info["temperature_baseline"] = round(
+        (participant_info["vas0"] + participant_info["vas70"]) / 2, 1
+    )
+    participant_info["temperature_range"] = round(
+        participant_info["vas70"] - participant_info["vas0"], 1
+    )
+    add_participant_info(CALIBRATION_DATA_PATH, participant_info)
+
     # End of Experiment
     SCRIPT["bye"].present()
     exp.clock.wait_seconds(3)
 
     control.end()
     thermoino.close()
-    add_participant_info(PARTICIPANTS_EXCEL_PATH, participant_info)
+    add_participant_info(PARTICIPANTS_PATH, participant_info)
     logging.info("Calibration successfully finished.")
     close_root_logging()
 

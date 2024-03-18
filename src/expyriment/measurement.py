@@ -9,8 +9,11 @@ import pandas as pd
 from expyriment import control, design, io, stimuli
 from expyriment.misc.constants import C_DARKGREY, K_SPACE
 
+from src.expyriment.calibration import CALIBRATION_DATA_PATH
 from src.expyriment.imotions import EventRecievingiMotions, RemoteControliMotions
-from src.expyriment.participant_data import read_last_participant
+from src.expyriment.participant_data import (
+    read_last_participant,
+)
 from src.expyriment.pop_ups import (
     ask_for_eyetracker_calibration,
     ask_for_measurement_start,
@@ -32,8 +35,9 @@ EXP_NAME = "pain-measurement"
 SCRIPT_PATH = Path("src/expyriment/measurement_script.yaml")
 CONFIG_PATH = Path("src/expyriment/measurement_config.toml")
 THERMOINO_CONFIG_PATH = Path("src/expyriment/thermoino_config.toml")
-LOG_DIR = Path("runs/expyriment/measurement/")
-PARTICIPANTS_EXCEL_PATH = LOG_DIR.parent / "participants.xlsx"
+LOG_DIR = Path("runs/experiment/measurement/logs")
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+CALIBRATION_DATA_PATH = LOG_DIR.parent / "participants.xlsx"
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
@@ -107,7 +111,7 @@ io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 
 # Load participant info and update stimulus config with calibration data
-participant_info = read_last_participant(PARTICIPANTS_EXCEL_PATH)
+participant_info = read_last_participant(CALIBRATION_DATA_PATH)
 STIMULUS.update(participant_info)
 random.shuffle(STIMULUS["seeds"])
 

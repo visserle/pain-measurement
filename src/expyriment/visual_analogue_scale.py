@@ -108,7 +108,7 @@ class VisualAnalogueScale:
 
         # Check if the rate limiter allows a new rating
         if self.rate_limiter.is_allowed(timestamp):
-            # Adjust slider position based on mouse X-coordinate within boundaries
+            # Adjust slider position based on mouse x-coordinate within boundaries
             current_x_pos = self.experiment.mouse.position[0]
             slider_x = max(min(current_x_pos, self.slider_max_x), self.slider_min_x)
             rating = round(

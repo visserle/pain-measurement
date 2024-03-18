@@ -1,6 +1,3 @@
-# TODO
-# - Fix query function
-
 import logging
 import math
 import time
@@ -132,12 +129,10 @@ class Thermoino:
     from thermoino import Thermoino, list_com_ports
 
     # List all available serial ports
-    from src.expyriment.thermoino import Thermoino, list_com_ports
-
-    # List all available serial ports
     list_com_ports()
-
     port = "COM7"
+
+    # Set up thermoino
     thermoino = Thermoino(
         port=port,
         mms_baseline=28,  # has to be the same as in MMS
@@ -151,7 +146,7 @@ class Thermoino:
     thermoino.sleep(duration=time_to_ramp_up)
     # 4 s plateau of 42°C
     thermoino.sleep(4)
-    # make sure to always update the temperature in the thermoino object
+    # always update the temperature in the thermoino object
     time_to_ramp_down, _ = thermoino.set_temp(28)
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
@@ -326,7 +321,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     create and load complex temperature courses (CTC) on the Thermoino, and execute these courses.
 
     NOTE: The resulting temperature course won't be millisecond-precise due to the resampling and binning.
-    The CTC will be 1 bin shorter than the original temperature course and thus the last temperature will be the same as the second last.
+    Account for some delay at the end of the complex time course for the Thermoino to be ready to receive new commands (0.5 s is recommended).
 
     Attributes
     ----------
@@ -397,13 +392,14 @@ class ThermoinoComplexTimeCourses(Thermoino):
     Examples
     --------
     ````python
+    import time
     from thermoino import ThermoinoComplexTimeCourses, list_com_ports
 
     # List all available serial ports
     list_com_ports()
+    port = "COM7"
 
     # Set up thermoino
-    port = "COM7"
     thermoino = ThermoinoComplexTimeCourses(
         port=port,
         mms_baseline=28,  # has to be the same as in MMS
@@ -421,6 +417,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
     thermoino.sleep(duration_ms=time_to_ramp_up)
     time_to_exec_ctc = thermoino.exec_ctc()
     thermoino.sleep(time_to_exec_ctc)
+    # Account for some delay at the end of the complex time course
+    time.sleep(0.5)
     time_to_ramp_down, _ = thermoino.set_temp(32)
     thermoino.flush_ctc()
     thermoino.close()
@@ -561,7 +559,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     def query_ctc(self, queryLvl, statAbort):
         """
         Query information about the complex temperature course (CTC) on the Thermoino
-        device.
+        device. Note: not tested yet.
 
         This method sends a 'QUERYCTC' command to the device. Depending on the query level (`queryLvl`),
         different types of information are returned, e.g. ctcStatus, ctcBinSize,
@@ -654,24 +652,24 @@ def main():
 
     # List all available serial ports
     print(list_com_ports())
+    port = "COM3"
 
     # Set up the Thermoino in dummy mode
-    port = "COM3"
     thermoino = Thermoino(
         port=port,
         mms_baseline=28,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
-        dummy=False,
+        dummy=True,
     )
 
     # Use thermoino to set temperatures:
     thermoino.connect()
     thermoino.trigger()
-    time_to_ramp_up, _ = thermoino.set_temp(42.34)
+    time_to_ramp_up, _ = thermoino.set_temp(42.3)
     thermoino.sleep(duration=time_to_ramp_up)
     # 4 s plateau of 42°C
     thermoino.sleep(4)
-    # make sure to always update the temperature in the thermoino object
+    # always update the temperature in the thermoino object
     time_to_ramp_down, _ = thermoino.set_temp(28)
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
@@ -684,7 +682,7 @@ def main():
         port=port,
         mms_baseline=28,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
-        dummy=False,
+        dummy=True,
     )
 
     thermoino.connect()
@@ -697,6 +695,8 @@ def main():
     thermoino.sleep(duration=time_to_ramp_up)
     time_to_exec_ctc = thermoino.exec_ctc()
     thermoino.sleep(time_to_exec_ctc)
+    # Account for some delay at the end of the complex time course
+    time.sleep(0.5)
     time_to_ramp_down, _ = thermoino.set_temp(28)  # back to baseline
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()

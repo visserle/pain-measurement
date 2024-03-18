@@ -36,24 +36,24 @@ class RateLimiter:
         else:
             self.last_checked = None
 
-    def is_allowed(self, current_time):
+    def is_allowed(self, current_time_ms):
         """
         Check if the operation is allowed at the current time, optionally considering specific intervals.
 
-        - current_time is expected to be in milliseconds.
+        - current_time_ms is expected to be in milliseconds.
         """
         if self.use_intervals:
-            if current_time >= self.next_allowed_time:
+            if current_time_ms >= self.next_allowed_time:
                 self.next_allowed_time = (
-                    current_time + self.interval - (current_time % self.interval)
+                    current_time_ms + self.interval - (current_time_ms % self.interval)
                 )
                 return True
             return False
         else:
             if (
                 self.last_checked is None
-                or current_time - self.last_checked >= 1000 / self.rate
+                or current_time_ms - self.last_checked >= 1000 / self.rate
             ):
-                self.last_checked = current_time
+                self.last_checked = current_time_ms
                 return True
             return False

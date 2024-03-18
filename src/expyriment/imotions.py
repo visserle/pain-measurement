@@ -160,7 +160,8 @@ class RemoteControliMotions:
         if self._check_status() != 0:
             logger.error("Not ready to start study.")
             raise iMotionsError("Not ready to start study.")
-        start_study_query = f"R;3;;RUN;{self.study};{self.participant_info['id']};Age={self.participant_info['age']} Gender={self.participant_info['gender']};{mode}\r\n"
+        gender = "Female" if self.participant_info["gender"] == "f" else "Male"
+        start_study_query = f"R;3;;RUN;{self.study};{self.participant_info['id']};Age={self.participant_info['age']} Gender={gender};{mode}\r\n"
         response = self._send_and_receive(start_study_query)
         # e.g. "13;RemoteControl;RUN;;-1;;1;"
         logger.info(
