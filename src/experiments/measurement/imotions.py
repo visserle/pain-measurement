@@ -10,7 +10,7 @@ import socket
 import time
 from collections import namedtuple
 
-from src.expyriment.rate_limiter import RateLimiter
+from src.experiments.measurement.rate_limiter import RateLimiter
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 

@@ -9,35 +9,37 @@ import pandas as pd
 from expyriment import control, design, io, stimuli
 from expyriment.misc.constants import C_DARKGREY, K_SPACE
 
-from src.expyriment.calibration import CALIBRATION_DATA_PATH
-from src.expyriment.imotions import EventRecievingiMotions, RemoteControliMotions
-from src.expyriment.participant_data import (
-    read_last_participant,
+from src.experiments.calibration.exp import CALIBRATION_DATA_PATH
+from src.experiments.measurement.imotions import (
+    EventRecievingiMotions,
+    RemoteControliMotions,
 )
-from src.expyriment.pop_ups import (
+from src.experiments.measurement.pop_ups import (
     ask_for_eyetracker_calibration,
     ask_for_measurement_start,
 )
-from src.expyriment.stimulus_generator import StimulusGenerator
-from src.expyriment.thermoino import ThermoinoComplexTimeCourses
-from src.expyriment.utils import (
+from src.experiments.measurement.stimulus_generator import StimulusGenerator
+from src.experiments.measurement.visual_analogue_scale import VisualAnalogueScale
+from src.experiments.participant_data import (
+    read_last_participant,
+)
+from src.experiments.thermoino import ThermoinoComplexTimeCourses
+from src.experiments.utils import (
     load_configuration,
     load_script,
     prepare_script,
     scale_1d_value,
     scale_2d_tuple,
 )
-from src.expyriment.visual_analogue_scale import VisualAnalogueScale
 from src.log_config import close_root_logging, configure_logging
 
 # Constants
 EXP_NAME = "pain-measurement"
-SCRIPT_PATH = Path("src/expyriment/measurement_script.yaml")
-CONFIG_PATH = Path("src/expyriment/measurement_config.toml")
-THERMOINO_CONFIG_PATH = Path("src/expyriment/thermoino_config.toml")
+SCRIPT_PATH = Path("src/experiments/measurement/script.yaml")
+CONFIG_PATH = Path("src/experiments/measurement/config.toml")
+THERMOINO_CONFIG_PATH = Path("src/experiments/thermoino_config.toml")
 LOG_DIR = Path("runs/experiment/measurement/logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
-CALIBRATION_DATA_PATH = LOG_DIR.parent / "participants.xlsx"
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")

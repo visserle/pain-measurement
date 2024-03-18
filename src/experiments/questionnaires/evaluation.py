@@ -2,8 +2,8 @@ import logging
 import re
 from pathlib import Path
 
-from src.expyriment.participant_data import add_participant_info
-from src.questionnaires.scoring_schemas import SCORING_SCHEMAS
+from src.experiments.participant_data import add_participant_info
+from src.experiments.questionnaires.scoring_schemas import SCORING_SCHEMAS
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 

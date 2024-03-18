@@ -10,14 +10,14 @@ from pathlib import Path
 from expyriment import control, design, io, stimuli
 from expyriment.misc.constants import C_DARKGREY, K_SPACE, K_n, K_y
 
-from src.expyriment.estimator import BayesianEstimatorVAS
-from src.expyriment.participant_data import (
+from src.experiments.calibration.estimator import BayesianEstimatorVAS
+from src.experiments.participant_data import (
     PARTICIPANTS_PATH,
     add_participant_info,
     read_last_participant,
 )
-from src.expyriment.thermoino import Thermoino
-from src.expyriment.utils import (
+from src.experiments.thermoino import Thermoino
+from src.experiments.utils import (
     load_configuration,
     load_script,
     prepare_script,
@@ -28,9 +28,9 @@ from src.log_config import close_root_logging, configure_logging
 
 # Constants
 EXP_NAME = "pain-calibration"
-SCRIPT_PATH = Path("src/expyriment/calibration_script.yaml")
-CONFIG_PATH = Path("src/expyriment/calibration_config.toml")
-THERMOINO_CONFIG_PATH = Path("src/expyriment/thermoino_config.toml")
+SCRIPT_PATH = Path("src/experiments/calibration/script.yaml")
+CONFIG_PATH = Path("src/experiments/calibration/config.toml")
+THERMOINO_CONFIG_PATH = Path("src/experiments/thermoino_config.toml")
 LOG_DIR = Path("runs/experiment/calibration/logs/")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 CALIBRATION_DATA_PATH = LOG_DIR.parent / "calibration.csv"

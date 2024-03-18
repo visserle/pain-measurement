@@ -1,7 +1,7 @@
 from expyriment import stimuli
 
-from src.expyriment.rate_limiter import RateLimiter
-from src.expyriment.utils import scale_1d_value, scale_2d_tuple
+from src.experiments.measurement.rate_limiter import RateLimiter
+from src.experiments.utils import scale_1d_value, scale_2d_tuple
 
 
 class VisualAnalogueScale:

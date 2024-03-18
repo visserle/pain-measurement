@@ -19,17 +19,17 @@ import markdown
 import yaml
 from flask import Flask, redirect, render_template, request, url_for
 
-from src.expyriment.participant_data import (
+from src.experiments.participant_data import (
     PARTICIPANTS_PATH,
     add_participant_info,
     ask_for_participant_info,
     read_last_participant,
 )
-from src.log_config import configure_logging
-from src.questionnaires.evaluation import (
+from src.experiments.questionnaires.evaluation import (
     save_results,
     score_results,
 )
+from src.log_config import configure_logging
 
 QUESTIONNAIRES = [
     "general",
