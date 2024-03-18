@@ -9,7 +9,7 @@ import pandas as pd
 from expyriment import control, design, io, stimuli
 from expyriment.misc.constants import C_DARKGREY, K_SPACE
 
-from src.experiments.calibration.exp import CALIBRATION_DATA_PATH
+from src.experiments.calibration.calibration import CALIBRATION_DATA_PATH
 from src.experiments.measurement.imotions import (
     EventRecievingiMotions,
     RemoteControliMotions,
