@@ -54,6 +54,13 @@ SCORING_SCHEMAS = {
         "max_item_score": 5,
         "metric": "mean",
     },
+    "panas": {
+        "components": {
+            "positive_affect": [1, 3, 4, 6, 10, 11, 13, 15, 17, 18],
+            "negative_affect": [2, 5, 7, 8, 9, 12, 14, 16, 19, 20],
+        },
+        "metric": "mean",
+    },
     "pcs": {
         "components": {
             "total": range(1, 14),
