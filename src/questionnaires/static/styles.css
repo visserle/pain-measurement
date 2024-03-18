@@ -29,18 +29,39 @@ fieldset {
     margin-bottom: 20px;
 }
 
-
 legend {
     font-weight: bold;
     margin-bottom: 10px;
 }
 
+.question-id {
+    font-weight: bold;
+}
+
 label {
-    display: inline-block;
-    margin-right: 10px;
+    margin: 10px 0; /* Add more space around the labels */
+    cursor: pointer; /* Indicate that the label is clickable */
+}
+
+input[type="radio"] {
+    margin-right: 5px; /* Space out the radio button from its label */
+    cursor: pointer; /* Change cursor to pointer to indicate clickable area */
+    accent-color: #007bff; /* Change the accent color for better visibility */
+    transform: scale(1.25); /* Increase the size of the radio buttons */
 }
 
 button {
     display: block;
     margin: 20px auto;
+    padding: 10px 20px; /* Increase button padding for better accessibility */
+    font-size: 16px; /* Increase font size for readability */
+    color: white; /* Change text color to white */
+    background-color: #007bff; /* Add background color for the button */
+    border: none; /* Remove button border */
+    border-radius: 5px; /* Add border radius to the button */
+    cursor: pointer; /* Indicate that the button is clickable */
+}
+
+button:hover {
+    background-color: #0056b3; /* Change background color on hover for better user feedback */
 }
