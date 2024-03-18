@@ -37,19 +37,18 @@ def map_trials(func, trial_column="Trial"):
         # Check if 'df' is a pl.DataFrame
         if not isinstance(df, pl.DataFrame):
             raise ValueError("Input must be a Polars DataFrame.")
-        # Check if DataFrame has the specified trial column
+        # Apply the function to each trial if trial_column exists
         if trial_column in df.columns:
             # Warning if only one trial is found
             if len(df[trial_column].unique()) == 1:
                 logger.warning(
                     "Only one trial found, applying function to the whole DataFrame."
                 )
-            # Apply the function to each trial
             result = df.group_by(trial_column, maintain_order=True).map_groups(
                 lambda group: func(group, *args, **kwargs)
             )
+        # Else apply the function to the whole DataFrame
         else:
-            # Apply the function to the whole DataFrame
             logger.warning(
                 f"No '{trial_column}' column found, applying function {func.__name__} to the whole DataFrame instead."
             )
@@ -72,7 +71,6 @@ def create_trials(
     ffill = df[marker_column].fill_null(strategy="forward")
     bfill = df[marker_column].fill_null(strategy="backward")
     # Where forward fill and backward fill are equal, replace the NaNs in the original Stimuli_Seed
-    # this is the same as np.where(ffill == bfill, ffill, df[marker_column])
     df = df.with_columns(
         pl.when(ffill == bfill)
         .then(ffill)
@@ -104,7 +102,7 @@ def add_timedelta_column(
     time_unit="ms",
 ) -> pl.DataFrame:
     """Create a new column that contains the time from Timestamp in ms."""
-    # NOTE: saving timedelta to csv runs into problems, maybe we can do without it for now / just use it for debuggings
+    # NOTE: saving timedelta to csv runs into problems, maybe we can do without it for now / just use it for debugging
     df = df.with_columns(
         pl.col(timestamp_column)
         .cast(pl.Duration(time_unit=time_unit))
@@ -180,13 +178,10 @@ def resample_to_500hz(df):  # FIXME
 def scale_min_max(
     df: pl.DataFrame, exclude_columns=["Timestamp", "Trial"]
 ) -> pl.DataFrame:
-    """NOTE: Not do not use for ML pipeline because of data leakage."""
+    """NOTE: Do not use in ML pipeline (data leakage)."""
     return df.with_columns(
         _scale_min_max_col(pl.col(pl.Float64).exclude(exclude_columns))
-    )
-
-
-# TODO: trial shouldn't even be float64
+    )  # TODO: trial shouldn't even be float64
 
 
 def _scale_min_max_col(col: pl.Expr) -> pl.Expr:
@@ -197,7 +192,7 @@ def _scale_min_max_col(col: pl.Expr) -> pl.Expr:
 def scale_standard(
     df: pl.DataFrame, exclude_columns=["Timestamp", "Trial"]
 ) -> pl.DataFrame:
-    """NOTE: Not do not use for ML pipeline because of data leakage."""
+    """NOTE: Do not use in ML pipeline (data leakage)."""
     return df.with_columns(
         _scale_standard_col(pl.col(pl.Float64).exclude(exclude_columns))
     )  # TODO: trial shouldn't even be float64

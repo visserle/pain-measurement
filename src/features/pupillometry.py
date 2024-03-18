@@ -3,6 +3,8 @@
 # - interpolation with cubic spline, resampling and low-pass filtering + sync, see matlab
 # - get the mean using a kalman filter
 
+# - check if facial expression and eeg fall into blink segments
+
 
 import logging
 
@@ -23,7 +25,7 @@ EYE_COLUMNS = ["Pupillometry_R", "Pupillometry_L"]
 def process_pupillometry(
     df: pl.DataFrame, eye_columns=EYE_COLUMNS, sampling_rate=60, cutoff_frequency=0.5
 ) -> pl.DataFrame:
-    df = values_below_x_are_considered_blinks(df, eye_columns)
+    df = below_threshold_equals_blink(df, eye_columns)
     df = remove_periods_around_blinks(df, eye_columns)
     df = interpolate_pupillometry(df, eye_columns)
     df = low_pass_filter_pupillometry(df, eye_columns, sampling_rate, cutoff_frequency)
@@ -31,12 +33,12 @@ def process_pupillometry(
     return df
 
 
-def values_below_x_are_considered_blinks(
-    df: pl.DataFrame, eye_columns, x=1.5
+def below_threshold_equals_blink(
+    df: pl.DataFrame, eye_columns, threshold=1.5
 ) -> pl.DataFrame:
     for eye in ensure_list(eye_columns):
         df = df.with_columns(
-            pl.when(pl.col(eye) < x).then(-1).otherwise(pl.col(eye)).alias(eye)
+            pl.when(pl.col(eye) < threshold).then(-1).otherwise(pl.col(eye)).alias(eye)
         )
     return df
 
@@ -197,7 +199,9 @@ def _low_pass_filter(
     Returns the filtered data as a numpy array.
     """
     # Normalize the frequency to Nyquist frequency and avoid aliasing
-    normalized_cutoff = cutoff_frequency / (0.5 * sampling_rate)
+    normalized_cutoff = cutoff_frequency / (
+        0.5 * sampling_rate
+    )  # TODO: make sure this is correct
 
     # Create filter
     b, a = signal.butter(N=2, Wn=normalized_cutoff, btype="low", analog=False)

@@ -14,6 +14,10 @@ import polars as pl
 # # search for nan values in raw data (trial + data)
 # -> samplenumber, should be increasing by 1 all the time
 
+# also check for floating point weirdness in timestamps -> bad sign
+
+# check for number of imotions events = stim len * sample rate
+
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
