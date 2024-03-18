@@ -3,6 +3,7 @@ SCORING_SCHEMAS = {
         "components": {
             "total": range(1, 22),
         },
+        "metric": "sum",
         "alert_threshold": 14,
         "alert_message": "depression",
     },
@@ -29,6 +30,7 @@ SCORING_SCHEMAS = {
             "optimism": [1, 4, 10],
         },
         "filler_items": [2, 5, 6, 8],
+        "metric": "sum",
     },
     "maas": {
         "components": {
@@ -50,6 +52,7 @@ SCORING_SCHEMAS = {
         "reverse_items": [5, 6, 7, 8, 9, 10, 11, 12, 15],
         "min_item_score": 0,
         "max_item_score": 5,
+        "metric": "mean",
     },
     "pcs": {
         "components": {
@@ -58,6 +61,7 @@ SCORING_SCHEMAS = {
             "magnification": [6, 7, 13],
             "helplessness": [1, 2, 3, 4, 5, 12],
         },
+        "metric": "sum",
         "alert_threshold": 30,
         "alert_message": "a clinically significant level of catastrophizing",
     },
@@ -70,6 +74,7 @@ SCORING_SCHEMAS = {
         "reverse_items": [8, 16],
         "min_item_score": 0,
         "max_item_score": 5,
+        "metric": "sum",
     },
     "stai-t-10": {
         "components": {
