@@ -11,7 +11,10 @@ src/models/mlp.py
 src/models/model.ipynb
 src/models/models.py
 src/models/models_2.py
+src/questionnaires/archive
+Src/experiments/oddball.py
 /events
+/src/experiments/questionnaires/archive
 
 # excluded for now
 /runs
@@ -116,6 +119,13 @@ target/
 # Mypy cache
 .mypy_cache/
 
-src/questionnaires/inventory/bdi.yaml
-src/questionnaires/inventory/pcs.yaml
-src/questionnaires/inventory/maia.yaml
+
+src/experiments/questionnaires/inventory/bdi-ii.yaml
+src/experiments/questionnaires/inventory/brs.yaml
+src/experiments/questionnaires/inventory/erq.yaml
+src/experiments/questionnaires/inventory/lot-r.yaml
+src/experiments/questionnaires/inventory/maas.yaml
+src/experiments/questionnaires/inventory/maia-2.yaml
+src/experiments/questionnaires/inventory/pcs.yaml
+src/experiments/questionnaires/inventory/pvaq.yaml
+src/experiments/questionnaires/inventory/stai-t-10.yaml
