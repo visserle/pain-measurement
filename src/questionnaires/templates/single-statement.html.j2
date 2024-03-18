@@ -13,7 +13,7 @@
         <form action="" method="post">
             {% for question in questions %}
             <div>
-                <p><strong>{{ question.id }}:</strong> {{ question.text }}</p>
+                <p><span class="question-id">{{ question.id }}:</span> {{ question.text }}</p>
                 {% for option in options %}
                 <input type="radio" id="q{{ question.id }}_option{{ option.score }}" name="q{{ question.id }}" value="{{ option.score }}" required>
                 <label for="q{{ question.id }}_option{{ option.score }}">{{ option.text }}</label><br> 

@@ -5,18 +5,19 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from src.expyriment.participant_data import read_last_participant
+from src.participants import add_participant_info, read_last_participant
 from src.questionnaires.scoring_schemas import SCORING_SCHEMAS
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
-PARTICIPANT_DATA = Path("runs/expyriment/participants.xlsx")
-RESULTS_DIRECTORY = Path("runs/questionnaires")
+PARTICIPANT_PATH = Path("runs/experiment/participants.csv")
+RESULTS_DIR = Path("data/questionnaires")
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _extract_number(s):
+def _extract_number(string):
     """Used to get the score from items with alternative options (e.g. 1a, 1b)."""
-    match = re.search(r"\d+", s)
+    match = re.search(r"\d+", string)
     return int(match.group()) if match else None
 
 
@@ -37,15 +38,10 @@ def score_results(scale, answers):
             component_score += item_score
         score[component] = component_score
 
-    # Recalculate scores based on special metric
+    # Recalculate scores based on special metric (sum by default)
     if schema.get("metric") == "mean":
-        if "total" in score:
-            score["total"] = round(
-                score["total"] / len(schema["components"]["total"]), 2
-            )
-        else:  # if there is no "total" component, apply metric to all components
-            for key, value in score.items():
-                score[key] = round(value / len(schema["components"][key]), 2)
+        for key, value in score.items():
+            score[key] = round(value / len(schema["components"][key]), 2)
     elif schema.get("metric") == "percentage":
         # only used for STAI-T-10 on the total score
         min_score = schema["min_item_score"] * len(schema["components"]["total"])
@@ -63,30 +59,25 @@ def score_results(scale, answers):
 
 
 def save_results(scale, questionnaire, answers, score):
-    filename = RESULTS_DIRECTORY / f"{scale}_results.csv"
-    file_exists = os.path.isfile(filename)
+    filename = RESULTS_DIR / f"{scale}_results.csv"
 
     # Basic fieldnames
     fieldnames = ["timestamp", "id", "age", "gender"]
-    # Extend the fieldnames with scale-specific components and question IDs (raw answers)
-    fieldnames.extend(SCORING_SCHEMAS[scale]["components"].keys())
+    # Extend fieldnames with scale-specific components and question IDs (raw answers)
+    if scale != "general":  # general questionnaire does not have scoring components
+        fieldnames.extend(SCORING_SCHEMAS[scale]["components"].keys())
     fieldnames.extend([f"q{q['id']}" for q in questionnaire["questions"]])
 
-    with open(filename, mode="a", newline="") as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        if not file_exists:
-            writer.writeheader()
+    participant_info = read_last_participant(PARTICIPANT_PATH)
+    participant_info_dict = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
-        # Construct and write the row directly in the CSV file
-        participant_info = read_last_participant(PARTICIPANT_DATA)
-        row = {
-            "timestamp": str(datetime.now())[0:19],
-            "id": participant_info["id"],
-            "age": participant_info["age"],
-            "gender": "M" if participant_info["gender"] == "Male" else "F",
-        }
-        row.update({component: score[component] for component in score})
-        row.update(
-            {f'q{q["id"]}': answers[f'q{q["id"]}'] for q in questionnaire["questions"]}
+    if scale != "general":
+        participant_info_dict.update(participant_info)  # TODO: is this necessary?
+        participant_info_dict.update(
+            {component: score[component] for component in score}
         )
-        writer.writerow(row)
+    participant_info_dict.update(
+        {f'q{q["id"]}': answers[f'q{q["id"]}'] for q in questionnaire["questions"]}
+    )
+
+    add_participant_info(filename, participant_info_dict)

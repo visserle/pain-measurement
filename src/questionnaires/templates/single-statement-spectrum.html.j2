@@ -24,15 +24,15 @@
         <form method="post">
             {% for question in questions %}
             <div class="question">
-                <p><strong>{{ question.id }}:</strong> {{ question.text }}</p>
+                <p><span class="question-id">{{ question.id }}:</span> {{ question.text }}</p>
                 <br>
                 <div>
-                    fast nie  <!-- almost never -->
-                    {% for i in options %}
-                    <input type="radio" id="q{{ question.id }}_option{{ i.score }}" name="q{{ question.id }}" value="{{ i.score }}" required>
-                    <label for="q{{ question.id }}_option{{ i.score }}">{{ i.score }}</label>
+                    {{ spectrum.left }}
+                    {% for option in options %}
+                    <input type="radio" id="q{{ question.id }}_option{{ option.score }}" name="q{{ question.id }}" value="{{ option.score }}" required>
+                    <label for="q{{ question.id }}_option{{ option.score }}">{{ option.score }}</label>
                     {% endfor %}
-                    fast immer  <!-- almost always -->
+                    {{ spectrum.right }}
                 </div>
                 <br>
             </div>
