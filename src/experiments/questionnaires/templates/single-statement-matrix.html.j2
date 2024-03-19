@@ -55,6 +55,12 @@
                     {% endfor %}
                 </tr>
                 {% endfor %}
+                <tr>
+                    <th></th>
+                    {% for option in options %}
+                    <th>{{ option.text }}</th>
+                    {% endfor %}
+                </tr>
             </table>
             <div class="submit-container">
                 <button type="submit">Abschicken</button>
