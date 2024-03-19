@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        label, select, input[type="text"] {
+            display: block;
+            margin-bottom: 10px;
+        }
+        label {
+            margin-top: 20px;
+        }
+        button {
+            margin-top: 20px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -17,9 +39,10 @@
                 <div>
                     <label for="{{ question.id }}">{{ question.text }}</label>
                     {% if question.type == "text" %}
-                        <input type="text" id="{{ question.id }}" name="{{ question.id }}">
+                        <input type="text" id="{{ question.id }}" name="{{ question.id }}" aria-label="{{ question.text }}" required>
                     {% elif question.type == "select" %}
-                        <select id="{{ question.id }}" name="{{ question.id }}">
+                        <select id="{{ question.id }}" name="{{ question.id }}" aria-label="{{ question.text }}" required>
+                            <option value="" disabled selected hidden>Bitte auswählen</option>
                             {% for option in question.options %}
                                 <option value="{{ option.score }}">{{ option.text }}</option>
                             {% endfor %}
