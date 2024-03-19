@@ -1,5 +1,3 @@
-#    ask_for_participant_info = lambda *args, **kwargs: config["dummy_participant"]  # noqa: E731
-
 import argparse
 import logging
 import random
@@ -92,8 +90,8 @@ if not args.participant:
 design.defaults.experiment_background_colour = C_DARKGREY
 stimuli.defaults.textline_text_colour = EXPERIMENT["element_color"]
 stimuli.defaults.textbox_text_colour = EXPERIMENT["element_color"]
-io.defaults.eventfile_directory = (LOG_DIR / "events").as_posix()
-io.defaults.datafile_directory = (LOG_DIR / "data").as_posix()
+io.defaults.eventfile_directory = (LOG_DIR.parent / "events").as_posix()
+io.defaults.datafile_directory = (LOG_DIR.parent / "data").as_posix()
 io.defaults.outputfile_time_stamp = True
 io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3

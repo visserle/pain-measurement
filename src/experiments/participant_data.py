@@ -22,7 +22,7 @@ def ask_for_participant_info(file_path: Path = PARTICIPANTS_PATH) -> dict:
 
     if app.participant_info:
         participant_info = app.participant_info
-        participant_exists(file_path, participant_info["id"])
+        _participant_exists(file_path, participant_info["id"])
         logger.info(f"Participant ID: {participant_info['id']}")
         logger.info(f"Participant Age: {participant_info['age']}")
         logger.info(f"Participant Gender: {participant_info['gender']}")
@@ -31,12 +31,12 @@ def ask_for_participant_info(file_path: Path = PARTICIPANTS_PATH) -> dict:
     return None
 
 
-def participant_exists(file_path: Path, participant_id: str) -> bool:
+def _participant_exists(file_path: Path, participant_id: str) -> bool:
     """
     Check if a participant with the given ID already exists in the CSV file.
     """
     if not file_path.exists():
-        logger.warning(f"{file_path} does not exist.")
+        logger.warning(f"{file_path} does not exist yet.")
         return True
     with open(file_path, mode="r", newline="") as file:
         reader = csv.DictReader(file)
@@ -45,8 +45,7 @@ def participant_exists(file_path: Path, participant_id: str) -> bool:
                 logger.critical(
                     f"Participant with ID {participant_id} already exists in {file_path}."
                 )
-                logger.critical(f"Last participant was added at {row['timestamp']}.")
-                logger.critical("Proceed with caution.")
+                logger.critical(f"First occurence was added at {row['timestamp']}.")
                 return True
     return False
 
@@ -86,13 +85,13 @@ def read_last_participant(file_path=PARTICIPANTS_PATH) -> dict:
 
     last_participant_info["id"] = int(last_participant_info["id"])
     logger.debug(
-        f"Participant data from {last_participant_info['id']} ({last_participant_info['timestamp']}) loaded."
+        f"Participant {last_participant_info['id']} ({last_participant_info['timestamp']}) loaded."
     )
 
     # Check if the participant data is from today
     today = datetime.now().strftime("%Y-%m-%d")
     if today not in last_participant_info["timestamp"]:
-        logger.warning("Participant data is not from today.")
+        logger.warning("Participant ID is not from today.")
 
     last_participant_info.pop("timestamp")
     return last_participant_info

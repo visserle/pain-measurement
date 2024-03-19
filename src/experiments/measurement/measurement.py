@@ -9,7 +9,6 @@ import pandas as pd
 from expyriment import control, design, io, stimuli
 from expyriment.misc.constants import C_DARKGREY, K_SPACE
 
-from src.experiments.calibration.calibration import CALIBRATION_DATA_PATH
 from src.experiments.measurement.imotions import (
     EventRecievingiMotions,
     RemoteControliMotions,
@@ -41,6 +40,7 @@ CONFIG_PATH = EXP_DIR / "measurement_config.toml"
 THERMOINO_CONFIG_PATH = EXP_DIR.parent / "thermoino_config.toml"
 LOG_DIR = Path("runs/experiments/measurement/logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
+CALIBRATION_DATA_PATH = Path("runs/experiments/calibration/calibration.csv")
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
@@ -107,8 +107,8 @@ design.defaults.experiment_background_colour = C_DARKGREY
 stimuli.defaults.textline_text_colour = EXPERIMENT["element_color"]
 stimuli.defaults.textbox_text_colour = EXPERIMENT["element_color"]
 stimuli.defaults.rectangle_colour = EXPERIMENT["element_color"]
-io.defaults.eventfile_directory = (LOG_DIR / "events").as_posix()
-io.defaults.datafile_directory = (LOG_DIR / "data").as_posix()
+io.defaults.eventfile_directory = (LOG_DIR.parent / "events").as_posix()
+io.defaults.datafile_directory = (LOG_DIR.parent / "data").as_posix()
 io.defaults.outputfile_time_stamp = True
 io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3

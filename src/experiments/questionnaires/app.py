@@ -1,14 +1,3 @@
-# TODO
-# add panas before and after
-# add readme to inventory
-# add full names of the scales, authors, and references
-# add progress bar
-# add fragebogen für allgemeines
-# meditationserfahrungen abfragen, händigkeit, sehvermögen, hornhautverkrümmung, botox, demographiscshe daten (gerne doppelt), sozioökonomischer status, bildung, beruf, einkommen, sport
-# freitext für pcs an welchen schmerz gedacht wurde?
-
-# NOTE: possible to deploy to web via docker: https://www.youtube.com/watch?v=cw34KMPSt4k
-
 import argparse
 import logging
 import webbrowser
@@ -56,8 +45,8 @@ parser.add_argument(
     help=f"Select the questionnaires to run: {', '.join(QUESTIONNAIRES)}.",
 )
 parser.add_argument(
-    "-p",
-    "--participant",
+    "-new",
+    "--new_participant",
     action="store_true",
     help="Create a new participant entry in the main participants.csv file.",
 )
@@ -72,25 +61,23 @@ parser.add_argument(
 args = parser.parse_args()
 questionnaires = args.questionnaire
 
+app = Flask(__name__)
+
 # Configure logging
-LOG_DIR = Path("runs/questionnaires/")
+LOG_DIR = Path("runs/experiments/questionnaires/")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 log_file = LOG_DIR / datetime.now().strftime(r"%Y_%m_%d__%H_%M_%S.log")
 configure_logging(
-    stream_level=logging.DEBUG,
-    file_path=log_file,
-    ignore_libs=["werkzeug"],  # , "participant_data"],
+    stream_level=logging.DEBUG, file_path=log_file, ignore_libs=["werkzeug"]
 )
 
-if args.participant and not args.debug:
+if args.new_participant and not args.debug:
     participant_info = ask_for_participant_info(PARTICIPANTS_PATH)
     add_participant_info(PARTICIPANTS_PATH, participant_info)
 elif not args.debug:
     participant_info = read_last_participant()
 else:
     logging.warning("Debug mode is enabled. Participant data will not be saved.")
-
-app = Flask(__name__)
 
 
 def load_questionnaire(scale):
@@ -161,6 +148,7 @@ def main():
     logging.info(f"Running the app with the following questionnaires: {questionnaires}")
     webbrowser.open_new("http://localhost:5000")
     app.run(debug=args.debug)
+    # NOTE: possible to deploy to web via docker: https://www.youtube.com/watch?v=cw34KMPSt4k
 
 
 if __name__ == "__main__":

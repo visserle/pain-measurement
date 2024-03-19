@@ -56,18 +56,21 @@ def score_results(scale, answers):
 
 def save_results(participant_info, scale, questionnaire, answers, score):
     filename = RESULTS_DIR / f"{scale}_results.csv"
+    # Avoid modifying the original participant_info
+    local_participant_info = participant_info.copy()
 
-    # Basic fieldnames
-    fieldnames = ["timestamp", "id", "age", "gender"]
-    # Extend fieldnames with scale-specific components and question IDs (raw answers)
-    if scale != "general":  # general questionnaire does not have scoring components
-        fieldnames.extend(SCORING_SCHEMAS[scale]["components"].keys())
-    fieldnames.extend([f"q{q['id']}" for q in questionnaire["questions"]])
-
-    if scale != "general":
-        participant_info.update({component: score[component] for component in score})
-    participant_info.update(
-        {f'q{q["id"]}': answers[f'q{q["id"]}'] for q in questionnaire["questions"]}
+    # For general questionnaire, only save the raw answers without scoring components
+    if scale == "general":
+        prefix = ""
+    else:
+        local_participant_info.update(
+            {component: score[component] for component in score}
+        )
+        prefix = "q"
+    local_participant_info.update(
+        {
+            f'{prefix}{question["id"]}': answers[f'{prefix}{question["id"]}']
+            for question in questionnaire["questions"]
+        }
     )
-
-    add_participant_info(filename, participant_info)
+    add_participant_info(filename, local_participant_info)
