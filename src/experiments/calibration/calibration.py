@@ -37,7 +37,7 @@ CALIBRATION_DATA_PATH = LOG_DIR.parent / "calibration.csv"
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
-configure_logging(stream_level=logging.DEBUG, file_path=log_file)
+configure_logging(stream_level=logging.INFO, file_path=log_file)
 
 # Load configurations and script
 config = load_configuration(CONFIG_PATH)
@@ -49,43 +49,49 @@ STIMULUS = config["stimulus"]
 JITTER = random.randint(0, STIMULUS["iti_max_jitter"])
 
 # Create an argument parser
-parser = argparse.ArgumentParser(
-    description="Run the pain-calibration experiment. Dry by default."
-)
-parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
+parser = argparse.ArgumentParser(description="Run the pain-calibration experiment.")
+parser.add_argument("-a", "--all", action="store_true", help="Use all flags")
+parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode")
 parser.add_argument(
-    "-f", "--full_screen", action="store_true", help="Run in full screen mode"
-)
-parser.add_argument(
-    "-s", "--full_stimuli", action="store_true", help="Use full stimuli duration"
+    "-w", "--windowed", action="store_true", help="Run in windowed mode"
 )
 parser.add_argument(
-    "-p", "--participant", action="store_true", help="Use participant data"
+    "-ds", "--dummy_stimulus", action="store_true", help="Use dummy stimulus"
 )
 parser.add_argument(
-    "-t", "--thermoino", action="store_true", help="Enable Thermoino device"
+    "-dp", "--dummy_participant", action="store_true", help="Use dummy participant data"
+)
+parser.add_argument(
+    "-dt", "--dummy_thermoino", action="store_true", help="Use dummy Thermoino device"
 )
 args = parser.parse_args()
 
 # Adjust settings
 if args.all:
-    logging.debug("Run full experiment.")
+    logging.debug("Using all flags for a dry run.")
     for flag in vars(args).keys():
         setattr(args, flag, True)
-if not args.full_screen:
-    control.defaults.window_size = (800, 600)
+if args.debug or args.windowed:
     control.set_develop_mode(True)
-if not args.full_stimuli:
+if args.debug:
+    configure_logging(stream_level=logging.DEBUG)
+    logging.debug("Enabled debug mode.")
+if args.windowed:
+    logging.debug("Running in windowed mode.")
+    control.defaults.window_size = (800, 600)
+if args.dummy_stimulus:
+    logging.debug("Using dummy stimulus.")
     STIMULUS["iti_duration"] = 0.2
     STIMULUS["stimulus_duration"] = 0.2
     JITTER = 0
     ESTIMATOR["trials_vas70"] = 2
     ESTIMATOR["trials_vas0"] = 2
-    logging.warning("Using dummy stimulus.")
-if not args.participant:
-    logging.warning("Using dummy participant data.")
+if args.dummy_participant:
+    logging.debug("Using dummy participant data.")
     read_last_participant = lambda x: config["dummy_participant"]  # noqa: E731
     add_participant_info = lambda *args, **kwargs: None  # noqa: E731
+if args.dummy_thermoino:
+    logging.debug("Using dummy Thermoino device.")
 
 # Expyriment defaults
 design.defaults.experiment_background_colour = C_DARKGREY
@@ -135,7 +141,7 @@ thermoino = Thermoino(
     port=THERMOINO["port"],
     mms_baseline=THERMOINO["mms_baseline"],
     mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
-    dummy=not args.thermoino,
+    dummy=args.dummy_thermoino,
 )
 thermoino.connect()
 

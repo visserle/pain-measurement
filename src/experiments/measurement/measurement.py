@@ -40,11 +40,11 @@ THERMOINO_CONFIG_PATH = EXP_DIR.parent / "thermoino_config.toml"
 RUN_DIR = Path("runs/experiments/measurement")
 LOG_DIR = RUN_DIR / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
-CALIBRATION_DATA_PATH = Path("runs/experiments/calibration/calibration.csv")
+CALIBRATION_RUN_PATH = Path("runs/experiments/calibration/calibration.csv")
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
-configure_logging(stream_level=logging.DEBUG, file_path=log_file)
+configure_logging(stream_level=logging.INFO, file_path=log_file)
 
 # Load configurations and script
 config = load_configuration(CONFIG_PATH)
@@ -56,42 +56,49 @@ IMOTIONS = config["imotions"]
 VAS = config["visual_analogue_scale"]
 
 # Create an argument parser
-parser = argparse.ArgumentParser(
-    description="Run the pain-measurement experiment. Dry by default."
-)
-parser.add_argument("-a", "--all", action="store_true", help="Enable all features")
+parser = argparse.ArgumentParser(description="Run the pain-measurement experiment.")
+parser.add_argument("-a", "--all", action="store_true", help="Use all flags")
+parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode")
 parser.add_argument(
-    "-f", "--full_screen", action="store_true", help="Run in full screen mode"
-)
-parser.add_argument(
-    "-s", "--full_stimulus", action="store_true", help="Use full stimulus duration"
+    "-w", "--windowed", action="store_true", help="Run in windowed mode"
 )
 parser.add_argument(
-    "-p", "--participant", action="store_true", help="Use real participant data"
+    "-ds", "--dummy_stimulus", action="store_true", help="Use dummy stimulus"
 )
 parser.add_argument(
-    "-t", "--thermoino", action="store_true", help="Enable Thermoino device"
+    "-dp", "--dummy_participant", action="store_true", help="Use dummy participant data"
 )
 parser.add_argument(
-    "-i", "--imotions", action="store_true", help="Enable iMotions integration"
+    "-dt", "--dummy_thermoino", action="store_true", help="Use dummy Thermoino device"
+)
+parser.add_argument(
+    "-di", "--dummy_imotions", action="store_true", help="Use dummy iMotions"
 )
 args = parser.parse_args()
 
 # Adjust settings
 if args.all:
-    logging.debug("Run full experiment.")
+    logging.debug("Using all flags for a dry run.")
     for flag in vars(args).keys():
         setattr(args, flag, True)
-if not args.full_screen:
-    control.defaults.window_size = (800, 600)
+if args.debug or args.windowed:
     control.set_develop_mode(True)
-if not args.full_stimulus:
+if args.debug:
+    configure_logging(stream_level=logging.DEBUG)
+    logging.debug("Enabled debug mode.")
+if args.windowed:
+    logging.debug("Run in windowed mode.")
+    control.defaults.window_size = (800, 600)
+if args.dummy_stimulus:
+    logging.debug("Using dummy stimulus.")
     STIMULUS.update(config["dummy_stimulus"])
-    logging.warning("Using dummy stimulus.")
-if not args.participant:
+if args.dummy_participant:
+    logging.debug("Using dummy participant data.")
     read_last_participant = lambda x: config["dummy_participant"]  # noqa: E731
-    logging.warning("Using dummy participant data.")
-if not args.imotions:
+if args.dummy_thermoino:
+    logging.debug("Using dummy Thermoino device.")
+if args.dummy_imotions:
+    logging.debug("Using dummy iMotions.")
     ask_for_eyetracker_calibration = (  # noqa: E731
         lambda: logging.debug(
             "Skip asking for eye-tracker calibration because of dummy iMotions."
@@ -101,6 +108,7 @@ if not args.imotions:
     ask_for_measurement_start = lambda: logging.debug(  # noqa: E731
         "Skip asking for measurement start because of dummy iMotions."
     )
+
 
 # Expyriment defaults
 design.defaults.experiment_background_colour = C_DARKGREY
@@ -114,17 +122,17 @@ io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 
 # Load participant info and update stimulus config with calibration data
-participant_info = read_last_participant(CALIBRATION_DATA_PATH)
+participant_info = read_last_participant(CALIBRATION_RUN_PATH)
 STIMULUS.update(participant_info)
 random.shuffle(STIMULUS["seeds"])
 
 # Initialize iMotions
 imotions_control = RemoteControliMotions(
-    study=EXP_NAME, participant_info=participant_info, dummy=not args.imotions
+    study=EXP_NAME, participant_info=participant_info, dummy=args.dummy_imotions
 )
 imotions_control.connect()
 imotions_event = EventRecievingiMotions(
-    sample_rate=IMOTIONS["sample_rate"], dummy=not args.imotions
+    sample_rate=IMOTIONS["sample_rate"], dummy=args.dummy_imotions
 )
 imotions_event.connect()
 proceed_with_eyetracker_calibration = ask_for_eyetracker_calibration()
@@ -149,7 +157,7 @@ thermoino = ThermoinoComplexTimeCourses(
     port=THERMOINO["port"],
     mms_baseline=THERMOINO["mms_baseline"],
     mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
-    dummy=not args.thermoino,
+    dummy=args.dummy_thermoino,
 )
 thermoino.connect()
 
@@ -163,7 +171,7 @@ def get_data_points(temp_course):
         timestamp=stopped_time,
         temperature=temp_course[index],
         rating=vas_slider.rating,
-        debug=not args.imotions,
+        debug=args.dummy_imotions,
     )
 
 
