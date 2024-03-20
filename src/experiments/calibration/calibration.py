@@ -93,8 +93,6 @@ if args.dummy_participant:
     logging.debug("Using dummy participant data.")
     read_last_participant = lambda x: config["dummy_participant"]  # noqa: E731
     add_participant_info = lambda *args, **kwargs: None  # noqa: E731
-if args.dummy_thermoino:
-    logging.debug("Using dummy Thermoino device.")
 
 # Expyriment defaults
 design.defaults.experiment_background_colour = C_DARKGREY
@@ -210,10 +208,12 @@ def main():
     SCRIPT["question_preexposure"].present()
     found, _ = exp.keyboard.wait(keys=[K_y, K_n])
     if found == K_y:
+        participant_info["preexposure_painful"] = True
         ESTIMATOR["temp_start_vas70"] -= STIMULUS["preexposure_correction"]
         SCRIPT["answer_yes"].present()
         logging.info("Pre-exposure was painful.")
     elif found == K_n:
+        participant_info["preexposure_painful"] = False
         SCRIPT["answer_no"].present()
         logging.info("Pre-exposure was not painful.")
     exp.clock.wait_seconds(1)

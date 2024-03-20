@@ -124,13 +124,13 @@ class BayesianEstimatorVAS:
 
         # Define the range of temperatures to consider based on the given standard deviation
         if int(self.temp_std) == 0:
-            range_width = 1  # e.g., 38.0 ± 1.0
+            range_width = 1.0  # e.g., 38.0 ± 1.0
         elif int(self.temp_std) == 1:
-            range_width = 2
+            range_width = 2.0
         elif int(self.temp_std) == 2:
-            range_width = 3
+            range_width = 3.0
         elif int(self.temp_std) == 3:
-            range_width = 5
+            range_width = 5.0
         else:
             raise ValueError(
                 "int(temp_std) must be 0, 1, 2, or 3 (or add more cases for other ranges)."

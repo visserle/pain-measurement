@@ -52,7 +52,7 @@ questions:
         text: "Arbeitsunfähig"
       - score: "Prefer not to say"
         text: "Möchte ich nicht angeben"
-  - id: "occupation"
+  - id: "occupation_german"
     text: "Was ist Ihre derzeitige oder letzte berufliche Tätigkeit?"
     type: "text"
   - id: "income"

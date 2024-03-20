@@ -99,7 +99,7 @@ class RemoteControliMotions:
         self.participant_info = participant_info
         self.dummy = dummy
         if self.dummy:
-            logger.warning("Running in dummy mode.")
+            logger.debug("Running in dummy mode.")
 
         # iMotions info
         self.sock = (

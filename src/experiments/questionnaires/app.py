@@ -55,7 +55,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 questionnaires = args.questionnaire
-
 app = Flask(__name__)
 
 # Configure logging
@@ -65,6 +64,7 @@ configure_logging(
     file_path=log_file if not args.debug else None,
     ignore_libs=["werkzeug", "urllib3", "requests"],
 )
+
 
 # Load participant data
 participant_info = read_last_participant()

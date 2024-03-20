@@ -55,8 +55,9 @@ class StimulusGenerator:
         self.prolonged_minima_num = config.get("prolonged_minima_num", 2)
         self.prolonged_minima_duration = config.get("prolonged_minima_duration", 5)
 
-        self.temperature_baseline = config.get("temperature_baseline", 40)
-        self.temperature_range = config.get("temperature_range", 3)
+        # Calibrate temperatures
+        self.temperature_baseline = float(config.get("temperature_baseline", 40))
+        self.temperature_range = float(config.get("temperature_range", 3))
 
         # Calculate length of the stimulus
         self.desired_length_random_half_cycles = (

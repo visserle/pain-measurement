@@ -180,7 +180,7 @@ class Thermoino:
         self.mms_rate_of_rise = mms_rate_of_rise
         self.dummy = dummy
         if self.dummy:
-            logger.warning("Running in dummy mode.")
+            logger.debug("Running in dummy mode.")
 
     def connect(self):
         """

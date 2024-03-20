@@ -36,17 +36,15 @@ def _participant_exists(file_path: Path, participant_id: str) -> bool:
     Check if a participant with the given ID already exists in the CSV file.
     """
     if not file_path.exists():
-        logger.warning(f"{file_path} does not exist yet.")
-        return True
+        return False
     with open(file_path, mode="r", newline="") as file:
         reader = csv.DictReader(file)
         for row in reader:
             if int(row["id"]) == int(participant_id):
-                logger.critical(
-                    f"Participant with ID {participant_id} already exists in {file_path}."
+                logger.warning(
+                    f"Participant with ID {participant_id} ({row['timestamp']}) already exists in {file_path}."
                 )
-                logger.critical(f"First occurence was added at {row['timestamp']}.")
-                return True
+        return True
     return False
 
 
@@ -54,6 +52,7 @@ def add_participant_info(file_path: Path, participant_info: dict):
     """
     Add a participant to the participants.csv file with a timestamp.
     """
+    file_path.parent.mkdir(parents=True, exist_ok=True)
     # Check if the file exists and has content; if not, write headers
     file_exists = file_path.exists()
     # Add timestamp to participant_info as the first key
@@ -93,7 +92,7 @@ def read_last_participant(file_path=PARTICIPANTS_FILE) -> dict:
     if today not in last_participant_info["timestamp"]:
         logger.warning("Participant ID is not from today.")
 
-    last_participant_info.pop("timestamp")
+    last_participant_info.pop("timestamp")  # new timestamp is added when the participant is added
     return last_participant_info
 
 

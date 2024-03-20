@@ -20,7 +20,7 @@ from src.experiments.measurement.pop_ups import (
 )
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 from src.experiments.measurement.visual_analogue_scale import VisualAnalogueScale
-from src.experiments.participant_data import add_participant_info, read_last_participant
+from src.experiments.participant_data import add_participant_info, read_last_participant, PARTICIPANTS_FILE
 from src.experiments.thermoino import ThermoinoComplexTimeCourses
 from src.experiments.utils import (
     load_configuration,
@@ -98,10 +98,7 @@ if args.dummy_stimulus:
 if args.dummy_participant:
     logging.debug("Using dummy participant data.")
     read_last_participant = lambda x: config["dummy_participant"]  # noqa: E731
-if args.dummy_thermoino:
-    logging.debug("Using dummy Thermoino device.")
 if args.dummy_imotions:
-    logging.debug("Using dummy iMotions.")
     ask_for_eyetracker_calibration = (  # noqa: E731
         lambda: logging.debug(
             "Skip asking for eye-tracker calibration because of dummy iMotions."
@@ -253,7 +250,7 @@ def main():
         # Correlation check for reward
         data_points = pd.DataFrame(imotions_event.data_points)
         data_points.set_index("timestamp", inplace=True)
-        correlation = data_points.corr()["temperature"]["rating"]
+        correlation = round(data_points.corr()["temperature"]["rating"], 2)
         correlations.append(correlation)
         logging.info(f"Correlation between temperature and rating: {correlation:.2f}.")
         if correlation > 0.6:
@@ -262,7 +259,7 @@ def main():
             SCRIPT["reward"].present()
             exp.clock.wait_seconds(2.5)
         elif correlation < 0.3 or np.isnan(correlation):
-            logging.warning(
+            logging.error(
                 "Correlation is too low. Is the participant paying attention?"
             )
         imotions_event.clear_data_points()
@@ -276,9 +273,10 @@ def main():
         exp.keyboard.wait(K_SPACE)
 
     # Save participant data
-    participant_info["reward"] = reward
-    participant_info["correlations"] = correlations
-    add_participant_info(RUN_DIR / "measurement.csv", participant_info)
+    participant_info_ = read_last_participant(PARTICIPANTS_FILE)  # reload to remove calibration data
+    participant_info_["correlations"] = correlations
+    participant_info_["reward"] = reward
+    add_participant_info(RUN_DIR / "measurement.csv", participant_info_)
 
     # End of Experiment
     SCRIPT["bye"].present()

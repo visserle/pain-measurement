@@ -95,7 +95,7 @@ def ask_for_measurement_start() -> bool:
         "MMS Trigger-bereit?",
         "iMotions' Kalibrierung bestätigt?",
         "Sensor Preview geöffnet?",
-        "Signale überprüft (PPG, EDA, etc.)?",
+        "Signale überprüft (PPG, EDA, Eyetracking)?",
     ]
     root = tk.Tk()
     root.withdraw()
