@@ -9,10 +9,10 @@ from src.helpers import center_tk_window
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
-PARTICIPANTS_PATH = Path("runs/experiments/participants.csv")
+PARTICIPANTS_FILE = Path("runs/experiments/participants.csv")
 
 
-def ask_for_participant_info(file_path: Path = PARTICIPANTS_PATH) -> dict:
+def ask_for_participant_info(file_path: Path = PARTICIPANTS_FILE) -> dict:
     root = tk.Tk()
     root.withdraw()
     app = ParticipantDataApp(root)
@@ -69,7 +69,7 @@ def add_participant_info(file_path: Path, participant_info: dict):
         logger.debug(f"Added participant {participant_info_dict['id']} to {file_path}.")
 
 
-def read_last_participant(file_path=PARTICIPANTS_PATH) -> dict:
+def read_last_participant(file_path=PARTICIPANTS_FILE) -> dict:
     """
     Returns information about the last participant from the participants.csv file without the timestamp.
     """
@@ -80,12 +80,12 @@ def read_last_participant(file_path=PARTICIPANTS_PATH) -> dict:
             last_participant_info = row
 
     if not last_participant_info:
-        logger.warning("No participants found in the file.")
+        logger.warning(f"No participants found in the file {file_path}.")
         return {}
 
     last_participant_info["id"] = int(last_participant_info["id"])
     logger.debug(
-        f"Participant {last_participant_info['id']} ({last_participant_info['timestamp']}) loaded."
+        f"Participant {last_participant_info['id']} ({last_participant_info['timestamp']}) loaded from {file_path}."
     )
 
     # Check if the participant data is from today
@@ -177,12 +177,18 @@ class ParticipantDataApp:
         }
 
 
+def main():
+    """
+    Add a participant to the main participants.csv file.
+    """
+    participant_info = ask_for_participant_info(PARTICIPANTS_FILE)
+    if participant_info:
+        add_participant_info(PARTICIPANTS_FILE, participant_info)
+
+
 if __name__ == "__main__":
     from src.log_config import configure_logging
 
     configure_logging()
 
-    participant_info = ask_for_participant_info(PARTICIPANTS_PATH)
-    if participant_info:
-        add_participant_info(PARTICIPANTS_PATH, participant_info)
-        print(f"Participant {participant_info['id']} added to {PARTICIPANTS_PATH}.")
+    main()

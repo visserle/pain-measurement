@@ -21,6 +21,7 @@ from src.experiments.questionnaires.evaluation import (
 )
 from src.log_config import configure_logging
 
+LOG_DIR = Path("runs/experiments/questionnaires/")
 INVENTORY_DIR = Path("src/experiments/questionnaires/inventory/")
 QUESTIONNAIRES = [
     "general",  # without scoring
@@ -58,12 +59,10 @@ questionnaires = args.questionnaire
 app = Flask(__name__)
 
 # Configure logging
-LOG_DIR = Path("runs/experiments/questionnaires/")
-LOG_DIR.mkdir(parents=True, exist_ok=True)
 log_file = LOG_DIR / datetime.now().strftime(r"%Y_%m_%d__%H_%M_%S.log")
 configure_logging(
-    stream_level=logging.DEBUG,
-    file_path=log_file,
+    stream_level=logging.INFO if not args.debug else logging.DEBUG,
+    file_path=log_file if not args.debug else None,
     ignore_libs=["werkzeug", "urllib3", "requests"],
 )
 
@@ -158,7 +157,7 @@ def trigger_shutdown():
 
 def main():
     logging.info(
-        f"Running questionnaire app with the following questionnaires: {questionnaires.upper()}"
+        f"Running questionnaire app with the following questionnaires: {list(map(str.upper, questionnaires))}"
     )
     webbrowser.open_new("http://localhost:5000")
     app.run(debug=args.debug)
