@@ -1,12 +1,8 @@
-import logging
 import re
 
 import toml
 import yaml
 from expyriment.stimuli import TextBox
-
-logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
-
 
 BASE_SCREEN_SIZE = (1920, 1200)
 
