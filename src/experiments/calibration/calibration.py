@@ -282,7 +282,7 @@ def main():
     thermoino.close()
     add_participant_info(PARTICIPANTS_PATH, participant_info)
     logging.info("Calibration successfully finished.")
-    close_root_logging()
+    sys.exit(0)
 
 
 if __name__ == "__main__":

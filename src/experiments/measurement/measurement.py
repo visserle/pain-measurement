@@ -1,6 +1,7 @@
 import argparse
 import logging
 import random
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -249,7 +250,7 @@ def main():
             SCRIPT["reward"].present()
             exp.clock.wait_seconds(2.5)
         elif corr < 0.3 or np.isnan(corr):
-            logging.error(
+            logging.warning(
                 "Correlation is too low. Is the participant paying attention?"
             )
         imotions_event.clear_data_points()
@@ -264,15 +265,15 @@ def main():
 
     # End of Experiment
     SCRIPT["bye"].present()
-    exp.keyboard.wait(K_SPACE)
+    exp.clock.wait_seconds(3)
 
     control.end()
     imotions_control.end_study()
     for instance in [thermoino, imotions_event, imotions_control]:
         instance.close()
-    logging.info("Experiment finished. Good job!")
+    logging.info("Experiment finished.")
     logging.info(f"Participant reward: {reward} €.")
-    close_root_logging()
+    sys.exit(0)
 
 
 if __name__ == "__main__":
