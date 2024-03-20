@@ -1,17 +1,18 @@
 import argparse
 import logging
+import os
+import signal
+import threading
 import webbrowser
 from datetime import datetime
 from pathlib import Path
 
 import markdown
+import requests
 import yaml
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, after_this_request, redirect, render_template, request, url_for
 
 from src.experiments.participant_data import (
-    PARTICIPANTS_PATH,
-    add_participant_info,
-    ask_for_participant_info,
     read_last_participant,
 )
 from src.experiments.questionnaires.evaluation import (
@@ -45,13 +46,6 @@ parser.add_argument(
     help=f"Select the questionnaires to run: {', '.join(QUESTIONNAIRES)}.",
 )
 parser.add_argument(
-    "-new",
-    "--new_participant",
-    action="store_true",
-    help="Create a new participant entry in the main participants.csv file.",
-)
-
-parser.add_argument(
     "-d",
     "--debug",
     action="store_true",
@@ -68,15 +62,14 @@ LOG_DIR = Path("runs/experiments/questionnaires/")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 log_file = LOG_DIR / datetime.now().strftime(r"%Y_%m_%d__%H_%M_%S.log")
 configure_logging(
-    stream_level=logging.DEBUG, file_path=log_file, ignore_libs=["werkzeug"]
+    stream_level=logging.DEBUG,
+    file_path=log_file,
+    ignore_libs=["werkzeug", "urllib3", "requests"],
 )
 
-if args.new_participant and not args.debug:
-    participant_info = ask_for_participant_info(PARTICIPANTS_PATH)
-    add_participant_info(PARTICIPANTS_PATH, participant_info)
-elif not args.debug:
-    participant_info = read_last_participant()
-else:
+# Load participant data
+participant_info = read_last_participant()
+if args.debug:
     logging.warning("Debug mode is enabled. Participant data will not be saved.")
 
 
@@ -138,14 +131,35 @@ def questionnaire_handler(scale):
 @app.route("/thanks")
 def thanks():
     logging.info("Completed all questionnaires.")
+    trigger_shutdown()
+
     return render_template(
         "thanks.html.j2",
         text="Vielen Dank für das Ausfüllen der Fragebögen!",
     )
 
 
+@app.route("/shutdown")
+def shutdown():
+    os.kill(os.getpid(), signal.SIGINT)
+    return "Server shutting down..."
+
+
+def trigger_shutdown():
+    @after_this_request
+    def shutdown(response):
+        threading.Timer(
+            0.5, lambda: requests.get("http://localhost:5000/shutdown")
+        ).start()
+        return response
+
+    return ""
+
+
 def main():
-    logging.info(f"Running the app with the following questionnaires: {questionnaires}")
+    logging.info(
+        f"Running questionnaire app with the following questionnaires: {questionnaires.upper()}"
+    )
     webbrowser.open_new("http://localhost:5000")
     app.run(debug=args.debug)
     # NOTE: possible to deploy to web via docker: https://www.youtube.com/watch?v=cw34KMPSt4k
