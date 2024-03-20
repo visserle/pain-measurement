@@ -22,7 +22,7 @@ from src.experiments.utils import (
     scale_1d_value,
     scale_2d_tuple,
 )
-from src.log_config import close_root_logging, configure_logging
+from src.log_config import configure_logging
 
 # Constants
 EXP_NAME = "pain-calibration"
@@ -30,7 +30,8 @@ EXP_DIR = Path("src/experiments/calibration")
 SCRIPT_PATH = EXP_DIR / "calibration_script.yaml"
 CONFIG_PATH = EXP_DIR / "calibration_config.toml"
 THERMOINO_CONFIG_PATH = EXP_DIR.parent / "thermoino_config.toml"
-LOG_DIR = Path("runs/experiments/calibration/logs/")
+RUN_DIR = Path("runs/experiments/calibration/")
+LOG_DIR = RUN_DIR / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 CALIBRATION_DATA_PATH = LOG_DIR.parent / "calibration.csv"
 
@@ -272,7 +273,9 @@ def main():
     participant_info["temperature_range"] = round(
         participant_info["vas70"] - participant_info["vas0"], 1
     )
-    add_participant_info(CALIBRATION_DATA_PATH, participant_info)
+    participant_info["vas70_temps"] = estimator_vas70.temps
+    participant_info["vas0_temps"] = estimator_vas0.temps
+    add_participant_info(RUN_DIR, participant_info)
 
     # End of Experiment
     SCRIPT["bye"].present()
@@ -280,7 +283,7 @@ def main():
 
     control.end()
     thermoino.close()
-    add_participant_info(PARTICIPANTS_PATH, participant_info)
+    add_participant_info(RUN_DIR / "calibration.csv", participant_info)
     logging.info("Calibration successfully finished.")
     sys.exit(0)
 

@@ -20,9 +20,7 @@ from src.experiments.measurement.pop_ups import (
 )
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 from src.experiments.measurement.visual_analogue_scale import VisualAnalogueScale
-from src.experiments.participant_data import (
-    read_last_participant,
-)
+from src.experiments.participant_data import add_participant_info, read_last_participant
 from src.experiments.thermoino import ThermoinoComplexTimeCourses
 from src.experiments.utils import (
     load_configuration,
@@ -31,7 +29,7 @@ from src.experiments.utils import (
     scale_1d_value,
     scale_2d_tuple,
 )
-from src.log_config import close_root_logging, configure_logging
+from src.log_config import configure_logging
 
 # Constants
 EXP_NAME = "pain-measurement"
@@ -39,7 +37,8 @@ EXP_DIR = Path("src/experiments/measurement")
 SCRIPT_PATH = EXP_DIR / "measurement_script.yaml"
 CONFIG_PATH = EXP_DIR / "measurement_config.toml"
 THERMOINO_CONFIG_PATH = EXP_DIR.parent / "thermoino_config.toml"
-LOG_DIR = Path("runs/experiments/measurement/logs")
+RUN_DIR = Path("runs/experiments/measurement")
+LOG_DIR = RUN_DIR / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 CALIBRATION_DATA_PATH = Path("runs/experiments/calibration/calibration.csv")
 
@@ -194,6 +193,7 @@ def main():
 
     # Trial loop
     total_trials = len(STIMULUS["seeds"])
+    correlations = []
     for trial, seed in enumerate(STIMULUS["seeds"]):
         logging.info(f"Started trial ({trial + 1}/{total_trials}) with seed {seed}.")
 
@@ -242,14 +242,15 @@ def main():
         # Correlation check for reward
         data_points = pd.DataFrame(imotions_event.data_points)
         data_points.set_index("timestamp", inplace=True)
-        corr = data_points.corr()["temperature"]["rating"]
-        logging.info(f"Correlation between temperature and rating: {corr:.2f}.")
-        if corr > 0.6:
+        correlation = data_points.corr()["temperature"]["rating"]
+        correlations.append(correlation)
+        logging.info(f"Correlation between temperature and rating: {correlation:.2f}.")
+        if correlation > 0.6:
             reward += 1
             logging.debug("Rewarding participant.")
             SCRIPT["reward"].present()
             exp.clock.wait_seconds(2.5)
-        elif corr < 0.3 or np.isnan(corr):
+        elif correlation < 0.3 or np.isnan(correlation):
             logging.warning(
                 "Correlation is too low. Is the participant paying attention?"
             )
@@ -262,6 +263,11 @@ def main():
         exp.keyboard.wait(K_SPACE)
         SCRIPT["approve"].present()
         exp.keyboard.wait(K_SPACE)
+
+    # Save participant data
+    participant_info["reward"] = reward
+    participant_info["correlations"] = correlations
+    add_participant_info(RUN_DIR / "measurement.csv", participant_info)
 
     # End of Experiment
     SCRIPT["bye"].present()
