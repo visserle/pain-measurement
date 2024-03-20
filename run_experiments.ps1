@@ -1,4 +1,12 @@
-﻿if ($IsWindows) {
+﻿# Check for PowerShell version 6.0 or higher
+if ($PSVersionTable.PSVersion.Major -lt 6) {
+    Write-Host "Error: This script requires PowerShell version 6.0 or higher."
+    Read-Host
+    exit
+}
+
+# Initialize Conda environment
+if ($IsWindows) {
     # Windows specific Conda initialization
     $condaPath = "C:\mamba"
     & "$condaPath\shell\condabin\conda-hook.ps1"
@@ -6,7 +14,7 @@
     # & "$condaPath\Scripts\activate.ps1"
     conda activate pain
 } elseif ($IsMacOS) {
-    # macOS specific Conda initialization (only used for development without iMotions)
+    # macOS specific Conda initialization (only used for development without iMotions and the respective dummy_imotions flag)
     $condaPath = "$HOME/miniforge3"
     # Use bash to activate the environment and get the Python path
     $pythonPath = /bin/bash -c "source '$condaPath/bin/activate' pain; which python"
@@ -46,21 +54,23 @@ Write-Host "Press [Enter] to continue with the calibration..."
 Read-Host
 
 Write-Host "2. Pain Calibration"
-python -m src.experiments.calibration.calibration -f
+python -m src.experiments.calibration.calibration
 Write-Host "Press [Enter] to continue with the measurement..."
 Read-Host
 
 Write-Host "3. Pain Measurement"
-python -m src.experiments.measurement.measurement -f
+python -m src.experiments.measurement.measurement
 Write-Host "Press [Enter] to continue with the questionnaires..."
 Read-Host
 
 Write-Host "4. Post-Experiment Questionnaires"
 python -m src.experiments.questionnaires.app panas maia-2 pcs pvaq lot-r bdi-ii brs stai-t-10 erq maas
 
+# Print the completion message
 Write-Host "Experiment completed."
 Write-Host ""
 Write-Host "╔═════════════════════════════════════════════════════════════════════════════╗"
+Write-Host "║                                                                             ║"
 Write-Host "║                                                                             ║"
 Write-Host "║                                                                             ║"
 Write-Host "║    ██████╗  ██████╗  ██████╗ ██████╗          ██╗ ██████╗ ██████╗     ██╗   ║"
@@ -69,6 +79,7 @@ Write-Host "║   ██║  ███╗██║   ██║██║   ██
 Write-Host "║   ██║   ██║██║   ██║██║   ██║██║  ██║    ██   ██║██║   ██║██╔══██╗    ╚═╝   ║"
 Write-Host "║   ╚██████╔╝╚██████╔╝╚██████╔╝██████╔╝    ╚█████╔╝╚██████╔╝██████╔╝    ██╗   ║"
 Write-Host "║    ╚═════╝  ╚═════╝  ╚═════╝ ╚═════╝      ╚════╝  ╚═════╝ ╚═════╝     ╚═╝   ║"
+Write-Host "║                                                                             ║"
 Write-Host "║                                                                             ║"
 Write-Host "║                                                                             ║"
 Write-Host "╚═════════════════════════════════════════════════════════════════════════════╝"
