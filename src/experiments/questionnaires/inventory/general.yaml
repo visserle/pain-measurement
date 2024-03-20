@@ -151,8 +151,6 @@ questions:
         text: "Selten"
       - score: "Never"
         text: "Nie"
-      - score: "Prefer not to say"
-        text: "Möchte ich nicht angeben"
   - id: "meditation"
     text: "Meditieren Sie regelmäßig?"
     type: "select"
@@ -175,5 +173,4 @@ questions:
         text: "Eher ungesund"
       - score: "Very unhealthy"
         text: "Sehr ungesund"
-      - score: "Prefer not to say"
-        text: "Möchte ich nicht angeben"
+
