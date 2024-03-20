@@ -135,8 +135,8 @@ class BayesianEstimatorVAS:
             raise ValueError(
                 "int(temp_std) must be 0, 1, 2, or 3 (or add more cases for other ranges)."
             )
-        self.min_temp = int(self.temp_start - range_width)
-        self.max_temp = int(self.temp_start + range_width)
+        self.min_temp = self.temp_start - range_width
+        self.max_temp = self.temp_start + range_width
         num = int((self.max_temp - self.min_temp) / 0.1) + 1
         self.range_temp = np.linspace(self.min_temp, self.max_temp, num)
 
