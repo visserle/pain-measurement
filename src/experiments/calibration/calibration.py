@@ -10,7 +10,7 @@ from expyriment.misc.constants import C_DARKGREY, K_SPACE, K_n, K_y
 
 from src.experiments.calibration.estimator import BayesianEstimatorVAS
 from src.experiments.participant_data import (
-    PARTICIPANTS_PATH,
+    PARTICIPANTS_FILE,
     add_participant_info,
     read_last_participant,
 )
@@ -24,25 +24,22 @@ from src.experiments.utils import (
 )
 from src.log_config import configure_logging
 
-# Constants
+# Paths
 EXP_NAME = "pain-calibration"
 EXP_DIR = Path("src/experiments/calibration")
-SCRIPT_PATH = EXP_DIR / "calibration_script.yaml"
-CONFIG_PATH = EXP_DIR / "calibration_config.toml"
-THERMOINO_CONFIG_PATH = EXP_DIR.parent / "thermoino_config.toml"
-RUN_DIR = Path("runs/experiments/calibration/")
+RUN_DIR = Path("runs/experiments/calibration")
 LOG_DIR = RUN_DIR / "logs"
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-CALIBRATION_DATA_PATH = LOG_DIR.parent / "calibration.csv"
 
-# Configure logging
+SCRIPT_FILE = EXP_DIR / "calibration_script.yaml"
+CONFIG_FILE = EXP_DIR / "calibration_config.toml"
+THERMOINO_CONFIG_FILE = EXP_DIR.parent / "thermoino_config.toml"
+CALIBRATION_RUN_FILE = RUN_DIR / "calibration.csv"
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
-configure_logging(stream_level=logging.INFO, file_path=log_file)
 
 # Load configurations and script
-config = load_configuration(CONFIG_PATH)
-SCRIPT = load_script(SCRIPT_PATH)
-THERMOINO = load_configuration(THERMOINO_CONFIG_PATH)
+config = load_configuration(CONFIG_FILE)
+SCRIPT = load_script(SCRIPT_FILE)
+THERMOINO = load_configuration(THERMOINO_CONFIG_FILE)
 EXPERIMENT = config["experiment"]
 ESTIMATOR = config["estimator"]
 STIMULUS = config["stimulus"]
@@ -66,6 +63,12 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+# Configure logging
+configure_logging(
+    stream_level=logging.INFO if not (args.debug or args.all) else logging.DEBUG,
+    file_path=log_file if not (args.debug or args.all) else None,
+    )
+
 # Adjust settings
 if args.all:
     logging.debug("Using all flags for a dry run.")
@@ -74,7 +77,7 @@ if args.all:
 if args.debug or args.windowed:
     control.set_develop_mode(True)
 if args.debug:
-    configure_logging(stream_level=logging.DEBUG)
+    configure_logging(stream_level=logging.DEBUG, file_path=log_file)
     logging.debug("Enabled debug mode.")
 if args.windowed:
     logging.debug("Running in windowed mode.")
@@ -104,7 +107,7 @@ io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 
 # Experiment setup
-participant_info = read_last_participant(PARTICIPANTS_PATH)
+participant_info = read_last_participant(PARTICIPANTS_FILE)
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
@@ -281,7 +284,7 @@ def main():
     )
     participant_info["vas70_temps"] = estimator_vas70.temps
     participant_info["vas0_temps"] = estimator_vas0.temps
-    add_participant_info(RUN_DIR, participant_info)
+    add_participant_info(CALIBRATION_RUN_FILE, participant_info)
 
     # End of Experiment
     SCRIPT["bye"].present()
@@ -289,7 +292,6 @@ def main():
 
     control.end()
     thermoino.close()
-    add_participant_info(RUN_DIR / "calibration.csv", participant_info)
     logging.info("Calibration successfully finished.")
     sys.exit(0)
 
