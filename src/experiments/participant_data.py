@@ -12,7 +12,60 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 PARTICIPANTS_FILE = Path("runs/experiments/participants.csv")  # main participants file
 
 
+def add_participant_info(participant_info: dict, file_path: Path = PARTICIPANTS_FILE):
+    """
+    Add a participant to the participants file with a timestamp.
+    """
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    # Check if the file exists and has content; if not, write headers
+    file_exists = file_path.exists()
+    # Add timestamp to participant_info as the first key
+    participant_info_dict = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+    participant_info_dict.update(participant_info)
+    with open(file_path, mode="a+", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=participant_info_dict.keys())
+
+        if not file_exists:
+            writer.writeheader()
+
+        writer.writerow(participant_info_dict)
+        logger.debug(f"Added participant {participant_info_dict['id']} to {file_path}.")
+
+
+def read_last_participant(file_path=PARTICIPANTS_FILE) -> dict:
+    """
+    Return information about the last participant from the participants file without the timestamp.
+    """
+    last_participant_info = {}
+    with open(file_path, mode="r", newline="") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            last_participant_info = row
+
+    if not last_participant_info:
+        logger.warning(f"No participants found in the file {file_path}.")
+        return {}
+
+    last_participant_info["id"] = int(last_participant_info["id"])
+    logger.debug(
+        f"Participant {last_participant_info['id']} ({last_participant_info['timestamp']}) loaded from {file_path}."
+    )
+
+    # Check if the participant data is from today
+    today = datetime.now().strftime("%Y-%m-%d")
+    if today not in last_participant_info["timestamp"]:
+        logger.warning("Participant ID is not from today.")
+
+    last_participant_info.pop(
+        "timestamp"
+    )  # new timestamp is added when the participant is added
+    return last_participant_info
+
+
 def ask_for_participant_info(file_path: Path = PARTICIPANTS_FILE) -> dict:
+    """
+    Ask for basic participant information using a simple GUI.
+    """
     root = tk.Tk()
     root.withdraw()
     app = ParticipantDataApp(root)
@@ -46,56 +99,6 @@ def _participant_exists(participant_id: str, file_path: Path) -> bool:
                 )
         return True
     return False
-
-
-def add_participant_info(participant_info: dict, file_path: Path = PARTICIPANTS_FILE):
-    """
-    Add a participant to the participants file with a timestamp.
-    """
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    # Check if the file exists and has content; if not, write headers
-    file_exists = file_path.exists()
-    # Add timestamp to participant_info as the first key
-    participant_info_dict = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-    participant_info_dict.update(participant_info)
-    with open(file_path, mode="a+", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=participant_info_dict.keys())
-
-        if not file_exists:
-            writer.writeheader()
-
-        writer.writerow(participant_info_dict)
-        logger.debug(f"Added participant {participant_info_dict['id']} to {file_path}.")
-
-
-def read_last_participant(file_path=PARTICIPANTS_FILE) -> dict:
-    """
-    Returns information about the last participant from the participants file without the timestamp.
-    """
-    last_participant_info = {}
-    with open(file_path, mode="r", newline="") as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            last_participant_info = row
-
-    if not last_participant_info:
-        logger.warning(f"No participants found in the file {file_path}.")
-        return {}
-
-    last_participant_info["id"] = int(last_participant_info["id"])
-    logger.debug(
-        f"Participant {last_participant_info['id']} ({last_participant_info['timestamp']}) loaded from {file_path}."
-    )
-
-    # Check if the participant data is from today
-    today = datetime.now().strftime("%Y-%m-%d")
-    if today not in last_participant_info["timestamp"]:
-        logger.warning("Participant ID is not from today.")
-
-    last_participant_info.pop(
-        "timestamp"
-    )  # new timestamp is added when the participant is added
-    return last_participant_info
 
 
 class ParticipantDataApp:
