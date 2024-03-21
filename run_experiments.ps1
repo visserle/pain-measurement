@@ -1,6 +1,6 @@
 ﻿# Check for PowerShell version 6.0 or higher
 if ($PSVersionTable.PSVersion.Major -lt 6) {
-    Write-Host "Error: This script requires PowerShell version 6.0 or higher."
+    Write-Host "Please install PowerShell 6.0 or higher to run this script."
     Read-Host
     exit
 }
@@ -8,7 +8,7 @@ if ($PSVersionTable.PSVersion.Major -lt 6) {
 # Initialize Conda environment
 if ($IsWindows) {
     # Windows specific Conda initialization
-    $condaPath = "C:\mamba"
+    $condaPath = "C:\mamba"  # Change this to the path of your Conda installation
     & "$condaPath\shell\condabin\conda-hook.ps1"
     # Depending on the Conda setup you might need this instead to initialize Conda
     # & "$condaPath\Scripts\activate.ps1"
