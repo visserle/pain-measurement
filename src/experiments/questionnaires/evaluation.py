@@ -73,4 +73,4 @@ def save_results(participant_info, scale, questionnaire, answers, score):
             for question in questionnaire["questions"]
         }
     )
-    add_participant_info(filename, local_participant_info)
+    add_participant_info(local_participant_info, filename)

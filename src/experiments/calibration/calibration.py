@@ -10,7 +10,6 @@ from expyriment.misc.constants import C_DARKGREY, K_SPACE, K_n, K_y
 
 from src.experiments.calibration.estimator import BayesianEstimatorVAS
 from src.experiments.participant_data import (
-    PARTICIPANTS_FILE,
     add_participant_info,
     read_last_participant,
 )
@@ -67,7 +66,7 @@ args = parser.parse_args()
 configure_logging(
     stream_level=logging.INFO if not (args.debug or args.all) else logging.DEBUG,
     file_path=log_file if not (args.debug or args.all) else None,
-    )
+)
 
 # Adjust settings
 if args.all:
@@ -91,7 +90,7 @@ if args.dummy_stimulus:
     ESTIMATOR["trials_vas0"] = 2
 if args.dummy_participant:
     logging.debug("Using dummy participant data.")
-    read_last_participant = lambda x: config["dummy_participant"]  # noqa: E731
+    read_last_participant = lambda: config["dummy_participant"]  # noqa: E731
     add_participant_info = lambda *args, **kwargs: None  # noqa: E731
 
 # Expyriment defaults
@@ -105,7 +104,7 @@ io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 
 # Experiment setup
-participant_info = read_last_participant(PARTICIPANTS_FILE)
+participant_info = read_last_participant()
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
@@ -284,7 +283,7 @@ def main():
     )
     participant_info["vas70_temps"] = estimator_vas70.temps
     participant_info["vas0_temps"] = estimator_vas0.temps
-    add_participant_info(CALIBRATION_RUN_FILE, participant_info)
+    add_participant_info(participant_info, CALIBRATION_RUN_FILE)
 
     # End of Experiment
     SCRIPT["bye"].present()

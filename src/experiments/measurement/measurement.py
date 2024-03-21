@@ -1,3 +1,6 @@
+# TODO
+# data export
+
 import argparse
 import logging
 import random
@@ -20,7 +23,10 @@ from src.experiments.measurement.pop_ups import (
 )
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 from src.experiments.measurement.visual_analogue_scale import VisualAnalogueScale
-from src.experiments.participant_data import add_participant_info, read_last_participant, PARTICIPANTS_FILE
+from src.experiments.participant_data import (
+    add_participant_info,
+    read_last_participant,
+)
 from src.experiments.thermoino import ThermoinoComplexTimeCourses
 from src.experiments.utils import (
     load_configuration,
@@ -78,7 +84,7 @@ args = parser.parse_args()
 configure_logging(
     stream_level=logging.INFO if not (args.debug or args.all) else logging.DEBUG,
     file_path=log_file if not (args.debug or args.all) else None,
-    )
+)
 
 # Adjust settings
 if args.all:
@@ -179,7 +185,7 @@ def main():
     # Start experiment
     reward = 0
     control.start(skip_ready_screen=True, subject_id=participant_info["id"])
-    logging.info(f"Started experiment with seed order {STIMULUS['seeds']}.")
+    logging.info(f"Started measurement with seed order {STIMULUS['seeds']}.")
 
     # Introduction
     for text in SCRIPT["welcome"].values():
@@ -273,10 +279,10 @@ def main():
         exp.keyboard.wait(K_SPACE)
 
     # Save participant data
-    participant_info_ = read_last_participant(PARTICIPANTS_FILE)  # reload to remove calibration data
+    participant_info_ = read_last_participant()  # reload to remove calibration data
     participant_info_["correlations"] = correlations
     participant_info_["reward"] = reward
-    add_participant_info(RUN_DIR / "measurement.csv", participant_info_)
+    add_participant_info(participant_info_, RUN_DIR / "measurement.csv")
 
     # End of Experiment
     SCRIPT["bye"].present()
@@ -286,7 +292,7 @@ def main():
     imotions_control.end_study()
     for instance in [thermoino, imotions_event, imotions_control]:
         instance.close()
-    logging.info("Experiment finished.")
+    logging.info("Measurement successfully finished.")
     logging.info(f"Participant reward: {reward} €.")
     sys.exit(0)
 

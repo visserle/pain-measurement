@@ -22,7 +22,7 @@ def ask_for_participant_info(file_path: Path = PARTICIPANTS_FILE) -> dict:
 
     if app.participant_info:
         participant_info = app.participant_info
-        _participant_exists(file_path, participant_info["id"])
+        _participant_exists(participant_info["id"], file_path)
         logger.info(f"Participant ID: {participant_info['id']}")
         logger.info(f"Participant Age: {participant_info['age']}")
         logger.info(f"Participant Gender: {participant_info['gender']}")
@@ -31,7 +31,7 @@ def ask_for_participant_info(file_path: Path = PARTICIPANTS_FILE) -> dict:
     return None
 
 
-def _participant_exists(file_path: Path, participant_id: str) -> bool:
+def _participant_exists(participant_id: str, file_path: Path) -> bool:
     """
     Check if a participant with the given ID already exists in the CSV file.
     """
@@ -48,7 +48,7 @@ def _participant_exists(file_path: Path, participant_id: str) -> bool:
     return False
 
 
-def add_participant_info(file_path: Path, participant_info: dict):
+def add_participant_info(participant_info: dict, file_path: Path = PARTICIPANTS_FILE):
     """
     Add a participant to the participants.csv file with a timestamp.
     """
@@ -92,7 +92,9 @@ def read_last_participant(file_path=PARTICIPANTS_FILE) -> dict:
     if today not in last_participant_info["timestamp"]:
         logger.warning("Participant ID is not from today.")
 
-    last_participant_info.pop("timestamp")  # new timestamp is added when the participant is added
+    last_participant_info.pop(
+        "timestamp"
+    )  # new timestamp is added when the participant is added
     return last_participant_info
 
 
