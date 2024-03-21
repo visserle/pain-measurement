@@ -1,6 +1,3 @@
-# TODO
-# data export
-
 import argparse
 import logging
 import random
@@ -40,13 +37,14 @@ from src.log_config import configure_logging
 # Paths
 EXP_NAME = "pain-measurement"
 EXP_DIR = Path("src/experiments/measurement")
+DATA_DIR = Path("data/imotions")
 RUN_DIR = Path("runs/experiments/measurement")
 LOG_DIR = RUN_DIR / "logs"
 
 SCRIPT_FILE = EXP_DIR / "measurement_script.yaml"
 CONFIG_FILE = EXP_DIR / "measurement_config.toml"
 THERMOINO_CONFIG_FILE = EXP_DIR.parent / "thermoino_config.toml"
-MEASURRMENT_RUN_FILE = RUN_DIR / "measurement.csv"
+MEASUREMENT_RUN_FILE = RUN_DIR / "measurement.csv"
 CALIBRATION_RUN_FILE = Path("runs/experiments/calibration/calibration.csv")
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
 
@@ -114,7 +112,6 @@ if args.dummy_imotions:
     ask_for_measurement_start = lambda: logging.debug(  # noqa: E731
         "Skip asking for measurement start because of dummy iMotions."
     )
-
 
 # Expyriment defaults
 design.defaults.experiment_background_colour = C_DARKGREY
@@ -282,7 +279,7 @@ def main():
     participant_info_ = read_last_participant()  # reload to remove calibration data
     participant_info_["correlations"] = correlations
     participant_info_["reward"] = reward
-    add_participant_info(participant_info_, RUN_DIR / "measurement.csv")
+    add_participant_info(participant_info_, MEASUREMENT_RUN_FILE)
 
     # End of Experiment
     SCRIPT["bye"].present()
@@ -290,6 +287,7 @@ def main():
 
     control.end()
     imotions_control.end_study()
+    imotions_control.export_data(DATA_DIR)
     for instance in [thermoino, imotions_event, imotions_control]:
         instance.close()
     logging.info("Measurement successfully finished.")

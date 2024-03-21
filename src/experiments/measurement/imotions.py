@@ -1,7 +1,4 @@
-# work in progress
-
 # TODO
-# - add export data function, p. 34 onwards for experiment2
 # - update doc strings
 
 import itertools
@@ -9,6 +6,7 @@ import logging
 import socket
 import time
 from collections import namedtuple
+from pathlib import Path
 
 from src.experiments.measurement.rate_limiter import RateLimiter
 
@@ -200,11 +198,17 @@ class RemoteControliMotions:
             self.study,
         )
 
-    def export_data(self, path):
+    def export_data(self, dir_path: Path):
+        dir_path.mkdir(parents=True, exist_ok=True)
+        # TODO: maybe we need to change msg version? p.34
+        # NOTE TODO: affdex post processing available
         logger.debug(
-            "Exported data for participant %s to %s", self.participant_info["id"], path
+            "Export data for participant %s to %s",
+            self.participant_info["id"],
+            dir_path,
         )
-        pass
+        export_query = f"R;1;;EXPORTSENSORDATA;;{self.study};{self.participant_info['id']};{dir_path}\r\n"
+        self._send_and_receive(export_query)
 
     def close(self):
         try:
