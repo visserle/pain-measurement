@@ -9,7 +9,7 @@ from src.helpers import center_tk_window
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
-PARTICIPANTS_FILE = Path("runs/experiments/participants.csv")
+PARTICIPANTS_FILE = Path("runs/experiments/participants.csv")  # main participants file
 
 
 def ask_for_participant_info(file_path: Path = PARTICIPANTS_FILE) -> dict:
@@ -50,7 +50,7 @@ def _participant_exists(participant_id: str, file_path: Path) -> bool:
 
 def add_participant_info(participant_info: dict, file_path: Path = PARTICIPANTS_FILE):
     """
-    Add a participant to the participants.csv file with a timestamp.
+    Add a participant to the participants file with a timestamp.
     """
     file_path.parent.mkdir(parents=True, exist_ok=True)
     # Check if the file exists and has content; if not, write headers
@@ -70,7 +70,7 @@ def add_participant_info(participant_info: dict, file_path: Path = PARTICIPANTS_
 
 def read_last_participant(file_path=PARTICIPANTS_FILE) -> dict:
     """
-    Returns information about the last participant from the participants.csv file without the timestamp.
+    Returns information about the last participant from the participants file without the timestamp.
     """
     last_participant_info = {}
     with open(file_path, mode="r", newline="") as file:
@@ -182,9 +182,9 @@ def main():
     """
     Add a participant to the main participants.csv file.
     """
-    participant_info = ask_for_participant_info(PARTICIPANTS_FILE)
+    participant_info = ask_for_participant_info()
     if participant_info:
-        add_participant_info(PARTICIPANTS_FILE, participant_info)
+        add_participant_info(participant_info)
 
 
 if __name__ == "__main__":
