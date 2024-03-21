@@ -16,7 +16,7 @@ def center_tk_window(window: tk.Tk, primary_screen: bool = False) -> tuple[int, 
 
     # Get list of monitors and sort them
     monitors = sorted(get_monitors(), key=lambda m: m.is_primary)
-    # Bools are sorted as False < True, so the non-primary monitor comes first (if available)
+    # Non-primary monitor comes first (False < True)
     if primary_screen:
         target_monitor = monitors[-1]
     else:
