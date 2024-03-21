@@ -207,7 +207,7 @@ class RemoteControliMotions:
             self.participant_info["id"],
             dir_path,
         )
-        export_query = f"R;1;;EXPORTSENSORDATA;;{self.study};{self.participant_info['id']};{dir_path}\r\n"
+        export_query = f"R;1;;EXPORTSENSORDATA;;{self.study};{self.participant_info['id']};{dir_path.resolve()}\r\n"
         self._send_and_receive(export_query)
 
     def close(self):
