@@ -65,7 +65,6 @@ configure_logging(
     ignore_libs=["werkzeug", "urllib3", "requests"],
 )
 
-
 # Load participant data
 participant_info = read_last_participant()
 if args.debug:
@@ -73,14 +72,18 @@ if args.debug:
 
 
 def load_questionnaire(scale):
-    with open(f"{INVENTORY_DIR / scale}.yaml", "r", encoding="utf-8") as file:
-        current_questionnaire = yaml.safe_load(file)
+    try:
+        with open(f"{INVENTORY_DIR / scale}.yaml", "r", encoding="utf-8") as file:
+            current_questionnaire = yaml.safe_load(file)
 
-    if "instructions" in current_questionnaire:
-        current_questionnaire["instructions"] = markdown.markdown(
-            current_questionnaire["instructions"]
-        )
-    return current_questionnaire
+        if "instructions" in current_questionnaire:
+            current_questionnaire["instructions"] = markdown.markdown(
+                current_questionnaire["instructions"]
+            )
+        return current_questionnaire
+    except FileNotFoundError:
+        logging.error(f"Questionnaire '{scale.upper()}' not found.")
+        return dict()
 
 
 @app.route("/")
@@ -113,16 +116,10 @@ def questionnaire_handler(scale):
 
     return render_template(
         f"{current_questionnaire['layout']}.html.j2",
-        title=current_questionnaire["title"],
-        instructions=current_questionnaire["instructions"]
-        if "instructions" in current_questionnaire
-        else None,
-        spectrum=current_questionnaire["spectrum"]
-        if "spectrum" in current_questionnaire
-        else None,
-        options=current_questionnaire["options"]
-        if "options" in current_questionnaire
-        else None,
+        title=current_questionnaire.get("title"),
+        instructions=current_questionnaire.get("instructions"),
+        spectrum=current_questionnaire.get("spectrum"),
+        options=current_questionnaire.get("options"),
         questions=current_questionnaire["questions"],
     )
 
