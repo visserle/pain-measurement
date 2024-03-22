@@ -1,3 +1,7 @@
+# TODO
+# - add readme
+# - upload yaml of license free questionnaires
+
 import argparse
 import logging
 import os

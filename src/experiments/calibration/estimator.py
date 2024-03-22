@@ -164,7 +164,7 @@ class BayesianEstimatorVAS:
             logger.warning("Maximum temperature of %s °C reached.", self.MAX_TEMP)
 
     @property
-    def steps(self):
+    def steps(self) -> np.ndarray:
         return np.diff(self.temps)
 
     def conduct_trial(self, response: str, trial: int) -> None:

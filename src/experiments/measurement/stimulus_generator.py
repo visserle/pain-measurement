@@ -4,7 +4,13 @@ import plotly.graph_objects as go
 import scipy
 
 
-def cosine_half_cycle(period, amplitude, y_intercept=0, t_start=0, sample_rate=10):
+def cosine_half_cycle(
+    period: float,
+    amplitude: float,
+    y_intercept: float = 0,
+    t_start: float = 0,
+    sample_rate: int = 10,
+) -> tuple[np.ndarray, np.ndarray]:
     frequency = 1 / period
     num_steps = period * sample_rate
     assert num_steps == int(num_steps), "Number of steps must be an integer"
