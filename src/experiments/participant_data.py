@@ -5,12 +5,11 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import messagebox, ttk
 
-from src.helpers import center_tk_window
+from src.experiments.utils import center_tk_window
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 PARTICIPANTS_FILE = Path("runs/experiments/participants.csv")  # main participants file
-PARTICIPANTS_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 
 def add_participant_info(participant_info: dict, file_path: Path = PARTICIPANTS_FILE):
