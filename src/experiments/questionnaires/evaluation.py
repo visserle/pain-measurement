@@ -19,8 +19,14 @@ def _extract_number(string):
 
 def score_results(scale, answers):
     score = {}
-    schema = SCORING_SCHEMAS.get(scale, {})
-    for component, questions in schema.get("components", {}).items():
+    schema = SCORING_SCHEMAS.get(scale)
+    if not schema:
+        logger.info(
+            f"No schema found for scale: {scale.upper()}. Returning empty score."
+        )
+        return score
+
+    for component, questions in schema["components"].items():
         component_score = 0
 
         for qid in questions:
@@ -55,6 +61,12 @@ def score_results(scale, answers):
 
 
 def save_results(participant_info, scale, questionnaire, answers, score):
+    if score is None:
+        logger.debug(
+            f"No score available for participant: {participant_info.get('id', 'unknown')}, scale: {scale}. Not saving results."
+        )
+        return
+
     filename = RESULTS_DIR / f"{scale}_results.csv"
     # Avoid modifying the original participant_info
     local_participant_info = participant_info.copy()
@@ -63,10 +75,12 @@ def save_results(participant_info, scale, questionnaire, answers, score):
     if scale == "general":
         prefix = ""
     else:
+        # Update participant info with scores
         local_participant_info.update(
             {component: score[component] for component in score}
         )
         prefix = "q"
+
     # Add raw answers to the participant info
     local_participant_info.update(
         {
