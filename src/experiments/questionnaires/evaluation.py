@@ -19,8 +19,8 @@ def _extract_number(string):
 
 def score_results(scale, answers):
     score = {}
-    schema = SCORING_SCHEMAS[scale]
-    for component, questions in schema["components"].items():
+    schema = SCORING_SCHEMAS.get(scale, {})
+    for component, questions in schema.get("components", {}).items():
         component_score = 0
 
         for qid in questions:
@@ -67,10 +67,11 @@ def save_results(participant_info, scale, questionnaire, answers, score):
             {component: score[component] for component in score}
         )
         prefix = "q"
+    # Add raw answers to the participant info
     local_participant_info.update(
         {
             f'{prefix}{question["id"]}': answers[f'{prefix}{question["id"]}']
-            for question in questionnaire["questions"]
+            for question in questionnaire.get("questions", [])
         }
     )
     add_participant_info(local_participant_info, filename)

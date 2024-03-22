@@ -115,12 +115,14 @@ def questionnaire_handler(scale):
             return redirect(url_for("thanks"))
 
     return render_template(
-        f"{current_questionnaire['layout']}.html.j2",
+        f"{current_questionnaire['layout']}.html.j2"
+        if "layout" in current_questionnaire
+        else "blank.html.j2",
         title=current_questionnaire.get("title"),
         instructions=current_questionnaire.get("instructions"),
         spectrum=current_questionnaire.get("spectrum"),
         options=current_questionnaire.get("options"),
-        questions=current_questionnaire["questions"],
+        questions=current_questionnaire.get("questions"),
     )
 
 
