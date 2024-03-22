@@ -11,13 +11,13 @@ RESULTS_DIR = Path("data/questionnaires")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _extract_number(string):
+def _extract_number(string: str) -> int:
     """Used to get the score from items with alternative options (e.g. 1a, 1b)."""
     match = re.search(r"\d+", string)
     return int(match.group()) if match else None
 
 
-def score_results(scale, answers):
+def score_results(scale: str, answers: dict) -> dict:
     score = {}
     schema = SCORING_SCHEMAS.get(scale)
     if not schema:
@@ -60,7 +60,9 @@ def score_results(scale, answers):
     return score
 
 
-def save_results(participant_info, scale, questionnaire, answers, score):
+def save_results(
+    participant_info: dict, scale: str, questionnaire: dict, answers: dict, score
+) -> None:
     if score is None:
         logger.debug(
             f"No score available for participant: {participant_info.get('id', 'unknown')}, scale: {scale}. Not saving results."

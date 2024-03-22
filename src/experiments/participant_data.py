@@ -32,7 +32,7 @@ def add_participant_info(participant_info: dict, file_path: Path = PARTICIPANTS_
         logger.debug(f"Added participant {participant_info_dict['id']} to {file_path}.")
 
 
-def read_last_participant(file_path=PARTICIPANTS_FILE) -> dict:
+def read_last_participant(file_path: Path = PARTICIPANTS_FILE) -> dict:
     """
     Return information about the last participant from the participants file without the timestamp.
     """

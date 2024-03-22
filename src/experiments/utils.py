@@ -7,21 +7,26 @@ from expyriment.stimuli import TextBox
 BASE_SCREEN_SIZE = (1920, 1200)
 
 
-def load_configuration(file_path):
+def load_configuration(file_path: str) -> dict:
     """Load configuration from a TOML file."""
     with open(file_path, "r", encoding="utf8") as file:
         return toml.load(file)
 
 
-def load_script(file_path):
+def load_script(file_path: str) -> dict:
     """Load script from a YAML file."""
     with open(file_path, "r", encoding="utf8") as file:
         return yaml.safe_load(file)
 
 
-def prepare_script(script, text_size, text_box_size, parent_key=None):
+def prepare_script(
+    script: dict,
+    text_size: int,
+    text_box_size: tuple[int, int],
+    parent_key: str = None,
+) -> None:
     """
-    Recursively convert script strings to CustomTextBox stimuli and preload them.
+    Recursively convert existings script strings to CustomTextBox stimuli and preload them.
 
     (With special preloading for 'instruction' as they are shown with the visual analogue scale composition)
     """
@@ -45,7 +50,10 @@ def prepare_script(script, text_size, text_box_size, parent_key=None):
                 script[key].preload()
 
 
-def _scale_ratio(screen_size, base_screen_size=BASE_SCREEN_SIZE) -> float:
+def _scale_ratio(
+    screen_size: tuple[int, int],
+    base_screen_size: tuple[int, int],
+) -> float:
     """
     Calculate the scale ratio based on the screen size.
     """
@@ -81,7 +89,9 @@ def scale_1d_value(
 
 
 def scale_2d_tuple(
-    base_value: tuple[int, int], screen_size, base_screen_size=BASE_SCREEN_SIZE
+    base_value: tuple[int, int],
+    screen_size: tuple[int, int],
+    base_screen_size: tuple[int, int] = BASE_SCREEN_SIZE,
 ) -> tuple[int, int]:
     """
     Calculate the adjusted value based on the screen size for 2D values like position or size.

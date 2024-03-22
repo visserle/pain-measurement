@@ -71,7 +71,7 @@ if args.debug:
     logging.warning("Debug mode is enabled. Participant data will not be saved.")
 
 
-def load_questionnaire(scale):
+def load_questionnaire(scale: str) -> dict:
     try:
         with open(f"{INVENTORY_DIR / scale}.yaml", "r", encoding="utf-8") as file:
             current_questionnaire = yaml.safe_load(file)
