@@ -1,3 +1,4 @@
+import argparse
 import csv
 import logging
 import tkinter as tk
@@ -5,14 +6,18 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import messagebox, ttk
 
-from src.experiments.utils import center_tk_window
+from src.helpers import center_tk_window
+from src.log_config import close_root_logging, configure_logging
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 PARTICIPANTS_FILE = Path("runs/experiments/participants.csv")  # main participants file
 
 
-def add_participant_info(participant_info: dict, file_path: Path = PARTICIPANTS_FILE):
+def add_participant_info(
+    participant_info: dict,
+    file_path: Path = PARTICIPANTS_FILE,
+) -> None:
     """
     Add a participant to the participants file with a timestamp.
     """
@@ -32,7 +37,9 @@ def add_participant_info(participant_info: dict, file_path: Path = PARTICIPANTS_
         logger.debug(f"Added participant {participant_info_dict['id']} to {file_path}.")
 
 
-def read_last_participant(file_path: Path = PARTICIPANTS_FILE) -> dict:
+def read_last_participant(
+    file_path: Path = PARTICIPANTS_FILE,
+) -> dict:
     """
     Return information about the last participant from the participants file without the timestamp.
     """
@@ -44,7 +51,7 @@ def read_last_participant(file_path: Path = PARTICIPANTS_FILE) -> dict:
 
     if not last_participant_info:
         logger.warning(f"No participants found in the file {file_path}.")
-        return {}
+        return dict()
 
     last_participant_info["id"] = int(last_participant_info["id"])
     logger.debug(
@@ -62,7 +69,9 @@ def read_last_participant(file_path: Path = PARTICIPANTS_FILE) -> dict:
     return last_participant_info
 
 
-def ask_for_participant_info(file_path: Path = PARTICIPANTS_FILE) -> dict:
+def ask_for_participant_info(
+    file_path: Path = PARTICIPANTS_FILE,
+) -> dict:
     """
     Ask for basic participant information using a simple GUI.
     """
@@ -81,10 +90,13 @@ def ask_for_participant_info(file_path: Path = PARTICIPANTS_FILE) -> dict:
         logger.info(f"Participant Gender: {participant_info['gender']}")
         return participant_info
     logger.warning("No participant information entered.")
-    return None
+    return dict()
 
 
-def _participant_exists(participant_id: str, file_path: Path) -> bool:
+def _participant_exists(
+    participant_id: str,
+    file_path: Path,
+) -> bool:
     """
     Check if a participant with the given ID already exists in the CSV file.
     """
@@ -181,18 +193,37 @@ class ParticipantDataApp:
         }
 
 
-def main():
+def parse_args():
+    """
+    Parse command-line arguments.
+    """
+    parser = argparse.ArgumentParser(
+        description="Add a participant to the main participants file."
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Enable debug mode. Data will not be saved.",
+    )
+    return parser.parse_args()
+
+
+def main(args):
     """
     Add a participant to the main participants.csv file.
     """
+    if args.debug:
+        logger.debug("Debug mode is enabled. Data will not be saved.")
+
     participant_info = ask_for_participant_info()
-    if participant_info:
+    if participant_info and not args.debug:
         add_participant_info(participant_info)
 
 
 if __name__ == "__main__":
-    from src.log_config import configure_logging
+    args = parse_args()
+    configure_logging(stream_level=logging.INFO if not args.debug else logging.DEBUG)
 
-    configure_logging()
-
-    main()
+    main(args)
+    close_root_logging()
