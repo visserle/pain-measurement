@@ -27,6 +27,7 @@ from src.log_config import configure_logging
 EXP_NAME = "pain-calibration"
 EXP_DIR = Path("src/experiments/calibration")
 RUN_DIR = Path("runs/experiments/calibration")
+RUN_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR = RUN_DIR / "logs"
 
 SCRIPT_FILE = EXP_DIR / "calibration_script.yaml"
@@ -47,18 +48,20 @@ JITTER = random.randint(0, STIMULUS["iti_max_jitter"])
 # Create an argument parser
 parser = argparse.ArgumentParser(description="Run the pain-calibration experiment.")
 parser.add_argument("-a", "--all", action="store_true", help="Use all flags")
-parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode")
 parser.add_argument(
-    "-w", "--windowed", action="store_true", help="Run in windowed mode"
+    "-d",
+    "--debug",
+    action="store_true",
+    help="Enable debug mode with dummy participant data. Results will not be saved.",
 )
 parser.add_argument(
-    "-ds", "--dummy_stimulus", action="store_true", help="Use dummy stimulus"
+    "-w", "--windowed", action="store_true", help="Run in windowed mode."
 )
 parser.add_argument(
-    "-dp", "--dummy_participant", action="store_true", help="Use dummy participant data"
+    "-ds", "--dummy_stimulus", action="store_true", help="Use dummy stimulus."
 )
 parser.add_argument(
-    "-dt", "--dummy_thermoino", action="store_true", help="Use dummy Thermoino device"
+    "-dt", "--dummy_thermoino", action="store_true", help="Use dummy Thermoino device."
 )
 args = parser.parse_args()
 
@@ -76,11 +79,12 @@ if args.all:
 if args.debug or args.windowed:
     control.set_develop_mode(True)
 if args.debug:
-    configure_logging(stream_level=logging.DEBUG, file_path=log_file)
-    logging.debug("Enabled debug mode.")
+    logging.debug(
+        "Enabled debug mode with dummy participant data. Results will not be saved."
+    )
 if args.windowed:
     logging.debug("Running in windowed mode.")
-    control.defaults.window_size = (800, 600)
+    control.defaults.window_size = (860, 600)
 if args.dummy_stimulus:
     logging.debug("Using dummy stimulus.")
     STIMULUS["iti_duration"] = 0.2
@@ -88,10 +92,6 @@ if args.dummy_stimulus:
     JITTER = 0
     ESTIMATOR["trials_vas70"] = 2
     ESTIMATOR["trials_vas0"] = 2
-if args.dummy_participant:
-    logging.debug("Using dummy participant data.")
-    read_last_participant = lambda: config["dummy_participant"]  # noqa: E731
-    add_participant_info = lambda *args, **kwargs: None  # noqa: E731
 
 # Expyriment defaults
 design.defaults.experiment_background_colour = C_DARKGREY
@@ -104,7 +104,9 @@ io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 
 # Experiment setup
-participant_info = read_last_participant()
+participant_info = (
+    read_last_participant() if not args.debug else config["dummy_participant"]
+)
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
@@ -283,7 +285,11 @@ def main():
     )
     participant_info["vas70_temps"] = estimator_vas70.temps
     participant_info["vas0_temps"] = estimator_vas0.temps
-    add_participant_info(participant_info, CALIBRATION_RUN_FILE)
+    add_participant_info(
+        participant_info, CALIBRATION_RUN_FILE
+    ) if not args.debug else None
+    if args.debug:
+        logging.debug(f"Participant data: {participant_info}")
 
     # End of Experiment
     SCRIPT["bye"].present()

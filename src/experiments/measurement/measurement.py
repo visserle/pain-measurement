@@ -39,6 +39,7 @@ EXP_NAME = "pain-measurement"
 EXP_DIR = Path("src/experiments/measurement")
 DATA_DIR = Path("data/imotions")
 RUN_DIR = Path("runs/experiments/measurement")
+RUN_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR = RUN_DIR / "logs"
 
 SCRIPT_FILE = EXP_DIR / "measurement_script.yaml"
@@ -60,15 +61,17 @@ VAS = config["visual_analogue_scale"]
 # Create an argument parser
 parser = argparse.ArgumentParser(description="Run the pain-measurement experiment.")
 parser.add_argument("-a", "--all", action="store_true", help="Use all flags")
-parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode")
+parser.add_argument(
+    "-d",
+    "--debug",
+    action="store_true",
+    help="Enable debug mode using dummy participants. Results will not be saved.",
+)
 parser.add_argument(
     "-w", "--windowed", action="store_true", help="Run in windowed mode"
 )
 parser.add_argument(
     "-ds", "--dummy_stimulus", action="store_true", help="Use dummy stimulus"
-)
-parser.add_argument(
-    "-dp", "--dummy_participant", action="store_true", help="Use dummy participant data"
 )
 parser.add_argument(
     "-dt", "--dummy_thermoino", action="store_true", help="Use dummy Thermoino device"
@@ -92,16 +95,19 @@ if args.all:
 if args.debug or args.windowed:
     control.set_develop_mode(True)
 if args.debug:
-    logging.debug("Enabled debug mode.")
+    read_last_participant = lambda *args, **kwargs: config["dummy_participant"]  # noqa: E731
+    add_participant_info = lambda *args, **kwargs: logging.debug(  # noqa: E731
+        f"Participant data: {args[0]}."
+    )
+    logging.debug(
+        "Enabled debug mode with dummy participant data. Results (logs and participant data) will not be saved."
+    )
 if args.windowed:
     logging.debug("Run in windowed mode.")
-    control.defaults.window_size = (800, 600)
+    control.defaults.window_size = (860, 600)
 if args.dummy_stimulus:
     logging.debug("Using dummy stimulus.")
     STIMULUS.update(config["dummy_stimulus"])
-if args.dummy_participant:
-    logging.debug("Using dummy participant data.")
-    read_last_participant = lambda x: config["dummy_participant"]  # noqa: E731
 if args.dummy_imotions:
     ask_for_eyetracker_calibration = (  # noqa: E731
         lambda: logging.debug(
@@ -138,8 +144,7 @@ imotions_event = EventRecievingiMotions(
     sample_rate=IMOTIONS["sample_rate"], dummy=args.dummy_imotions
 )
 imotions_event.connect()
-proceed_with_eyetracker_calibration = ask_for_eyetracker_calibration()
-if not proceed_with_eyetracker_calibration:
+if not ask_for_eyetracker_calibration():
     raise SystemExit("Eye-tracker calibration denied.")
 imotions_control.start_study(mode=IMOTIONS["start_study_mode"])
 ask_for_measurement_start()
@@ -287,7 +292,6 @@ def main():
 
     control.end()
     imotions_control.end_study()
-    imotions_control.export_data(DATA_DIR)
     for instance in [thermoino, imotions_event, imotions_control]:
         instance.close()
     logging.info("Measurement successfully finished.")
