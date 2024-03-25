@@ -1,5 +1,7 @@
 # TODO
 # - update doc strings
+# - affdex post processing available
+
 
 import itertools
 import logging
@@ -79,11 +81,11 @@ class RemoteControliMotions:
     Notes:
     ------
     - Ensure that the iMotions software is running with the Remote Control API enabled.
-    - The query structure for communication follows a specific format, e.g., "R;2;TEST;STATUS\\r\\n":
+    - The query structure for communication follows a specific format, e.g., "R;2;TEST;STATUS\\r\\n", where the query parts are:
         - R: Represents a specific command or operation.
-        - 2: Represent a version or type of the command.
-        - TEST: Is a placeholder or specific command identifier.
-        - STATUS: Is the actual command or operation to be performed.
+        - 2: Represent a version or type of the command. Different queries need different versions.
+        - TEST: Is a placeholder or specific command identifier. Not used in this implementation.
+        - STATUS: Is the actual command or operation to be performed. It is always at index 3.
         - \\r\\n: The end of the query (with only one backslash)
         -> See the iMotions Remote Control API documentation for more details and the different versions of the commands.
     """
@@ -91,7 +93,12 @@ class RemoteControliMotions:
     HOST = "localhost"
     PORT = 8087  # default port for iMotions remote control
 
-    def __init__(self, study, participant_info: dict, dummy=False):
+    def __init__(
+        self,
+        study: str,
+        participant_info: dict,
+        dummy: bool = False,
+    ):
         # Experiment info
         self.study = study
         self.participant_info = participant_info
@@ -115,6 +122,20 @@ class RemoteControliMotions:
         response = self.sock.recv(1024).decode("utf-8").strip()
         return response
 
+    def _validate_response(self, response):
+        """Helper function to validate the response from iMotions."""
+        if response:
+            msg = response.split(";")[-1]
+            # if there is a response message, something went wrong for most commands
+            if msg and not Path(msg).exists():  # ignore file paths
+                logger.error(
+                    "iMotions error code for command %s: %s.",
+                    response.split(";")[2],
+                    msg,
+                )
+                return False
+        return True
+
     def _check_status(self):
         """
         Helper function to check the status of iMotions.
@@ -136,14 +157,11 @@ class RemoteControliMotions:
                 time.sleep(0.1)
             logger.debug("Ready for remote control.")
         except socket.error as exc:
-            logger.error(
-                "Not ready for remote control. Error connecting to server:\n%s", exc
-            )
-            raise iMotionsError(
-                "Not ready for remote control. Error connecting to server:\n%s", exc
-            ) from exc
+            msg = f"Not ready for remote control. Error connecting to server:\n{exc}"
+            logger.error(msg)
+            raise iMotionsError(msg) from exc
 
-    def start_study(self, mode="NormalPrompt"):
+    def start_study(self, mode: str = "NormalPrompt"):
         """
         Start study in iMotions with participant details.
 
@@ -162,17 +180,13 @@ class RemoteControliMotions:
         start_study_query = f"R;3;;RUN;{self.study};{self.participant_info['id']};Age={self.participant_info['age']} Gender={gender};{mode}\r\n"
         response = self._send_and_receive(start_study_query)
         # e.g. "13;RemoteControl;RUN;;-1;;1;"
+        if not self._validate_response(response):
+            raise iMotionsError("Error starting study.")
         logger.info(
-            "Started recording participant %s (%s)",
+            "Started recording participant %s (%s).",
             self.participant_info["id"],
             self.study,
         )
-        response_msg = response.split(";")[-1]
-        if (
-            len(response_msg) > 0
-        ):  # if there is a response message, something went wrong
-            logger.error("iMotions error code: %s", response_msg)
-            raise iMotionsError("iMotions error code: %s", response_msg)
 
     def end_study(self):
         """
@@ -181,7 +195,7 @@ class RemoteControliMotions:
         end_study_query = "R;1;;SLIDESHOWNEXT\r\n"
         self._send_and_receive(end_study_query)
         logger.info(
-            "Stopped recording participant %s (%s)",
+            "Stopped recording participant %s (%s).",
             self.participant_info["id"],
             self.study,
         )
@@ -193,22 +207,26 @@ class RemoteControliMotions:
         abort_study_query = "R;1;;SLIDESHOWCANCEL\r\n"
         self._send_and_receive(abort_study_query)
         logger.info(
-            "Aborted recording participant %s (%s)",
+            "Aborted recording participant %s (%s).",
             self.participant_info["id"],
             self.study,
         )
 
     def export_data(self, dir_path: Path):
+        """
+        Export data from iMotions to a given directory path.
+
+        Note that this function will throw an error if iMotions is still busy with a previous command.
+        """
         dir_path.mkdir(parents=True, exist_ok=True)
-        # TODO: maybe we need to change msg version? p.34
-        # NOTE TODO: affdex post processing available
         logger.debug(
-            "Export data for participant %s to %s",
+            "Export data for participant %s to %s.",
             self.participant_info["id"],
             dir_path,
         )
-        export_query = f"R;1;;EXPORTSENSORDATA;;{self.study};{self.participant_info['id']};{dir_path.resolve()}\r\n"
-        self._send_and_receive(export_query)
+        export_query = f"R;1;;EXPORTSENSORDATA;;{self.study};{self.participant_info['id']};{dir_path.resolve()};;\r\n"
+        response = self._send_and_receive(export_query)
+        self._validate_response(response)
 
     def close(self):
         try:
@@ -260,7 +278,11 @@ class EventRecievingiMotions:
     HOST = "localhost"
     PORT = 8089  # default port for iMotions event recieving
 
-    def __init__(self, sample_rate, dummy=False):
+    def __init__(
+        self,
+        sample_rate: int,
+        dummy: bool = False,
+    ):
         """
         Initialize the class with the sample rate for the rate limiter and optional dummy mode.
         """
@@ -271,7 +293,10 @@ class EventRecievingiMotions:
         )
         self.seed_cycles = {}  # class variable to keep track of seed cycles (start and end stimulus markers)
         self.prep_cycle = itertools.cycle(
-            ["M;2;;;thermode_ramp_on;;D;\r\n", "M;2;;;thermode_ramp_off;;D;\r\n"]
+            [
+                "M;2;;;thermode_ramp_on/off;;S;\r\n",
+                "M;2;;;thermode_ramp_on/off;;E;\r\n",
+            ]
         )
         self.rate_limiter = RateLimiter(sample_rate, use_intervals=True)
         self.dummy = dummy
@@ -307,7 +332,7 @@ class EventRecievingiMotions:
         self._send_message(next(self.prep_cycle))
         logger.debug("Received marker for thermode ramp on/off.")
 
-    def send_stimulus_markers(self, seed):
+    def send_stimulus_markers(self, seed: int):
         """
         Sends a start (S) and end (E) marker for a given seed value of a stimulus function.
 
@@ -326,7 +351,13 @@ class EventRecievingiMotions:
         self._send_message(next(self.seed_cycles[seed]))
         logger.debug("Received stimulus marker for seed %s.", seed)
 
-    def send_data_rate_limited(self, timestamp, temperature, rating, debug=False):
+    def send_data_rate_limited(
+        self,
+        timestamp: int,
+        temperature: float,
+        rating: float,
+        debug: bool = False,
+    ) -> None:
         """
         Send temperature and rating data to iMotions at once.
 
@@ -368,24 +399,27 @@ def main():
 
     # Remote control example
     imotions = RemoteControliMotions(
-        study="dummy_study",
-        participant_info={"id": "P001", "age": 20, "gender": "Female"},
-        dummy=True,
+        study="pain-measurement",
+        participant_info={"id": "0", "age": 0, "gender": "Female"},
+        dummy=False,
     )
-    imotions.connect()
-    imotions.start_study()
-    # run the experiment ...
-    imotions.end_study()
-    imotions.close()
 
-    # Event recieving example
-    imotions_events = EventRecievingiMotions(sample_rate=10, dummy=True)
-    imotions_events.connect()
-    # Send a start stimulus marker for seed 9
-    imotions_events.send_stimulus_markers(seed=9)
-    # Call again to send an end stimulus marker for the same seed
-    imotions_events.send_stimulus_markers(seed=9)
-    imotions_events.close()
+    imotions.connect()
+    imotions.export_data(Path("data/imotions"))
+    # imotions.connect()
+    # imotions.start_study()
+    # # run the experiment ...
+    # imotions.end_study()
+    # imotions.close()
+
+    # # Event recieving example
+    # imotions_events = EventRecievingiMotions(sample_rate=10, dummy=True)
+    # imotions_events.connect()
+    # # Send a start stimulus marker for seed 9
+    # imotions_events.send_stimulus_markers(seed=9)
+    # # Call again to send an end stimulus marker for the same seed
+    # imotions_events.send_stimulus_markers(seed=9)
+    # imotions_events.close()
 
 
 if __name__ == "__main__":
