@@ -9,7 +9,11 @@ class RateLimiter:
     simply limiting the number of operations per second without regard to their temporal distribution.
     """
 
-    def __init__(self, rate, use_intervals=False):
+    def __init__(
+        self,
+        rate: int,
+        use_intervals: bool = False,
+    ):
         """
         Initialize the rate limiter with the specified rate and interval-based limiting option.
 
@@ -27,7 +31,7 @@ class RateLimiter:
                 None  # Track the last checked time for simple rate limiting
             )
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the rate limiter to allow immediate operation.
         """
@@ -36,7 +40,7 @@ class RateLimiter:
         else:
             self.last_checked = None
 
-    def is_allowed(self, current_time_ms):
+    def is_allowed(self, current_time_ms: int) -> bool:
         """
         Check if the operation is allowed at the current time, optionally considering specific intervals.
 

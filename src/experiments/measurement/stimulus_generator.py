@@ -11,6 +11,7 @@ def cosine_half_cycle(
     t_start: float = 0,
     sample_rate: int = 10,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Generate a half cycle of a cosine function."""
     frequency = 1 / period
     num_steps = period * sample_rate
     assert num_steps == int(num_steps), "Number of steps must be an integer"
@@ -28,7 +29,12 @@ class StimulusGenerator:
     Note that the term `period` refers to 1 pi in this class.
     """
 
-    def __init__(self, config=None, seed=None, debug=False):
+    def __init__(
+        self,
+        config: dict = None,
+        seed: int = None,
+        debug: bool = False,
+    ):
         self.debug = debug
         if config is None:
             config = {}
@@ -106,7 +112,10 @@ class StimulusGenerator:
     def y_dot(self):
         return np.gradient(self.y, 1 / self.sample_rate)  # dx in seconds
 
-    def _get_desired_length_random_half_cycles(self, shorten):
+    def _get_desired_length_random_half_cycles(
+        self,
+        shorten,
+    ) -> int:
         """
         Get the desired length for the random half cycles.
 
@@ -123,14 +132,14 @@ class StimulusGenerator:
         )  # necessary for even boundaries, round to nearest sample
         return desired_length_random_half_cycles
 
-    def _get_desired_length_big_decreasing_half_cycles(self):
+    def _get_desired_length_big_decreasing_half_cycles(self) -> int:
         return (
             self.big_decreasing_half_cycle_period
             * self.big_decreasing_half_cycle_num
             * self.sample_rate
         )
 
-    def _get_desired_length(self):
+    def _get_desired_length(self) -> int:
         desired_length = (
             self.desired_length_random_half_cycles
             + self.desired_length_big_decreasing_half_cycles
@@ -138,7 +147,7 @@ class StimulusGenerator:
         desired_length -= desired_length % self.sample_rate  # round to nearest sample
         return desired_length
 
-    def _get_big_decreasing_half_cycle_idx(self):
+    def _get_big_decreasing_half_cycle_idx(self) -> np.ndarray:
         return np.sort(
             self.rng_numpy.choice(
                 range(1, self.half_cycle_num, 2),
@@ -147,7 +156,7 @@ class StimulusGenerator:
             )
         )
 
-    def _get_big_decreasing_half_cycle_idx_for_insert(self):
+    def _get_big_decreasing_half_cycle_idx_for_insert(self) -> np.ndarray:
         """Indices for np.insert"""
         return [i - idx for idx, i in enumerate(self.big_decreasing_half_cycle_idx)]
 
@@ -218,9 +227,8 @@ class StimulusGenerator:
                             self.amplitude_range[0], self.amplitude_range[1]
                         )
                         if not i & 1:
-                            amplitude *= (
-                                -1
-                            )  # invert amplitude for increasing half cycles
+                            # invert amplitude for increasing half cycles
+                            amplitude *= -1
                     next_y_intercept = y_intercept + amplitude * -2
 
                     if (
@@ -328,7 +336,11 @@ class StimulusGenerator:
             duration=self.prolonged_minima_duration,
         )
 
-    def _extend_stimulus_at_indices(self, indices, duration):
+    def _extend_stimulus_at_indices(
+        self,
+        indices,
+        duration,
+    ) -> np.ndarray:
         """Extend the stimulus at specific indices by repeating their values."""
         y_new = np.array([], dtype=self.y.dtype)
         last_idx = 0
@@ -346,7 +358,11 @@ class StimulusGenerator:
         return y_new
 
 
-def stimulus_extra(stimulus, s_RoC, display_stats=True):
+def stimulus_extra(
+    stimulus: StimulusGenerator,
+    s_RoC: float,
+    display_stats: bool = True,
+) -> tuple[np.ndarray, np.ndarray, go.Figure]:
     """
     For plotly graphing of f(x), f'(x), and labels. Also displays the number and length of cooling segments.
 

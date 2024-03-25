@@ -5,7 +5,11 @@ from src.experiments.utils import scale_1d_value, scale_2d_tuple
 
 
 class VisualAnalogueScale:
-    def __init__(self, experiment, vas_config: dict):
+    def __init__(
+        self,
+        experiment: object,
+        vas_config: dict,
+    ):
         self.experiment = experiment
         self.screen_size = self.experiment.screen.size
 
@@ -101,7 +105,11 @@ class VisualAnalogueScale:
         ]:
             stimulus.preload(inhibit_ogl_compress=True)
 
-    def rate(self, instruction_textbox=None, timestamp=None):
+    def rate(
+        self,
+        instruction_textbox: stimuli.TextBox = None,
+        timestamp: int = None,
+    ):
         # Use the provided timestamp if given, otherwise, retrieve from experiment
         if timestamp is None:
             timestamp = self.experiment.clock.time

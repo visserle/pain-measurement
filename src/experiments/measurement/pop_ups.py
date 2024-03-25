@@ -6,7 +6,7 @@ import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from src.experiments.utils import center_tk_window
+from src.helpers import center_tk_window
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -56,10 +56,9 @@ def ask_for_measurement_start() -> bool:
     dialog = ChecklistDialog(root, items)
     center_tk_window(root)
     response = dialog.show()
-    if response:
-        logger.debug("Confirmation for experiment start received.")
-    else:
-        logger.debug("Confirmation for experiment start denied.")
+    logger.debug(
+        f"Confirmation for experiment start {'recieved' if response else 'denied'}."
+    )
     return response
 
 

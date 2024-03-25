@@ -11,7 +11,7 @@ import serial.tools.list_ports
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-def list_com_ports():
+def list_com_ports() -> str:
     """List all serial ports."""
     ports = serial.tools.list_ports.comports()
     output = []
@@ -155,7 +155,13 @@ class Thermoino:
 
     BAUD_RATE = 115200
 
-    def __init__(self, port, mms_baseline, mms_rate_of_rise, dummy=False):
+    def __init__(
+        self,
+        port: str,
+        mms_baseline: int,
+        mms_rate_of_rise: int,
+        dummy: bool = False,
+    ):
         """
         Constructs a Thermoino object.
 
@@ -268,7 +274,7 @@ class Thermoino:
         elif output in ErrorCodes.__members__:
             logger.error("Triggering failed: %s.", output)
 
-    def set_temp(self, temp_target):
+    def set_temp(self, temp_target: float) -> tuple[float, bool]:
         """
         Set a target temperature on the Thermoino device.
 
@@ -299,7 +305,7 @@ class Thermoino:
             logger.error("Setting temperature to %s°C failed: %s.", temp_target, output)
         return (duration, success)
 
-    def sleep(self, duration):
+    def sleep(self, duration: float) -> None:
         """
         Sleep for a given duration in seconds. This function delays the execution in
         Python for a given number of seconds.
@@ -436,7 +442,13 @@ class ThermoinoComplexTimeCourses(Thermoino):
     ````
     """
 
-    def __init__(self, port, mms_baseline, mms_rate_of_rise, dummy=False):
+    def __init__(
+        self,
+        port: str,
+        mms_baseline: int,
+        mms_rate_of_rise: int,
+        dummy: bool = False,
+    ):
         super().__init__(port, mms_baseline, mms_rate_of_rise, dummy)
         self.bin_size_ms = None
         self.temp_course_duration = None
@@ -444,7 +456,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
         self.temp_course_end = None
         self.ctc = None
 
-    def init_ctc(self, bin_size_ms):
+    def init_ctc(self, bin_size_ms: int):
         """
         Initialize a complex temperature course (CTC) on the Thermoino device.
 
@@ -460,7 +472,11 @@ class ThermoinoComplexTimeCourses(Thermoino):
                 "Initializing complex temperature course (CTC) failed: %s.", output
             )
 
-    def create_ctc(self, temp_course, sample_rate):
+    def create_ctc(
+        self,
+        temp_course: np.ndarray,
+        sample_rate: int,
+    ) -> None:
         """
         Create a complex temperature course (CTC) based on the temperature course and
         sample rate.
@@ -523,7 +539,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             self.bin_size_ms,
         )
 
-    def load_ctc(self, debug=False):
+    def load_ctc(self, debug: bool = False) -> None:
         """
         Load the created CTC into the Thermoino device by sending single bins in a
         for-loop to the Thermoino.
@@ -598,7 +614,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             logger.error("Preparing complex temperature course (CTC) failed.")
         return prep_duration
 
-    def exec_ctc(self):
+    def exec_ctc(self) -> float:
         """
         Execute the CTC on the Thermoino device.
 
@@ -626,7 +642,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             )
         return exec_duration_s
 
-    def flush_ctc(self):
+    def flush_ctc(self) -> None:
         """
         Reset or delete all complex temperature course (CTC) information on the
         Thermoino device.
