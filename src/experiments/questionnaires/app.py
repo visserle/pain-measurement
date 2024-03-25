@@ -54,12 +54,11 @@ parser.add_argument(
     "-d",
     "--debug",
     action="store_true",
-    help="Enable debug mode.",
+    help="Enable debug mode. Data will not be saved.",
 )
 
 args = parser.parse_args()
 questionnaires = args.questionnaire
-app = Flask(__name__)
 
 # Configure logging
 log_file = LOG_DIR / datetime.now().strftime(r"%Y_%m_%d__%H_%M_%S.log")
@@ -70,9 +69,12 @@ configure_logging(
 )
 
 # Load participant data
-participant_info = read_last_participant()
+participant_info = read_last_participant() if not args.debug else dict(id=0)
 if args.debug:
-    logging.warning("Debug mode is enabled. Participant data will not be saved.")
+    logging.debug("Debug mode is enabled. Data will not be saved.")
+
+
+app = Flask(__name__)
 
 
 def load_questionnaire(scale: str) -> dict:
@@ -95,12 +97,19 @@ def home():
     return redirect(url_for("questionnaire_handler", scale=questionnaires[0]))
 
 
+@app.route("/favicon.ico")
+def favicon():
+    return app.send_static_file("favicon.ico")
+
+
 @app.route("/<scale>", methods=["GET", "POST"])
 def questionnaire_handler(scale):
     current_questionnaire = load_questionnaire(scale)
     if request.method == "POST":
         answers = request.form
-        logging.debug(f"Received answers: {answers}") if args.debug else None
+        logging.debug(
+            f"{scale.upper()} answers = {answers}",
+        ) if args.debug else None
         score = score_results(scale, answers) if scale != "general" else None
         save_results(
             participant_info,
@@ -163,7 +172,7 @@ def main():
         f"Running questionnaire app with the following questionnaires: {list(map(str.upper, questionnaires))}"
     )
     webbrowser.open_new("http://localhost:5000")
-    app.run(debug=args.debug)
+    app.run(debug=args.debug, use_reloader=False)
     # NOTE: possible to deploy to web via docker: https://www.youtube.com/watch?v=cw34KMPSt4k
 
 
