@@ -5,10 +5,10 @@ instructions: |
 layout: "general_questions"
 questions:
   - id: "height"
-    text: "Wie groß sind Sie? (m)"
+    text: "Wie groß sind Sie (m)? Beispiel: 1,75"
     type: "text"
   - id: "weight"
-    text: "Wie viel wiegen Sie? (Kg)"
+    text: "Wie viel wiegen Sie (Kg)? Beispiel: 70"
     type: "text"
   - id: "education"
     text: "Was ist Ihr höchster Bildungsabschluss?"
