@@ -27,6 +27,7 @@ if ($IsWindows) {
 }
 
 # Print the welcome message
+Write-Host "*** DEVELOP MODE ***"
 Write-Host ""
 Write-Host "This is the behavioral pain measurement experiment."
 Write-Host ""
@@ -43,26 +44,26 @@ Read-Host
 
 # Execute Python scripts
 Write-Host "1. Pre-Experiment Questionnaires"
-python -m src.experiments.participant_data  # add a new participant
-python -m src.experiments.questionnaires.app general panas
+python -m src.experiments.participant_data  --debug
+python -m src.experiments.questionnaires.app general panas --debug
 Write-Host ""
 Write-Host "Press [Enter] to continue with the calibration..."
 Read-Host
 
 Write-Host "2. Pain Calibration"
-python -m src.experiments.calibration.calibration
+python -m src.experiments.calibration.calibration --dummy_thermoino --dummy_stimulus --windowed --debug
 Write-Host ""
 Write-Host "Press [Enter] to continue with the measurement..."
 Read-Host
 
 Write-Host "3. Pain Measurement"
-python -m src.experiments.measurement.measurement
+python -m src.experiments.measurement.measurement --dummy_imotions --dummy_thermoino --dummy_stimulus --windowed --debug
 Write-Host ""
 Write-Host "Press [Enter] to continue with the questionnaires..."
 Read-Host
 
 Write-Host "4. Post-Experiment Questionnaires"
-python -m src.experiments.questionnaires.app panas maia-2 pcs pvaq lot-r bdi-ii brs stai-t-10 erq maas
+python -m src.experiments.questionnaires.app panas maia-2 pcs pvaq lot-r bdi-ii brs stai-t-10 erq maas --debug
 
 # Print the completion message
 Write-Host "Experiment completed."
