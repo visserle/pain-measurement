@@ -17,11 +17,15 @@ def _extract_number(string: str) -> int:
     return int(match.group()) if match else None
 
 
-def score_results(scale: str, answers: dict) -> dict:
+def score_results(
+    scale: str,
+    answers: dict,
+) -> dict:
+    """Calculate the score for each component of the questionnaire."""
     score = {}
     schema = SCORING_SCHEMAS.get(scale)
     if not schema:
-        logger.info(
+        logger.error(
             f"No schema found for scale: {scale.upper()}. Returning empty score."
         )
         return score
@@ -61,11 +65,15 @@ def score_results(scale: str, answers: dict) -> dict:
 
 
 def save_results(
-    participant_info: dict, scale: str, questionnaire: dict, answers: dict, score
+    participant_info: dict,
+    scale: str,
+    questionnaire: dict,
+    answers: dict,
+    score: dict,
 ) -> None:
-    if score is None:
-        logger.debug(
-            f"No score available for participant: {participant_info.get('id', 'unknown')}, scale: {scale}. Not saving results."
+    if not answers:
+        logger.error(
+            f"No answers available for participant: {participant_info.get('id', 'unknown')}, scale: {scale.upper()}. Not saving results."
         )
         return
 
