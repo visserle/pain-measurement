@@ -14,6 +14,8 @@ def process_eda(
 ) -> pl.DataFrame:
     eda_raw = df.select(EDA_RAW_COLUMN).to_numpy().flatten()
     eda_processed: pd.DataFrame = nk.eda_phasic(
-        eda_raw, sampling_rate=sampling_rate, method="neurokit"
+        eda_signal=eda_raw,
+        sampling_rate=sampling_rate,
+        method="neurokit",
     )  # returns EDA_Phasic and EDA_Tonic columns
     return df.hstack(pl.from_pandas(eda_processed))
