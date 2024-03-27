@@ -1,6 +1,9 @@
 # TODO
 # - add readme
 # - upload yaml of license free questionnaires
+# - improve html layout
+# - remove bdi-ii, or only used for screening? -> do not save results in logs if not published
+# - add welcome page with instructions, info on drinking water, which questionnaires will be published etc.
 
 import argparse
 import logging
@@ -28,13 +31,13 @@ from src.log_config import configure_logging
 LOG_DIR = Path("runs/experiments/questionnaires/")
 INVENTORY_DIR = Path("src/experiments/questionnaires/inventory/")
 QUESTIONNAIRES = [
-    "general",  # without scoring
+    "general",  # no scoring
+    "bdi-ii",  # screening only
     "panas",
     "maia-2",
     "pcs",
     "pvaq",
     "lot-r",
-    "bdi-ii",
     "brs",
     "stai-t-10",
     "erq",

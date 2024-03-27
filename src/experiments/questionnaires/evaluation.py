@@ -7,6 +7,9 @@ from src.experiments.questionnaires.scoring_schemas import SCORING_SCHEMAS
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
+# Screening questionnaire results are not saved and only logged if they exceed the alert threshold.
+SCREENING_ONLY = ["bdi-ii"]
+
 RESULTS_DIR = Path("data/questionnaires")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -21,9 +24,17 @@ def score_results(
     scale: str,
     answers: dict,
 ) -> dict:
-    """Calculate the score for each component of the questionnaire."""
+    """
+    Calculate the score for each component of the questionnaire.
+    """
     score = {}
     schema = SCORING_SCHEMAS.get(scale)
+    screening_only = scale in SCREENING_ONLY
+    if screening_only:
+        logger.debug(
+            f"Scale '{scale.upper()}' is a screening questionnaire. Only logging results as an error if they exceed the alert threshold."
+        )
+
     if not schema:
         logger.error(
             f"No schema found for scale: {scale.upper()}. Returning empty score."
@@ -57,11 +68,13 @@ def score_results(
         )
 
     formatted_score = ", ".join(f"{key}: {value}" for key, value in score.items())
-    logger.info(f"{scale.upper()} score = {formatted_score}.")
+    logger.info(
+        f"{scale.upper()} score = {formatted_score}."
+    ) if not screening_only else None
     if "alert_threshold" in schema and score["total"] >= schema["alert_threshold"]:
-        logger.warning(f"{scale.upper()} score indicates {schema['alert_message']}.")
+        logger.error(f"{scale.upper()} score indicates {schema['alert_message']}.")
 
-    return score
+    return score if not screening_only else None
 
 
 def save_results(
@@ -72,8 +85,14 @@ def save_results(
     score: dict,
 ) -> None:
     if not answers:
-        logger.error(
+        logger.debug(
             f"No answers available for participant: {participant_info.get('id', 'unknown')}, scale: {scale.upper()}. Not saving results."
+        )
+        return
+
+    if scale in SCREENING_ONLY:
+        logger.debug(
+            f"Scale '{scale.upper()}' is a screening questionnaire. Not saving results."
         )
         return
 
