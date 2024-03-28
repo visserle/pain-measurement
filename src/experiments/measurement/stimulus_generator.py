@@ -94,6 +94,7 @@ class StimulusGenerator:
 
         # Stimulus
         self.y = None  # Placeholder for the stimulus
+        self.extensions = []  # Placeholder for the extensions from the add_methods
         self._generate_stimulus()
         if not debug:
             self.add_plateaus()
@@ -111,6 +112,17 @@ class StimulusGenerator:
     @property
     def y_dot(self):
         return np.gradient(self.y, 1 / self.sample_rate)  # dx in seconds
+
+    @property
+    def big_decreasing_intervals(self) -> list[tuple[int, int]]:
+        intervals = []
+        for idx in self.big_decreasing_half_cycle_idx:
+            start = sum(self.periods[:idx]) * self.sample_rate
+            # Adjust the start position based on the extensions that occurred before this index
+            start += sum(ext for i, ext in self.extensions if i < start)
+            end = start + self.big_decreasing_half_cycle_period * self.sample_rate
+            intervals.append((start, end))
+        return intervals
 
     def _get_desired_length_random_half_cycles(
         self,
@@ -353,6 +365,8 @@ class StimulusGenerator:
                 (y_new, np.full(repeat_count, self.y[idx], dtype=self.y.dtype))
             )
             last_idx = idx
+            # Track the extensions
+            self.extensions.append((idx, repeat_count))
         # Append any remaining values after the last index
         y_new = np.concatenate((y_new, self.y[last_idx:]))
         return y_new
