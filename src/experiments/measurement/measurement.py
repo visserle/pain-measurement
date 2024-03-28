@@ -282,6 +282,7 @@ def main():
 
     # Save participant data
     participant_info_ = read_last_participant()  # reload to remove calibration data
+    participant_info_["seed_order"] = STIMULUS["seeds"]
     participant_info_["correlations"] = correlations
     participant_info_["reward"] = reward
     add_participant_info(participant_info_, MEASUREMENT_RUN_FILE)
