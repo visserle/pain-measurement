@@ -16,44 +16,6 @@ SCORING_SCHEMAS = {
         "max_item_score": 5,
         "metric": "mean",
     },
-    "erq": {
-        "components": {
-            "reappraisal": [1, 3, 5, 7, 8, 10],
-            "suppression": [2, 4, 6, 9],
-        },
-        "metric": "mean",
-    },
-    "lot-r": {
-        "components": {
-            # following two-dimensional model of indepentent optimism and pessimism
-            "pessimism": [3, 7, 9],
-            "optimism": [1, 4, 10],
-        },
-        "filler_items": [2, 5, 6, 8],
-        "metric": "sum",
-    },
-    "maas": {
-        "components": {
-            "total": range(1, 16),
-        },
-        "metric": "mean",
-    },
-    "maia-2": {
-        "components": {
-            "noticing": [1, 2, 3, 4],
-            "not_distracting": [5, 6, 7, 8, 9, 10],  # items are reverse-scored
-            "not_worrying": [11, 12, 13, 14, 15],  # some items are reverse-scored
-            "attention_regulation": [16, 17, 18, 19, 20, 21, 22],
-            "emotional_awareness": [23, 24, 25, 26, 27],
-            "self_regulation": [28, 29, 30, 31],
-            "body_listening": [32, 33, 34],
-            "trusting": [35, 36, 37],
-        },
-        "reverse_items": [5, 6, 7, 8, 9, 10, 11, 12, 15],
-        "min_item_score": 0,
-        "max_item_score": 5,
-        "metric": "mean",
-    },
     "panas": {
         "components": {
             "positive_affect": [1, 3, 4, 6, 10, 11, 13, 15, 17, 18],
@@ -71,6 +33,14 @@ SCORING_SCHEMAS = {
         "metric": "sum",
         "alert_threshold": 30,
         "alert_message": "a clinically significant level of catastrophizing",
+    },
+    "phq-15": {
+        "components": {
+            "total": range(1, 16),
+        },
+        "metric": "sum",
+        "alert_threshold": 10,
+        "alert_message": "a clinically significant level of somatic symptoms",
     },
     "pvaq": {
         "components": {
