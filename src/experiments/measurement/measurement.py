@@ -263,7 +263,7 @@ def main():
         logging.info(f"Correlation between temperature and rating: {correlation:.2f}.")
         if correlation > 0.6:
             reward += 1
-            logging.debug("Rewarding participant.")
+            logging.info("Rewarding participant.")
             SCRIPT["reward"].present()
             exp.clock.wait_seconds(2.5)
         elif correlation < 0.3 or np.isnan(correlation):
