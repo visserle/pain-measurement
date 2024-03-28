@@ -122,75 +122,60 @@ class ParticipantDataApp:
     def __init__(self, root):
         self.root = root
         self.participant_info = {}
-        self._setup_ui()
+        self.setup_ui()
 
-    def _setup_ui(self):
-        """Configures the main UI components for the participant data input form."""
-        self._configure_window()
-        self._create_data_fields()
-        self._create_submit_button()
-
-    def _configure_window(self):
-        """Sets window title and configures the grid layout."""
+    def setup_ui(self):
+        """Configures the main UI components including window, data fields, and submit button."""
+        # Window configuration
         self.root.title("Participant Data Input")
         self.root.columnconfigure(0, weight=1)
         self.root.columnconfigure(1, weight=3)
 
-    def _create_data_fields(self):
-        """Creates input fields for participant data."""
+        # Data fields creation
         fields = ["ID", "Age", "Gender"]
         self.entries = {}
         for i, field in enumerate(fields):
-            self._create_field(field, i)
+            label = ttk.Label(self.root, text=f"{field}:")
+            label.grid(column=0, row=i, sticky=tk.W, padx=5, pady=5)
+            if field == "Gender":
+                entry = ttk.Combobox(
+                    self.root, values=["Male", "Female"], state="readonly"
+                )
+            else:
+                entry = ttk.Entry(self.root)
+            entry.grid(column=1, row=i, sticky=tk.EW, padx=5, pady=5)
+            self.entries[field] = entry
 
-    def _create_field(self, field, row):
-        """Creates a single field in the UI."""
-        label = ttk.Label(self.root, text=f"{field}:")
-        label.grid(column=0, row=row, sticky=tk.W, padx=5, pady=5)
-        if field == "Gender":
-            entry = ttk.Combobox(self.root, values=["Male", "Female"], state="readonly")
-        else:
-            entry = ttk.Entry(self.root)
-        entry.grid(column=1, row=row, sticky=tk.EW, padx=5, pady=5)
-        self.entries[field] = entry
-
-    def _create_submit_button(self):
-        """Creates the submit button."""
-        submit_button = ttk.Button(self.root, text="Submit", command=self._submit_data)
+        # Submit button creation
+        submit_button = ttk.Button(self.root, text="Submit", command=self.submit_data)
         submit_button.grid(
             column=0, row=len(self.entries), columnspan=2, sticky=tk.EW, padx=5, pady=5
         )
 
-    def _submit_data(self):
-        """Handles data submission and validation."""
-        if self._validate_entries():
-            self._extract_data()
-            self.root.destroy()
-
-    def _validate_entries(self):
-        """Validates the entries to ensure they are not empty and meet specific criteria."""
+    def submit_data(self):
+        """Handles data submission, including validation and extraction."""
+        # Data validation
+        valid = True
         for field, entry in self.entries.items():
             value = entry.get().strip()
             if not value:
                 messagebox.showwarning("Missing Information", f"{field} is required.")
-                return False
-            if field in ["ID", "Age"]:
-                if not value.isdigit():
-                    messagebox.showwarning(
-                        "Invalid Input", f"{field} must be a number."
-                    )
-                    return False
-        return True
+                valid = False
+                break  # Exit the loop early on validation failure
+            if field in ["ID", "Age"] and not value.isdigit():
+                messagebox.showwarning("Invalid Input", f"{field} must be a number.")
+                valid = False
+                break
 
-    def _extract_data(self):
-        """Extracts and processes data from the input fields."""
-        gender_full = self.entries["Gender"].get()
-        gender_abbr = "m" if gender_full == "Male" else "f"
-        self.participant_info = {
-            "id": int(self.entries["ID"].get().strip()),
-            "age": int(self.entries["Age"].get()),
-            "gender": gender_abbr,
-        }
+        # Data extraction
+        if valid:
+            gender_full = self.entries["Gender"].get()
+            self.participant_info = {
+                "id": int(self.entries["ID"].get().strip()),
+                "age": int(self.entries["Age"].get()),
+                "gender": "m" if gender_full == "Male" else "f",
+            }
+            self.root.destroy()
 
 
 def parse_args():
