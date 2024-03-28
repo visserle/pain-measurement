@@ -54,7 +54,7 @@ def configure_logging(
     if file_path:
         file_path = Path(file_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_handler = logging.FileHandler(file_path)
+        file_handler = logging.FileHandler(file_path, encoding="utf-8")
         file_handler.setLevel(file_level)
         file_formatter = logging.Formatter(
             "{asctime} | {levelname:8} | {name} | {message}", style="{"
