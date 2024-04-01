@@ -7,10 +7,7 @@ from src.experiments.questionnaires.scoring_schemas import SCORING_SCHEMAS
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
-# Screening questionnaire results are not saved and only logged if they exceed the alert threshold.
-SCREENING_ONLY = ["bdi-ii"]
-
-RESULTS_DIR = Path("data/questionnaires")
+RESULTS_DIR = Path("data/experiments/questionnaires")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -29,11 +26,6 @@ def score_results(
     """
     score = {}
     schema = SCORING_SCHEMAS.get(scale)
-    screening_only = scale in SCREENING_ONLY
-    if screening_only:
-        logger.debug(
-            f"Scale '{scale.upper()}' is a screening questionnaire. Only logging results as an error if they exceed the alert threshold."
-        )
 
     if not schema:
         logger.error(
@@ -68,13 +60,11 @@ def score_results(
         )
 
     formatted_score = ", ".join(f"{key}: {value}" for key, value in score.items())
-    logger.info(
-        f"{scale.upper()} score = {formatted_score}."
-    ) if not screening_only else None
+    logger.info(f"{scale.upper()} score = {formatted_score}.")
     if "alert_threshold" in schema and score["total"] >= schema["alert_threshold"]:
         logger.error(f"{scale.upper()} score indicates {schema['alert_message']}.")
 
-    return score if not screening_only else None
+    return score
 
 
 def save_results(
@@ -90,25 +80,19 @@ def save_results(
         )
         return
 
-    if scale in SCREENING_ONLY:
-        logger.debug(
-            f"Scale '{scale.upper()}' is a screening questionnaire. Not saving results."
-        )
-        return
-
     filename = RESULTS_DIR / f"{scale}_results.csv"
     # Avoid modifying the original participant_info
     local_participant_info = participant_info.copy()
 
-    # For general questionnaire, only save the raw answers without scoring components
-    if scale == "general":
+    # For general questionnaires we don't have a score and only save the answers
+    if scale.split("_")[0] == "general":
         prefix = ""
     else:
         # Update participant info with scores
         local_participant_info.update(
             {component: score[component] for component in score}
         )
-        prefix = "q"
+        prefix = "q"  # e.g. q1, q2, etc.
 
     # Add raw answers to the participant info
     local_participant_info.update(

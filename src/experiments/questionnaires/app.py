@@ -2,8 +2,10 @@
 # - add readme
 # - upload yaml of license free questionnaires
 # - improve html layout
-# - remove bdi-ii, or only used for screening? -> do not save results in logs if not published
 # - add welcome page with instructions, info on drinking water, which questionnaires will be published etc.
+# - improve using https://github.com/vlevit/q10r
+# - from scoring_schemas import sreening only + add conditional logging info
+# - misc doch datenschutz problematisch?
 
 import argparse
 import logging
@@ -31,17 +33,15 @@ from src.log_config import configure_logging
 LOG_DIR = Path("runs/experiments/questionnaires/")
 INVENTORY_DIR = Path("src/experiments/questionnaires/inventory/")
 QUESTIONNAIRES = [
-    "general",  # no scoring
+    "general_ses",  # no scoring, screening only
+    "general_misc",  # no scoring
     "bdi-ii",  # screening only
+    "phq-15",  # screening only
+    "panas",  # pre-post
     "panas",
-    "maia-2",
     "pcs",
     "pvaq",
-    "lot-r",
-    "brs",
     "stai-t-10",
-    "erq",
-    "maas",
 ]
 
 parser = argparse.ArgumentParser(
@@ -113,7 +113,9 @@ def questionnaire_handler(scale):
         logging.debug(
             f"{scale.upper()} answers = {answers}",
         ) if args.debug else None
-        score = score_results(scale, answers) if scale != "general" else None
+        score = (
+            score_results(scale, answers) if scale.split("_")[0] != "general" else None
+        )
         save_results(
             participant_info,
             scale,
