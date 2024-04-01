@@ -11,7 +11,10 @@ from src.log_config import close_root_logging, configure_logging
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
-PARTICIPANTS_FILE = Path("runs/experiments/participants.csv")  # main participants file
+# The main participants file with all participants
+# and their basic information: timestamp, ID, age, gender
+# (stored in the non-disclosed runs folder for privacy reasons)
+PARTICIPANTS_FILE = Path("runs/experiments/participants.csv")
 
 
 def add_participant_info(
@@ -19,54 +22,56 @@ def add_participant_info(
     file_path: Path = PARTICIPANTS_FILE,
 ) -> None:
     """
-    Add a participant to the participants file with a timestamp.
+    Add a participant to the participants file with the given information.
     """
     file_path.parent.mkdir(parents=True, exist_ok=True)
     # Check if the file exists and has content; if not, write headers
     file_exists = file_path.exists()
-    # Add timestamp to participant_info as the first key
-    participant_info_dict = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-    participant_info_dict.update(participant_info)
+    if file_path == PARTICIPANTS_FILE:
+        # Add timestamp to main participants file at first position
+        participant_info_ = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        participant_info_.update(participant_info)
+        participant_info = participant_info_
     with open(file_path, mode="a+", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=participant_info_dict.keys())
+        writer = csv.DictWriter(file, fieldnames=participant_info.keys())
 
         if not file_exists:
             writer.writeheader()
 
-        writer.writerow(participant_info_dict)
-        logger.debug(f"Added participant {participant_info_dict['id']} to {file_path}.")
+        writer.writerow(participant_info)
+        logger.debug(f"Added participant {participant_info['id']} to {file_path}.")
 
 
 def read_last_participant(
     file_path: Path = PARTICIPANTS_FILE,
 ) -> dict:
     """
-    Return information about the last participant from the participants file without the timestamp.
+    Return information about the last participant from the participants file.
     """
-    last_participant_info = {}
+    participant_info = {}
     with open(file_path, mode="r", newline="") as file:
         reader = csv.DictReader(file)
+        # Read all rows and keep the last one (the most recent participant)
         for row in reader:
-            last_participant_info = row
+            participant_info = row
 
-    if not last_participant_info:
+    if not participant_info:
         logger.warning(f"No participants found in the file {file_path}.")
         return dict()
 
-    last_participant_info["id"] = int(last_participant_info["id"])
+    participant_info["id"] = int(participant_info["id"])
+    timestamp = f" ({ts})" if (ts := participant_info.get("timestamp", None)) else ""
     logger.debug(
-        f"Participant {last_participant_info['id']} ({last_participant_info['timestamp']}) loaded from {file_path}."
+        f"Participant {participant_info['id']}{timestamp} loaded from {file_path}."
     )
 
     # Check if the participant data is from today
     today = datetime.now().strftime("%Y-%m-%d")
-    if today not in last_participant_info["timestamp"]:
+    if today not in participant_info.get("timestamp", today):  # hack for no timestamp
         logger.warning("Participant ID is not from today.")
 
-    last_participant_info.pop(
-        "timestamp"
-    )  # new timestamp is added when the participant is added
-    return last_participant_info
+    participant_info.pop("timestamp", None)  # remove timestamps for privacy
+    return participant_info
 
 
 def ask_for_participant_info(
@@ -106,8 +111,9 @@ def _participant_exists(
         reader = csv.DictReader(file)
         for row in reader:
             if int(row["id"]) == int(participant_id):
+                timestamp = f" ({ts})" if (ts := row.get("timestamp", None)) else ""
                 logger.warning(
-                    f"Participant with ID {participant_id} ({row['timestamp']}) already exists in {file_path}."
+                    f"Participant with ID {participant_id}{timestamp} already exists in {file_path}."
                 )
         return True
     return False
