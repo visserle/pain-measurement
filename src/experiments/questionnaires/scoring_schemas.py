@@ -7,15 +7,6 @@ SCORING_SCHEMAS = {
         "alert_threshold": 14,
         "alert_message": "depression",
     },
-    "brs": {
-        "components": {
-            "total": range(1, 7),
-        },
-        "reverse_items": [2, 4, 6],
-        "min_item_score": 1,
-        "max_item_score": 5,
-        "metric": "mean",
-    },
     "panas": {
         "components": {
             "positive_affect": [1, 3, 4, 6, 10, 11, 13, 15, 17, 18],
