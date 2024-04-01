@@ -8,42 +8,50 @@ class VisualAnalogueScale:
     def __init__(
         self,
         experiment: object,
-        vas_config: dict,
+        config: dict | None = None,
     ):
+        self.config = config if config is not None else {}
         self.experiment = experiment
         self.screen_size = self.experiment.screen.size
+        self.rate_limiter = RateLimiter(config.get("sample_rate", 60))
 
-        self.rate_limiter = RateLimiter(vas_config.get("sample_rate", 60))
+        self._extract_config()
+        self._create_slider_elements()
 
+        # Initialize the last x position and the rating
+        self.last_x_pos = -1
+        self.rating = 50
+
+    def _extract_config(self):
         self.bar_length = scale_1d_value(
-            vas_config.get("bar_length", 800), self.screen_size
+            config.get("bar_length", 800), self.screen_size
         )
         self.bar_thickness = scale_1d_value(
-            vas_config.get("bar_thickness", 30), self.screen_size
+            config.get("bar_thickness", 30), self.screen_size
         )
         self.bar_position = scale_2d_tuple(
-            vas_config.get("bar_position", (0, 0)), self.screen_size
+            config.get("bar_position", (0, 0)), self.screen_size
         )
 
         self.slider_width = scale_1d_value(
-            vas_config.get("slider_width", 10), self.screen_size
+            config.get("slider_width", 10), self.screen_size
         )
         self.slider_height = scale_1d_value(
-            vas_config.get("slider_height", 90), self.screen_size
+            config.get("slider_height", 90), self.screen_size
         )
-        self.slider_color = vas_config.get("slider_color", (194, 24, 7))
+        self.slider_color = config.get("slider_color", (194, 24, 7))
         self.slider_initial_position = scale_2d_tuple(
-            vas_config.get("slider_initial_position", (0, self.bar_position[1])),
+            config.get("slider_initial_position", (0, self.bar_position[1])),
             self.screen_size,
         )
         self.slider_min_x = -(self.bar_length / 2)
         self.slider_max_x = self.bar_length / 2
 
         self.label_text_size = scale_1d_value(
-            vas_config.get("label_text_size", 40), self.screen_size
+            config.get("label_text_size", 40), self.screen_size
         )
         self.label_text_box_size = scale_2d_tuple(
-            vas_config.get("label_text_box_size", [250, 100]),
+            config.get("label_text_box_size", [250, 100]),
             self.screen_size,
         )
         self.label_right_position = (
@@ -54,12 +62,6 @@ class VisualAnalogueScale:
             self.label_right_position[0] - self.bar_length,
             self.label_right_position[1],
         )
-
-        self._create_slider_elements()
-
-        # Initialize the last x position and the rating
-        self.last_x_pos = -1
-        self.rating = 50
 
     def _create_slider_elements(self):
         # Create the bar, ends, slider and labels
@@ -164,8 +166,8 @@ if __name__ == "__main__":
     control.initialize(exp)
 
     # Default VAS configuration
-    vas_config = {}
-    vas_slider = VisualAnalogueScale(exp, vas_config)
+    config = {}
+    vas_slider = VisualAnalogueScale(exp, config)
 
     # Start the experiment
     control.start(skip_ready_screen=True)
