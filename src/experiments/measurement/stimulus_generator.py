@@ -1,6 +1,4 @@
 import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
 import scipy
 
 
@@ -11,7 +9,7 @@ def cosine_half_cycle(
     t_start: float = 0,
     sample_rate: int = 10,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Generate a half cycle of a cosine function."""
+    """Generate a half cycle cosine function (1 pi) with the given parameters."""
     frequency = 1 / period
     num_steps = period * sample_rate
     assert num_steps == int(num_steps), "Number of steps must be an integer"
@@ -31,46 +29,90 @@ class StimulusGenerator:
 
     def __init__(
         self,
-        config: dict = None,
+        config: dict | None = None,
         seed: int = None,
         debug: bool = False,
     ):
-        self.debug = debug
-        if config is None:
-            config = {}
-
         # Initialize parameters
+        self.config = config if config is not None else {}
         self.seed = seed if seed is not None else np.random.randint(0, 1000)
+        self.debug = debug
         self.rng_numpy = np.random.default_rng(self.seed)
 
-        self.sample_rate = config.get("sample_rate", 10)
-        self.half_cycle_num = config.get("half_cycle_num", 10)
-        self.period_range = config.get("period_range", [5, 20])
-        self.amplitude_range = config.get("amplitude_range", [0.3, 0.9])
-        self.inflection_point_range = config.get("inflection_point_range", [-0.5, 0.3])
-        self.shorten_expected_duration = config.get("shorten_expected_duration", 7)
+        # Extract and validate the configuration
+        self._extract_config()
+        self._validate_parameters()
+        self._initialize_dynamic_attributes()
 
-        self.big_decreasing_half_cycle_num = config.get(
+        # Stimulus
+        self.y = None  # placeholder for the stimulus
+        self._extensions = []  # placeholder for the extensions from the add_methods
+        self._generate_stimulus()
+        if not debug:
+            # add extensions and temperature calibration
+            self.add_plateaus()
+            self.add_prolonged_minima()
+            self.add_calibration()
+
+    def _extract_config(self):
+        """Extracts and sets the configuration parameters."""
+        # Basic parameters
+        self.sample_rate = self.config.get("sample_rate", 10)
+        self.half_cycle_num = self.config.get("half_cycle_num", 10)
+        self.period_range = self.config.get("period_range", [5, 20])
+        self.amplitude_range = self.config.get("amplitude_range", [0.3, 1.0])
+        self.inflection_point_range = self.config.get(
+            "inflection_point_range", [-0.5, 0.3]
+        )
+        self.shorten_expected_duration = self.config.get("shorten_expected_duration", 7)
+
+        # Big decreasing half cycles
+        self.big_decreasing_half_cycle_num = self.config.get(
             "big_decreasing_half_cycle_num", 3
         )
-        self.big_decreasing_half_cycle_period = config.get(
+        self.big_decreasing_half_cycle_period = self.config.get(
             "big_decreasing_half_cycle_period", 20
         )
-        self.big_decreasing_half_cycle_amplitude = config.get(
-            "big_decreasing_half_cycle_amplitude", 0.85
+        self.big_decreasing_half_cycle_amplitude = self.config.get(
+            "big_decreasing_half_cycle_amplitude", 0.925
+        )  # times 2 for the full range of the half cycle
+        self.big_decreasing_half_cycle_min_y_intercept = self.config.get(
+            "big_decreasing_half_cycle_min_y_intercept", 0.9
+        )  # based on the curve without temperature calibration
+
+        # Plateaus
+        self.plateau_num = self.config.get("plateau_num", 2)
+        self.plateau_duration = self.config.get("plateau_duration", 15)
+        self.plateau_percentile_range = self.config.get(
+            "plateau_percentile_range", [25, 50]
         )
 
-        self.plateau_num = config.get("plateau_num", 2)
-        self.plateau_duration = config.get("plateau_duration", 15)
-        self.plateau_percentile_range = config.get("plateau_percentile_range", [25, 50])
+        # Prolonged minima
+        self.prolonged_minima_num = self.config.get("prolonged_minima_num", 2)
+        self.prolonged_minima_duration = self.config.get("prolonged_minima_duration", 5)
 
-        self.prolonged_minima_num = config.get("prolonged_minima_num", 2)
-        self.prolonged_minima_duration = config.get("prolonged_minima_duration", 5)
+        # Temperature
+        self.temperature_baseline = float(self.config.get("temperature_baseline", 40))
+        self.temperature_range = float(self.config.get("temperature_range", 3))
 
-        # Calibrate temperatures
-        self.temperature_baseline = float(config.get("temperature_baseline", 40))
-        self.temperature_range = float(config.get("temperature_range", 3))
+    def _validate_parameters(self):
+        """Validates the configuration parameters."""
+        assert (
+            self.big_decreasing_half_cycle_min_y_intercept < self.amplitude_range[1]
+        ), (
+            "The minimum y intercept for the big decreasing half cycles "
+            "must be less than the maximum amplitude."
+        )
+        assert (
+            self.config.get("big_decreasing_half_cycle_amplitude", 0.925)
+            < self.amplitude_range[1]
+        ), (
+            "The amplitude of the big decreasing half cycles "
+            "must be less than the maximum amplitude."
+        )
 
+    def _initialize_dynamic_attributes(self):
+        """Initializes the dynamic attributes."""
         # Calculate length of the stimulus
         self.desired_length_random_half_cycles = (
             self._get_desired_length_random_half_cycles(
@@ -92,34 +134,27 @@ class StimulusGenerator:
         self.periods = self._get_periods()
         self.amplitudes = self._get_amplitudes()
 
-        # Stimulus
-        self.y = None  # Placeholder for the stimulus
-        self.extensions = []  # Placeholder for the extensions from the add_methods
-        self._generate_stimulus()
-        if not debug:
-            self.add_plateaus()
-            self.add_calibration()
-            self.add_prolonged_minima()
-
     @property
-    def duration(self):  # in seconds
+    def duration(self) -> float:  # in seconds
         return len(self.y) / self.sample_rate
 
     @property
-    def t(self):
+    def t(self) -> np.ndarray:
         return np.linspace(0, self.duration, len(self.y))
 
     @property
-    def y_dot(self):
+    def y_dot(self) -> np.ndarray:
         return np.gradient(self.y, 1 / self.sample_rate)  # dx in seconds
 
     @property
     def big_decreasing_intervals(self) -> list[tuple[int, int]]:
+        """Get the start and end indices of the big decreasing half cycles for labeling."""
         intervals = []
         for idx in self.big_decreasing_half_cycle_idx:
             start = sum(self.periods[:idx]) * self.sample_rate
-            # Adjust the start position based on the extensions that occurred before this index
-            start += sum(ext for i, ext in self.extensions if i < start)
+            for extension in self._extensions:
+                if extension[0] <= start:
+                    start += extension[1]
             end = start + self.big_decreasing_half_cycle_period * self.sample_rate
             intervals.append((start, end))
         return intervals
@@ -179,7 +214,6 @@ class StimulusGenerator:
         Constraints:
         - The sum of the periods must equal desired_length.
         """
-        # TODO: add variance check for rAnDoMnEsS?
         counter = 0
         while True:
             counter += 1
@@ -215,7 +249,7 @@ class StimulusGenerator:
 
         Contraints:
         - The resulting function must be within -1 and 1.
-        - The maximum y_intercept is greater than 0.95.
+        - The y intercept of each big decrease is greater than big_decreasing_half_cycle_min_y_intercept.
         - The inflection point of each cosine segment is within inflection_point_range.
         """
         retry_limit_per_half_cycle = 5
@@ -238,7 +272,7 @@ class StimulusGenerator:
                         amplitude = self.rng_numpy.uniform(
                             self.amplitude_range[0], self.amplitude_range[1]
                         )
-                        if not i & 1:
+                        if i % 2 == 0:
                             # invert amplitude for increasing half cycles
                             amplitude *= -1
                     next_y_intercept = y_intercept + amplitude * -2
@@ -259,7 +293,14 @@ class StimulusGenerator:
                 if not valid_amplitude_found:
                     success = False
                     break
-            if success and np.max(y_intercepts) > 0.95:
+            if not success:
+                continue
+
+            big_decreases_high_enough = np.all(
+                np.array(y_intercepts)[self.big_decreasing_half_cycle_idx]
+                > self.big_decreasing_half_cycle_min_y_intercept
+            )
+            if success and big_decreases_high_enough:
                 break
         if self.debug:
             print(f"Amplitudes: {counter} iterations to converge")
@@ -366,104 +407,13 @@ class StimulusGenerator:
             )
             last_idx = idx
             # Track the extensions
-            self.extensions.append((idx, repeat_count))
+            self._extensions.append((idx, repeat_count))
         # Append any remaining values after the last index
         y_new = np.concatenate((y_new, self.y[last_idx:]))
         return y_new
 
 
-def stimulus_extra(
-    stimulus: StimulusGenerator,
-    s_RoC: float,
-    display_stats: bool = True,
-) -> tuple[np.ndarray, np.ndarray, go.Figure]:
-    """
-    For plotly graphing of f(x), f'(x), and labels. Also displays the number and length of cooling segments.
-
-    Parameters
-    ----------
-    stimulus : StimulusGenerator
-        The stimulus object.
-    s_RoC : float
-        The rate of change threshold (°C/s) for alternative labels.
-        For more information about thresholds, also see: http://www.scholarpedia.org/article/Thermal_touch#Thermal_thresholds
-    display_stats : bool, optional
-        If True, the number and length of cooling segments are displayed (default is True).
-
-    Returns
-    -------
-    labels : array_like
-        A binary array where 0 indicates cooling and 1 indicates heating.
-    labels_alt : array_like
-        A ternary array where 0 indicates cooling, 1 indicates heating, and 2 indicates a rate of change less than s_RoC.
-    fig : plotly.graph_objects.Figure
-        The plotly figure.
-
-    Examples
-    --------
-    >>> _ = stimulus_extra(stimulus, s_RoC=0.2)
-    """
-    time = np.array(range(len(stimulus.y))) / stimulus.sample_rate
-    # 0 for cooling, 1 for heating
-    labels = (stimulus.y_dot >= 0).astype(int)
-    # alternative: 0 for cooling, 1 for heating, 2 for RoC < s_RoC
-    labels_alt = np.where(np.abs(stimulus.y_dot) > s_RoC, labels, 2)
-
-    # Plot functions and labels
-    fig = go.Figure()
-    fig.update_layout(
-        autosize=True, height=300, width=900, margin=dict(l=20, r=20, t=40, b=20)
-    )
-    fig.update_xaxes(title_text="Time (s)", tickmode="linear", tick0=0, dtick=10)
-    fig.update_yaxes(
-        title_text=r"Temperature (°C) \ RoC (°C/s)",
-        # range=[
-        #     n:=min(stimulus.y) if np.sign(min(stimulus.y)) +1 else min(min(stimulus.y), -1),
-        #     max(stimulus.y) if np.sign(n) + 1 else abs(n),
-        # ]
-    )
-
-    func = [stimulus.y, stimulus.y_dot, labels, labels_alt]
-    func_names = "f(x)", "f'(x)", "Label", "Label (alt)"
-    colors = "royalblue", "skyblue", "springgreen", "violet"
-
-    for idx, i in enumerate(func):
-        visible = (
-            "legendonly" if idx != 0 else True
-        )  # only show the first function by default
-        fig.add_scatter(
-            x=time,
-            y=i,
-            name=func_names[idx],
-            line=dict(color=colors[idx]),
-            visible=visible,
-        )
-    fig.show()
-
-    # Calculate the number and length of cooling segments from the alternative labels.
-    # segment_change indicates where the label changes,
-    # segment_number is the cumulative sum of segment_change
-    df = pd.DataFrame({"label": labels_alt})
-    df["segment_change"] = df["label"].ne(df["label"].shift())
-    df["segment_number"] = df["segment_change"].cumsum()
-
-    # group by segment_number and calculate the size of each group
-    segment_sizes = df.groupby("segment_number").size()
-
-    # filter the segments that correspond to the label 0
-    label_0_segments = df.loc[df["label"] == 0, "segment_number"]
-    label_0_sizes = segment_sizes.loc[label_0_segments.unique()]
-
-    # calculate the number and length of segments in seconds
-    if display_stats:
-        print(
-            f"Cooling segments [s] based on 'Label_alt' with a rate of change threshold of {s_RoC} (°C/s):\n"
-        )
-        print((label_0_sizes / stimulus.sample_rate).describe().apply("{:,.2f}".format))
-
-    return labels, labels_alt, fig
-
-
 if __name__ == "__main__":
-    stimulus = StimulusGenerator()
-    _ = stimulus_extra(stimulus, s_RoC=0.2)
+    # for debugging
+    stimulus = StimulusGenerator(seed=246)
+    print(stimulus.big_decreasing_intervals)
