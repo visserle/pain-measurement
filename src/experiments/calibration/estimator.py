@@ -68,12 +68,12 @@ class BayesianEstimatorVAS:
 
     def __init__(
         self,
-        vas_value,
-        trials,
-        temp_start,
-        temp_std,
-        likelihood_std=1,
-        reduction_factor=0.9,
+        vas_value: int,
+        trials: int,
+        temp_start: float,
+        temp_std: float,
+        likelihood_std: float = 1,
+        reduction_factor: float = 0.9,
     ):
         """
         Initialize the VAS_Estimator object for recursive Bayesian estimation of temperature based on VAS values.
@@ -167,7 +167,11 @@ class BayesianEstimatorVAS:
     def steps(self) -> np.ndarray:
         return np.diff(self.temps)
 
-    def conduct_trial(self, response: str, trial: int) -> None:
+    def conduct_trial(
+        self,
+        response: str,
+        trial: int,
+    ) -> None:
         """
         Conducts a single estimation trial and updates internal states based on the response.
 
@@ -202,7 +206,7 @@ class BayesianEstimatorVAS:
         posterior /= np.sum(posterior)  # normalize
 
         # Choose the temperature for the next trial based on the posterior distribution
-        self.current_temp = np.round(self.range_temp[np.argmax(posterior)], 1)
+        self.current_temp = np.round(self.range_temp[np.argmax(posterior)], 2)
 
         # Store the distributions and temperature
         self.priors.append(self.prior)
