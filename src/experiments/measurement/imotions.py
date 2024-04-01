@@ -303,7 +303,7 @@ class EventRecievingiMotions:
 
         self.data_points = []
 
-    def connect(self):
+    def connect(self) -> None:
         try:
             self.sock.connect((self.HOST, self.PORT))
             logger.debug("Ready for event recieving.")
@@ -318,12 +318,16 @@ class EventRecievingiMotions:
     def _send_message(self, message):
         self.sock.sendall(message.encode("utf-8"))
 
-    def send_marker(self, marker_name, value):
+    def send_marker(
+        self,
+        marker_name: str,
+        value: str | int | float,
+    ) -> None:
         imotions_marker = f"M;2;;;{marker_name};{value};D;\r\n"
         self._send_message(imotions_marker)
         logger.debug("Received marker %s: %s.", marker_name, value)
 
-    def send_prep_markers(self):
+    def send_prep_markers(self) -> None:
         """
         Sends a start and end marker for the preparation phase of the heat stimulus (ramp on and off).
 
@@ -332,7 +336,7 @@ class EventRecievingiMotions:
         self._send_message(next(self.prep_cycle))
         logger.debug("Received marker for thermode ramp on/off.")
 
-    def send_stimulus_markers(self, seed: int):
+    def send_stimulus_markers(self, seed: int) -> None:
         """
         Sends a start (S) and end (E) marker for a given seed value of a stimulus function.
 
@@ -380,10 +384,16 @@ class EventRecievingiMotions:
                     rating,
                 )
 
-    def clear_data_points(self):
+    def clear_data_points(self) -> None:
+        """
+        Clear the data points stored in the class.
+        """
         self.data_points = []
 
-    def close(self):
+    def close(self) -> None:
+        """
+        Close the connection to the iMotions software.
+        """
         try:
             self.sock.close()
             logger.debug("Closed event recieving connection.")

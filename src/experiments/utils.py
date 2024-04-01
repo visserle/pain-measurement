@@ -127,7 +127,7 @@ class CustomTextBox(TextBox):
     #     del lines[0]
     """
 
-    def format_block(self, block):
+    def format_block(self, block) -> str:
         """Format the given block of text.
 
         This function is trimming leading and trailing

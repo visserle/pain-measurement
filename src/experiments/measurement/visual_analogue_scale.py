@@ -55,13 +55,13 @@ class VisualAnalogueScale:
             self.label_right_position[1],
         )
 
-        self.create_slider_elements()
+        self._create_slider_elements()
 
         # Initialize the last x position and the rating
         self.last_x_pos = -1
         self.rating = 50
 
-    def create_slider_elements(self):
+    def _create_slider_elements(self):
         # Create the bar, ends, slider and labels
         self.bar = stimuli.Rectangle(
             (self.bar_length, self.bar_thickness), position=self.bar_position
@@ -109,7 +109,7 @@ class VisualAnalogueScale:
         self,
         instruction_textbox: stimuli.TextBox = None,
         timestamp: int = None,
-    ):
+    ) -> None:
         # Use the provided timestamp if given, otherwise, retrieve from experiment
         if timestamp is None:
             timestamp = self.experiment.clock.time
