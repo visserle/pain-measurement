@@ -37,16 +37,17 @@ from src.log_config import configure_logging
 # Paths
 EXP_NAME = "pain-measurement"
 EXP_DIR = Path("src/experiments/measurement")
+RESULTS_DIR = Path("data/experiments")
 DATA_DIR = Path("data/imotions")
 RUN_DIR = Path("runs/experiments/measurement")
-RUN_DIR.mkdir(parents=True, exist_ok=True)
+RUN_DIR.mkdir(parents=True, exist_ok=True)  # needed for expyriment
 LOG_DIR = RUN_DIR / "logs"
 
 SCRIPT_FILE = EXP_DIR / "measurement_script.yaml"
 CONFIG_FILE = EXP_DIR / "measurement_config.toml"
 THERMOINO_CONFIG_FILE = EXP_DIR.parent / "thermoino_config.toml"
-MEASUREMENT_RUN_FILE = RUN_DIR / "measurement.csv"
-CALIBRATION_RUN_FILE = Path("runs/experiments/calibration/calibration.csv")
+MEASUREMENT_RESULTS = RESULTS_DIR / "measurement_results.csv"
+CALIBRATION_RESULTS = RESULTS_DIR / "calibration_results.csv"
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
 
 # Load configurations and script
@@ -131,7 +132,7 @@ io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 
 # Load participant info and update stimulus config with calibration data
-participant_info = read_last_participant(CALIBRATION_RUN_FILE)
+participant_info = read_last_participant(CALIBRATION_RESULTS)
 STIMULUS.update(participant_info)
 random.shuffle(STIMULUS["seeds"])
 
@@ -198,18 +199,17 @@ def main():
     for text in SCRIPT["instruction"].values():
         exp.keyboard.wait(
             K_SPACE,
-            callback_function=lambda text=text: vas_slider.rate(
-                instruction_textbox=text
-            ),
+            callback_function=lambda text=text: vas_slider.rate(text),
         )
 
     # Ready
-    SCRIPT["ready_set_go"].present()
-    exp.keyboard.wait(K_SPACE)
+    for text in SCRIPT["ready"].values():
+        text.present()
+        exp.keyboard.wait(K_SPACE)
 
     # Trial loop
     total_trials = len(STIMULUS["seeds"])
-    correlations = []
+    correlations = []  # between temperature and rating
     for trial, seed in enumerate(STIMULUS["seeds"]):
         logging.info(f"Started trial ({trial + 1}/{total_trials}) with seed {seed}.")
 
@@ -272,7 +272,7 @@ def main():
             )
         imotions_event.clear_data_points()
 
-        # End of trial
+        # Next trial
         if trial == total_trials - 1:
             break
         SCRIPT["next_trial"].present()
@@ -285,7 +285,7 @@ def main():
     participant_info_["seed_order"] = STIMULUS["seeds"]
     participant_info_["correlations"] = correlations
     participant_info_["reward"] = reward
-    add_participant_info(participant_info_, MEASUREMENT_RUN_FILE)
+    add_participant_info(participant_info_, MEASUREMENT_RESULTS)
 
     # End of Experiment
     SCRIPT["bye"].present()

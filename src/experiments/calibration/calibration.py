@@ -26,14 +26,15 @@ from src.log_config import configure_logging
 # Paths
 EXP_NAME = "pain-calibration"
 EXP_DIR = Path("src/experiments/calibration")
+RESULTS_DIR = Path("data/experiments")
 RUN_DIR = Path("runs/experiments/calibration")
-RUN_DIR.mkdir(parents=True, exist_ok=True)
+RUN_DIR.mkdir(parents=True, exist_ok=True)  # needed for expyriment
 LOG_DIR = RUN_DIR / "logs"
 
 SCRIPT_FILE = EXP_DIR / "calibration_script.yaml"
 CONFIG_FILE = EXP_DIR / "calibration_config.toml"
 THERMOINO_CONFIG_FILE = EXP_DIR.parent / "thermoino_config.toml"
-CALIBRATION_RUN_FILE = RUN_DIR / "calibration.csv"
+CALIBRATION_RESULTS = RESULTS_DIR / "calibration_results.csv"
 log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
 
 # Load configurations and script
@@ -148,7 +149,7 @@ thermoino = Thermoino(
 thermoino.connect()
 
 
-def run_estimation_trials(estimator: BayesianEstimatorVAS):
+def run_estimation_trials(estimator: BayesianEstimatorVAS) -> None:
     """Run estimation trials and return the final estimate."""
     for trial in range(estimator.trials):
         cross["idle"].present()
@@ -286,7 +287,7 @@ def main():
     participant_info["vas70_temps"] = estimator_vas70.temps
     participant_info["vas0_temps"] = estimator_vas0.temps
     add_participant_info(
-        participant_info, CALIBRATION_RUN_FILE
+        participant_info, CALIBRATION_RESULTS
     ) if not args.debug else None
     if args.debug:
         logging.debug(f"Participant data: {participant_info}")
