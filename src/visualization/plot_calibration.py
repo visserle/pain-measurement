@@ -1,5 +1,3 @@
-"""See calibration notebook for a visualization of the calibration process."""
-
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -10,6 +8,7 @@ def plot_trials(
     estimator: BayesianEstimatorVAS,
     interactive: bool = False,
 ) -> None:
+    # Extract data from the estimator
     priors = estimator.priors
     likelihoods = estimator.likelihoods
     posteriors = estimator.posteriors
