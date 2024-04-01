@@ -1,3 +1,4 @@
+import ast
 import tkinter as tk
 
 from screeninfo import get_monitors
@@ -6,6 +7,14 @@ from screeninfo import get_monitors
 def ensure_list(to_list: str | list[str]) -> list[str]:
     """Convert str to list idempotently."""
     return [to_list] if isinstance(to_list, str) else to_list
+
+
+def convert_str_to_list(str_list: str) -> list:
+    """Convert a string representation of a list to a list."""
+    try:
+        return ast.literal_eval(str_list)
+    except ValueError:
+        return []  # return an empty list in case of error
 
 
 def center_tk_window(
