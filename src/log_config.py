@@ -8,28 +8,27 @@ from pathlib import Path
 
 def configure_logging(
     stream_level: int = logging.INFO,
-    stream: bool = True,
     file_level: int = logging.DEBUG,
     file_path: Path | str | None = None,
     ignore_libs: list[str] | None = None,
+    stream: bool = True,
     stream_milliseconds: bool = False,
 ) -> None:
     """
-    Configures the root logger for logging messages to the console and optionally to a file.
-    Supports ignoring logs from specified libraries and colored output.
+    Configures the root logger for console and file logging with the specified parameters.
 
     Parameters:
     - stream_level: The logging level for the stream handler.
-    - stream: Whether to enable the stream handler for console logging.
     - file_level: The logging level for the file handler.
-    - file_path: The path to the debug log file for the file handler, logs are only saved to a file if this is provided.
-    - ignore_libs: A list of library names whose logs should be ignored.
-    - stream_milliseconds: Whether to include milliseconds in the stream log timestamps (performance impact).
+    - file_path: The path to the log file (if None, file logging is disabled).
+    - ignore_libs: A list of library names to ignore in the logs.
+    - stream: Whether to enable console logging (default is True).
+    - stream_milliseconds: Whether to include milliseconds in the console log timestamps (default is False).
 
     Example usage:
     >>> import logging
-    >>> configure_logging(stream_level=logging.DEBUG, ignore_libs=["matplotlib"])
-    >>> logging.debug("This is a debug message.")
+    >>> configure_logging(stream_level=logging.DEBUG)
+    >>> logging.debug("This is a beautiful debug message.")
     """
 
     handlers = []
@@ -81,7 +80,7 @@ def configure_logging(
     logging.basicConfig(level=min(stream_level, file_level), handlers=handlers)
 
 
-def close_root_logging():
+def close_root_logging() -> None:
     """
     Safely closes and removes all handlers associated with the root logger.
 
