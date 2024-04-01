@@ -90,6 +90,25 @@ instruction:
 
 
 
+    Ganz links bedeutet "keine Schmerzen" und ganz rechts "Sehr starke Schmerzen".
+    ("Sehr starke Schmerzen" entsprechen der 7 von 10 aus Ihrer Schmerz-Kalibrierung.)
+
+
+
+
+
+
+
+
+
+
+
+    (Leertaste drücken, um fortzufahren)
+  3: |-
+
+
+
+
     Während des Experiments haben Sie die Aufgabe, Ihren Schmerz mittels der Skala kontinuierlich zu bewerten.
 
 
@@ -103,7 +122,8 @@ instruction:
 
 
     (Leertaste drücken, um fortzufahren)
-ready_set_go: |-
+ready:
+  1: |-
 
 
 
@@ -111,12 +131,25 @@ ready_set_go: |-
 
 
 
-  Als Nächstes startet das Experiment.
-  
-  Sollten Sie noch Fragen haben, richten Sie sich bitte jetzt an die Versuchsleitung.
-  
-  
-  (Leertaste drücken, um fortzufahren)
+    Wir möchten Sie bitten, bei der Schmerzstimulation nicht zu sprechen, nicht zu trinken und Ihre Augen immer geöffnet zu halten (Blinzeln ist erlaubt).
+    Konzentrieren Sie sich ganz auf Ihre Empfindungen.
+
+    
+    (Leertaste drücken, um fortzufahren)
+  2: |-
+
+
+
+
+
+
+
+    Als Nächstes startet das Experiment.
+    
+    Sollten Sie noch Fragen haben, richten Sie sich bitte jetzt an die Versuchsleitung.
+    
+    
+    (Leertaste drücken, um fortzufahren)
 next_trial: |-
 
 
@@ -181,7 +214,7 @@ bye: |-
 
   Vielen Dank! Die Schmerz-Messung ist erfolgreich abgeschlossen.
 
-  Als Nächstes geht es mit dem Fragebogen weiter.
+  Als Nächstes geht es mit den Fragebögen weiter.
   
 
   Bitte melden Sie sich bei der Versuchsleitung.
