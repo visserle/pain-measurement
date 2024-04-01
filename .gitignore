@@ -1,3 +1,6 @@
+# Log files
+/runs
+
 # work in progress
 notebooks/00_stimuli_function.ipynb
 notebooks/03_dataset_size.ipynb
@@ -13,11 +16,9 @@ src/models/models.py
 src/models/models_2.py
 src/questionnaires/archive
 Src/experiments/oddball.py
-/events
 /src/experiments/questionnaires/archive
 
 # excluded for now
-/runs
 notebooks/_stuff.ipynb
 notebooks/10_skorch_doctor.ipynb
 plan.md
@@ -28,8 +29,6 @@ plan.md
 /data/interim
 /data/processed
 /data/raw
-
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -121,12 +120,7 @@ target/
 
 
 src/experiments/questionnaires/inventory/bdi-ii.yaml
-src/experiments/questionnaires/inventory/brs.yaml
-src/experiments/questionnaires/inventory/erq.yaml
-src/experiments/questionnaires/inventory/lot-r.yaml
-src/experiments/questionnaires/inventory/maas.yaml
-src/experiments/questionnaires/inventory/maia-2.yaml
+src/experiments/questionnaires/inventory/panas.yaml
 src/experiments/questionnaires/inventory/pcs.yaml
 src/experiments/questionnaires/inventory/pvaq.yaml
 src/experiments/questionnaires/inventory/stai-t-10.yaml
-src/experiments/questionnaires/inventory/panas.yaml
