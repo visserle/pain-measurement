@@ -1,4 +1,4 @@
-port = "COM3" # COM7 for Luigi, COM12 for Mario
+port = "COM7" # COM7 for Luigi, COM12 for Mario
 mms_baseline = 28.0  # must be the same as in MMS
 mms_rate_of_rise = 10.0  # must be the same as in MMS
 bin_size_ms = 500
