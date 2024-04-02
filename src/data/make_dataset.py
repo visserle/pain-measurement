@@ -5,6 +5,9 @@
 # - makes a bit more sense to only display the warning for missing datasets once at loading time
 # - in thw other functions we can just check if the dataset is available and skip it if not
 # - based on a list of available datasets for each participant not with the convoluted if statements
+# - use parquet for internal processing instead of csv https://kaveland.no/friends-dont-let-friends-export-to-csv.html
+# - support csv as an addtional output format at the end
+# - NOTE we won't publish this basic data set on huggingface
 
 
 """
@@ -25,7 +28,7 @@ from pathlib import Path
 import polars as pl
 
 from src.data.config_data import DataConfigBase
-from src.data.config_data_imotions import IMOTIONS_DICT, IMOTIONS_LIST, iMotionsConfig
+from src.data.config_data_imotions import IMOTIONS_LIST, iMotionsConfig
 from src.data.config_data_raw import RAW_LIST, RawConfig
 from src.data.config_participant import PARTICIPANT_LIST, ParticipantConfig
 from src.log_config import configure_logging
@@ -63,7 +66,8 @@ class Participant:
 
 
 def load_dataset(
-    participant_config: ParticipantConfig, data_config: DataConfigBase
+    participant_config: ParticipantConfig,
+    data_config: DataConfigBase,
 ) -> Data:
     file_path = (
         data_config.load_dir
@@ -110,7 +114,8 @@ def load_dataset(
 
 
 def load_participant_datasets(
-    participant_config: ParticipantConfig, data_configs: list[DataConfigBase]
+    participant_config: ParticipantConfig,
+    data_configs: list[DataConfigBase],
 ) -> Participant:
     datasets: dict[str, Data] = {}
     for data_config in data_configs:
@@ -134,7 +139,10 @@ def load_participant_datasets(
     return Participant(id=participant_config.id, datasets=datasets)
 
 
-def transform_dataset(data: Data, data_config: DataConfigBase) -> Data:
+def transform_dataset(
+    data: Data,
+    data_config: DataConfigBase,
+) -> Data:
     """
     Transform a single dataset.
     Note that we just map a list of functions to the dataset. Could be made faster probably.
@@ -173,6 +181,7 @@ def transform_participant_datasets(
         for data_config in IMOTIONS_LIST:
             if data_config.name in participant_config.not_available_data:
                 continue  # skip datasets that are not available, FIXME a bit convoluted, better to have a list of available datasets for each participant
+                # or just remove it all together
             # add the stimuli seed column to all datasets of the participant except for the trial data which already has it
             if (
                 "Stimuli_Seed"
@@ -208,7 +217,9 @@ def transform_participant_datasets(
 
 
 def save_dataset(
-    data: Data, participant_data: Participant, data_config: DataConfigBase
+    data: Data,
+    participant_data: Participant,
+    data_config: DataConfigBase,
 ) -> None:
     """Save a single dataset to a csv file."""
     output_dir = data_config.save_dir / participant_data.id
@@ -263,7 +274,7 @@ def main():
     ]
 
     for data_configs in list_of_data_configs:
-        for participant_config in PARTICIPANT_LIST:
+        for participant_config in PARTICIPANT_LIST[:1]:
             participant_data = load_participant_datasets(
                 participant_config, data_configs
             )
