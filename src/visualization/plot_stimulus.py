@@ -70,6 +70,23 @@ def plot_stimulus_extra(
             line=dict(color=colors[idx]),
             visible=visible,
         )
+
+    for interval in stimulus.big_decreasing_intervals:
+        start_time, end_time = (
+            interval[0] / stimulus.sample_rate,
+            interval[1] / stimulus.sample_rate,
+        )
+        fig.add_shape(
+            type="rect",
+            x0=start_time,
+            y0=min(stimulus.y),
+            x1=end_time,
+            y1=max(stimulus.y),
+            line=dict(width=0),
+            fillcolor="salmon",
+            opacity=0.1,
+        )
+
     fig.show()
 
     # Calculate the number and length of cooling segments from the alternative labels.
