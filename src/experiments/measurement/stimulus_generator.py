@@ -204,7 +204,7 @@ class StimulusGenerator:
         )
 
     def _get_big_decreasing_half_cycle_idx_for_insert(self) -> np.ndarray:
-        """Indices for np.insert"""
+        """Indices for np.insert."""
         return [i - idx for idx, i in enumerate(self.big_decreasing_half_cycle_idx)]
 
     def _get_periods(self) -> np.ndarray:
@@ -214,6 +214,7 @@ class StimulusGenerator:
         Constraints:
         - The sum of the periods must equal desired_length.
         """
+        # Iteratively find periods for the random half cycles
         counter = 0
         while True:
             counter += 1
@@ -228,6 +229,7 @@ class StimulusGenerator:
                 == self.desired_length_random_half_cycles
             ):
                 break
+        # Insert the big decreasing half cycle periods
         periods = np.insert(
             periods,
             self.big_decreasing_half_cycle_idx_for_insert,
@@ -249,7 +251,7 @@ class StimulusGenerator:
 
         Contraints:
         - The resulting function must be within -1 and 1.
-        - The y intercept of each big decrease is greater than big_decreasing_half_cycle_min_y_intercept.
+        - The y_intercept of each big decrease is greater than big_decreasing_half_cycle_min_y_intercept.
         - The inflection point of each cosine segment is within inflection_point_range.
         """
         retry_limit_per_half_cycle = 5

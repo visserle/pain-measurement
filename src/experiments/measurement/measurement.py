@@ -159,7 +159,7 @@ prepare_script(
     text_box_size=scale_2d_tuple(EXPERIMENT["text_box_size"], screen_size),
     text_size=scale_1d_value(EXPERIMENT["text_size"], screen_size),
 )
-vas_slider = VisualAnalogueScale(experiment=exp, vas_config=VAS)
+vas_slider = VisualAnalogueScale(experiment=exp, config=VAS)
 
 # Initialize Thermoino
 thermoino = ThermoinoComplexTimeCourses(
@@ -171,7 +171,7 @@ thermoino = ThermoinoComplexTimeCourses(
 thermoino.connect()
 
 
-def get_data_points(temp_course):
+def get_data_points(temp_course) -> None:
     """Get rating and temperature data points and send them to iMotions (run in callback)."""
     stopped_time = exp.clock.stopwatch_time
     vas_slider.rate()

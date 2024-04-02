@@ -30,6 +30,7 @@ shorten_expected_duration = 7
 big_decreasing_half_cycle_num = 3
 big_decreasing_half_cycle_period = 20
 big_decreasing_half_cycle_amplitude = 0.925
+big_decreasing_half_cycle_min_y_intercept = 0.9
 plateau_num = 2
 plateau_duration = 15
 plateau_percentile_range = [25, 50]
