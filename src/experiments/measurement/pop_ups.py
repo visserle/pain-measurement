@@ -48,6 +48,8 @@ def ask_for_measurement_start() -> bool:
     items = [
         "MMS Programm umgestellt?",
         "MMS Trigger-bereit?",
+        "Jalousien unten?",
+        "Hautareal gewechselt?",
         "iMotions' Kalibrierung bestätigt?",
         "Sensor Preview geöffnet?",
         "Signale überprüft (PPG, EDA, Eyetracking)?",
