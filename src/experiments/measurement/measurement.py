@@ -134,6 +134,12 @@ control.defaults.initialize_delay = 3
 
 # Load participant info and update stimulus config with calibration data
 participant_info = read_last_participant(CALIBRATION_RESULTS)
+# determine oder if skin areas based on participant ID
+SKIN_AREAS = range(1, 7) if int(participant_info["id"]) % 2 else range(6, 0, -1)
+logging.info(
+    f"Participant ID is {'odd' if int(participant_info['id']) % 2 else 'even'}. "
+    f"Start with skin area {SKIN_AREAS[0]}."
+)
 STIMULUS.update(participant_info)
 random.shuffle(STIMULUS["seeds"])
 
@@ -278,6 +284,9 @@ def main():
         # Next trial
         if trial == total_trials - 1:
             break
+        logging.info(
+            f"Next, use skin area {SKIN_AREAS[(trial + 1) % len(SKIN_AREAS)]}."
+        )
         SCRIPT["next_trial"].present()
         exp.keyboard.wait(K_SPACE)
         SCRIPT["approve"].present()

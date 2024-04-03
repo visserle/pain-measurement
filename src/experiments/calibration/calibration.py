@@ -108,9 +108,16 @@ control.defaults.initialize_delay = 3
 participant_info = (
     read_last_participant() if not args.debug else config["dummy_participant"]
 )
+# determine oder if skin areas based on participant ID
+SKIN_AREAS = range(1, 7) if int(participant_info["id"]) % 2 else range(6, 0, -1)
+logging.info(
+    f"Participant ID is {'odd' if int(participant_info['id']) % 2 else 'even'}. "
+    f"Use skin area {SKIN_AREAS[1]}."
+)
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
+
 # Prepare stimuli objects
 prepare_script(
     SCRIPT,
