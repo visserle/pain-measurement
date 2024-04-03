@@ -49,11 +49,14 @@ class RemoteControliMotions:
     """
     This class provides an interface to control the iMotions software remotely.
 
-    The class is designed to be integrated within an experiment, allowing for the initiation of studies, sending of commands, and receiving responses from the iMotions software.
+    The class is designed to be integrated within an experiment, allowing for the
+    initiation of studies, sending of commands, and receiving responses from
+    the iMotions software.
 
     Methods:
     --------
-    - __init__(self, study, participant_info, dummy=False): Initializes the class with study and participant details.
+    - __init__(self, study, participant_info, dummy=False): Initializes the class with
+    study and participant details.
     - connect(self): Establishes a connection to the iMotions software.
     - start_study(self): Initiates a study in iMotions.
     - end_study(self): Ends the current study in iMotions.
@@ -81,13 +84,16 @@ class RemoteControliMotions:
     Notes:
     ------
     - Ensure that the iMotions software is running with the Remote Control API enabled.
-    - The query structure for communication follows a specific format, e.g., "R;2;TEST;STATUS\\r\\n", where the query parts are:
+    - The query structure for communication follows a specific format,
+      e.g., "R;2;TEST;STATUS\\r\\n", where the query parts are:
         - R: Represents a specific command or operation.
-        - 2: Represent a version or type of the command. Different queries need different versions.
-        - TEST: Is a placeholder or specific command identifier. Not used in this implementation.
-        - STATUS: Is the actual command or operation to be performed. It is always at index 3.
+        - 2: Represent a version or type of the command. Different queries need
+          different versions.
+        - TEST: Is a placeholder or specific command identifier. Not used here.
+        - STATUS: Is the actual command or operation to be performed. Always at index 3.
         - \\r\\n: The end of the query (with only one backslash)
-        -> See the iMotions Remote Control API documentation for more details and the different versions of the commands.
+    -> See the iMotions Remote Control API documentation for more details and
+       the different versions of the commands.
     """
 
     HOST = "localhost"
@@ -112,7 +118,8 @@ class RemoteControliMotions:
             if not dummy
             else DummySocket()
         )
-        # longer timeout to have time to react to iMotions prompts (if enabled via start_study mode)
+        # longer timeout to have time to react to iMotions prompts
+        # (if enabled via start_study mode)
         self.sock.settimeout(30.0)
         self.connected = None
 
@@ -168,16 +175,23 @@ class RemoteControliMotions:
         Notes
         -----
         There are three prompt handling commands in v3:
-        - NormalPrompt: Default behavior where the operator is prompted to confirm continuing when certain conditions are detected e.g. an expected sensor is not active.
-        - NoPromptIgnoreWarnings: The operator is not prompted on warnings, it is assumed that the continue option is desired.
-        - NoPrompt: The operator is not prompted on warnings, they are treated as errors, and the study will not be run.
+        - NormalPrompt: Default behavior where the operator is prompted to confirm
+          continuing when certain conditions are detected e.g. an expected sensor is
+          not active.
+        - NoPromptIgnoreWarnings: The operator is not prompted on warnings, it is
+          assumed that the continue option is desired.
+        - NoPrompt: The operator is not prompted on warnings, they are treated as
+          errors, and the study will not be run.
         """
         # sent status request to iMotions and proceed if iMotions is ready
         if self._check_status() != 0:
             logger.error("Not ready to start study.")
             raise iMotionsError("Not ready to start study.")
         gender = "Female" if self.participant_info["gender"] == "f" else "Male"
-        start_study_query = f"R;3;;RUN;{self.study};{self.participant_info['id']};Age={self.participant_info['age']} Gender={gender};{mode}\r\n"
+        start_study_query = (
+            f"R;3;;RUN;{self.study};{self.participant_info['id']};"
+            f"Age={self.participant_info['age']} Gender={gender};{mode}\r\n"
+        )
         response = self._send_and_receive(start_study_query)
         # e.g. "13;RemoteControl;RUN;;-1;;1;"
         if not self._validate_response(response):
@@ -216,7 +230,8 @@ class RemoteControliMotions:
         """
         Export data from iMotions to a given directory path.
 
-        Note that this function will throw an error if iMotions is still busy with a previous command.
+        Note that this function will throw an error if iMotions is still busy with a
+        previous command.
         """
         dir_path.mkdir(parents=True, exist_ok=True)
         logger.debug(
@@ -224,7 +239,10 @@ class RemoteControliMotions:
             self.participant_info["id"],
             dir_path,
         )
-        export_query = f"R;1;;EXPORTSENSORDATA;;{self.study};{self.participant_info['id']};{dir_path.resolve()};;\r\n"
+        export_query = (
+            f"R;1;;EXPORTSENSORDATA;;{self.study};"
+            f"{self.participant_info['id']};{dir_path.resolve()};;\r\n"
+        )
         response = self._send_and_receive(export_query)
         self._validate_response(response)
 
@@ -243,24 +261,35 @@ DataPoint = namedtuple("DataPoint", ["timestamp", "temperature", "rating"])
 
 class EventRecievingiMotions:
     """
-    This class provides an interface to send discrete markers / continuous event data to the iMotions software.
+    This class provides an interface to send discrete markers / continuous event data to
+    the iMotions software.
 
     Methods:
     --------
-    - __init__(self, sample_rate, dummy=False): Initializes the class with the sample rate for the rate limiter and a dummy mode.
-    - connect(self): Establishes a connection to the iMotions software for event receiving.
-    - send_marker(self, marker_name, value): Sends a specific marker with a given value to iMotions.
-    - send_prep_markers(self): Sends a start and end marker for the preparation phase of the heat stimulus (ramp on and off).
-    - send_stimulus_markers(self, seed): Sends a start/end marker for a given seed value of a stimulus function.
-    - send_data_rate_limited(self, timestamp, temperature, rating, debug=False): Sends temperature and rating data from the pain-measurement experiment to iMotions.
+    - __init__(self, sample_rate, dummy=False): Initializes the class with the sample
+      rate for the rate limiter and a dummy mode.
+    - connect(self): Establishes a connection to the iMotions software for event
+      receiving.
+    - send_marker(self, marker_name, value): Sends a specific marker with a given value
+      to iMotions.
+    - send_prep_markers(self): Sends a start and end marker for the preparation phase of
+      the heat stimulus (ramp on and off).
+    - send_stimulus_markers(self, seed): Sends a start/end marker for a given seed value
+      of a stimulus function.
+    - send_data_rate_limited(self, timestamp, temperature, rating, debug=False): Sends
+      temperature and rating data from the pain-measurement experiment to iMotions.
     - close(self): Closes the connection to the iMotions software.
 
     Notes:
     ------
     - The message types are: 'E' for Sensor Event and 'M' for Discrete Marker.
-    - iMotions supports both TCP and UDP network connections for event receiving. In this class, TCP is used (more reliable and ordered data transfer compared to UDP, but slower).
-    - iMotions can receive data from many event sources, and each event source can support multiple sample types.
-    - An additional event source definition file (XML text file) is used to describe the samples that can be received from a source.
+    - iMotions supports both TCP and UDP network connections for event receiving.
+      In this class, TCP is used (more reliable and ordered data transfer compared
+      to UDP, but slower).
+    - iMotions can receive data from many event sources, and each event source can
+      support multiple sample types.
+    - An additional event source definition file (XML text file) is used to describe the
+      samples that can be received from a source.
 
     Example Usage:
     --------------
@@ -284,14 +313,16 @@ class EventRecievingiMotions:
         dummy: bool = False,
     ):
         """
-        Initialize the class with the sample rate for the rate limiter and optional dummy mode.
+        Initialize the class with the sample rate for the rate limiter and optional
+        dummy mode.
         """
         self.sock = (
             socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             if not dummy
             else DummySocket()
         )
-        self.seed_cycles = {}  # class variable to keep track of seed cycles (start and end stimulus markers)
+        # Class variables to keep track of the cycling states for markers
+        self.seed_cycles = {}
         self.prep_cycle = itertools.cycle(
             [
                 "M;2;;;thermode_ramp_on/off;;S;\r\n",
@@ -329,7 +360,8 @@ class EventRecievingiMotions:
 
     def send_prep_markers(self) -> None:
         """
-        Sends a start and end marker for the preparation phase of the heat stimulus (ramp on and off).
+        Sends a start and end marker for the preparation phase of the heat stimulus
+        (ramp on and off).
 
         Uses a cycling state to alternate between the two markers.
         """
@@ -338,10 +370,12 @@ class EventRecievingiMotions:
 
     def send_stimulus_markers(self, seed: int) -> None:
         """
-        Sends a start (S) and end (E) marker for a given seed value of a stimulus function.
+        Sends a start (S) and end (E) marker for a given seed value of a stimulus
+        function.
 
-        This function creates and maintains a separate cycling state for each seed, ensuring that each call for a
-        particular seed alternates between start and end markers. A new cycle is initialized for each new seed.
+        This function creates and maintains a separate cycling state for each seed,
+        ensuring that each call for a particular seed alternates between start and end
+        markers. A new cycle is initialized for each new seed.
         """
         if (
             seed not in self.seed_cycles
@@ -365,7 +399,9 @@ class EventRecievingiMotions:
         """
         Send temperature and rating data to iMotions at once.
 
-        This function uses an interval-based rate limiter to ensure that the data is sent at a specific sampling rate.
+        This function uses an interval-based rate limiter to ensure that the data is
+        sent at a specific sampling rate.
+
         See imotions.xml for the xml structure.
         """
         if self.rate_limiter.is_allowed(timestamp):

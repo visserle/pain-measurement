@@ -75,7 +75,7 @@ class StimulusGenerator:
         )
         self.big_decreasing_half_cycle_amplitude = self.config.get(
             "big_decreasing_half_cycle_amplitude", 0.925
-        )  # times 2 for the full range of the half cycle
+        )  # * 2 = the full range of the half cycle
         self.big_decreasing_half_cycle_min_y_intercept = self.config.get(
             "big_decreasing_half_cycle_min_y_intercept", 0.9
         )  # based on the curve without temperature calibration
@@ -148,7 +148,9 @@ class StimulusGenerator:
 
     @property
     def big_decreasing_intervals(self) -> list[tuple[int, int]]:
-        """Get the start and end indices of the big decreasing half cycles for labeling."""
+        """
+        Get the start and end indices of the big decreasing half cycles for labeling.
+        """
         intervals = []
         for idx in self.big_decreasing_half_cycle_idx:
             start = sum(self.periods[:idx]) * self.sample_rate
@@ -251,7 +253,8 @@ class StimulusGenerator:
 
         Contraints:
         - The resulting function must be within -1 and 1.
-        - The y_intercept of each big decrease is greater than big_decreasing_half_cycle_min_y_intercept.
+        - The y_intercept of each big decrease is greater than
+          big_decreasing_half_cycle_min_y_intercept.
         - The inflection point of each cosine segment is within inflection_point_range.
         """
         retry_limit_per_half_cycle = 5
@@ -335,10 +338,11 @@ class StimulusGenerator:
         """
         Adds plateaus to the stimulus at random positions.
 
-        For each plateau, the temperature is rising and between the given percentile range.
+        For each plateau, the temperature is rising and between the given percentile
+        range.
         The distance between the plateaus is at least 1.5 times the plateau_duration.
         """
-        # Get indices of values within the given percentile range and with a rising temperature
+        # Get indices of values within the given percentile range
         percentile_low = np.percentile(self.y, self.plateau_percentile_range[0])
         percentile_high = np.percentile(self.y, self.plateau_percentile_range[1])
         idx_between_values = np.where(
@@ -353,10 +357,10 @@ class StimulusGenerator:
             counter += 1
             if counter == 100:
                 raise ValueError(
-                    "Unable to add the specified number of plateaus within the given wave.\n"
-                    "This issue usually arises when the number and/or duration of plateaus is too high.\n"
+                    "Unable to add the specified number of plateaus within the given wave.\n"  # noqa E501
+                    "This issue usually arises when the number and/or duration of plateaus is too high.\n"  # noqa E501
                     "relative to the plateau_duration of the wave.\n"
-                    "Try again with a different seed or change the parameters of the add_plateaus method."
+                    "Try again with a different seed or change the parameters of the add_plateaus method."  # noqa E501
                 )
             idx_plateaus = self.rng_numpy.choice(
                 idx_between_values, self.plateau_num, replace=False
@@ -375,14 +379,16 @@ class StimulusGenerator:
 
     def add_prolonged_minima(self):
         """
-        Prologue some of the minima in the stimulus to make it more relexaed, less predictable and slightly longer.
+        Prologue some of the minima in the stimulus to make it more relexaed, less
+        predictable and slightly longer.
 
         Otherwise, the stimulus can feel like a non-stop series of ups and downs.
         """
         minima_indices, _ = scipy.signal.find_peaks(-self.y, prominence=0.5)
         minima_values = self.y[minima_indices]
         # Find the indices of the smallest minima values
-        # (argsort returns indices that would sort the array, and we take the first `self.prolonged_minima_num` ones)
+        # (argsort returns indices that would sort the array,
+        # and we take the first `self.prolonged_minima_num` ones)
         smallest_minima_indices = np.argsort(minima_values)[: self.prolonged_minima_num]
         prolonged_minima_indices = minima_indices[smallest_minima_indices]
 

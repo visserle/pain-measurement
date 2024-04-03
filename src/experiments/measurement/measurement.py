@@ -101,7 +101,8 @@ if args.debug:
         f"Participant data: {args[0]}."
     )
     logging.debug(
-        "Enabled debug mode with dummy participant data. Results (logs and participant data) will not be saved."
+        "Enabled debug mode with dummy participant data. "
+        "Results (logs and participant data) will not be saved."
     )
 if args.windowed:
     logging.debug("Run in windowed mode.")
@@ -172,7 +173,9 @@ thermoino.connect()
 
 
 def get_data_points(temp_course) -> None:
-    """Get rating and temperature data points and send them to iMotions (run in callback)."""
+    """
+    Get rating and temperature data points and send them to iMotions (run in callback).
+    """
     stopped_time = exp.clock.stopwatch_time
     vas_slider.rate()
     index = int((stopped_time / 1000) * STIMULUS["sample_rate"])
@@ -235,7 +238,7 @@ def main():
         # Measure temperature and rating
         thermoino.exec_ctc()
         imotions_event.rate_limiter.reset()
-        exp.clock.reset_stopwatch()  # used to get the temperature in the callback function
+        exp.clock.reset_stopwatch()  # needed for the callback
         imotions_event.send_stimulus_markers(seed)
         exp.clock.wait_seconds(
             stimulus.duration - 0.001,  # prevent index out of range error
@@ -244,7 +247,7 @@ def main():
         imotions_event.send_stimulus_markers(seed)
         logging.info("Complex temperature course (CTC) finished.")
 
-        # Account for some delay at the end of the complex time course (see Thermoino documentation)
+        # Add delay at the end of the complex time course (see Thermoino class)
         exp.clock.wait_seconds(0.5, callback_function=lambda: vas_slider.rate())
 
         # Ramp down temperature

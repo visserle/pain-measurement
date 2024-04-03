@@ -2,7 +2,8 @@
 # - add readme
 # - upload yaml of license free questionnaires
 # - improve html layout
-# - add welcome page with instructions, info on drinking water, which questionnaires will be published etc.
+# - add welcome page with instructions, info on drinking water, which questionnaires
+# will be published etc.
 # - improve using https://github.com/vlevit/q10r
 # - from scoring_schemas import sreening only + add conditional logging info
 # - misc doch datenschutz problematisch?
@@ -33,8 +34,7 @@ from src.log_config import configure_logging
 LOG_DIR = Path("runs/experiments/questionnaires/")
 INVENTORY_DIR = Path("src/experiments/questionnaires/inventory/")
 QUESTIONNAIRES = [
-    "general_ses",  # no scoring, screening only
-    "general_misc",  # no scoring
+    "general",  # no scoring, screening only
     "bdi-ii",  # screening only
     "phq-15",  # screening only
     "panas",  # pre-post
@@ -174,11 +174,13 @@ def trigger_shutdown():
 
 def main():
     logging.info(
-        f"Running questionnaire app with the following questionnaires: {list(map(str.upper, questionnaires))}"
+        "Running questionnaire app with the following questionnaires: "
+        f"{list(map(str.upper, questionnaires))}"
     )
     webbrowser.open_new("http://localhost:5000")
     app.run(debug=args.debug, use_reloader=False)
-    # NOTE: possible to deploy to web via docker: https://www.youtube.com/watch?v=cw34KMPSt4k
+    # NOTE: possible to deploy to web via docker:
+    # https://www.youtube.com/watch?v=cw34KMPSt4k
 
 
 if __name__ == "__main__":

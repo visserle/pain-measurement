@@ -113,7 +113,8 @@ def _participant_exists(
             if int(row["id"]) == int(participant_id):
                 timestamp = f" ({ts})" if (ts := row.get("timestamp", None)) else ""
                 logger.warning(
-                    f"Participant with ID {participant_id}{timestamp} already exists in {file_path}."
+                    f"Participant with ID {participant_id}{timestamp} "
+                    f"already exists in {file_path}."
                 )
         return True
     return False
@@ -121,8 +122,8 @@ def _participant_exists(
 
 class ParticipantDataApp:
     """
-    A simple GUI for entering participant data. It allows easy access to the participant_info dictionary
-    for further processing or validation of participant information.
+    A simple GUI for entering participant data. It allows easy access to the
+    participant_info dictionary for further processing.
     """
 
     def __init__(self, root):
@@ -131,7 +132,10 @@ class ParticipantDataApp:
         self.setup_ui()
 
     def setup_ui(self):
-        """Configures the main UI components including window, data fields, and submit button."""
+        """
+        Configures the main UI components including window, data fields,
+        and submit button.
+        """
         # Window configuration
         self.root.title("Participant Data Input")
         self.root.columnconfigure(0, weight=1)

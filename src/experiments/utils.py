@@ -28,13 +28,16 @@ def prepare_script(
     parent_key: str = None,
 ) -> None:
     """
-    Recursively convert existings script strings to CustomTextBox stimuli and preload them.
+    Recursively convert existings script strings to CustomTextBox stimuli and preload
+    them.
 
-    (With special preloading for 'instruction' as they are shown with the visual analogue scale composition)
+    (With special preloading for 'instruction' as they are shown with the visual
+    analogue scale composition)
     """
     for key, value in script.items():
         if isinstance(value, dict):
-            # Recursively process nested dictionaries, passing down the current key as the parent_key
+            # Recursively process nested dictionaries,
+            # passing down the current key as the parent_key
             prepare_script(value, text_size, text_box_size, key)
         else:
             # Convert strings to CustomTextBox stimuli
@@ -45,7 +48,7 @@ def prepare_script(
                 text_font="timesnewroman",
                 text_size=text_size,
             )
-            # Special preloading for 'instruction' which contains the visual analogue scale composition
+            # Special preloading for 'instruction' which contains the VAS composition
             if parent_key == "instruction":
                 script[key].preload(inhibit_ogl_compress=True)
             else:
@@ -72,12 +75,14 @@ def scale_1d_value(
     base_screen_size: tuple[int, int] = BASE_SCREEN_SIZE,
 ) -> int | float:
     """
-    Calculate the adjusted value based on the screen size for 1D values like length, width or text size.
+    Calculate the adjusted value based on the screen size for 1D values like length,
+    width or text size.
 
     Parameters:
     - base_value: int or float, base value to scale from
     - screen_size: tuple, current screen size (width, height)
-    - base_screen_size: tuple, base screen size (width, height) for scaling reference, default=(1920, 1200)
+    - base_screen_size: tuple, base screen size (width, height) for scaling reference,
+      default=(1920, 1200)
 
     Returns:
     - scaled_value: int or float, scaled value based on the current screen size
@@ -96,12 +101,14 @@ def scale_2d_tuple(
     base_screen_size: tuple[int, int] = BASE_SCREEN_SIZE,
 ) -> tuple[int, int]:
     """
-    Calculate the adjusted value based on the screen size for 2D values like position or size.
+    Calculate the adjusted value based on the screen size for 2D values like position or
+    size.
 
     Parameters:
     - base_value: tuple, base value to scale from (width, height)
     - screen_size: tuple, current screen size (width, height)
-    - base_screen_size: tuple, base screen size (width, height) for scaling reference, default=(1920, 1200)
+    - base_screen_size: tuple, base screen size (width, height) for scaling reference,
+      default=(1920, 1200)
 
     Returns:
     - scaled_value: tuple, scaled value based on the current screen size
@@ -120,7 +127,8 @@ class CustomTextBox(TextBox):
 
     This class is a copy of the TextBox class from expyriment.stimuli.textbox
     with the only difference that it does not strip leading whitespace from the text.
-    This allows simpler text formatting of the script file using a constant text box size.
+    This allows simpler text formatting of the script file using a constant text box
+    size.
 
     This code has been commented out twice below:
     # while lines and not lines[0]:

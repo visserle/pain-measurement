@@ -2,11 +2,13 @@ class RateLimiter:
     """
     Rate limiter to limit the number of operations per second.
 
-    With an optional interval-based limiting feature to enforce operation execution at precise, predefined intervals.
-    This feature allows for more granular control over the timing of operations, making it ideal for scenarios
-    where it's crucial to maintain a consistent rate of operation execution over time. When enabled, this mode
-    ensures operations are initiated only at specific, regular intervals (e.g., every 100 ms), as opposed to
-    simply limiting the number of operations per second without regard to their temporal distribution.
+    With an optional interval-based limiting feature to enforce operation execution at
+    precise, predefined intervals. This feature allows for more granular control over
+    the timing of operations, making it ideal for scenarios where it's crucial to
+    maintain a consistent rate of operation execution over time. When enabled, this mode
+    ensures operations are initiated only at specific, regular intervals (e.g., every
+    100 ms), as opposed to simply limiting the number of operations per second without
+    regard to their temporal distribution.
     """
 
     def __init__(
@@ -15,7 +17,8 @@ class RateLimiter:
         use_intervals: bool = False,
     ):
         """
-        Initialize the rate limiter with the specified rate and interval-based limiting option.
+        Initialize the rate limiter with the specified rate and interval-based limiting
+        option.
 
         - rate is the allowed number of operations per second.
         - use_intervals is a flag to enable interval-based limiting.
@@ -42,7 +45,8 @@ class RateLimiter:
 
     def is_allowed(self, current_time_ms: int) -> bool:
         """
-        Check if the operation is allowed at the current time, optionally considering specific intervals.
+        Check if the operation is allowed at the current time, optionally considering
+        specific intervals.
 
         - current_time_ms is expected to be in milliseconds.
         """

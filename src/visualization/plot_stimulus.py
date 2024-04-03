@@ -71,6 +71,7 @@ def plot_stimulus_extra(
             visible=visible,
         )
 
+    # Add shapes for the big increasing intervals
     for interval in stimulus.big_decreasing_intervals:
         start_time, end_time = (
             interval[0] / stimulus.sample_rate,

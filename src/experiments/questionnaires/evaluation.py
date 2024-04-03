@@ -76,7 +76,9 @@ def save_results(
 ) -> None:
     if not answers:
         logger.debug(
-            f"No answers available for participant: {participant_info.get('id', 'unknown')}, scale: {scale.upper()}. Not saving results."
+            "No answers available for participant: "
+            f"{participant_info.get('id', 'unknown')}, scale: {scale.upper()}. "
+            "Not saving results."
         )
         return
 

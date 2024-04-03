@@ -37,7 +37,8 @@ def plot_trials(
 
         # Create a slider for the trial number
         trial_slider = widgets.IntSlider(min=0, max=trials - 1, step=1, value=0)
-        # Create Next and Previous buttons, define click events and link them to the buttons
+        # Create Next and Previous buttons,
+        # define click events and link them to the buttons
         next_button = widgets.Button(description="Next")
         prev_button = widgets.Button(description="Previous")
 
@@ -52,7 +53,7 @@ def plot_trials(
         next_button.on_click(next_button_clicked)
         prev_button.on_click(prev_button_clicked)
 
-        # Use the interact function to automatically update the plot when the slider is moved
+        # Interact function to automatically update the plot when the slider is moved
         out = widgets.interactive_output(plot_trial, {"trial": trial_slider})
         # Display the slider and the buttons on top of the figure (box on box)
         display(

@@ -1,5 +1,6 @@
 """
-Note that all pop_ups have to be called before expyriment window creation or bad things will happen.
+Note that all pop_ups have to be called before expyriment window creation or bad things
+will happen.
 """
 
 import logging

@@ -75,14 +75,15 @@ def plot_trial_plotly(df: pl.DataFrame, trial: int, features: list[str] = None):
     fig.show()
 
 
+# NOTE: this is prob not needed anymore because jupyter_bokeh supports jupyter 4.0 now
 def plot_data_panel(df: pl.DataFrame, features: list[str] = None, groups: str = None):
     """
     Plots the data using hvPlot and Panel.
     To exclude a feature, simply use df.drop(feature)
     By default the plot will be grouped by Trial and (if available) Participant.
 
-    To concat the data of several partcipants for one modality and add a participant column
-    you can use concat_participants_on_modality from the plotting utils module.
+    To concat the data of several partcipants for one modality and add a participant
+    column you can use concat_participants_on_modality from the plotting utils module.
 
 
     TODO: grouped legend? https://community.plotly.com/t/plots-with-grouped-legend/71864
