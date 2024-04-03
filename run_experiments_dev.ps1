@@ -45,7 +45,7 @@ Read-Host
 # Execute Python scripts
 Write-Host "1. Pre-Experiment Questionnaires"
 python -m src.experiments.participant_data  --debug
-python -m src.experiments.questionnaires.app general_ses general_misc bdi-ii phq-15 panas --debug
+python -m src.experiments.questionnaires.app general bdi-ii phq-15 panas --debug
 Write-Host ""
 Write-Host "Press [Enter] to continue with the calibration..."
 Read-Host
