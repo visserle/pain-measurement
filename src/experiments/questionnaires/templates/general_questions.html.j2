@@ -33,7 +33,7 @@
     <div class="container">
         <h1>{{ title }}</h1>
         {% if instructions %}
-            <p>{{ instructions|safe }}</p>
+           <div class="instructions"><p>{{ instructions|safe }}</p></div>
         {% endif %}
         <form action="" method="post">
             {% for question in questions %}

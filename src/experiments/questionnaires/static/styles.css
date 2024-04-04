@@ -17,6 +17,17 @@ h1 {
     text-align: center;
 }
 
+.instructions {
+    background-color: #eef6fd; /* Light background color for emphasis */
+    border-left: 4px solid #007bff; /* Add a colored bar to the left for emphasis */
+    padding: 15px; /* Add padding for space around the text */
+    margin-bottom: 20px; /* Add margin for space below the instructions */
+    border-radius: 4px; /* Slightly round the corners of the background */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: add a subtle shadow for depth */
+}
+
+
+
 form {
     background: white;
     padding: 20px;
