@@ -10,18 +10,25 @@ def ensure_list(to_list: str | list[str]) -> list[str]:
 
 
 def convert_str_to_list(str_list: str) -> list:
-    """Convert a string representation of a list to a list."""
+    """
+    Convert a string representation of a list to a list.
+
+    Returns an empty list if the conversion fails.
+    """
     try:
         return ast.literal_eval(str_list)
     except ValueError:
-        return []  # return an empty list in case of error
+        return []
 
 
 def center_tk_window(
     window: tk.Tk,
     primary_screen: bool = False,
 ) -> None:
-    """Center a window, by default on the first available non-primary screen if available, otherwise on the primary screen."""
+    """
+    Center a window, by default on the first available non-primary screen if available,
+    otherwise on the primary screen.
+    """
     # Get sorted list of monitors
     monitors = sorted(get_monitors(), key=lambda m: m.is_primary)
     # non-primary monitor comes first (False < True)
