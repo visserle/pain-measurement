@@ -35,7 +35,7 @@ class StimulusGenerator:
     ):
         # Initialize parameters
         self.config = config if config is not None else {}
-        self.seed = seed if seed is not None else np.random.randint(0, 1000)
+        self.seed = seed if seed is not None else np.random.randint(100, 1000)
         self.debug = debug
         self.rng_numpy = np.random.default_rng(self.seed)
 
@@ -259,16 +259,19 @@ class StimulusGenerator:
         """
         retry_limit_per_half_cycle = 5
         counter = 0
+
         while True:
             success = True
             amplitudes = []
             y_intercepts = []
             y_intercept = -1  # starting intercept
 
+            # Iterate over the half cycles
             for i in range(self.half_cycle_num):
                 retries = retry_limit_per_half_cycle
                 valid_amplitude_found = False
 
+                # Try to find a valid amplitude for the current half cycle
                 while retries > 0 and not valid_amplitude_found:
                     counter += 1
                     if i in self.big_decreasing_half_cycle_idx:
@@ -295,18 +298,21 @@ class StimulusGenerator:
                     else:
                         retries -= 1
 
+                # If no valid amplitude was found, break the loop and start over
                 if not valid_amplitude_found:
                     success = False
                     break
             if not success:
                 continue
 
+            # Final check for the big decreasing half cycles
             big_decreases_high_enough = np.all(
                 np.array(y_intercepts)[self.big_decreasing_half_cycle_idx]
                 > self.big_decreasing_half_cycle_min_y_intercept
             )
-            if success and big_decreases_high_enough:
+            if big_decreases_high_enough:
                 break
+
         if self.debug:
             print(f"Amplitudes: {counter} iterations to converge")
         return amplitudes
