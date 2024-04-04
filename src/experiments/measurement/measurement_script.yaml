@@ -203,6 +203,20 @@ approve : |-
 
 
   (Leertaste drücken, um fortzufahren)
+halfway: |-
+
+
+
+
+
+
+
+
+
+  Sie haben die Hälfte des Experiments erfolgreich abgeschlossen (6 von 12 Blöcken).
+
+
+  (Leertaste drücken, um fortzufahren)
 bye: |-
   
 

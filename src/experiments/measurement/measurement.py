@@ -289,6 +289,10 @@ def main():
         )
         SCRIPT["next_trial"].present()
         exp.keyboard.wait(K_SPACE)
+        # Show halfway message
+        if trial == total_trials // 2:
+            SCRIPT["halfway"].present()
+            exp.keyboard.wait(K_SPACE)
         SCRIPT["approve"].present()
         exp.keyboard.wait(K_SPACE)
 
