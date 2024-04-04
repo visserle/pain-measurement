@@ -1,5 +1,6 @@
-# Log files
+# Log and data files
 /runs
+/data
 
 # work in progress
 notebooks/00_stimuli_function.ipynb
@@ -15,20 +16,19 @@ src/models/model.ipynb
 src/models/models.py
 src/models/models_2.py
 src/questionnaires/archive
-Src/experiments/oddball.py
+src/experiments/oddball.py
 /src/experiments/questionnaires/archive
+
+src/experiments/questionnaires/inventory/bdi-ii.yaml
+src/experiments/questionnaires/inventory/panas.yaml
+src/experiments/questionnaires/inventory/pcs.yaml
+src/experiments/questionnaires/inventory/pvaq.yaml
+src/experiments/questionnaires/inventory/stai-t-10.yaml
 
 # excluded for now
 notebooks/_stuff.ipynb
 notebooks/10_skorch_doctor.ipynb
 plan.md
-
-# exclude data from source control by default
-/data/external
-/data/imotions
-/data/interim
-/data/processed
-/data/raw
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -118,9 +118,3 @@ target/
 # Mypy cache
 .mypy_cache/
 
-
-src/experiments/questionnaires/inventory/bdi-ii.yaml
-src/experiments/questionnaires/inventory/panas.yaml
-src/experiments/questionnaires/inventory/pcs.yaml
-src/experiments/questionnaires/inventory/pvaq.yaml
-src/experiments/questionnaires/inventory/stai-t-10.yaml
