@@ -103,10 +103,7 @@ def load_questionnaire(scale: str) -> dict:
 
 @app.route("/")
 def home():
-    if args.welcome:
-        args.welcome = False
-        return redirect(url_for("welcome"))
-    return redirect(url_for("questionnaire_handler", scale=questionnaires[0]))
+    return redirect(url_for("welcome")) if args.welcome else redirect(url_for("questionnaire_handler", scale=questionnaires[0]))
 
 
 @app.route("/favicon.ico")
