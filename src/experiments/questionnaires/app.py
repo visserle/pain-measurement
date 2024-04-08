@@ -5,7 +5,6 @@
 # - add welcome page with instructions, info on drinking water, which questionnaires
 # will be published etc.
 # - improve using https://github.com/vlevit/q10r
-# - from scoring_schemas import sreening only + add conditional logging info
 # - misc doch datenschutz problematisch?
 
 import argparse
@@ -60,6 +59,13 @@ parser.add_argument(
     help="Enable debug mode. Data will not be saved.",
 )
 
+parser.add_argument(
+    "-w",
+    "--welcome",
+    action="store_true",
+    help="Show welcome page with instructions and information.",
+)
+
 args = parser.parse_args()
 questionnaires = args.questionnaire
 
@@ -97,12 +103,26 @@ def load_questionnaire(scale: str) -> dict:
 
 @app.route("/")
 def home():
+    if args.welcome:
+        args.welcome = False
+        return redirect(url_for("welcome"))
     return redirect(url_for("questionnaire_handler", scale=questionnaires[0]))
 
 
 @app.route("/favicon.ico")
 def favicon():
     return app.send_static_file("favicon.ico")
+
+
+@app.route("/welcome")
+def welcome():
+    if not args.welcome:
+        return redirect(url_for("questionnaire_handler", scale=questionnaires[0]))
+
+    with open(INVENTORY_DIR / "welcome.yaml", "r") as file:
+        welcome_content = yaml.safe_load(file)
+
+    return render_template("welcome.html.j2", content=welcome_content)
 
 
 @app.route("/<scale>", methods=["GET", "POST"])
