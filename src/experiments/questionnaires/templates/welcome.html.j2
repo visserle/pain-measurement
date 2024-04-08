@@ -6,13 +6,43 @@
     <title>Willkommen!</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .start-button {
+            display: block;
+            width: max-content;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .start-button:hover {
+            background-color: #0056b3;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>{{ title }}</h1>
-    <p>{{ introduction }}</p>
+    <div class="container">
+        <h1>{{ content.title }}</h1>
+        <p>{{ content.introduction }}</p>
+        <p>{{ content.privacy_info }}</p>
+    <p>{{ content.instructions }}</p>
     <p>{{ privacy_info }}</p>    <p>{{ content.instructions }}</p>
     <p>{{ content.hydration_info }}</p>
     <p>{{ content.questionnaire_info }}</p>
     <a href="{{ url_for('questionnaire_handler', scale='general') }}" class="start-button">Start Survey</a>
+    </div>
 </body>
 </html>
