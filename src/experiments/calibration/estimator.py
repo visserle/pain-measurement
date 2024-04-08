@@ -220,7 +220,7 @@ class BayesianEstimatorVAS:
         posterior /= np.sum(posterior)  # normalize
 
         # Choose the temperature for the next trial based on the posterior distribution
-        self.current_temp = np.round(self.range_temp[np.argmax(posterior)], 2)
+        self.current_temp = np.round(self.range_temp[np.argmax(posterior)], 1)
 
         # Store the distributions and temperature
         self.priors.append(self.prior)

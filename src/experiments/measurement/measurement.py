@@ -135,9 +135,10 @@ control.defaults.initialize_delay = 3
 # Load participant info and update stimulus config with calibration data
 participant_info = read_last_participant(CALIBRATION_RESULTS)
 # determine oder if skin areas based on participant ID
-SKIN_AREAS = range(1, 7) if int(participant_info["id"]) % 2 else range(6, 0, -1)
+id_is_odd = int(participant_info["id"]) % 2
+SKIN_AREAS = range(1, 7) if id_is_odd else range(6, 0, -1)
 logging.info(
-    f"Participant ID is {'odd' if int(participant_info['id']) % 2 else 'even'}. "
+    f"Participant ID is {'odd' if id_is_odd else 'even'}. "
     f"Start with skin area {SKIN_AREAS[0]}."
 )
 STIMULUS.update(participant_info)
