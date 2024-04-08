@@ -103,7 +103,11 @@ def load_questionnaire(scale: str) -> dict:
 
 @app.route("/")
 def home():
-    return redirect(url_for("welcome")) if args.welcome else redirect(url_for("questionnaire_handler", scale=questionnaires[0]))
+    return (
+        redirect(url_for("welcome"))
+        if args.welcome
+        else redirect(url_for("questionnaire_handler", scale=questionnaires[0]))
+    )
 
 
 @app.route("/favicon.ico")
@@ -118,8 +122,11 @@ def welcome():
 
     with open(INVENTORY_DIR / "welcome.yaml", "r") as file:
         welcome_content = yaml.safe_load(file)
+        welcome_content["text"] = markdown.markdown(welcome_content["text"])
 
-    return render_template("welcome.html.j2", content=welcome_content)
+    return render_template(
+        "welcome.html.j2", title=welcome_content["title"], text=welcome_content["text"]
+    )
 
 
 @app.route("/<scale>", methods=["GET", "POST"])

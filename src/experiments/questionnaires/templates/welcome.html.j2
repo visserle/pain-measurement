@@ -35,13 +35,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>{{ content.title }}</h1>
-        <p>{{ content.introduction }}</p>
-        <p>{{ content.privacy_info }}</p>
-    <p>{{ content.instructions }}</p>
-    <p>{{ privacy_info }}</p>    <p>{{ content.instructions }}</p>
-    <p>{{ content.hydration_info }}</p>
-    <p>{{ content.questionnaire_info }}</p>
+        <h1>{{ title }}</h1>
+        <p>{{ text }}</p>
+        <p>{{ privacy_info }}</p>
+    <p>{{ instructions }}</p>
+    <p>{{ privacy_info }}</p>    <p>{{ instructions }}</p>
+    <p>{{ hydration_info }}</p>
+    <p>{{ questionnaire_info }}</p>
     <a href="{{ url_for('questionnaire_handler', scale='general') }}" class="start-button">Start Survey</a>
     </div>
 </body>
