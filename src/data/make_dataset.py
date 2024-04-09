@@ -145,7 +145,8 @@ def transform_dataset(
 ) -> Data:
     """
     Transform a single dataset.
-    Note that we just map a list of functions to the dataset. Could be made faster probably.
+    Note that we just map a list of functions to the dataset.
+    Could be made faster probably.
 
     From the old, basic code:
 
