@@ -31,7 +31,7 @@ def prepare_script(
     Recursively convert existings script strings to CustomTextBox stimuli and preload
     them.
 
-    (With special preloading for 'instruction' as they are shown with the visual
+    (With special preloading for 'instruction' key as they are shown with the visual
     analogue scale composition)
     """
     for key, value in script.items():
