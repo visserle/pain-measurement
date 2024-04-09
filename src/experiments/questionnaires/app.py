@@ -101,7 +101,7 @@ def load_questionnaire(scale: str) -> dict:
         return dict()
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def home():
     return (
         redirect(url_for("welcome"))
@@ -117,15 +117,14 @@ def favicon():
 
 @app.route("/welcome")
 def welcome():
-    if not args.welcome:
-        return redirect(url_for("questionnaire_handler", scale=questionnaires[0]))
+    args.welcome = False  # we only want to show the welcome page once
 
     with open(INVENTORY_DIR / "welcome.yaml", "r") as file:
-        welcome_content = yaml.safe_load(file)
-        welcome_content["text"] = markdown.markdown(welcome_content["text"])
+        welcome = yaml.safe_load(file)
+        welcome["instructions"] = markdown.markdown(welcome["instructions"])
 
     return render_template(
-        "welcome.html.j2", title=welcome_content["title"], text=welcome_content["text"]
+        "welcome.html.j2", title=welcome["title"], instructions=welcome["instructions"]
     )
 
 

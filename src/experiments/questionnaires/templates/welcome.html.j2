@@ -7,42 +7,21 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <style>
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .start-button {
-            display: block;
-            width: max-content;
-            margin: 20px auto;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            text-align: center;
-            border-radius: 5px;
-        }
-        .start-button:hover {
-            background-color: #0056b3;
-        }
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
+        .transparent-form {
+            background: none;
+            border: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>{{ title }}</h1>
-        <p>{{ text }}</p>
-        <p>{{ privacy_info }}</p>
-    <p>{{ instructions }}</p>
-    <p>{{ privacy_info }}</p>    <p>{{ instructions }}</p>
-    <p>{{ hydration_info }}</p>
-    <p>{{ questionnaire_info }}</p>
-    <a href="{{ url_for('questionnaire_handler', scale='general') }}" class="start-button">Start Survey</a>
+        <div class="instructions">
+            <p>{{ instructions|safe }}</p>
+        </div>
+        <form action="{{ url_for('home') }}" method="post" class="transparent-form">
+            <button type="submit" >Mit den Fragebögen starten</button>
+        </form>
     </div>
 </body>
 </html>
