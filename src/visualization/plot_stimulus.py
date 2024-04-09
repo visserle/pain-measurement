@@ -85,7 +85,7 @@ def plot_stimulus_extra(
             y1=max(stimulus.y),
             line=dict(width=0),
             fillcolor="salmon",
-            opacity=0.1,
+            opacity=0.125,
         )
 
     fig.show()
