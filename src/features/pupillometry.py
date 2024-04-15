@@ -1,7 +1,8 @@
 # TODO:
 # - distrubution of blinks vs look-aways
 # - interpolation with cubic spline, resampling and low-pass filtering + sync, see matlab
-# - get the mean using a kalman filter
+# - get the mean using a kalman filter?
+# - average only when len list > 1
 
 # - check if facial expression and eeg fall into blink segments
 
@@ -19,11 +20,22 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 EYE_COLUMNS = ["Pupillometry_R", "Pupillometry_L"]
+TIME_COLUMN = "Timestamp"
+TRIAL_COLUMN = "Trial"
+RESULT_COLUMN = "Pupillometry"
+
+SAMPLE_RATE = 60
+BLINK_THRESHOLD = 1.5
+BLINK_PERIOD_REMOVAL = 120
+CUTOFF_FREQUENCY = 0.5
 
 
 @map_trials
 def process_pupillometry(
-    df: pl.DataFrame, eye_columns=EYE_COLUMNS, sampling_rate=60, cutoff_frequency=0.5
+    df: pl.DataFrame,
+    eye_columns: str | list[str] = EYE_COLUMNS,
+    sampling_rate: int = SAMPLE_RATE,
+    cutoff_frequency: float = CUTOFF_FREQUENCY,
 ) -> pl.DataFrame:
     df = below_threshold_equals_blink(df, eye_columns)
     df = remove_periods_around_blinks(df, eye_columns)
@@ -34,19 +46,29 @@ def process_pupillometry(
 
 
 def below_threshold_equals_blink(
-    df: pl.DataFrame, eye_columns, threshold=1.5
+    df: pl.DataFrame,
+    eye_columns: str | list[str] = EYE_COLUMNS,
+    threshold: int = BLINK_THRESHOLD,
 ) -> pl.DataFrame:
     for eye in ensure_list(eye_columns):
         df = df.with_columns(
-            pl.when(pl.col(eye) < threshold).then(-1).otherwise(pl.col(eye)).alias(eye)
+            pl.when(pl.col(eye) < threshold)
+            .then(-1)
+            .otherwise(pl.col(eye))
+            .alias(
+                eye,
+            )
         )
     return df
 
 
-def _get_blink_segments(df: pl.DataFrame, eye_columns: str | list[str]) -> pl.DataFrame:
+def _get_blink_segments(
+    df: pl.DataFrame,
+    eye_columns: str | list[str] = EYE_COLUMNS,
+) -> pl.DataFrame:
     """
-    This helper functions returns the start and end timestamps of blink segments in the given DataFrame.
-    It returns a DataFrame to be usable in a Polars pipeline.
+    This helper functions returns the start and end timestamps of blink segments in the
+    given DataFrame. It returns a DataFrame to be usable in a Polars pipeline.
 
     Note that this function does not depend on indices but on time stamps as
     indices are not preserved by the @map_trials decorator.
@@ -59,8 +81,8 @@ def _get_blink_segments(df: pl.DataFrame, eye_columns: str | list[str]) -> pl.Da
         # Skip if there are no blinks
         if neg_ones.sum() == 0:
             trial_info = (
-                f' for trial {int(df["Trial"].unique().item())}'
-                if ("Trial" in df.columns) and (df["Trial"].n_unique() == 1)
+                f" for trial {int(df[TRIAL_COLUMN].unique().item())}"
+                if (TRIAL_COLUMN in df.columns) and (df[TRIAL_COLUMN].n_unique() == 1)
                 else ""
             )
             logger.warning(f"No blinks found in {eye}{trial_info}.")
@@ -81,8 +103,8 @@ def _get_blink_segments(df: pl.DataFrame, eye_columns: str | list[str]) -> pl.Da
             end_indices.append(df.height - 1)
 
         # Get timestamps for the blink segments
-        start_timestamps = df["Timestamp"][start_indices].to_list()
-        end_timestamps = df["Timestamp"][end_indices].to_list()
+        start_timestamps = df[TIME_COLUMN][start_indices].to_list()
+        end_timestamps = df[TIME_COLUMN][end_indices].to_list()
 
         # Add to the blink segments list
         blink_segments_data.extend(
@@ -94,7 +116,8 @@ def _get_blink_segments(df: pl.DataFrame, eye_columns: str | list[str]) -> pl.Da
         blink_segments_data, schema=["eye", "start_timestamp", "end_timestamp"]
     )
 
-    # Add a duration column if there are any segments, else create an empty DataFrame with the expected schema
+    # Add a duration column if there are any segments,
+    # else create an empty DataFrame with the expected schema
     return (
         blink_segments_df.with_columns(
             (
@@ -110,7 +133,9 @@ def _get_blink_segments(df: pl.DataFrame, eye_columns: str | list[str]) -> pl.Da
 
 
 def remove_periods_around_blinks(
-    df: pl.DataFrame, eye_columns, period=120, time_column="Timestamp"
+    df: pl.DataFrame,
+    eye_columns: str | list[str] = EYE_COLUMNS,
+    period: int = BLINK_PERIOD_REMOVAL,
 ) -> pl.DataFrame:
     """
     Remove periods of 120 ms before and after blinks from the DataFrame.
@@ -118,8 +143,8 @@ def remove_periods_around_blinks(
 
     TODO: add a look_away detector for segments over 300 ms (?) with longer cut-off period
     """
-    min_timestamp = df[time_column].min()
-    max_timestamp = df[time_column].max()
+    min_timestamp = df[TIME_COLUMN].min()
+    max_timestamp = df[TIME_COLUMN].max()
 
     for eye in ensure_list(eye_columns):
         # Get the blink segments
@@ -154,15 +179,25 @@ def remove_periods_around_blinks(
         for start, end in zip(
             blink_segments["expanded_start"], blink_segments["expanded_end"]
         ):
-            mask = mask | df[time_column].is_between(start, end)
+            mask = mask | df[TIME_COLUMN].is_between(start, end)
 
         # Replace the values in the DataFrame with None
-        df = df.with_columns(pl.when(mask).then(None).otherwise(df[eye]).alias(eye))
+        df = df.with_columns(
+            pl.when(mask)
+            .then(None)
+            .otherwise(df[eye])
+            .alias(
+                eye,
+            )
+        )
 
     return df
 
 
-def interpolate_pupillometry(df: pl.DataFrame, eye_columns) -> pl.DataFrame:
+def interpolate_pupillometry(
+    df: pl.DataFrame,
+    eye_columns: str | list[str] = EYE_COLUMNS,
+) -> pl.DataFrame:
     # Linearly interpolate and fill edge cases when the first or last value is null
     # NOTE: cubic spline?
     for eye in ensure_list(eye_columns):
@@ -177,7 +212,12 @@ def interpolate_pupillometry(df: pl.DataFrame, eye_columns) -> pl.DataFrame:
     return df
 
 
-def low_pass_filter_pupillometry(df, eye_columns, sampling_rate, cutoff_frequency=2.0):
+def low_pass_filter_pupillometry(
+    df: pl.DataFrame,
+    eye_columns: str | list[str] = EYE_COLUMNS,
+    sampling_rate: int = SAMPLE_RATE,
+    cutoff_frequency: float = CUTOFF_FREQUENCY,
+) -> pl.DataFrame:
     for eye in ensure_list(eye_columns):
         pupil_low_pass_filtered = _low_pass_filter(
             df[eye], sampling_rate, cutoff_frequency=0.5
@@ -187,7 +227,9 @@ def low_pass_filter_pupillometry(df, eye_columns, sampling_rate, cutoff_frequenc
 
 
 def _low_pass_filter(
-    data: pl.Series, sampling_rate, cutoff_frequency=2.0
+    data: pl.Series,
+    sampling_rate: int = SAMPLE_RATE,
+    cutoff_frequency: float = CUTOFF_FREQUENCY,
 ) -> np.ndarray:
     """
     Apply a low-pass filter to smooth the data.
@@ -213,7 +255,9 @@ def _low_pass_filter(
 
 
 def mean_pupil_size(
-    df: pl.DataFrame, eye_columns=EYE_COLUMNS, new_column="Pupillometry"
+    df: pl.DataFrame,
+    eye_columns: str | list[str] = EYE_COLUMNS,
+    new_column: str = RESULT_COLUMN,
 ) -> pl.DataFrame:
     return df.with_columns(
         ((pl.col(eye_columns[0]) + pl.col(eye_columns[1])) / 2).alias(new_column)
