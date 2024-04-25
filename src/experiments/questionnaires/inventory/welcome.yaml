@@ -1,6 +1,9 @@
-title: "Welcome to Our Survey!"
-introduction: "Thank you for participating. This survey aims to gather insights on..."
-privacy_info: "Your responses will be kept confidential and used only for research purposes."
-instructions: "Before you begin, please ensure you are in a quiet environment where you can focus without interruptions. The survey consists of several questionnaires, each taking approximately 5-10 minutes to complete."
-hydration_info: "Please make sure to drink water before starting the survey to stay hydrated."
-questionnaire_info: "The following questionnaires will be included in this survey: General, BDI-II, PHQ-15, PANAS, PCS, PVAQ, STAI-T-10."
+title: "Willkommen zur Schmerzmessung"
+instructions: |
+  Bevor wir mit dem Experiment beginnen, beachten Sie bitte folgende Hinweise:
+
+  - Bitte kauen Sie während des Experiments kein Kaugummi.
+  - Falls Sie auf Toilette müssen, tun Sie dies bitte jetzt. Wichtig: Verwenden sie keine Seife beim Händewaschen, da dies die Messdaten beeinflussen könnte.
+  - Um möglichst gute Daten von Ihnen zu erhalten, möchten wir Sie bitten, sich während des Experiments ganz auf Ihre jeweilige Aufgabe zu konzentrieren.
+
+  Auf der nächsten Seite beginnen wir mit den Fragebögen zu Ihrer Person.

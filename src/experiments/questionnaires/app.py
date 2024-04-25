@@ -12,6 +12,7 @@ import logging
 import os
 import signal
 import threading
+import time
 import webbrowser
 from datetime import datetime
 from pathlib import Path
@@ -104,7 +105,7 @@ def load_questionnaire(scale: str) -> dict:
 @app.route("/", methods=["GET", "POST"])
 def home():
     return (
-        redirect(url_for("welcome"))
+        redirect("/welcome")  # hardcoded works all the time, url_for not reliable here
         if args.welcome
         else redirect(url_for("questionnaire_handler", scale=questionnaires[0]))
     )
