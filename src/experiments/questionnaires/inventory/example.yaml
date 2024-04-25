@@ -21,7 +21,7 @@ questions:
 
 # The pcs.yaml is structured as follows:
 title: "PCS"
-instructions: "TEXT"  # paragraphs are supported using \n\n
+instructions: "TEXT"  # paragraphs are supported using markdown
 options:
   - score: 0
     text: "does not apply at all"
