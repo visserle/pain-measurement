@@ -6,6 +6,7 @@
 # will be published etc.
 # - improve using https://github.com/vlevit/q10r
 # - misc doch datenschutz problematisch?
+# - open browser in full screen
 
 import argparse
 import logging
@@ -120,7 +121,7 @@ def favicon():
 def welcome():
     args.welcome = False  # we only want to show the welcome page once
 
-    with open(INVENTORY_DIR / "welcome.yaml", "r") as file:
+    with open(INVENTORY_DIR / "welcome.yaml", "r", encoding="utf-8") as file:
         welcome = yaml.safe_load(file)
         welcome["instructions"] = markdown.markdown(welcome["instructions"])
 
