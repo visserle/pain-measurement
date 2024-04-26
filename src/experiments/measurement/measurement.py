@@ -137,10 +137,7 @@ participant_info = read_last_participant(CALIBRATION_RESULTS)
 # determine oder if skin areas based on participant ID
 id_is_odd = int(participant_info["id"]) % 2
 SKIN_AREAS = range(1, 7) if id_is_odd else range(6, 0, -1)
-logging.info(
-    f"Participant ID is {'odd' if id_is_odd else 'even'}. "
-    f"Start with skin area {SKIN_AREAS[0]}."
-)
+logging.info(f"Start with skin area {SKIN_AREAS[0]}.")
 STIMULUS.update(participant_info)
 random.shuffle(STIMULUS["seeds"])
 

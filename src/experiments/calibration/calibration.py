@@ -111,10 +111,7 @@ participant_info = (
 # determine oder if skin areas based on participant ID
 id_is_odd = int(participant_info["id"]) % 2
 SKIN_AREAS = range(1, 7) if id_is_odd else range(6, 0, -1)
-logging.info(
-    f"Participant ID is {'odd' if id_is_odd else 'even'}. "
-    f"Use skin area {SKIN_AREAS[1]}."
-)
+logging.info(f"Use skin area {SKIN_AREAS[-2]} for calibration.")
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
