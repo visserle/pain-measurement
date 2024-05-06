@@ -5,5 +5,8 @@ extend-select = ["I"]
 [tool.ruff.format]
 docstring-code-format = true
 
+[tool.ruff.lint]
+select = ["E", "F"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"

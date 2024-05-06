@@ -24,7 +24,7 @@ class StimulusGenerator:
     """
     Generates a stimulus by appending half cycle cosine functions
 
-    Note that the term `period` refers to 1 pi in this class.
+    Note that the term `period` refers to only 1 pi in this class.
     """
 
     def __init__(
@@ -216,7 +216,7 @@ class StimulusGenerator:
         Constraints:
         - The sum of the periods must equal desired_length.
         """
-        # Iteratively find periods for the random half cycles
+        # Find periods for the random half cycles by brute force
         counter = 0
         while True:
             counter += 1
@@ -247,7 +247,8 @@ class StimulusGenerator:
 
         Note that this code it less readable than the vectorized _get_periods,
         but for the dependent nature of the amplitudes on the y_intercepts,
-        looping is much more efficient and much faster than vectorized operations.
+        looping is much more efficient and much faster than vectorized
+        brute force operations.
         If one intercept is invalid we do not need to recompute the entire array,
         just the current value.
 

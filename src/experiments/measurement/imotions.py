@@ -273,7 +273,7 @@ class EventRecievingiMotions:
     - send_marker(self, marker_name, value): Sends a specific marker with a given value
       to iMotions.
     - send_prep_markers(self): Sends a start and end marker for the preparation phase of
-      the heat stimulus (ramp on and off).
+      the pain stimulus (ramp on and off).
     - send_stimulus_markers(self, seed): Sends a start/end marker for a given seed value
       of a stimulus function.
     - send_data_rate_limited(self, timestamp, temperature, rating, debug=False): Sends
@@ -360,7 +360,7 @@ class EventRecievingiMotions:
 
     def send_prep_markers(self) -> None:
         """
-        Sends a start and end marker for the preparation phase of the heat stimulus
+        Sends a start and end marker for the preparation phase of the pain stimulus
         (ramp on and off).
 
         Uses a cycling state to alternate between the two markers.
@@ -382,8 +382,8 @@ class EventRecievingiMotions:
         ):  # only create a new cycle if it doesn't exist yet
             self.seed_cycles[seed] = itertools.cycle(
                 [
-                    f"M;2;;;heat_stimulus;{seed};S;\r\n",
-                    f"M;2;;;heat_stimulus;{seed};E;\r\n",
+                    f"M;2;;;pain_stimulus;{seed};S;\r\n",
+                    f"M;2;;;pain_stimulus;{seed};E;\r\n",
                 ]
             )
         self._send_message(next(self.seed_cycles[seed]))
