@@ -118,3 +118,5 @@ target/
 # Mypy cache
 .mypy_cache/
 
+.aider*
+src/experiments/questionnaires/inventory/phq-15.yaml
