@@ -20,10 +20,9 @@ welcome:
 
 
 
+    Mit diesem Experiment möchten wir fluktuierende Schmerzen objektiv messbar machen.
 
-
-    In diesem Experiment möchten wir schwankende Schmerzen objektiv messen.
-
+    Während Sie Schmerzen empfinden, nehmen unsere Sensoren Ihre Körperreaktionen auf. Diese Daten helfen uns, Schmerz besser zu verstehen und zu behandeln.
 
     (Leertaste drücken, um fortzufahren)
   3: |-
@@ -32,7 +31,7 @@ welcome:
 
 
 
-    Dazu erhalten Sie im Folgenden Schmerzen mit unterschiedlicher Intensität.
+    Im Experiment stimulieren wir Ihren Arm fortlaufend mit kaum bis sehr schmerzhaften Temperaturen.
 
     Ihre Aufgabe wird es sein, Ihren erlebten Schmerz durchgehend - also ohne Unterbrechung - zu bewerten. Die Schmerzintensität variiert dabei zufällig, sodass Sie die nächste Intensität nicht vorhersehen können.
 
@@ -61,7 +60,7 @@ welcome:
 
     Es ist wichtig, dass Sie Ihre Schmerzbewertung so genau wie nur möglich mitteilen.
 
-    Die Bewertung erfolgt mithilfe einer visuellen Skala, die Sie auf der nächsten Seite sehen.
+    Die Bewertung erfolgt über eine Skala, die Sie auf der nächsten Seite sehen.
     
 
     (Leertaste drücken, um fortzufahren)
@@ -72,7 +71,7 @@ instruction:
 
     Mit Hilfe des Schiebereglers geben Sie die von Ihnen erlebte Schmerzstärke an.
     Bewegen Sie dazu Ihren Mauszeiger auf der Skala hin und her.
-    Probieren Sie es aus!
+    Probieren Sie es jetzt aus!
 
 
 
@@ -131,7 +130,7 @@ ready:
 
 
 
-    Wir möchten Sie bitten, bei der Schmerzstimulation nicht zu sprechen, nicht zu trinken und Ihre Augen immer geöffnet zu halten (Blinzeln ist erlaubt).
+    Wir möchten Sie bitten, bei der Schmerzstimulation nicht zu sprechen, nicht zu trinken, auf den Monitor zu schauen und Ihre Augen immer geöffnet zu halten (Blinzeln ist erlaubt).
     Konzentrieren Sie sich ganz auf Ihre Empfindungen.
 
     
@@ -156,12 +155,12 @@ next_trial: |-
 
 
 
+
+
     Dieser Block ist geschafft.
     
     Nun wechseln wir die Hautstelle am Arm.
-    
-    Bitte melden Sie sich bei der Versuchsleitung.
-    
+        
     
     (Leertaste drücken, um fortzufahren)
 wait: |-
@@ -229,6 +228,3 @@ bye: |-
   Vielen Dank! Die Schmerz-Messung ist erfolgreich abgeschlossen.
 
   Als Nächstes geht es mit den Fragebögen weiter.
-  
-
-  Bitte melden Sie sich bei der Versuchsleitung.

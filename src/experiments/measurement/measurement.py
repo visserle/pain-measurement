@@ -1,4 +1,5 @@
 import argparse
+import copy
 import logging
 import random
 import sys
@@ -28,6 +29,7 @@ from src.experiments.thermoino import ThermoinoComplexTimeCourses
 from src.experiments.utils import (
     load_configuration,
     load_script,
+    prepare_audio,
     prepare_script,
     scale_1d_value,
     scale_2d_tuple,
@@ -37,6 +39,7 @@ from src.log_config import configure_logging
 # Paths
 EXP_NAME = "pain-measurement"
 EXP_DIR = Path("src/experiments/measurement")
+AUDIO_DIR = EXP_DIR / "audio"
 RESULTS_DIR = Path("data/experiments")
 DATA_DIR = Path("data/imotions")
 RUN_DIR = Path("runs/experiments/measurement")
@@ -159,11 +162,13 @@ ask_for_measurement_start()
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
+AUDIO = copy.deepcopy(SCRIPT)  # audio needs the keys from the script
 prepare_script(
     SCRIPT,
     text_box_size=scale_2d_tuple(EXPERIMENT["text_box_size"], screen_size),
     text_size=scale_1d_value(EXPERIMENT["text_size"], screen_size),
 )
+prepare_audio(AUDIO, AUDIO_DIR)
 vas_slider = VisualAnalogueScale(experiment=exp, config=VAS)
 
 # Initialize Thermoino
@@ -198,20 +203,23 @@ def main():
     logging.info(f"Started measurement with seed order {STIMULUS['seeds']}.")
 
     # Introduction
-    for text in SCRIPT["welcome"].values():
+    for text, audio in zip(SCRIPT[s := "welcome"].values(), AUDIO[s].values()):
         text.present()
+        audio.play()
         exp.keyboard.wait(K_SPACE)
 
     # Instruction
-    for text in SCRIPT["instruction"].values():
+    for text, audio in zip(SCRIPT[s := "instruction"].values(), AUDIO[s].values()):
+        audio.play()
         exp.keyboard.wait(
             K_SPACE,
             callback_function=lambda text=text: vas_slider.rate(text),
         )
 
     # Ready
-    for text in SCRIPT["ready"].values():
+    for text, audio in zip(SCRIPT[s := "ready"].values(), AUDIO[s].values()):
         text.present()
+        audio.play()
         exp.keyboard.wait(K_SPACE)
 
     # Trial loop
@@ -286,10 +294,12 @@ def main():
             f"Next, use skin area {SKIN_AREAS[(trial + 1) % len(SKIN_AREAS)]}."
         )
         SCRIPT["next_trial"].present()
+        AUDIO["next_trial"].play()
         exp.keyboard.wait(K_SPACE)
         # Show halfway message
         if trial == total_trials // 2:
             SCRIPT["halfway"].present()
+            AUDIO["halfway"].play()
             exp.keyboard.wait(K_SPACE)
         SCRIPT["approve"].present()
         exp.keyboard.wait(K_SPACE)

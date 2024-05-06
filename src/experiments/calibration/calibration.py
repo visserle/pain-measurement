@@ -1,4 +1,5 @@
 import argparse
+import copy
 import logging
 import random
 import sys
@@ -17,6 +18,7 @@ from src.experiments.thermoino import Thermoino
 from src.experiments.utils import (
     load_configuration,
     load_script,
+    prepare_audio,
     prepare_script,
     scale_1d_value,
     scale_2d_tuple,
@@ -26,6 +28,7 @@ from src.log_config import configure_logging
 # Paths
 EXP_NAME = "pain-calibration"
 EXP_DIR = Path("src/experiments/calibration")
+AUDIO_DIR = EXP_DIR / "audio"
 RESULTS_DIR = Path("data/experiments")
 RUN_DIR = Path("runs/experiments/calibration")
 RUN_DIR.mkdir(parents=True, exist_ok=True)  # needed for expyriment
@@ -117,11 +120,13 @@ control.initialize(exp)
 screen_size = exp.screen.size
 
 # Prepare stimuli objects
+AUDIO = copy.deepcopy(SCRIPT)  # audio needs the keys from the script
 prepare_script(
     SCRIPT,
     text_size=scale_1d_value(EXPERIMENT["text_size"], screen_size),
     text_box_size=scale_2d_tuple(EXPERIMENT["text_box_size"], screen_size),
 )
+prepare_audio(AUDIO, AUDIO_DIR)
 
 cross = {}
 for name, color in zip(
@@ -180,6 +185,7 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS) -> None:
     if not success:
         logging.error("Please repeat the calibration if applicable.")
         SCRIPT["fail"].present()
+        AUDIO["fail"].play()
         exp.clock.wait_seconds(3)
         control.end()
         sys.exit(1)
@@ -191,8 +197,9 @@ def main():
     logging.info("Started calibration.")
 
     # Introduction
-    for text in SCRIPT["welcome"].values():
+    for text, audio in zip(SCRIPT[s := "welcome"].values(), AUDIO[s].values()):
         text.present()
+        audio.play()
         exp.keyboard.wait(K_SPACE)
 
     # Pre-exposure Trials
@@ -213,6 +220,7 @@ def main():
 
     # Pre-exposure Feedback
     SCRIPT["question_preexposure"].present()
+    AUDIO["question_preexposure"].play()
     found, _ = exp.keyboard.wait(keys=[K_y, K_n])
     if found == K_y:
         participant_info["preexposure_painful"] = True
@@ -226,7 +234,7 @@ def main():
     exp.clock.wait_seconds(1)
 
     # VAS 70 estimation
-    for key, text in SCRIPT["info_vas70"].items():
+    for (key, text), audio in zip(SCRIPT[s := "info_vas70"].items(), AUDIO[s].values()):
         # Show VAS pictures, first the unmarked, then the marked one
         if "picture" in str(key):
             if "wait" in str(key):
@@ -238,9 +246,11 @@ def main():
             else:
                 vas_pictures["marked"].present(clear=True, update=False)
                 text.present(clear=False, update=True)
+                audio.play()
                 exp.keyboard.wait(K_SPACE)
             continue
         text.present()
+        audio.play()
         exp.keyboard.wait(K_SPACE)
 
     estimator_vas70 = BayesianEstimatorVAS(
@@ -254,10 +264,12 @@ def main():
     run_estimation_trials(estimator=estimator_vas70)
     participant_info["vas70"] = estimator_vas70.get_estimate()
     SCRIPT["excellent"].present()  # say something nice to the participant
+    AUDIO["excellent"].play()
     exp.clock.wait_seconds(1.5)
 
     # Pain threshold (VAS 0) estimation
     SCRIPT["info_vas0"].present()
+    AUDIO["info_vas0"].play()
     exp.keyboard.wait(K_SPACE)
     estimator_vas0 = BayesianEstimatorVAS(
         vas_value=0,
@@ -278,6 +290,7 @@ def main():
             f"VAS 70 and VAS 0 are too {range_error}. Please repeat the calibration."
         )
         SCRIPT["fail"].present()
+        AUDIO["fail"].play()
         exp.clock.wait_seconds(3)
         control.end()
         sys.exit(1)
@@ -299,7 +312,8 @@ def main():
 
     # End of Experiment
     SCRIPT["bye"].present()
-    exp.clock.wait_seconds(3)
+    AUDIO["bye"].play()
+    exp.clock.wait_seconds(7)
 
     control.end()
     thermoino.close()
