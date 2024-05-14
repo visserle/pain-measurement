@@ -1,3 +1,5 @@
+"""Generate audio files for the calibration and measurement scripts using Google TTS."""
+
 import re
 from pathlib import Path
 
