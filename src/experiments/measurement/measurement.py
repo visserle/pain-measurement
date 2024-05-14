@@ -198,7 +198,7 @@ def get_data_points(temp_course) -> None:
 
 def main():
     # Start experiment
-    reward = 0
+    reward = 0.0
     control.start(skip_ready_screen=True, subject_id=participant_info["id"])
     logging.info(f"Started measurement with seed order {STIMULUS['seeds']}.")
 
@@ -276,8 +276,8 @@ def main():
         correlation = round(data_points.corr()["temperature"]["rating"], 2)
         correlations.append(correlation)
         logging.info(f"Correlation between temperature and rating: {correlation:.2f}.")
-        if correlation > 0.6:
-            reward += 1
+        if correlation > 0.55:
+            reward += 0.5
             logging.info("Rewarding participant.")
             SCRIPT["reward"].present()
             exp.clock.wait_seconds(2.5)

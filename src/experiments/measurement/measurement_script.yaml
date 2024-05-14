@@ -45,7 +45,7 @@ welcome:
 
     Insgesamt besteht das Experiment aus 12 Blöcken, die jeweils 3 Minuten lang sind.
 
-    Falls Ihre Schmerzbewertung in einem Block präzise genug war, erhalten Sie eine Belohnung von 1 €. So können Sie sich zusätzlich zur Aufwandsentschädigung eine Belohnung von bis zu 12 € verdienen.
+    Falls Ihre Schmerzbewertung in einem Block präzise genug war, erhalten Sie eine Belohnung von 50 Cent. So können Sie sich zusätzlich zur Aufwandsentschädigung eine Belohnung von bis zu 6 € verdienen.
 
 
     (Leertaste drücken, um fortzufahren)
@@ -184,10 +184,9 @@ reward: |-
 
 
 
-  Ihre Schmerzbewertung war präzise genug.
-  
-  
-  Sie erhalten 1 € Belohnung.
+
+
+  Sie erhalten eine Belohnung.
 approve : |-
 
 
