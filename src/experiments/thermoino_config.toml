@@ -1,4 +1,15 @@
-port = "COM7" # COM7 for Luigi, COM12 for Mario
+# COM-port for Thermoino
+
+# "COM7" for Luigi
+# "COM12" for Mario
+# "COM4" for Bowser
+
+
+# Adapt the value on the right-hand side:
+port = "COM4"  
+
+
+# More stuff (do not edit)
 mms_baseline = 28.0  # must be the same as in MMS
 mms_rate_of_rise = 10.0  # must be the same as in MMS
 bin_size_ms = 500
