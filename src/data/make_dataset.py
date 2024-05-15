@@ -5,9 +5,8 @@
 # - makes a bit more sense to only display the warning for missing datasets once at loading time
 # - in thw other functions we can just check if the dataset is available and skip it if not
 # - based on a list of available datasets for each participant not with the convoluted if statements
-# - use parquet for internal processing instead of csv https://kaveland.no/friends-dont-let-friends-export-to-csv.html
+# - use parquet for internal processing instead of csv? https://kaveland.no/friends-dont-let-friends-export-to-csv.html
 # - support csv as an addtional output format at the end
-# - NOTE we won't publish this basic data set on huggingface
 
 
 """
@@ -29,6 +28,7 @@ import polars as pl
 
 from src.data.config_data import DataConfigBase
 from src.data.config_data_imotions import IMOTIONS_LIST, iMotionsConfig
+from src.data.config_data_interim import INTERIM_LIST
 from src.data.config_data_raw import RAW_LIST, RawConfig
 from src.data.config_participant import PARTICIPANT_LIST, ParticipantConfig
 from src.log_config import configure_logging
@@ -37,26 +37,26 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 @dataclass
-class Data:
-    """Dataclass for a single csv files"""
+class Dataset:
+    """Dataclass for a single csv file"""
 
     name: str
-    dataset: pl.DataFrame
+    df: pl.DataFrame
 
 
 @dataclass
-class Participant:
+class ParticipantData:
     """Dataclass for a single participant"""
 
     id: str
-    datasets: dict[str, Data]
+    datasets: dict[str, Dataset]
 
     def __call__(self, attr_name):
         return getattr(self, attr_name)
 
     def __getattr__(self, name):
         if name in self.datasets:
-            return self.datasets[name].dataset
+            return self.datasets[name].df
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no attribute '{name}'"
         )
@@ -68,7 +68,7 @@ class Participant:
 def load_dataset(
     participant_config: ParticipantConfig,
     data_config: DataConfigBase,
-) -> Data:
+) -> Dataset:
     file_path = (
         data_config.load_dir
         / participant_config.id
@@ -89,7 +89,7 @@ def load_dataset(
         )
 
     # Load and process data using Polars
-    dataset = pl.read_csv(
+    df = pl.read_csv(
         file_path,
         columns=data_config.load_columns,
         skip_rows=file_start_index,
@@ -102,7 +102,7 @@ def load_dataset(
     # For iMotions data we also want to rename some columns
     if isinstance(data_config, iMotionsConfig):
         if data_config.rename_columns:
-            dataset = dataset.rename(data_config.rename_columns)
+            df = df.rename(data_config.rename_columns)
 
     logger.debug(
         "Dataset '%s' for participant %s loaded from %s",
@@ -110,39 +110,27 @@ def load_dataset(
         participant_config.id,
         file_path,
     )
-    return Data(name=data_config.name, dataset=dataset)
+    return Dataset(name=data_config.name, df=df)
 
 
 def load_participant_datasets(
     participant_config: ParticipantConfig,
     data_configs: list[DataConfigBase],
-) -> Participant:
-    datasets: dict[str, Data] = {}
+) -> ParticipantData:
+    datasets: dict[str, Dataset] = {}
     for data_config in data_configs:
-        if data_config.name in participant_config.not_available_data:
-            logger.warning(
-                "Dataset '%s' for participant %s not available",
-                data_config.name,
-                participant_config.id,
-            )
-            continue
         datasets[data_config.name] = load_dataset(participant_config, data_config)
 
-    available_datasets = [
-        data_config.name
-        for data_config in data_configs
-        if data_config.name not in participant_config.not_available_data
-    ]
     logger.info(
-        f"Participant {participant_config.id} loaded with datasets: {available_datasets}"
+        f"Participant {participant_config.id} loaded with datasets: {datasets.keys()}"
     )
-    return Participant(id=participant_config.id, datasets=datasets)
+    return ParticipantData(id=participant_config.id, datasets=datasets)
 
 
 def transform_dataset(
-    data: Data,
+    dataset: Dataset,
     data_config: DataConfigBase,
-) -> Data:
+) -> Dataset:
     """
     Transform a single dataset.
     Note that we just map a list of functions to the dataset.
@@ -161,7 +149,7 @@ def transform_dataset(
     """
     if data_config.transformations:
         for transformation in data_config.transformations:
-            data.dataset = transformation(data.dataset)
+            dataset.df = transformation(dataset.df)
             logger.debug(
                 "Dataset '%s' transformed with %s",
                 data_config.name,
@@ -172,29 +160,32 @@ def transform_dataset(
 
 def transform_participant_datasets(
     participant_config: ParticipantConfig,
-    participant_data: Participant,
+    participant_data: ParticipantData,
     data_configs: list[DataConfigBase],
-) -> Participant:
+) -> ParticipantData:
     """Transform all datasets for a single participant."""
 
-    # Special case for imotions data: we first need to merge trial information into each dataset (via Stimuli_Seed)
+    # Special case for imotions data: we first want to add the participant id and merge
+    # trial information into each dataset (via Stimulus_Seed)
     if isinstance(data_configs[0], iMotionsConfig):
         for data_config in IMOTIONS_LIST:
-            if data_config.name in participant_config.not_available_data:
-                continue  # skip datasets that are not available, FIXME a bit convoluted, better to have a list of available datasets for each participant
-                # or just remove it all together
-            # add the stimuli seed column to all datasets of the participant except for the trial data which already has it
+            # add the stimuli seed column to all datasets of the participant except for
+            # the trial data which already has it
             if (
-                "Stimuli_Seed"
-                not in participant_data.datasets[data_config.name].dataset.columns
+                "Stimulus_Seed"
+                not in participant_data.datasets[data_config.name].df.columns
             ):
-                participant_data.datasets[data_config.name].dataset = (
+                participant_data.datasets[data_config.name].df = (
                     participant_data.datasets[data_config.name]
-                    .dataset.join(
+                    .df.join(
                         participant_data.trial, on="Timestamp", how="outer_coalesce"
                     )
                     .sort("Timestamp")
                 )
+            # add participant id to all datasets of the participant
+            participant_data.datasets[data_config.name].df = participant_data.datasets[
+                data_config.name
+            ].df.with_columns(pl.lit(participant_data.id).alias("Participant"))
         logger.debug(
             "Participant %s datasets are now merged with trial information",
             participant_data.id,
@@ -202,13 +193,6 @@ def transform_participant_datasets(
 
     # Do the regular transformation(s) as defined in the config
     for data_config in data_configs:
-        if data_config.name in participant_config.not_available_data:
-            logger.warning(
-                "Dataset '%s' for participant %s not available",
-                data_config.name,
-                participant_data.id,
-            )
-            continue
         transform_dataset(participant_data.datasets[data_config.name], data_config)
     logger.info(f"Participant {participant_data.id} datasets successfully transformed")
     return participant_data
@@ -218,8 +202,8 @@ def transform_participant_datasets(
 
 
 def save_dataset(
-    data: Data,
-    participant_data: Participant,
+    dataset: Dataset,
+    participant_data: ParticipantData,
     data_config: DataConfigBase,
 ) -> None:
     """Save a single dataset to a csv file."""
@@ -229,7 +213,7 @@ def save_dataset(
 
     # Write the DataFrame to CSV
     # TODO: problems with saving timedelta format, but we can do without it for now
-    data.dataset.write_csv(file_path)
+    dataset.df.write_csv(file_path)
     logger.debug(
         "Dataset '%s' for participant %s saved to %s",
         data_config.name,
@@ -240,42 +224,28 @@ def save_dataset(
 
 def save_participant_datasets(
     participant_config: ParticipantConfig,
-    participant_data: Participant,
+    participant_data: ParticipantData,
     data_configs: list[DataConfigBase],
 ) -> None:
     """Save all datasets for a single participant to csv files."""
     for data_config in data_configs:
-        if data_config.name in participant_config.not_available_data:
-            logger.warning(
-                "Dataset '%s' for participant %s not available",
-                data_config.name,
-                participant_data.id,
-            )
-            continue
         save_dataset(
             participant_data.datasets[data_config.name], participant_data, data_config
         )
 
-    available_datasets = [
-        data_config.name
-        for data_config in data_configs
-        if data_config.name not in participant_config.not_available_data
-    ]
     logger.info(
-        f"Participant {participant_data.id} saved with datasets: {available_datasets}"
+        f"Participant {participant_data.id} saved with datasets: "
+        f"{participant_data.datasets.keys()}"
     )
 
 
 def main():
     configure_logging(stream_level=logging.DEBUG)
 
-    list_of_data_configs = [
-        IMOTIONS_LIST,
-        RAW_LIST,
-    ]
+    list_of_data_configs = [IMOTIONS_LIST, RAW_LIST, INTERIM_LIST]
 
     for data_configs in list_of_data_configs:
-        for participant_config in PARTICIPANT_LIST[:1]:
+        for participant_config in PARTICIPANT_LIST[:2]:
             participant_data = load_participant_datasets(
                 participant_config, data_configs
             )
