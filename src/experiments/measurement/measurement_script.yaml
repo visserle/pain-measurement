@@ -22,7 +22,8 @@ welcome:
 
     Mit diesem Experiment möchten wir fluktuierende Schmerzen objektiv messbar machen.
 
-    Während Sie Schmerzen empfinden, nehmen unsere Sensoren Ihre Körperreaktionen auf. Diese Daten helfen uns, Schmerz besser zu verstehen und zu behandeln.
+    Während Sie Schmerzen empfinden, nehmen unsere Sensoren Ihre Körperreaktionen auf. Diese Daten helfen uns, Schmerzen besser zu verstehen und zu behandeln.
+
 
     (Leertaste drücken, um fortzufahren)
   3: |-
@@ -43,14 +44,15 @@ welcome:
 
 
 
+
     Insgesamt besteht das Experiment aus 12 Blöcken, die jeweils 3 Minuten lang sind.
 
     Falls Ihre Schmerzbewertung in einem Block präzise genug war, erhalten Sie eine Belohnung von 50 Cent. So können Sie sich zusätzlich zur Aufwandsentschädigung eine Belohnung von bis zu 6 € verdienen.
 
 
     (Leertaste drücken, um fortzufahren)
-  
   5: |-
+
 
 
 
@@ -108,8 +110,7 @@ instruction:
 
 
 
-    Während des Experiments haben Sie die Aufgabe, Ihren Schmerz mittels der Skala kontinuierlich zu bewerten.
-
+    Während des Experiments haben Sie die Aufgabe, Ihren Schmerz mittels der Skala durchgehend zu bewerten. Dies geschieht ausschließlich über Ihre Mausbewegungen; Sie müssen nichts klicken.
 
 
 
@@ -130,12 +131,14 @@ ready:
 
 
 
-    Wir möchten Sie bitten, bei der Schmerzstimulation nicht zu sprechen, nicht zu trinken, auf den Monitor zu schauen und Ihre Augen immer geöffnet zu halten (Blinzeln ist erlaubt).
-    Konzentrieren Sie sich ganz auf Ihre Empfindungen.
 
-    
+
+    Wir möchten Sie bitten, bei der Schmerzstimulation nicht zu sprechen, nicht zu trinken, auf den Monitor zu schauen und Ihre Augen immer geöffnet zu halten (Blinzeln ist erlaubt).
+
+
     (Leertaste drücken, um fortzufahren)
   2: |-
+
 
 
 
