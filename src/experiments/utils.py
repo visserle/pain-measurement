@@ -132,7 +132,6 @@ def prepare_audio(
     based on the keys of the script dictionary.
     """
     for key, value in audio.items():
-        print(key)
         if isinstance(value, dict):
             # Recursively process nested dictionaries,
             # passing down the current key as the parent_key
@@ -143,7 +142,6 @@ def prepare_audio(
                 if parent_key
                 else Path(audio_dir) / f"{key}.wav"
             ).as_posix()
-            print(audio_path)
             audio[key] = Audio(audio_path)
             audio[key].preload()
 

@@ -20,7 +20,7 @@ def text_to_speech(
     client = texttospeech.TextToSpeechClient()
 
     # Set the text input to be synthesized
-    synthesis_input = texttospeech.SynthesisInput(text=text)
+    synthesis_input = texttospeech.SynthesisInput(text=text.strip())
 
     # Build the voice request
     voice = texttospeech.VoiceSelectionParams(
@@ -28,9 +28,10 @@ def text_to_speech(
         name="de-DE-Wavenet-B",
     )
 
-    # Select the type of audio file you want returned
+    # Select the type of audio file
     audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.LINEAR16
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16,
+        speaking_rate=1.05,
     )
 
     # Perform the text-to-speech request on the text input with the selected
@@ -66,9 +67,10 @@ def script_to_speech(
                 parent_key=key,
             )
         else:
-            # Remove '(y/n)' and '(Leertaste drücken, um fortzufahren)' from the text
+            # Remove unnecessary text from the script
             value = re.sub(r"\(y/n\)", "", value)
             value = re.sub(r"\(Leertaste drücken, um fortzufahren\)", "", value)
+            value = re.sub(r"Nun wechseln wir die Hautstelle am Arm.", "", value)
 
             audio_path = (
                 Path(audio_dir) / f"{parent_key}_{key}.wav"
