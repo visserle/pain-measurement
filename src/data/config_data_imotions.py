@@ -3,13 +3,17 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import polars as pl
-
 from src.data.config_data import DataConfigBase
-from src.features.transformations import create_trials, interpolate_to_marker_timestamps
+from src.features.transformations import (
+    create_trials,
+    interpolate_to_marker_timestamps,
+)
 
 # - add schemas for csv (for now dtype keyword only)
 # -> no need for infer_schema_length then (quite costly)
+
+LOAD_FROM = Path("data/imotions")
+SAVE_TO = Path("data/raw")
 
 
 @dataclass
@@ -24,9 +28,12 @@ class iMotionsConfig(DataConfigBase):
     notes: str | None = None
 
     def __post_init__(self):
-        self.load_dir = Path("data/imotions")
-        self.save_dir = Path("data/raw")
-        self.transformations = [create_trials, interpolate_to_marker_timestamps]
+        self.load_dir = LOAD_FROM
+        self.save_dir = SAVE_TO
+        self.transformations = [
+            create_trials,
+            interpolate_to_marker_timestamps,
+        ]
 
 
 TRIAL = iMotionsConfig(
@@ -34,20 +41,21 @@ TRIAL = iMotionsConfig(
     name_imotions="ExternalMarker_ET_EventAPI_ExternDevice",
     load_columns=["Timestamp", "MarkerDescription"],
     rename_columns={
-        "MarkerDescription": "Stimuli_Seed",
+        "MarkerDescription": "Stimulus_Seed",
     },
     notes="MarkerDescription contains the stimulus seed and is originally send once at the start and end of each trial.",
 )
 
-HEAT = iMotionsConfig(
-    name="heat",
+STIMULUS = iMotionsConfig(
+    name="stimulus",
     name_imotions="CustomCurves_CustomCurves@1_ET_EventAPI_ExternDevice",
     load_columns=["Timestamp", "Temperature", "Rating"],
 )
 
 EDA = iMotionsConfig(
     name="eda",
-    name_imotions="Shimmer3_GSR+_&_EDA_(D200)_Shimmer3_GSR+_&_EDA_(D200)_ET_Shimmer_ShimmerDevice",
+    name_imotions="Shimmer3_EDA_&_PPG_Shimmer3_EDA_&_PPG_ET_Shimmer_ShimmerDevice",
+    # name_imotions="Shimmer3_GSR+_&_EDA_(D200)_Shimmer3_GSR+_&_EDA_(D200)_ET_Shimmer_ShimmerDevice",
     load_columns=[
         "RowNumber",
         "SampleNumber",
@@ -65,7 +73,8 @@ EDA = iMotionsConfig(
 
 PPG = iMotionsConfig(
     name="ppg",
-    name_imotions="Shimmer3_GSR+_&_EDA_(D200)_Shimmer3_GSR+_&_EDA_(D200)_ET_Shimmer_ShimmerDevice",
+    # name_imotions="Shimmer3_GSR+_&_EDA_(D200)_Shimmer3_GSR+_&_EDA_(D200)_ET_Shimmer_ShimmerDevice",
+    name_imotions="Shimmer3_EDA_&_PPG_Shimmer3_EDA_&_PPG_ET_Shimmer_ShimmerDevice",
     load_columns=[
         "RowNumber",
         "SampleNumber",
@@ -87,7 +96,7 @@ PPG = iMotionsConfig(
 
 EEG = iMotionsConfig(
     name="eeg",
-    name_imotions="EEG_Enobio-USB_ENOBIO-8-NE-Device_(COM13)_ET_Lsl_LslSensor",
+    name_imotions="EEG_Enobio-USB_ENOBIO-8-NE-Device_(COM3)_ET_Lsl_LslSensor",
     load_columns=["Timestamp", "Ch1", "Ch2", "Ch3", "Ch4", "Ch5", "Ch6", "Ch7", "Ch8"],
     rename_columns={
         "Ch1": "EEG_RAW_Ch1",
@@ -195,5 +204,5 @@ SYSTEM = iMotionsConfig(
 )
 
 
-IMOTIONS_LIST = [TRIAL, HEAT, EEG, EDA, PPG, PUPILLOMETRY, AFFECTIVA, SYSTEM]
+IMOTIONS_LIST = [TRIAL, STIMULUS, EEG, EDA, PPG, PUPILLOMETRY, AFFECTIVA, SYSTEM]
 IMOTIONS_DICT = {config.name: config for config in IMOTIONS_LIST}

@@ -1,12 +1,18 @@
+# NOTE, TODO: for unchanged data representations simply import the config from a previous stage
 """
 For processing interim (already cleaned) data.
 """
+
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from src.data.config_data import DataConfigBase
+from src.features.eda import process_eda
 from src.features.pupillometry import process_pupillometry
 from src.features.transformations import interpolate  # resample
+
+LOAD_FROM = Path("data/interim")
+SAVE_TO = Path("data/preprocessed")
 
 
 @dataclass
@@ -18,23 +24,22 @@ class InterimConfig(DataConfigBase):
     notes: str | None = None
 
     def __post_init__(self):
-        self.load_dir = Path("data/raw")
-        self.save_dir = Path("data/interim")
+        self.load_dir = LOAD_FROM
+        self.save_dir = SAVE_TO
         self.transformations = (
             [interpolate] if not self.transformations else [] + self.transformations
         )
+        self.load_columns = ["Participant", "Trial", "Timestamp"] + self.load_columns
 
 
-HEAT = InterimConfig(
-    name="heat",
-    load_columns=["Trial", "Timestamp", "Temperature", "Rating"],  #
+STIMULUS = InterimConfig(
+    name="stimulus",
+    load_columns=["Temperature", "Rating"],
 )
 
 EEG = InterimConfig(
     name="eeg",
     load_columns=[
-        "Trial",
-        "Timestamp",
         "EEG_RAW_Ch1",
         "EEG_RAW_Ch2",
         "EEG_RAW_Ch3",
@@ -48,14 +53,12 @@ EEG = InterimConfig(
 
 EDA = InterimConfig(
     name="eda",
-    load_columns=["Trial", "Timestamp", "EDA_RAW"],
+    load_columns=["EDA_RAW", "EDA_Phasic", "EDA_Tonic"],
 )
 
 PPG = InterimConfig(
     name="ppg",
     load_columns=[
-        "Trial",
-        "Timestamp",
         "PPG_RAW",
         "PPG_HeartRate",
         "PPG_IBI",
@@ -65,20 +68,15 @@ PPG = InterimConfig(
 PUPILLOMETRY = InterimConfig(
     name="pupillometry",
     load_columns=[
-        "Trial",
-        "Timestamp",
         "Pupillometry_L",
         "Pupillometry_R",
     ],
-    transformations=[process_pupillometry],
     sampling_rate=60,
 )
 
 AFFECTIVA = InterimConfig(
     name="affectiva",
     load_columns=[
-        "Trial",
-        "Timestamp",
         "Anger",
         "Contempt",
         "Disgust",
@@ -123,5 +121,5 @@ AFFECTIVA = InterimConfig(
 )
 
 
-INTERIM_LIST = [HEAT, EEG, EDA, PPG, PUPILLOMETRY, AFFECTIVA]
+INTERIM_LIST = [STIMULUS, EEG, EDA, PPG, PUPILLOMETRY, AFFECTIVA]
 INTERIM_DICT = {config.name: config for config in INTERIM_LIST}
