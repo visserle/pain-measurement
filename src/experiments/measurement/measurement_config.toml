@@ -20,7 +20,7 @@ sample_rate = 10
 start_study_mode = "NormalPrompt"
 
 [stimulus]
-seeds = [762, 536, 280, 306, 366, 526, 806, 140, 305, 659, 630, 989]
+seeds = [806, 536, 658, 536, 681, 467, 265, 743, 952, 264, 243, 265]
 sample_rate = 10
 half_cycle_num = 10
 period_range = [5, 20]
