@@ -1,8 +1,8 @@
 [experiment]
 text_size = 40
 text_box_size = [1500, 900]
-element_color = [128, 64, 192]
-marker_color = [192, 64, 128]
+element_color = [255, 162, 0]
+marker_color = [255, 0, 0]
 
 [visual_analogue_scale]
 sample_rate = 60

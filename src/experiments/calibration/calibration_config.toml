@@ -1,8 +1,8 @@
 [experiment]
 text_size = 40
 text_box_size = [1500, 900]
-element_color = [128, 64, 192]
-cross_pain_color = [192, 64, 128]
+element_color = [255, 162, 0]
+cross_pain_color = [255, 0, 0]
 cross_size = [100, 100]
 cross_line_width = 20
 
