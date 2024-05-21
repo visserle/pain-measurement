@@ -1,16 +1,19 @@
+# TODO
+
+# - add schemas for csv (for now dtype keyword only)
+# -> no need for infer_schema_length then (quite costly)
+
 """Contains information about the iMotions data files (= external data)."""
 
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from src.data.config_data import DataConfigBase
+from src.features.affectiva import process_affectiva
 from src.features.transformations import (
     create_trials,
     interpolate_to_marker_timestamps,
 )
-
-# - add schemas for csv (for now dtype keyword only)
-# -> no need for infer_schema_length then (quite costly)
 
 LOAD_FROM = Path("data/imotions")
 SAVE_TO = Path("data/raw")
@@ -30,10 +33,12 @@ class iMotionsConfig(DataConfigBase):
     def __post_init__(self):
         self.load_dir = LOAD_FROM
         self.save_dir = SAVE_TO
-        self.transformations = [
-            create_trials,
-            interpolate_to_marker_timestamps,
-        ]
+        self.transformations = (
+            [create_trials, interpolate_to_marker_timestamps]
+            if not self.transformations
+            else [create_trials, interpolate_to_marker_timestamps]
+            + self.transformations
+        )
 
 
 TRIAL = iMotionsConfig(
@@ -150,6 +155,7 @@ PUPILLOMETRY = iMotionsConfig(
 AFFECTIVA = iMotionsConfig(
     name="affectiva",
     name_imotions="Affectiva_AFFDEX_ET_Affectiva_AffectivaCameraDevice",
+    transformations=[process_affectiva],
     load_columns=[
         "SampleNumber",
         "Timestamp",

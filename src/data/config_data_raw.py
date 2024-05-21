@@ -26,14 +26,16 @@ class RawConfig(DataConfigBase):
         self.load_dir = LOAD_FROM
         self.save_dir = SAVE_TO
         self.load_columns = ["Participant", "Trial", "Timestamp"] + self.load_columns
-        self.transformations = (
-            [interpolate] if not self.transformations else [] + self.transformations
+        self.transformations = (  # TODO FIXME Why is this here? Do we really need this?
+            [interpolate]
+            if not self.transformations
+            else [interpolate] + self.transformations
         )
 
 
 STIMULUS = RawConfig(
     name="stimulus",
-    load_columns=["Temperature", "Rating"],
+    load_columns=["Temperature", "Rating", "Stimulus_Seed"],
 )
 
 EEG = RawConfig(

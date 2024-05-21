@@ -27,14 +27,16 @@ class InterimConfig(DataConfigBase):
         self.load_dir = LOAD_FROM
         self.save_dir = SAVE_TO
         self.transformations = (
-            [interpolate] if not self.transformations else [] + self.transformations
+            [interpolate]  # TODO FIXME Why is this here? Do we really need this?
+            if not self.transformations
+            else [interpolate] + self.transformations
         )
         self.load_columns = ["Participant", "Trial", "Timestamp"] + self.load_columns
 
 
 STIMULUS = InterimConfig(
     name="stimulus",
-    load_columns=["Temperature", "Rating"],
+    load_columns=["Temperature", "Rating", "Stimulus_Seed"],
 )
 
 EEG = InterimConfig(
