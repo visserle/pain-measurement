@@ -20,7 +20,7 @@ def _scale_standard_col(col: pl.Expr) -> pl.Expr:
 
 
 def _scale_percent_to_decimal_col(col: pl.Expr) -> pl.Expr:
-    return col / 100
+    return (col / 100).round(5)
 
 
 @map_trials
