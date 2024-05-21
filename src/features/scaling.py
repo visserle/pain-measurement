@@ -8,7 +8,6 @@ EXCLUDE_COLUMNS = [
     "Trial",
     "Stimulus_Seed",
     "Participant",
-    "Trial",
 ]
 
 
@@ -48,7 +47,7 @@ def scale_standard(
     )
 
 
-@map_trials
+# does not need to be mapped by trial since it's a simple operation
 def scale_percent_to_decimal(
     df: pl.DataFrame,
     exclude_columns: list[str] = EXCLUDE_COLUMNS,
