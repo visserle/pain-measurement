@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Iterable
+from dataclasses import dataclass
 from functools import reduce, wraps
 
 import numpy as np
@@ -17,10 +17,50 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 # 447,929.23030000000006, ...
 # 448,929.2894, ...
 # -> add as function to transformations of raw data, even imotions data?
+# add reconstruct skin area from participant id
 
 
-def map_participant_datasets(func, participant):
-    """Utility function for debugging, will be removed in the future, see process_data.py."""
+def map_trials(func: callable) -> callable:
+    """Decorator to apply a function to each trial in a pl.DataFrame."""
+
+    @wraps(func)
+    def wrapper(
+        df: pl.DataFrame,
+        *args,
+        **kwargs,
+    ) -> pl.DataFrame:
+        # Apply the function to each trial if "Trial" exists
+        if "Trial" in df.columns:
+            if len(df["Trial"].unique()) == 1:
+                logger.debug(
+                    "Only one trial found, applying function to the whole DataFrame."
+                )
+            result = df.group_by("Trial", maintain_order=True).map_groups(
+                lambda group: func(group, *args, **kwargs)
+            )
+        # Else apply the function to the whole DataFrame
+        else:
+            logger.warning(
+                f"No 'Trial' column found, applying function {func.__name__} "
+                "to the whole DataFrame instead."
+            )
+            logger.info(
+                f"Use {func.__name__}.__wrapped__() to access the function without the "
+                "map_trials decorator."
+            )
+            result = func(df, *args, **kwargs)
+        return result
+
+    return wrapper
+
+
+def map_participant_datasets(
+    func: callable,
+    participant: dataclass,
+) -> dataclass:
+    """Utility function for debugging, will be removed in the future.
+
+    -> this normally done in the pipeline"""
     # TODO: use map instead, e.g.:
     # dict(zip(a, map(f, a.values())))
     # dict(map(lambda item: (item[0], f(item[1])), my_dictionary.items()
@@ -29,48 +69,21 @@ def map_participant_datasets(func, participant):
     return participant
 
 
-def map_trials(func, trial_column="Trial"):
-    """Decorator to apply a function to each trial in a DataFrame."""
-
-    @wraps(func)
-    def wrapper(df, *args, **kwargs):
-        # Check if 'df' is a pl.DataFrame
-        if not isinstance(df, pl.DataFrame):
-            raise ValueError("Input must be a Polars DataFrame.")
-        # Apply the function to each trial if trial_column exists
-        if trial_column in df.columns:
-            # Warning if only one trial is found
-            if len(df[trial_column].unique()) == 1:
-                logger.warning(
-                    "Only one trial found, applying function to the whole DataFrame."
-                )
-            result = df.group_by(trial_column, maintain_order=True).map_groups(
-                lambda group: func(group, *args, **kwargs)
-            )
-        # Else apply the function to the whole DataFrame
-        else:
-            logger.warning(
-                f"No '{trial_column}' column found, applying function {func.__name__} to the whole DataFrame instead."
-            )
-            logger.info(
-                f"Use {func.__name__}.__wrapped__() to access the function without the map_trials decorator."
-            )
-            result = func(df, *args, **kwargs)
-        return result
-
-    return wrapper
-
-
 def create_trials(
-    df: pl.DataFrame, marker_column="Stimuli_Seed", trial_column="Trial"
+    df: pl.DataFrame,
+    marker_column: str = "Stimulus_Seed",
 ) -> pl.DataFrame:
-    """Create a trial column based on the marker column which originally saves the stimuli seed only once at the start and end of each trial."""
+    """
+    Create a trial column based on the marker column which originally saves the stimuli
+    seed only once at the start and end of each trial.
+    """
     # TODO: maybe we need to interpolate here for the nan at the start and end of each trial
     # TODO: Check if all trials are complete
     # Forward fill and backward fill columns
     ffill = df[marker_column].fill_null(strategy="forward")
     bfill = df[marker_column].fill_null(strategy="backward")
-    # Where forward fill and backward fill are equal, replace the NaNs in the original Stimuli_Seed
+    # Where forward fill and backward fill are equal,
+    # replace the NaNs in the original Stimulus_Seed
     df = df.with_columns(
         pl.when(ffill == bfill)
         .then(ffill)
@@ -78,7 +91,7 @@ def create_trials(
         .alias(marker_column)
     )
     assert df["Timestamp"].is_sorted(descending=False)
-    # Only keep rows where the Stimuli_Seed is not NaN
+    # Only keep rows where the Stimulus_Seed is not NaN
     df = df.filter(df[marker_column].is_not_null())
     # Create a new column that contains the trial number
     df = df.with_columns(
@@ -90,7 +103,7 @@ def create_trials(
         .ne(0)  # Check for non-zero differences
         .cum_sum()  # Cumulative sum of boolean values
         .cast(pl.UInt8)  # Cast to integer data type between 0 and 255
-        .alias(trial_column)  # Rename the series
+        .alias("Trial")  # Rename the series
     )
     return df
 
@@ -113,7 +126,8 @@ def add_timedelta_column(
 
 @map_trials
 def interpolate_to_marker_timestamps(
-    df: pl.DataFrame, timestamp_column="Timestamp"
+    df: pl.DataFrame,
+    timestamp_column: str = "Timestamp",
 ) -> pl.DataFrame:
     # Define a custom function for the transformation
     # TODO;NOTE: maybe there is a better way to do this:
@@ -124,6 +138,8 @@ def interpolate_to_marker_timestamps(
     of the device to have the exact same trial duration for each modality
     (different devices have different sampling rates). This shifts the data by about 5 ms
     and could be interpreted as an interpolation.
+
+    Also drops all rows with null values.
     """
     # Only do if there are nulls in the df which means that there are still the empty marker events were no data was recorded
     # Else we could change values that are not supposed to be changed
@@ -151,8 +167,8 @@ def interpolate_to_marker_timestamps(
 
 
 @map_trials
-def interpolate(df) -> pl.DataFrame:
-    """Linearly interpolates the whole DataFrame."""
+def interpolate(df: pl.DataFrame) -> pl.DataFrame:
+    """Linearly interpolates the whole DataFrame"""
     return df.interpolate()
 
 
@@ -174,51 +190,23 @@ def resample_to_500hz(df):  # FIXME
     return df
 
 
-@map_trials
-def scale_min_max(
-    df: pl.DataFrame, exclude_columns=["Timestamp", "Trial"]
-) -> pl.DataFrame:
-    """NOTE: Do not use in ML pipeline (data leakage)."""
-    return df.with_columns(
-        _scale_min_max_col(pl.col(pl.Float64).exclude(exclude_columns))
-    )  # TODO: trial shouldn't even be float64
-
-
-def _scale_min_max_col(col: pl.Expr) -> pl.Expr:
-    return (col - col.min()) / (col.max() - col.min())
-
-
-@map_trials
-def scale_standard(
-    df: pl.DataFrame, exclude_columns=["Timestamp", "Trial"]
-) -> pl.DataFrame:
-    """NOTE: Do not use in ML pipeline (data leakage)."""
-    return df.with_columns(
-        _scale_standard_col(pl.col(pl.Float64).exclude(exclude_columns))
-    )  # TODO: trial shouldn't even be float64
-
-
-def _scale_standard_col(col: pl.Expr) -> pl.Expr:
-    return (col - col.mean()) / col.std()
-
-
 def merge_dfs(
-    *dfs: pl.DataFrame | list[pl.DataFrame],
-    merge_on=["Timestamp", "Trial"],
-    sort_by=["Timestamp"],
+    dfs: list[pl.DataFrame],
+    merge_on: list[str] = ["Timestamp", "Trial"],
+    sort_by: list[str] = ["Timestamp"],
 ) -> pl.DataFrame:
     """
     Merge multiple DataFrames on the 'Timestamp' and 'Trial' columns.
-    Function accepts both a list of DataFrames or multiple DataFrames as arguments.
     """
-    # Flatten in case of a single argument which is an iterable of DataFrames
-    if len(dfs) == 1 and isinstance(dfs[0], Iterable):
-        dfs = list(dfs[0])
+    if len(dfs) < 2:
+        return dfs[0]
 
     df = reduce(
-        lambda left, right: left.join(right, on=merge_on, how="outer_coalesce").sort(
-            sort_by
-        ),
+        lambda left, right: left.join(
+            right,
+            on=merge_on,
+            how="outer_coalesce",
+        ).sort(sort_by),
         dfs,
     )
     return df
