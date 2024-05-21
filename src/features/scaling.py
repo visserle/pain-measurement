@@ -26,10 +26,11 @@ def _scale_percent_to_decimal_col(col: pl.Expr) -> pl.Expr:
 @map_trials
 def scale_min_max(
     df: pl.DataFrame,
-    exclude_columns: list[str] = EXCLUDE_COLUMNS,
+    exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
     """NOTE: Not for usage in ML pipeline (data leakage)."""
     # TODO: trial shouldn't even be float64
+    exclude_columns = EXCLUDE_COLUMNS + (exclude_additional_columns or [])
     return df.with_columns(
         _scale_min_max_col(pl.col(pl.Float64).exclude(exclude_columns))
     )
@@ -38,10 +39,11 @@ def scale_min_max(
 @map_trials
 def scale_standard(
     df: pl.DataFrame,
-    exclude_columns: list[str] = EXCLUDE_COLUMNS,
+    exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
     """NOTE: Not for usage in ML pipeline (data leakage)."""
     # TODO: trial shouldn't even be float64
+    exclude_columns = EXCLUDE_COLUMNS + (exclude_additional_columns or [])
     return df.with_columns(
         _scale_standard_col(pl.col(pl.Float64).exclude(exclude_columns))
     )
@@ -50,10 +52,11 @@ def scale_standard(
 # does not need to be mapped by trial since it's a simple operation
 def scale_percent_to_decimal(
     df: pl.DataFrame,
-    exclude_columns: list[str] = EXCLUDE_COLUMNS,
+    exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
     """Scale percentage columns to decimal."""
     # TODO: trial shouldn't even be float64
+    exclude_columns = EXCLUDE_COLUMNS + (exclude_additional_columns or [])
     return df.with_columns(
         _scale_percent_to_decimal_col(pl.col(pl.Float64).exclude(exclude_columns))
     )

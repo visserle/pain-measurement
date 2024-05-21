@@ -16,12 +16,12 @@ def process_stimulus(df: pl.DataFrame) -> pl.DataFrame:
 
 def scale_rating(df: pl.DataFrame) -> pl.DataFrame:
     """Normalize the 'Rating' column to the range [0, 1] by dividing by 100."""
-    return scale_percent_to_decimal(df, exclude_columns=["Temperature"])
+    return scale_percent_to_decimal(df, exclude_additional_columns=["Temperature"])
 
 
 def scale_temperature(df: pl.DataFrame) -> pl.DataFrame:
     """Normalize the 'Temperature' column using min-max scaling (for each trial)."""
-    return scale_min_max(df, exclude_columns=["Rating"])
+    return scale_min_max(df, exclude_additional_columns=["Rating"])
 
 
 def corr_temperature_rating(df: pl.DataFrame) -> pl.DataFrame:
