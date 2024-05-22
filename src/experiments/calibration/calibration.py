@@ -111,7 +111,7 @@ control.defaults.initialize_delay = 3
 participant_info = (
     read_last_participant() if not args.debug else config["dummy_participant"]
 )
-# determine oder if skin areas based on participant ID
+# determine order of skin areas based on participant ID
 id_is_odd = int(participant_info["id"]) % 2
 SKIN_AREAS = range(1, 7) if id_is_odd else range(6, 0, -1)
 logging.info(f"Use skin area {SKIN_AREAS[-2]} for calibration.")
