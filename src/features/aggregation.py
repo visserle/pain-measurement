@@ -8,7 +8,7 @@ def calculate_corr(
     df: pl.DataFrame,
     feature1: str,
     feature2: str,
-    add_columns: [str] = ["Trial", "Participant", "Stimulus_Seed"],
+    add_columns: list[str] = ["Trial", "Participant", "Stimulus_Seed"],
 ) -> pl.DataFrame:
     """
     Calculate the correlation between two features (columns of a DataFrame) for each
