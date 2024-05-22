@@ -26,6 +26,14 @@ def to_describe(col, prefix=""):
     """
     Helper function for having the describe expression for use in groupby-agg.
     From https://github.com/pola-rs/polars/issues/8066#issuecomment-1794144838
+
+    Example:
+    ````python
+    out = stimuli.group_by("seed", maintain_order=True).agg(
+        *to_describe("y", "temperature_"),  # using list unpacking
+        *to_describe("time"),
+    )
+    ````
     """
     prefix = prefix or f"{col}_"
     return [
