@@ -36,7 +36,7 @@ class InterimConfig(DataConfigBase):
 
 STIMULUS = InterimConfig(
     name="stimulus",
-    load_columns=["Temperature", "Rating", "Stimulus_Seed"],
+    load_columns=["Temperature", "Rating", "Stimulus_Seed", "Skin_Area"],
 )
 
 EEG = InterimConfig(

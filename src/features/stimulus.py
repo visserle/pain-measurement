@@ -4,10 +4,26 @@ from src.features.aggregation import calculate_corr
 from src.features.scaling import scale_min_max, scale_percent_to_decimal
 
 
+def add_skin_area(df: pl.DataFrame) -> pl.DataFrame:
+    """Add a 'Skin_Area' column based on the participant id."""
+    return df.with_columns(
+        pl.when(pl.col("Participant") % 2 == 1)
+        .then((pl.col("Trial") % 6) + 1)
+        .otherwise(6 - (pl.col("Trial") % 6))
+        .alias("Skin_Area")
+        .cast(pl.Int8)
+    )
+
+
 def process_stimulus(df: pl.DataFrame) -> pl.DataFrame:
     """
     Normalize the 'Stimulus' data by scaling the 'Rating' and 'Temperature' columns to
     [0, 1].
+
+    NOTE: This function should not be used in the ML pipeline due to data leakage of
+    the 'Temperature' column. However, we don't yet if temperature is a feature or a
+    target, so this function is included for now. Also the data leakeage is not
+    significant. TODO
     """
     df = scale_rating(df)
     df = scale_temperature(df)

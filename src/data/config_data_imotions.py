@@ -10,6 +10,7 @@ from pathlib import Path
 
 from src.data.config_data import DataConfigBase
 from src.features.affectiva import process_affectiva
+from src.features.stimulus import add_skin_area
 from src.features.transformations import (
     create_trials,
     interpolate_to_marker_timestamps,
@@ -55,6 +56,7 @@ STIMULUS = iMotionsConfig(
     name="stimulus",
     name_imotions="CustomCurves_CustomCurves@1_ET_EventAPI_ExternDevice",
     load_columns=["Timestamp", "Temperature", "Rating"],
+    transformations=[add_skin_area],
 )
 
 EDA = iMotionsConfig(

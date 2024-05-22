@@ -8,6 +8,7 @@ from pathlib import Path
 from src.data.config_data import DataConfigBase
 from src.features.eda import process_eda
 from src.features.pupillometry import process_pupillometry
+from src.features.stimulus import process_stimulus
 from src.features.transformations import interpolate  # resample
 
 LOAD_FROM = Path("data/raw")
@@ -26,16 +27,17 @@ class RawConfig(DataConfigBase):
         self.load_dir = LOAD_FROM
         self.save_dir = SAVE_TO
         self.load_columns = ["Participant", "Trial", "Timestamp"] + self.load_columns
-        self.transformations = (  # TODO FIXME Why is this here? Do we really need this?
-            [interpolate]
-            if not self.transformations
-            else [interpolate] + self.transformations
-        )
+        # self.transformations = (  # TODO FIXME Why is this here? Do we really need this?
+        #     [interpolate]
+        #     if not self.transformations
+        #     else [interpolate] + self.transformations
+        # )
 
 
 STIMULUS = RawConfig(
     name="stimulus",
-    load_columns=["Temperature", "Rating", "Stimulus_Seed"],
+    load_columns=["Temperature", "Rating", "Stimulus_Seed", "Skin_Area"],
+    transformations=[process_stimulus],
 )
 
 EEG = RawConfig(

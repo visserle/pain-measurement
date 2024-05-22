@@ -155,7 +155,7 @@ def transform_dataset(
                 data_config.name,
                 transformation.__name__,
             )
-            # TODO: add **kwargs to transformations and pass them here using lambda functions
+            # TODO: add **kwargs to transformations and pass them here using lambda functions? or better in the config?
 
 
 def transform_participant_datasets(
@@ -167,6 +167,7 @@ def transform_participant_datasets(
 
     # Special case for imotions data: we first want to add the participant id and merge
     # trial information into each dataset (via Stimulus_Seed)
+    # Note that this cannot be done via a transformation from the config
     if isinstance(data_configs[0], iMotionsConfig):
         for data_config in IMOTIONS_LIST:
             # add the stimuli seed column to all datasets of the participant except for
@@ -185,7 +186,9 @@ def transform_participant_datasets(
             # add participant id to all datasets of the participant
             participant_data.datasets[data_config.name].df = participant_data.datasets[
                 data_config.name
-            ].df.with_columns(pl.lit(participant_data.id).alias("Participant"))
+            ].df.with_columns(
+                pl.lit(participant_data.id).alias("Participant").cast(pl.Int8)
+            )
         logger.debug(
             "Participant %s datasets are now merged with trial information",
             participant_data.id,
@@ -195,10 +198,11 @@ def transform_participant_datasets(
     for data_config in data_configs:
         transform_dataset(participant_data.datasets[data_config.name], data_config)
     logger.info(f"Participant {participant_data.id} datasets successfully transformed")
-    return participant_data
 
     if isinstance(data_configs[0], DataConfigBase):
         pass  # TODO: merge datasets into one big dataset at the end
+
+    return participant_data
 
 
 def save_dataset(
@@ -255,6 +259,7 @@ def main():
             save_participant_datasets(
                 participant_config, participant_data, data_configs
             )
+    logger.info("All participants processed successfully")
 
     print(participant_data.eeg)
 
