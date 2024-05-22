@@ -5,7 +5,23 @@ from src.features.scaling import scale_min_max, scale_percent_to_decimal
 
 
 def add_skin_area(df: pl.DataFrame) -> pl.DataFrame:
-    """Add a 'Skin_Area' column based on the participant id."""
+    """
+    Reconstructs the applied skin areas on the left forearm from the participant id and
+    trial number.
+
+    The skin area distribution is as follows:
+
+    |---|---|
+    | 1 | 4 |
+    | 5 | 2 |
+    | 3 | 6 |
+    |---|---|
+
+    Each skin area is stimulated twice, where one trial is 3 minutes long.
+    For instance, for particpants with an even id the stimulation order is:
+
+    6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> end.
+    """
     return df.with_columns(
         pl.when(pl.col("Participant") % 2 == 1)
         .then((pl.col("Trial") % 6) + 1)
