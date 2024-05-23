@@ -20,8 +20,6 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 EYE_COLUMNS = ["Pupillometry_R", "Pupillometry_L"]
-TIME_COLUMN = "Timestamp"
-TRIAL_COLUMN = "Trial"
 RESULT_COLUMN = "Pupillometry"
 
 SAMPLE_RATE = 60
@@ -37,7 +35,7 @@ def process_pupillometry(
     sampling_rate: int = SAMPLE_RATE,
     cutoff_frequency: float = CUTOFF_FREQUENCY,
 ) -> pl.DataFrame:
-    df = below_threshold_equals_blink(df, eye_columns)
+    df = add_blink_threshold(df, eye_columns)
     df = remove_periods_around_blinks(df, eye_columns)
     df = interpolate_pupillometry(df, eye_columns)
     df = low_pass_filter_pupillometry(df, eye_columns, sampling_rate, cutoff_frequency)
@@ -45,7 +43,7 @@ def process_pupillometry(
     return df
 
 
-def below_threshold_equals_blink(
+def add_blink_threshold(
     df: pl.DataFrame,
     eye_columns: str | list[str] = EYE_COLUMNS,
     threshold: int = BLINK_THRESHOLD,
@@ -67,8 +65,7 @@ def _get_blink_segments(
     eye_columns: str | list[str] = EYE_COLUMNS,
 ) -> pl.DataFrame:
     """
-    This helper functions returns the start and end timestamps of blink segments in the
-    given DataFrame. It returns a DataFrame to be usable in a Polars pipeline.
+    Return start and end timestamps of blink segments in the pl.DataFrame.
 
     Note that this function does not depend on indices but on time stamps as
     indices are not preserved by the @map_trials decorator.
@@ -81,8 +78,8 @@ def _get_blink_segments(
         # Skip if there are no blinks
         if neg_ones.sum() == 0:
             trial_info = (
-                f" for trial {int(df[TRIAL_COLUMN].unique().item())}"
-                if (TRIAL_COLUMN in df.columns) and (df[TRIAL_COLUMN].n_unique() == 1)
+                f" for trial {int(df['Trial'].unique().item())}"
+                if ("Trial" in df.columns) and (df["Trial"].n_unique() == 1)
                 else ""
             )
             logger.warning(f"No blinks found in {eye}{trial_info}.")
@@ -103,8 +100,8 @@ def _get_blink_segments(
             end_indices.append(df.height - 1)
 
         # Get timestamps for the blink segments
-        start_timestamps = df[TIME_COLUMN][start_indices].to_list()
-        end_timestamps = df[TIME_COLUMN][end_indices].to_list()
+        start_timestamps = df["Timestamp"][start_indices].to_list()
+        end_timestamps = df["Timestamp"][end_indices].to_list()
 
         # Add to the blink segments list
         blink_segments_data.extend(
@@ -143,8 +140,8 @@ def remove_periods_around_blinks(
 
     TODO: add a look_away detector for segments over 300 ms (?) with longer cut-off period
     """
-    min_timestamp = df[TIME_COLUMN].min()
-    max_timestamp = df[TIME_COLUMN].max()
+    min_timestamp = df["Timestamp"].min()
+    max_timestamp = df["Timestamp"].max()
 
     for eye in ensure_list(eye_columns):
         # Get the blink segments
@@ -179,7 +176,7 @@ def remove_periods_around_blinks(
         for start, end in zip(
             blink_segments["expanded_start"], blink_segments["expanded_end"]
         ):
-            mask = mask | df[TIME_COLUMN].is_between(start, end)
+            mask = mask | df["Timestamp"].is_between(start, end)
 
         # Replace the values in the DataFrame with None
         df = df.with_columns(

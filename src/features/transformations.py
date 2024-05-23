@@ -10,14 +10,9 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 # NOTE: square brackets can be used to access columns in polars but do not allow lazy evaluation -> use select, take, etc for performance
 # although brackets can be faster for small dataframes
-# therre are issues on github reporting eager is faster than lazy
+# there are issues on github reporting eager is faster than lazy
 # TODO: add **kwars to apply_func_participant and data config
 # TODO: cast data types for more performance
-# TODO: Round all timestamps to remove floating point weirdness
-# 447,929.23030000000006, ...
-# 448,929.2894, ...
-# -> add as function to transformations of raw data, even imotions data?
-# add reconstruct skin area from participant id
 
 
 def map_trials(func: callable) -> callable:

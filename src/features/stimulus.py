@@ -18,9 +18,10 @@ def add_skin_area(df: pl.DataFrame) -> pl.DataFrame:
     |---|---|
 
     Each skin area is stimulated twice, where one trial is 3 minutes long.
-    For instance, for particpants with an even id the stimulation order is:
-
+    For particpants with an even id the stimulation order is:
     6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> end.
+    For participants with an odd id the stimulation order is:
+    1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> end.
     """
     return df.with_columns(
         pl.when(pl.col("Participant") % 2 == 1)

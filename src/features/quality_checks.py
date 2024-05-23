@@ -21,12 +21,16 @@ import polars as pl
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-def check_sample_rate(df, unique_timestamp=False):
+def check_sample_rate(
+    df: pl.DataFrame,
+    unique_timestamp: bool = False,
+) -> None:
     if unique_timestamp:
         # actually slightly faster than maintain_order=True (but not lazy)
         df = df.unique("Timestamp").sort("Timestamp")
         logger.info("Checking sample rate for unique timestamps.")
 
+    # the question is why I chose not to use maintain_order=True here FIXME TODO
     timestamp_start = (
         df.group_by("Trial")
         .agg(pl.first("Timestamp"))
@@ -59,7 +63,8 @@ def check_sample_rate(df, unique_timestamp=False):
     logger.info(f"The mean sample rate is {(sample_rate_mean):.2f}.")
     if coeff_of_variation and coeff_of_variation > 0.5:
         logger.warning(
-            f"Sample rate varies more than 0.5% between trials: {coeff_of_variation:.2f}% (coefficient of variation)."
+            "Sample rate varies more than 0.5% between trials: "
+            f"{coeff_of_variation:.2f}% (coefficient of variation)."
         )
 
 

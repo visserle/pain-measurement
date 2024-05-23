@@ -22,9 +22,12 @@ def convert_str_to_list(str_list: str) -> list:
         return []
 
 
-def to_describe(col, prefix=""):
+def to_describe(
+    col: str,
+    prefix: str = "",
+) -> list[pl.Expr]:
     """
-    Helper function for having the describe expression for use in groupby-agg.
+    Polars helper function for having the describe expression for use in groupby-agg.
     From https://github.com/pola-rs/polars/issues/8066#issuecomment-1794144838
 
     Example:
