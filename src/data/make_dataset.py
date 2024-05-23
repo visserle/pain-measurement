@@ -2,9 +2,6 @@
 
 #  TODO
 # - add argument parsing for the main function
-# - makes a bit more sense to only display the warning for missing datasets once at loading time
-# - in thw other functions we can just check if the dataset is available and skip it if not
-# - based on a list of available datasets for each participant not with the convoluted if statements
 # - use parquet for internal processing instead of csv? https://kaveland.no/friends-dont-let-friends-export-to-csv.html
 # - support csv as an addtional output format at the end
 
@@ -19,7 +16,6 @@ The script has three main steps:
 """
 
 import logging
-import os
 from dataclasses import dataclass
 from functools import reduce
 from pathlib import Path
@@ -69,26 +65,10 @@ def load_dataset(
     participant_config: ParticipantConfig,
     data_config: DataConfigBase,
 ) -> Dataset:
-    file_path = (
-        data_config.load_dir
-        / participant_config.id
-        / f"{participant_config.id}_{data_config.name}.csv"
-    )
-    file_start_index = 0
-    # iMotions data are stored in a different format and have metadata we need to skip
-    if isinstance(data_config, iMotionsConfig):
-        file_path = (
-            data_config.load_dir
-            / participant_config.id
-            / f"{data_config.name_imotions}.csv"
-        )
-        with open(file_path, "r") as file:
-            lines = file.readlines(2**16)  # only read a few lines
-        file_start_index = (
-            next(i for i, line in enumerate(lines) if "#DATA" in line) + 1
-        )
-
     # Load and process data using Polars
+    file_path, file_start_index = _get_file_path_and_start_index(
+        data_config, participant_config
+    )
     df = pl.read_csv(
         file_path,
         columns=data_config.load_columns,
@@ -98,11 +78,8 @@ def load_dataset(
         },  # FIXME TODO dirty hack, add data schema instead
         # infer_schema_length=1000,
     )
-
     # For iMotions data we also want to rename some columns
-    if isinstance(data_config, iMotionsConfig):
-        if data_config.rename_columns:
-            df = df.rename(data_config.rename_columns)
+    df = _rename_imotions_columns(df, data_config)
 
     logger.debug(
         "Dataset '%s' for participant %s loaded from %s",
@@ -156,44 +133,18 @@ def transform_dataset(
                 transformation.__name__,
             )
             # TODO: add **kwargs to transformations and pass them here using lambda functions? or better in the config?
+    return dataset
 
 
 def transform_participant_datasets(
-    participant_config: ParticipantConfig,
+    participant_config: ParticipantConfig,  # not used yet TODO
     participant_data: ParticipantData,
     data_configs: list[DataConfigBase],
 ) -> ParticipantData:
     """Transform all datasets for a single participant."""
 
-    # Special case for imotions data: we first want to add the participant id and merge
-    # trial information into each dataset (via Stimulus_Seed)
-    # Note that this cannot be done via a transformation from the config
-    if isinstance(data_configs[0], iMotionsConfig):
-        for data_config in IMOTIONS_LIST:
-            # add the stimuli seed column to all datasets of the participant except for
-            # the trial data which already has it
-            if (
-                "Stimulus_Seed"
-                not in participant_data.datasets[data_config.name].df.columns
-            ):
-                participant_data.datasets[data_config.name].df = (
-                    participant_data.datasets[data_config.name]
-                    .df.join(
-                        participant_data.trial, on="Timestamp", how="outer_coalesce"
-                    )
-                    .sort("Timestamp")
-                )
-            # add participant id to all datasets of the participant
-            participant_data.datasets[data_config.name].df = participant_data.datasets[
-                data_config.name
-            ].df.with_columns(
-                pl.lit(participant_data.id).alias("Participant").cast(pl.Int8)
-            )
-        logger.debug(
-            "Participant %s datasets are now merged with trial information",
-            participant_data.id,
-        )
-
+    # Special transformation for iMotions data (e.g. create trials) first
+    participant_data = _imotions_transformation(participant_data, data_configs)
     # Do the regular transformation(s) as defined in the config
     for data_config in data_configs:
         transform_dataset(participant_data.datasets[data_config.name], data_config)
@@ -202,6 +153,7 @@ def transform_participant_datasets(
     if isinstance(data_configs[0], DataConfigBase):
         pass  # TODO: merge datasets into one big dataset at the end
 
+    # also make_labels at the end?
     return participant_data
 
 
@@ -241,6 +193,84 @@ def save_participant_datasets(
         f"Participant {participant_data.id} saved with datasets: "
         f"{participant_data.datasets.keys()}"
     )
+
+
+def _get_file_path_and_start_index(
+    data_config: DataConfigBase,
+    participant_config: ParticipantConfig,
+) -> tuple[Path, int]:
+    """
+    Get the file path and start index for loading data.
+
+    Note that iMotions data is stored in a different format and has metadata we need to skip.
+    """
+    if not isinstance(data_config, iMotionsConfig):
+        file_path = (
+            data_config.load_dir
+            / participant_config.id
+            / f"{participant_config.id}_{data_config.name}.csv"
+        )
+        return file_path, 0
+    else:
+        file_path = (
+            data_config.load_dir
+            / participant_config.id
+            / f"{data_config.name_imotions}.csv"
+        )
+        with open(file_path, "r") as file:
+            lines = file.readlines(2**16)  # only read a few lines
+        file_start_index = (
+            next(i for i, line in enumerate(lines) if "#DATA" in line) + 1
+        )
+        return file_path, file_start_index
+
+
+def _rename_imotions_columns(
+    df: pl.DataFrame,
+    data_config: iMotionsConfig,
+) -> pl.DataFrame:
+    if isinstance(data_config, iMotionsConfig):
+        if data_config.rename_columns:
+            df = df.rename(data_config.rename_columns)
+    return df
+
+
+def _imotions_transformation(
+    participant_data: ParticipantData,
+    data_configs: list[DataConfigBase],
+) -> ParticipantData:
+    """
+    Special transformation for imotions data: we first want to add the participant id
+    and merge trial information into each dataset (via Stimulus_Seed).
+
+    Note that this cannot be done via a transformation from the config.
+    """
+    if isinstance(data_configs[0], iMotionsConfig):
+        for data_config in IMOTIONS_LIST:
+            # add the stimuli seed column to all datasets of the participant except for
+            # the trial data which already has it
+            if (
+                "Stimulus_Seed"
+                not in participant_data.datasets[data_config.name].df.columns
+            ):
+                participant_data.datasets[data_config.name].df = (
+                    participant_data.datasets[data_config.name]
+                    .df.join(
+                        participant_data.trial, on="Timestamp", how="outer_coalesce"
+                    )
+                    .sort("Timestamp")
+                )
+            # add participant id to all datasets of the participant
+            participant_data.datasets[data_config.name].df = participant_data.datasets[
+                data_config.name
+            ].df.with_columns(
+                pl.lit(participant_data.id).alias("Participant").cast(pl.Int8)
+            )
+        logger.debug(
+            "Participant %s datasets are now merged with trial information",
+            participant_data.id,
+        )
+    return participant_data
 
 
 def main():
