@@ -32,7 +32,11 @@ def scale_min_max(
     df: pl.DataFrame,
     exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
-    """NOTE: Not for usage in ML pipeline (data leakage)."""
+    """
+    Scales Float64 columns to the range [0, 1].
+
+    NOTE: Not for usage in ML pipeline (data leakage).
+    """
     # TODO: trial shouldn't even be float64
     exclude_columns = EXCLUDE_COLUMNS + (exclude_additional_columns or [])
     return df.with_columns(
@@ -45,7 +49,11 @@ def scale_standard(
     df: pl.DataFrame,
     exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
-    """NOTE: Not for usage in ML pipeline (data leakage)."""
+    """
+    Scale Float64 columns to have mean 0 and standard deviation 1.
+
+    NOTE: Not for usage in ML pipeline (data leakage).
+    """
     # TODO: trial shouldn't even be float64
     exclude_columns = EXCLUDE_COLUMNS + (exclude_additional_columns or [])
     return df.with_columns(
@@ -58,7 +66,8 @@ def scale_percent_to_decimal(
     df: pl.DataFrame,
     exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
-    """Scale percentage columns to decimal.
+    """
+    Scales Float64 columns that are in percentage format to decimal format.
 
     In addition to the default columns to exclude, you can pass a list of additional
     columns to exclude from scaling.
