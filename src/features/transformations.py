@@ -185,28 +185,6 @@ def resample_to_500hz(df):  # FIXME
     return df
 
 
-def merge_dfs(
-    dfs: list[pl.DataFrame],
-    merge_on: list[str] = ["Timestamp", "Trial"],
-    sort_by: list[str] = ["Timestamp"],
-) -> pl.DataFrame:
-    """
-    Merge multiple DataFrames on the 'Timestamp' and 'Trial' columns.
-    """
-    if len(dfs) < 2:
-        return dfs[0]
-
-    df = reduce(
-        lambda left, right: left.join(
-            right,
-            on=merge_on,
-            how="outer_coalesce",
-        ).sort(sort_by),
-        dfs,
-    )
-    return df
-
-
 """
 NOTE: NEW: scikit-learn’s transformers now support polars output with the set_output API.
 
