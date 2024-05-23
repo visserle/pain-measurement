@@ -1,6 +1,6 @@
 import polars as pl
 
-from src.features.transformations import map_trials
+from src.features.transformations import map_participants, map_trials
 
 # As long as data types are not set correctly, we need to exclude these columns
 # from scaling to avoid NaNs.
@@ -27,6 +27,7 @@ def _scale_percent_to_decimal_col(col: pl.Expr) -> pl.Expr:
     return (col / 100).round(5)  # round to avoid floating point weirdness
 
 
+@map_participants
 @map_trials
 def scale_min_max(
     df: pl.DataFrame,
@@ -44,6 +45,7 @@ def scale_min_max(
     )
 
 
+@map_participants
 @map_trials
 def scale_standard(
     df: pl.DataFrame,

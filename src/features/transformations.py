@@ -49,6 +49,45 @@ def map_trials(func: callable) -> callable:
     return wrapper
 
 
+def map_participants(func: callable) -> callable:
+    """
+    Decorator to apply a function to each participant in a pl.DataFrame.
+
+    NOTE: In contrast to the map_trials decorator, this decorator is only used in
+    exploratory data analysis and not in the ML pipeline (for now). TODO
+    """
+
+    @wraps(func)
+    def wrapper(
+        df: pl.DataFrame,
+        *args,
+        **kwargs,
+    ) -> pl.DataFrame:
+        # Apply the function to each participant if "Participant" exists
+        if "Participant" in df.columns:
+            if len(df["Participant"].unique()) == 1:
+                logger.debug(
+                    "Only one participant found, applying function to the whole DataFrame."
+                )
+            result = df.group_by("Participant", maintain_order=True).map_groups(
+                lambda group: func(group, *args, **kwargs)
+            )
+        # Else apply the function to the whole DataFrame
+        else:
+            logger.warning(
+                f"No 'Participant' column found, applying function {func.__name__} "
+                "to the whole DataFrame instead."
+            )
+            logger.info(
+                f"Use {func.__name__}.__wrapped__() to access the function without the "
+                "map_participants decorator."
+            )
+            result = func(df, *args, **kwargs)
+        return result
+
+    return wrapper
+
+
 def map_participant_datasets(
     func: callable,
     participant: dataclass,
