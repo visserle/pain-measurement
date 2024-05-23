@@ -130,7 +130,7 @@ def transform_dataset(
             logger.debug(
                 "Dataset '%s' transformed with %s",
                 data_config.name,
-                transformation.__name__,
+                transformation.__repr__(),
             )
             # TODO: add **kwargs to transformations and pass them here using lambda functions? or better in the config?
     return dataset
@@ -291,7 +291,7 @@ def main():
             )
     logger.info("All participants processed successfully")
 
-    print(participant_data.eeg)
+    print(participant_data.eda)
 
 
 if __name__ == "__main__":

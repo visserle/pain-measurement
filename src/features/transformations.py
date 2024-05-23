@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import reduce, wraps
 
 import numpy as np
@@ -13,6 +13,20 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 # there are issues on github reporting eager is faster than lazy
 # TODO: add **kwars to apply_func_participant and data config
 # TODO: cast data types for more performance
+
+
+@dataclass
+class Transformation:
+    """Use a function as a object with kwargs in the transformation pipeline."""
+
+    function: callable
+    kwargs: dict = field(default_factory=dict)
+
+    def __call__(self, df):
+        return self.function(df, **self.kwargs)
+
+    def __repr__(self):
+        return f"{self.function.__name__}({', '.join(f'{k}={v}' for k, v in self.kwargs.items())})"
 
 
 def map_trials(func: callable) -> callable:
@@ -54,7 +68,8 @@ def map_participants(func: callable) -> callable:
     Decorator to apply a function to each participant in a pl.DataFrame.
 
     NOTE: In contrast to the map_trials decorator, this decorator is only used in
-    exploratory data analysis and not in the ML pipeline (for now). TODO
+    exploratory data analysis and not in the ML pipeline because we are transforming
+    data for each participant seperately (for now). TODO
     """
 
     @wraps(func)

@@ -9,7 +9,10 @@ from src.data.config_data import DataConfigBase
 from src.features.eda import process_eda
 from src.features.pupillometry import process_pupillometry
 from src.features.stimulus import process_stimulus
-from src.features.transformations import interpolate  # resample
+from src.features.transformations import (  # resample
+    Transformation,
+    interpolate,
+)
 
 LOAD_FROM = Path("data/raw")
 SAVE_TO = Path("data/interim")
@@ -57,7 +60,7 @@ EEG = RawConfig(
 EDA = RawConfig(
     name="eda",
     load_columns=["EDA_RAW"],
-    transformations=[process_eda],
+    transformations=[Transformation(process_eda, {"sampling_rate": 100})],
 )
 
 PPG = RawConfig(
@@ -77,8 +80,7 @@ PUPILLOMETRY = RawConfig(
         "Pupillometry_L_Distance",
         "Pupillometry_R_Distance",
     ],
-    transformations=[process_pupillometry],
-    sampling_rate=60,
+    transformations=[Transformation(process_pupillometry, {"sampling_rate": 60})],
 )
 
 AFFECTIVA = RawConfig(
