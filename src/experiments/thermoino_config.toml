@@ -1,11 +1,10 @@
-# COM-port for Thermoino
+# COM-ports for Thermoino:
 
+# "COM4" for Bowser
 # "COM7" for Luigi
 # "COM12" for Mario
-# "COM4" for Bowser
 
-
-# Adapt the value on the right-hand side:
+# Adapt the value on the right-hand side of the following line accordingy:
 port = "COM4"  
 
 
