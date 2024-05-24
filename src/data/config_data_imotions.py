@@ -20,26 +20,24 @@ LOAD_FROM = Path("data/imotions")
 SAVE_TO = Path("data/raw")
 
 
-@dataclass
+@dataclass(kw_only=True)
 class iMotionsConfig(DataConfigBase):
     name: str
     name_imotions: str
     load_columns: list[str]
     dtypes: dict[str, str] = field(default_factory=dict)  # TODO maybe full schema?
     rename_columns: dict[str, str] = field(default_factory=dict)
-    transformations: list[callable] = field(default_factory=list)
     sample_rate: int | None = None
     notes: str | None = None
 
     def __post_init__(self):
         self.load_dir = LOAD_FROM
         self.save_dir = SAVE_TO
-        self.transformations = (
-            [create_trials, interpolate_to_marker_timestamps]
-            if not self.transformations
-            else [create_trials, interpolate_to_marker_timestamps]
-            + self.transformations
+        self.transformations = [create_trials, interpolate_to_marker_timestamps] + (
+            self.transformations or []
         )
+
+        super().__post_init__()  # to make Transformation objects from callables
 
 
 TRIAL = iMotionsConfig(

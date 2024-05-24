@@ -2,44 +2,43 @@
 For processing raw data.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from src.data.config_data import DataConfigBase
 from src.features.eda import process_eda
 from src.features.pupillometry import process_pupillometry
 from src.features.stimulus import process_stimulus
-from src.features.transformations import (  # resample
-    Transformation,
-    interpolate,
-)
+from src.features.transformations import interpolate  # resample?
 
 LOAD_FROM = Path("data/raw")
 SAVE_TO = Path("data/interim")
 
 
-@dataclass
+@dataclass(kw_only=True)
 class RawConfig(DataConfigBase):
     name: str
     load_columns: list[str]
-    transformations: list[callable] = field(default_factory=list)
     sampling_rate: int | None = None
     notes: str | None = None
 
     def __post_init__(self):
         self.load_dir = LOAD_FROM
         self.save_dir = SAVE_TO
-        self.load_columns = ["Participant", "Trial", "Timestamp"] + self.load_columns
-        # self.transformations = (  # TODO FIXME Why is this here? Do we really need this?
-        #     [interpolate]
-        #     if not self.transformations
-        #     else [interpolate] + self.transformations
-        # )
+        self.load_columns = [
+            "Participant",
+            "Trial",
+            "Timestamp",
+            "Stimulus_Seed",
+        ] + self.load_columns
+        self.transformations = [] + (self.transformations or [])
+
+        super().__post_init__()  # to make Transformation objects from callables
 
 
 STIMULUS = RawConfig(
     name="stimulus",
-    load_columns=["Temperature", "Rating", "Stimulus_Seed", "Skin_Area"],
+    load_columns=["Temperature", "Rating", "Skin_Area"],
     transformations=[process_stimulus],
 )
 
@@ -60,7 +59,7 @@ EEG = RawConfig(
 EDA = RawConfig(
     name="eda",
     load_columns=["EDA_RAW"],
-    transformations=[Transformation(process_eda, {"sampling_rate": 100})],
+    transformations=[(process_eda, {"sampling_rate": 100})],
 )
 
 PPG = RawConfig(
@@ -80,7 +79,7 @@ PUPILLOMETRY = RawConfig(
         "Pupillometry_L_Distance",
         "Pupillometry_R_Distance",
     ],
-    transformations=[Transformation(process_pupillometry, {"sampling_rate": 60})],
+    transformations=[(process_pupillometry, {"sampling_rate": 60})],
 )
 
 AFFECTIVA = RawConfig(

@@ -3,35 +3,34 @@
 For processing interim (already cleaned) data.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from src.data.config_data import DataConfigBase
 from src.features.eda import process_eda
 from src.features.pupillometry import process_pupillometry
-from src.features.transformations import interpolate  # resample
+from src.features.transformations import interpolate  # resample?
 
 LOAD_FROM = Path("data/interim")
 SAVE_TO = Path("data/preprocessed")
 
 
-@dataclass
+@dataclass(kw_only=True)
 class InterimConfig(DataConfigBase):
     name: str
     load_columns: list[str]
-    transformations: list[callable] = field(default_factory=list)
     sampling_rate: int | None = None
     notes: str | None = None
 
     def __post_init__(self):
         self.load_dir = LOAD_FROM
         self.save_dir = SAVE_TO
-        self.transformations = (
-            [interpolate]  # TODO FIXME Why is this here? Do we really need this?
-            if not self.transformations
-            else [interpolate] + self.transformations
-        )
+        self.transformations = [interpolate] + (
+            self.transformations or []
+        )  # TODO FIXME Why is this here? Do we really need this?
         self.load_columns = ["Participant", "Trial", "Timestamp"] + self.load_columns
+
+        super().__post_init__()  # to make Transformation objects from callables
 
 
 STIMULUS = InterimConfig(
