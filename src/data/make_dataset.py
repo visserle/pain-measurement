@@ -76,7 +76,7 @@ def load_dataset(
         dtypes={
             load_column: pl.Float64 for load_column in data_config.load_columns
         },  # FIXME TODO dirty hack, add data schema instead
-        # infer_schema_length=1000,
+        # infer_schema_length=10000  # also not optimal
     )
     # For iMotions data we also want to rename some columns
     df = _rename_imotions_columns(df, data_config)
@@ -130,9 +130,8 @@ def transform_dataset(
             logger.debug(
                 "Dataset '%s' transformed with %s",
                 data_config.name,
-                transformation.__repr__(),
+                transformation,
             )
-            # TODO: add **kwargs to transformations and pass them here using lambda functions? or better in the config?
     return dataset
 
 
@@ -276,7 +275,7 @@ def _imotions_transformation(
 def main():
     configure_logging(stream_level=logging.DEBUG)
 
-    list_of_data_configs = [IMOTIONS_LIST, RAW_LIST, INTERIM_LIST]
+    list_of_data_configs = [IMOTIONS_LIST, RAW_LIST]
 
     for data_configs in list_of_data_configs:
         for participant_config in PARTICIPANT_LIST[:2]:
@@ -291,7 +290,7 @@ def main():
             )
     logger.info("All participants processed successfully")
 
-    print(participant_data.eda)
+    print(participant_data.eeg)
 
 
 if __name__ == "__main__":

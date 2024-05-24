@@ -22,9 +22,9 @@ def calculate_corr(
         .rename({feature1: "Trial", feature2: "Correlation"})  # repurpose the columns
         .with_columns(  # add additional info columns using list comprehension
             [
-                pl.Series(add_column, [df[add_column][0]])
-                for add_column in ADDITIONAL_INFO_COLUMNS
-                if add_column in df.columns
+                pl.Series(info, [df[info][0]])
+                for info in ADDITIONAL_INFO_COLUMNS
+                if info in df.columns
             ]
         )
     )

@@ -1,8 +1,3 @@
-# TODO
-# - update doc strings
-# - affdex post processing available
-
-
 import itertools
 import logging
 import socket

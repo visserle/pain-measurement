@@ -1,4 +1,3 @@
-# Note: domain range is 0-1, scale accordingly
 import polars as pl
 
 from src.features.scaling import scale_percent_to_decimal

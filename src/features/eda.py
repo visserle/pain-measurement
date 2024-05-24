@@ -1,4 +1,5 @@
-# f your GSR data was collected at 100 Hz (100 samples per second), you can safely downsample it to 10 Hz (10 samples per second) or even less.
+# NOTE: if your GSR data was collected at 100 Hz (100 samples per second), you can
+# safely downsample it to 10 Hz (10 samples per second) or even less.
 
 import neurokit2 as nk
 import pandas as pd
@@ -12,7 +13,7 @@ EDA_RAW_COLUMN = "EDA_RAW"
 @map_trials
 def process_eda(
     df: pl.DataFrame,
-    sampling_rate: int = 100,  # TODO FIXME hardcoded
+    sampling_rate: int = 100,
 ) -> pl.DataFrame:
     eda_raw = df.select(EDA_RAW_COLUMN).to_numpy().flatten()
     eda_processed: pd.DataFrame = nk.eda_phasic(

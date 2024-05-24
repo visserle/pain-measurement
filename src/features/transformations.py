@@ -8,11 +8,9 @@ import polars as pl
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-# NOTE: square brackets can be used to access columns in polars but do not allow lazy evaluation -> use select, take, etc for performance
-# although brackets can be faster for small dataframes
-# there are issues on github reporting eager is faster than lazy
-# TODO: add **kwars to apply_func_participant and data config
-# TODO: cast data types for more performance
+# NOTE: square brackets can be used to access columns in polars but do not allow lazy
+# evaluation -> use select, take, etc for performance
+# (for lazy evaluation, one should also use pipe, etc.)
 
 
 @dataclass
@@ -195,26 +193,19 @@ def interpolate_to_marker_timestamps(
     if sum(df.null_count()).item() == 0:
         return df
 
-    # Get the first and last timestamp of the group
-    # TODO: NOTE: there is a difference between using the integer indexing and boolean indexing below
-    # - we should decide depending on how duplicate timestamps are handled
-    # especially in what order duplicate timestamps are removed
-    first_timestamp = df[timestamp_column][0]
-    second_timestamp = df[timestamp_column][1]
-    second_to_last_timestamp = df[timestamp_column][-2]
-    last_timestamp = df[timestamp_column][-1]
-
-    # Replace the second and second-to-last timestamps
+    # Replace the first and last timestamp with the marker timestamp
     return df.with_columns(
         pl.when(pl.col(timestamp_column) == df[timestamp_column][1])
-        .then(first_timestamp)
+        .then(df[timestamp_column][0])
         .when(pl.col(timestamp_column) == df[timestamp_column][-2])
-        .then(last_timestamp)
+        .then(df[timestamp_column][-1])
         .otherwise(pl.col(timestamp_column))
         .alias(timestamp_column)
     ).drop_nulls()
 
 
+# we do not need to map over participants here, because start and end points are defined
+# by the marker and there is no risk of changing values that should not be changed
 @map_trials
 def interpolate(df: pl.DataFrame) -> pl.DataFrame:
     """Linearly interpolates the whole DataFrame"""
