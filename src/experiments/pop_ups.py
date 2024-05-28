@@ -12,56 +12,40 @@ from src.helpers import center_tk_window
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-def ask_for_eyetracker_calibration() -> bool:
-    user_choice = {"proceed": False}  # Dictionary to store user's choice
-
-    def on_proceed():
-        user_choice["proceed"] = True
-        root.destroy()
-
-    def on_abort():
-        user_choice["proceed"] = False
-        root.destroy()
-
-    root = tk.Tk()
-    root.withdraw()
-    root.title("iMotions")
-
-    label = tk.Label(root, text="Kalibrierung für Eye-Tracking starten?")
-    label.pack(pady=10, padx=10)
-
-    abort_button = tk.Button(root, text="Nein", command=on_abort)
-    abort_button.pack(side=tk.LEFT, padx=20, pady=20)
-
-    proceed_button = tk.Button(root, text="Ja", command=on_proceed)
-    proceed_button.pack(side=tk.RIGHT, padx=20, pady=20)
-
-    center_tk_window(root)
-    root.deiconify()
-    root.mainloop()
-
-    return user_choice["proceed"]
+def ask_for_calibration_start() -> bool:
+    """Custom confirmation dialog window with checkboxes for each item."""
+    items = [
+        "MMS Programm pain-calibration?",
+        "MMS Trigger-bereit?",
+        "Thermodenkopf am Hautareal? (2 für ungerade Probanden-ID, 5 für gerade ID)",
+        "Jalousien unten?",
+    ]
+    return _start_window(items, "calibration")
 
 
 def ask_for_measurement_start() -> bool:
     """Custom confirmation dialog window with checkboxes for each item."""
     items = [
-        "MMS Programm umgestellt?",
+        "MMS Programm auf pain-measurement umgestellt?",
         "MMS Trigger-bereit?",
         "Hautareal gewechselt?",
-        "Jalousien unten?",
         "iMotions' Kalibrierung bestätigt?",
         "Sensor Preview geöffnet?",
         "Signale überprüft (PPG, EDA, Eyetracking)?",
         "Hintergrundbeleuchtung blendet nicht?",
     ]
+    return _start_window(items, "measurement")
+
+
+def _start_window(items: list[str], title: str) -> bool:
+    """Custom confirmation dialog window with checkboxes for each item."""
     root = tk.Tk()
     root.withdraw()
     dialog = ChecklistDialog(root, items)
     center_tk_window(root)
     response = dialog.show()
     logger.debug(
-        f"Confirmation for experiment start {'recieved' if response else 'denied'}."
+        f"Confirmation for {title} start {'recieved' if response else 'denied'}."
     )
     return response
 
@@ -112,6 +96,40 @@ class ChecklistDialog:
         return self.response
 
 
+def ask_for_eyetracker_calibration() -> bool:
+    user_choice = {"proceed": False}  # Dictionary to store user's choice
+
+    def on_proceed():
+        user_choice["proceed"] = True
+        root.destroy()
+
+    def on_abort():
+        user_choice["proceed"] = False
+        root.destroy()
+
+    root = tk.Tk()
+    root.withdraw()
+    root.title("iMotions")
+
+    label = tk.Label(root, text="Kalibrierung für Eye-Tracking starten?")
+    label.pack(pady=10, padx=10)
+
+    abort_button = tk.Button(root, text="Nein", command=on_abort)
+    abort_button.pack(side=tk.LEFT, padx=20, pady=20)
+
+    proceed_button = tk.Button(root, text="Ja", command=on_proceed)
+    proceed_button.pack(side=tk.RIGHT, padx=20, pady=20)
+
+    center_tk_window(root)
+    root.deiconify()
+    root.mainloop()
+
+    return user_choice["proceed"]
+
+
 if __name__ == "__main__":
+    # Set basic configuration for the logger
+    logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
+    ask_for_calibration_start()
     ask_for_eyetracker_calibration()
     ask_for_measurement_start()
