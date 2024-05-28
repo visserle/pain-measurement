@@ -15,15 +15,15 @@ from src.experiments.measurement.imotions import (
     EventRecievingiMotions,
     RemoteControliMotions,
 )
-from src.experiments.measurement.pop_ups import (
-    ask_for_eyetracker_calibration,
-    ask_for_measurement_start,
-)
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 from src.experiments.measurement.visual_analogue_scale import VisualAnalogueScale
 from src.experiments.participant_data import (
     add_participant_info,
     read_last_participant,
+)
+from src.experiments.pop_ups import (
+    ask_for_eyetracker_calibration,
+    ask_for_measurement_start,
 )
 from src.experiments.thermoino import ThermoinoComplexTimeCourses
 from src.experiments.utils import (
@@ -260,7 +260,7 @@ def main():
         logging.info("Complex temperature course (CTC) finished.")
 
         # Add delay at the end of the complex time course (see Thermoino class)
-        exp.clock.wait_seconds(0.5, callback_function=lambda: vas_slider.rate())
+        exp.clock.wait_seconds(1, callback_function=lambda: vas_slider.rate())
 
         # Ramp down temperature
         time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
@@ -276,7 +276,7 @@ def main():
         correlation = round(data_points.corr()["temperature"]["rating"], 2)
         correlations.append(correlation)
         logging.info(f"Correlation between temperature and rating: {correlation:.2f}.")
-        if correlation > 0.55:
+        if correlation > 0.6:
             reward += 0.5
             logging.info("Rewarding participant.")
             SCRIPT["reward"].present()
@@ -297,7 +297,7 @@ def main():
         AUDIO["next_trial"].play()
         exp.keyboard.wait(K_SPACE)
         # Show halfway message
-        if trial == total_trials // 2:
+        if trial == 5:  # after 6th trial
             SCRIPT["halfway"].present()
             AUDIO["halfway"].play()
             exp.keyboard.wait(K_SPACE)

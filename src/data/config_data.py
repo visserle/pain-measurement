@@ -16,8 +16,8 @@ class DataConfigBase:
 
     def __post_init__(self):
         self.transformations = [
-            Transformation(t[0], t[1])
+            Transformation(function=t[0], kwargs=t[1])
             if isinstance(t, tuple)  # tuples with kwargs need to be unpacked
-            else Transformation(t)
+            else Transformation(function=t)  # functions without kwargs
             for t in self.transformations
         ]

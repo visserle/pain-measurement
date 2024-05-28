@@ -14,6 +14,7 @@ from src.experiments.participant_data import (
     add_participant_info,
     read_last_participant,
 )
+from src.experiments.pop_ups import ask_for_calibration_start
 from src.experiments.thermoino import Thermoino
 from src.experiments.utils import (
     load_configuration,
@@ -43,7 +44,6 @@ log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
 # Load configurations and script
 config = load_configuration(CONFIG_FILE)
 SCRIPT = load_script(SCRIPT_FILE)
-THERMOINO = load_configuration(THERMOINO_CONFIG_FILE)
 EXPERIMENT = config["experiment"]
 ESTIMATOR = config["estimator"]
 STIMULUS = config["stimulus"]
@@ -82,6 +82,9 @@ if args.all:
         setattr(args, flag, True)
 if args.debug or args.windowed:
     control.set_develop_mode(True)
+    ask_for_calibration_start = lambda: logging.debug(  # noqa: E731
+        "Skip asking for calibration start in debug mode."
+    )
 if args.debug:
     logging.debug(
         "Enabled debug mode with dummy participant data. Results will not be saved."
@@ -115,6 +118,9 @@ participant_info = (
 id_is_odd = int(participant_info["id"]) % 2
 SKIN_AREAS = range(1, 7) if id_is_odd else range(6, 0, -1)
 logging.info(f"Use skin area {SKIN_AREAS[-2]} for calibration.")
+
+# Pop-up window before expyriment starts
+ask_for_calibration_start()
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size
@@ -150,6 +156,9 @@ for pic in ["unmarked", "marked"]:
     vas_pictures[pic].preload()
 
 # Initialize Thermoino
+# (we load the config here and not at the top because of ask_for_calibration_start
+# where we may need to change the port in the config file)
+THERMOINO = load_configuration(THERMOINO_CONFIG_FILE)
 thermoino = Thermoino(
     port=THERMOINO["port"],
     mms_baseline=THERMOINO["mms_baseline"],

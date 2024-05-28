@@ -338,7 +338,7 @@ class StimulusGenerator:
 
     def add_calibration(self):
         """Calibrates temperature range and baseline using participant data."""
-        self.y *= self.temperature_range / 2
+        self.y *= round(self.temperature_range / 2, 2)  # avoid floating point weirdness
         self.y += self.temperature_baseline
 
     def add_plateaus(self):
