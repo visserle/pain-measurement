@@ -209,7 +209,7 @@ class Thermoino:
             time.sleep(1)
         except serial.SerialException:
             logger.error("Connection failed @ %s.", self.PORT)
-            logger.info(f"Available serial ports are:\n{list_com_ports()}")
+            logger.error(f"Available serial ports are:\n{list_com_ports()}")
             raise serial.SerialException(f"Thermoino connection failed @ {self.PORT}.")
 
     def close(self):
@@ -689,13 +689,14 @@ def main():
     # List all available serial ports
     print(list_com_ports())
     port = "COM3"
+    dummy = False
 
     # Set up the Thermoino in dummy mode
     thermoino = Thermoino(
         port=port,
         mms_baseline=28,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
-        dummy=True,
+        dummy=dummy,
     )
 
     # Use thermoino to set temperatures:
@@ -718,7 +719,7 @@ def main():
         port=port,
         mms_baseline=28,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
-        dummy=True,
+        dummy=dummy,
     )
 
     thermoino.connect()
@@ -732,7 +733,7 @@ def main():
     time_to_exec_ctc = thermoino.exec_ctc()
     thermoino.sleep(time_to_exec_ctc)
     # Account for some delay at the end of the complex time course
-    time.sleep(0.5)
+    time.sleep(0.4)
     time_to_ramp_down, _ = thermoino.set_temp(28)  # back to baseline
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
