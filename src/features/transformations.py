@@ -24,7 +24,10 @@ class Transformation:
         return self.function(df, **self.kwargs)
 
     def __repr__(self):
-        return f"{self.function.__name__}({', '.join(f'{k}={v}' for k, v in self.kwargs.items())})"
+        return (
+            f"{self.function.__name__}"
+            + f"({', '.join(f'{k}={v}' for k, v in self.kwargs.items())})"
+        )
 
 
 def map_trials(func: callable) -> callable:
