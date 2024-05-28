@@ -209,7 +209,7 @@ class Thermoino:
             time.sleep(1)
         except serial.SerialException:
             logger.error("Connection failed @ %s.", self.PORT)
-            logger.error(f"Available serial ports are:\n{list_com_ports()}")
+            logger.error(f"Available serial ports are:\n\n{list_com_ports()}\n\n")
             raise serial.SerialException(f"Thermoino connection failed @ {self.PORT}.")
 
     def close(self):
