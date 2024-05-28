@@ -27,7 +27,7 @@ class InterimConfig(DataConfigBase):
         self.save_dir = SAVE_TO
         self.transformations = [interpolate] + (
             self.transformations or []
-        )  # TODO FIXME Why is this here? Do we really need this?
+        )  # TODO FIXME Do we really need to interpolate here?
         self.load_columns = ["Participant", "Trial", "Timestamp"] + self.load_columns
 
         super().__post_init__()  # to make Transformation objects from callables
