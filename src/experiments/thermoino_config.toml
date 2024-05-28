@@ -2,10 +2,10 @@
 
 # "COM4" for Bowser
 # "COM7" for Luigi
-# "COM12" for Mario
+# "COM5" for Mario
 
 # Adapt the value on the right-hand side of the following line accordingy:
-port = "COM4"  
+port = "COM5"  
 
 
 # More stuff (do not edit)
