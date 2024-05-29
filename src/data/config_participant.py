@@ -1,12 +1,14 @@
 # TODO
-# change to json or yaml file to make it easier to read and write
+# change to json or yaml file to make it easier to read and write?
 # create quality assessment functions that check if each trial is valid
 # add support for excluding trials
 
 from dataclasses import dataclass, field
 
 PARTICIPANT_IDS = [1, 2]
-EXCLUDED = [2]
+EXCLUDED = {
+    2: "Pain calibration failed because of too narrow range (< 1˚C)",
+}
 
 
 @dataclass
