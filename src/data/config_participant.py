@@ -5,9 +5,9 @@
 
 from dataclasses import dataclass, field
 
-PARTICIPANT_IDS = [1, 2]
+PARTICIPANT_IDS = ["1", "2"]
 EXCLUDED = {
-    2: "Pain calibration failed because of too narrow range (< 1˚C)",
+    "2": "Pain calibration failed because of too narrow range (< 1˚C)",
 }
 
 
@@ -35,10 +35,12 @@ class ParticipantManager:
             self._participants_list.remove(participant)
 
     def get_participant_dict(self):  # TODO maybe use a property instead with a setter
-        return self._participants_dict
+        return dict(
+            filter(lambda p: not p[1].excluded, self._participants_dict.items())
+        )
 
     def get_participant_list(self):
-        return self._participants_list
+        return list(filter(lambda p: not p.excluded, self._participants_list))
 
 
 # Create participants
@@ -51,3 +53,7 @@ for participant_id in PARTICIPANT_IDS:
 
 PARTICIPANT_LIST = manager.get_participant_list()
 PARTICIPANT_DICT = manager.get_participant_dict()
+
+
+if __name__ == "__main__":
+    print(PARTICIPANT_LIST)

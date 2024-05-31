@@ -17,7 +17,7 @@ def ask_for_calibration_start() -> bool:
     items = [
         "MMS Programm pain-calibration?",
         "MMS Trigger-bereit?",
-        "Thermodenkopf am Hautareal? (2 für ungerade Probanden-ID, 5 für gerade ID)",
+        "Thermodenkopf am Hautareal? (5 bei ungerader Probanden-ID, 2 bei gerader ID)",
         "Jalousien unten?",
     ]
     return _start_window(items, "calibration")
@@ -131,5 +131,3 @@ if __name__ == "__main__":
     # Set basic configuration for the logger
     logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
     ask_for_calibration_start()
-    ask_for_eyetracker_calibration()
-    ask_for_measurement_start()
