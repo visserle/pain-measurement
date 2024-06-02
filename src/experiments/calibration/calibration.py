@@ -293,6 +293,7 @@ def main():
 
     # Check if the temperature range is reasonable
     temperature_range = participant_info["vas70"] - participant_info["vas0"]
+    logging.info(f"Temperature range: {temperature_range}.")
     if not 1 <= temperature_range <= 5:
         range_error = "close together" if temperature_range < 1 else "far apart"
         logging.error(
