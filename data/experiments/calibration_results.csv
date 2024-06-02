@@ -1,2 +1,0 @@
-id,age,gender,preexposure_painful,vas70,vas0,temperature_baseline,temperature_range,vas70_temps,vas0_temps
-1,34,m,False,44.8,41.0,42.9,3.8,"[42.0, 43.4, 44.5, 45.4, 44.9, 45.2, 45.0, 44.8]","[42.3, 41.6, 41.1, 41.4, 41.2, 41.0]"

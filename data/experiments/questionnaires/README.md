@@ -1,1 +1,0 @@
-Note: Always use the participant manager when analyzing data. Do not include participants in the analysis that are in fact exlcuded.
