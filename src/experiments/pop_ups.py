@@ -19,6 +19,8 @@ def ask_for_calibration_start() -> bool:
         "MMS Trigger-bereit?",
         "Thermodenkopf am Hautareal? (5 bei ungerader Probanden-ID, 2 bei gerader ID)",
         "Jalousien unten?",
+        "Sensor Preview mit PPG, EDA und Pupillometrie?",
+        "Terminal, iMotions, NIC mit EEG Qualitätssignalen?",
     ]
     return _start_window(items, "calibration")
 
@@ -31,8 +33,10 @@ def ask_for_measurement_start() -> bool:
         "Hautareal gewechselt?",
         "iMotions' Kalibrierung bestätigt?",
         "Sensor Preview geöffnet?",
-        "Signale überprüft (PPG, EDA, Eyetracking)?",
+        "Signale überprüft (PPG, EDA, Pupillometrie)?",
         "Hintergrundbeleuchtung blendet nicht?",
+        "Eye-Tracker Postionsfeedback sichtbar?",
+        "Terminal, iMotions, NIC mit EEG Qualitätssignalen?",
     ]
     return _start_window(items, "measurement")
 
@@ -103,10 +107,6 @@ def ask_for_eyetracker_calibration() -> bool:
         user_choice["proceed"] = True
         root.destroy()
 
-    def on_abort():
-        user_choice["proceed"] = False
-        root.destroy()
-
     root = tk.Tk()
     root.withdraw()
     root.title("iMotions")
@@ -114,20 +114,21 @@ def ask_for_eyetracker_calibration() -> bool:
     label = tk.Label(root, text="Kalibrierung für Eye-Tracking starten?")
     label.pack(pady=10, padx=10)
 
-    abort_button = tk.Button(root, text="Nein", command=on_abort)
-    abort_button.pack(side=tk.LEFT, padx=20, pady=20)
-
-    proceed_button = tk.Button(root, text="Ja", command=on_proceed)
-    proceed_button.pack(side=tk.RIGHT, padx=20, pady=20)
-
+    proceed_button = tk.Button(root, text="Start", command=on_proceed)
+    proceed_button.pack(pady=10, padx=10)
     center_tk_window(root)
     root.deiconify()
     root.mainloop()
 
+    logger.debug(
+        "Confirmation for eye-tracker calibration "
+        f"{'recieved' if user_choice['proceed'] else 'denied'}."
+    )
     return user_choice["proceed"]
 
 
 if __name__ == "__main__":
     # Set basic configuration for the logger
     logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
-    ask_for_calibration_start()
+    # ask_for_calibration_start()
+    ask_for_eyetracker_calibration()
