@@ -1,6 +1,7 @@
 # Log and data files
 /runs
 /data/_pilot_up_to_2024_05_26
+/data/experiments
 /data/imotions
 /data/interim
 /data/merged
