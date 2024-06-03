@@ -13,7 +13,6 @@ import logging
 import os
 import signal
 import threading
-import time
 import webbrowser
 from datetime import datetime
 from pathlib import Path
