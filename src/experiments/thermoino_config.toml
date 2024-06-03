@@ -1,10 +1,13 @@
-# COM-ports for Thermoino:
+# COM-ports for Thermoino
+# (to find out the COM-port manually, open the 'Geräte-Manager'
+# with a right-click on the windows logo in the taskbar)
 
 # "COM4" for Bowser
 # "COM7" for Luigi
 # "COM5" for Mario
 
-# Adapt the value on the right-hand side of the following line accordingy:
+# Adapt the value on the right-hand side of the following line accordingly:
+
 port = "COM5"  
 
 
