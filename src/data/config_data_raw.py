@@ -25,12 +25,12 @@ class RawConfig(DataConfigBase):
     def __post_init__(self):
         self.load_dir = LOAD_FROM
         self.save_dir = SAVE_TO
-        self.load_columns = [
+        self.load_columns += [
             "Participant",
             "Trial",
             "Timestamp",
             "Stimulus_Seed",
-        ] + self.load_columns
+        ]
         self.transformations = [] + (self.transformations or [])
 
         super().__post_init__()  # to make Transformation objects from callables

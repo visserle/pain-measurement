@@ -35,7 +35,7 @@ class iMotionsConfig(DataConfigBase):
         self.save_dir = SAVE_TO
         self.transformations = [create_trials, interpolate_to_marker_timestamps] + (
             self.transformations or []
-        )
+        )  # no augmentated assignment here to have order
 
         super().__post_init__()  # to make Transformation objects from callables
 

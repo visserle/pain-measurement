@@ -28,7 +28,7 @@ class InterimConfig(DataConfigBase):
         self.transformations = [interpolate] + (
             self.transformations or []
         )  # TODO FIXME Do we really need to interpolate here?
-        self.load_columns = ["Participant", "Trial", "Timestamp"] + self.load_columns
+        self.load_columns += ["Participant", "Trial", "Timestamp"]
 
         super().__post_init__()  # to make Transformation objects from callables
 
