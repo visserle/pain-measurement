@@ -6,11 +6,10 @@ For processing interim (already cleaned) data.
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.data.config_data import DataConfigBase
+from src.data.config_data import DataConfigBase, Transformation
 from src.features.eda import process_eda
 from src.features.pupillometry import process_pupillometry
 from src.features.transformations import (
-    Transform,
     interpolate,  # resample?
 )
 
@@ -28,7 +27,7 @@ class InterimConfig(DataConfigBase):
     def __post_init__(self):
         self.load_dir = LOAD_FROM
         self.save_dir = SAVE_TO
-        self.transformations = [Transform(interpolate)] + (
+        self.transformations = [Transformation(interpolate)] + (
             self.transformations or []
         )  # TODO FIXME Do we really need to interpolate here?
         self.load_columns += ["Participant", "Trial", "Timestamp"]

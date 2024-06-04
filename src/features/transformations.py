@@ -13,23 +13,6 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 # (for lazy evaluation, one should also use pipe, etc.)
 
 
-class Transform:
-    """Use a function as a object with kwargs in the transformation pipeline."""
-
-    def __init__(self, func: callable, **kwargs):
-        self.func = func
-        self.kwargs = kwargs
-
-    def __call__(self, df: pl.DataFrame) -> pl.DataFrame:
-        return self.func(df, **self.kwargs)
-
-    def __repr__(self):
-        return (
-            f"{self.func.__name__}"
-            + f"({', '.join(f'{k}={v}' for k, v in self.kwargs.items())})"
-        )
-
-
 def map_trials(func: callable) -> callable:
     """Decorator to apply a function to each trial in a pl.DataFrame."""
 

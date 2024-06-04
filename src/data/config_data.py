@@ -1,26 +1,34 @@
 from dataclasses import dataclass, field
 
-from src.features.transformations import Transform
+import polars as pl
 
-# TODO
-# - maybe remove post init for transformations, explicit is better than implicit
+# NOTE:
+# Some out-of-the-box alternatives to this simple approach:
+# Snakemake: https://snakemake.github.io/
+# Kohesio: https://engineering.nike.com/koheesio/latest/tutorials/onboarding.html
+
+
+class Transformation:
+    """Use a function as a object with kwargs in the transformation pipeline."""
+
+    def __init__(self, func: callable, **kwargs):
+        self.func = func
+        self.kwargs = kwargs
+
+    def __call__(self, df: pl.DataFrame) -> pl.DataFrame:
+        return self.func(df, **self.kwargs)
+
+    def __repr__(self):
+        return (
+            f"{self.func.__name__}"
+            + f"({', '.join(f'{k}={v}' for k, v in self.kwargs.items())})"
+        )
 
 
 @dataclass(kw_only=True)
 class DataConfigBase:
     """
     Base class for data configuration.
-
-    Creates a list of Transformation objects from callables in the transformations list
-    post-init.
     """
 
-    transformations: list[Transform] = field(default_factory=list)
-
-    # def __post_init__(self):
-    #     self.transformations = [
-    #         Transformation(function=t[0], kwargs=t[1])
-    #         if isinstance(t, tuple)  # tuples with kwargs need to be unpacked
-    #         else Transformation(function=t)  # functions without kwargs
-    #         for t in self.transformations
-    #     ]
+    transformations: list[Transformation] = field(default_factory=list)

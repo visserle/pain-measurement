@@ -5,12 +5,11 @@ For processing raw data.
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.data.config_data import DataConfigBase
+from src.data.config_data import DataConfigBase, Transformation
 from src.features.eda import process_eda
 from src.features.pupillometry import process_pupillometry
 from src.features.stimulus import process_stimulus
 from src.features.transformations import (
-    Transform,
     interpolate,  # resample?
 )
 
@@ -40,7 +39,7 @@ class RawConfig(DataConfigBase):
 STIMULUS = RawConfig(
     name="stimulus",
     load_columns=["Temperature", "Rating", "Skin_Area"],
-    transformations=[Transform(process_stimulus)],
+    transformations=[Transformation(process_stimulus)],
 )
 
 EEG = RawConfig(
@@ -60,7 +59,7 @@ EEG = RawConfig(
 EDA = RawConfig(
     name="eda",
     load_columns=["EDA_RAW"],
-    transformations=[Transform(process_eda, sampling_rate=100)],
+    transformations=[Transformation(process_eda, sampling_rate=100)],
 )
 
 PPG = RawConfig(
@@ -80,7 +79,7 @@ PUPILLOMETRY = RawConfig(
         "Pupillometry_L_Distance",
         "Pupillometry_R_Distance",
     ],
-    transformations=[Transform(process_pupillometry, sampling_rate=60)],
+    transformations=[Transformation(process_pupillometry, sampling_rate=60)],
 )
 
 AFFECTIVA = RawConfig(
