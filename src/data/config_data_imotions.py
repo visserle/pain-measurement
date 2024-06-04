@@ -12,6 +12,7 @@ from src.data.config_data import DataConfigBase
 from src.features.affectiva import process_affectiva
 from src.features.stimulus import add_skin_area
 from src.features.transformations import (
+    Transform,
     create_trials,
     interpolate_to_marker_timestamps,
 )
@@ -33,11 +34,10 @@ class iMotionsConfig(DataConfigBase):
     def __post_init__(self):
         self.load_dir = LOAD_FROM
         self.save_dir = SAVE_TO
-        self.transformations = [create_trials, interpolate_to_marker_timestamps] + (
-            self.transformations or []
-        )  # no augmentated assignment here to have order
-
-        super().__post_init__()  # to make Transformation objects from callables
+        self.transformations = [
+            Transform(create_trials),
+            Transform(interpolate_to_marker_timestamps),
+        ] + (self.transformations or [])  # no augmentated assignment here to have order
 
 
 TRIAL = iMotionsConfig(
@@ -54,7 +54,7 @@ STIMULUS = iMotionsConfig(
     name="stimulus",
     name_imotions="CustomCurves_CustomCurves@1_ET_EventAPI_ExternDevice",
     load_columns=["Timestamp", "Temperature", "Rating"],
-    transformations=[add_skin_area],
+    transformations=[Transform(add_skin_area)],
 )
 
 EDA = iMotionsConfig(
@@ -155,7 +155,7 @@ PUPILLOMETRY = iMotionsConfig(
 AFFECTIVA = iMotionsConfig(
     name="affectiva",
     name_imotions="Affectiva_AFFDEX_ET_Affectiva_AffectivaCameraDevice",
-    transformations=[process_affectiva],
+    transformations=[Transform(process_affectiva)],
     load_columns=[
         "SampleNumber",
         "Timestamp",

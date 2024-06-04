@@ -13,19 +13,19 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 # (for lazy evaluation, one should also use pipe, etc.)
 
 
-@dataclass
-class Transformation:
+class Transform:
     """Use a function as a object with kwargs in the transformation pipeline."""
 
-    function: callable
-    kwargs: dict = field(default_factory=dict)
+    def __init__(self, func: callable, **kwargs):
+        self.func = func
+        self.kwargs = kwargs
 
-    def __call__(self, df):
-        return self.function(df, **self.kwargs)
+    def __call__(self, df: pl.DataFrame) -> pl.DataFrame:
+        return self.func(df, **self.kwargs)
 
     def __repr__(self):
         return (
-            f"{self.function.__name__}"
+            f"{self.func.__name__}"
             + f"({', '.join(f'{k}={v}' for k, v in self.kwargs.items())})"
         )
 
