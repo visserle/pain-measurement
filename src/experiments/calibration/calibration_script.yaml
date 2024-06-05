@@ -124,7 +124,7 @@ info_vas70:
 
 
     Aufgrund der Capsaicin-Creme verspüren Sie dabei starke Schmerzen schneller als gewöhnlich.
-    
+
     Aber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.
 
 
@@ -168,18 +168,32 @@ excellent: |-
 
 
   Ausgezeichnet!
-info_vas0: |-
-  
+info_vas0:
+  1: |-
 
 
 
 
-  Als Nächstes möchten wir bestimmen, ab wann Sie erste, leichte Schmerzen verspüren.
 
-  Wichtig dabei: Erste Schmerzen erkennen Sie daran, dass Sie zusätzlich zu den eventuellen Wirkungen der Capsaicin-Creme eine "neue Qualität" wie z. B. ein leichtes Stechen wahrnehmen.
+    Als Nächstes möchten wir bestimmen, ab wann Sie erste, leichte Schmerzen verspüren.
+
+    Wichtig dabei: Erste Schmerzen erkennen Sie daran, dass Sie zusätzlich zu den eventuellen Wirkungen der Capsaicin-Creme eine "neue Qualität" wie z. B. ein leichtes Stechen wahrnehmen.
 
 
-  (Leertaste drücken, um fortzufahren)
+    (Leertaste drücken, um fortzufahren)
+  2: |-
+
+
+
+
+
+
+    Wenn Sie sich nach einem Durchgang nicht sicher waren, ob Sie erste leichte Schmerzen gespürt haben oder nicht, können Sie sich gerne an die Versuchsleitung wenden.
+
+    Auf der nächsten Seite startet die Schmerz-Kalibrierung.
+
+
+    (Leertaste drücken, um fortzufahren)
 question_vas0: |-
   
 

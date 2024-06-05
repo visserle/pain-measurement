@@ -277,9 +277,10 @@ def main():
     exp.clock.wait_seconds(1.5)
 
     # Pain threshold (VAS 0) estimation
-    SCRIPT["info_vas0"].present()
-    AUDIO["info_vas0"].play()
-    exp.keyboard.wait(K_SPACE)
+    for (key, text), audio in zip(SCRIPT[s := "info_vas0"].items(), AUDIO[s].values()):
+        text.present()
+        audio.play()
+        exp.keyboard.wait(K_SPACE)
     estimator_vas0 = BayesianEstimatorVAS(
         vas_value=0,
         trials=ESTIMATOR["trials_vas0"],
@@ -292,7 +293,7 @@ def main():
     participant_info["vas0"] = estimator_vas0.get_estimate()
 
     # Check if the temperature range is reasonable
-    temperature_range = participant_info["vas70"] - participant_info["vas0"]
+    temperature_range = round(participant_info["vas70"] - participant_info["vas0"], 1)
     logging.info(f"Temperature range: {temperature_range}.")
     if not 1 <= temperature_range <= 5:
         range_error = "close together" if temperature_range < 1 else "far apart"
@@ -309,9 +310,7 @@ def main():
     participant_info["temperature_baseline"] = round(
         (participant_info["vas0"] + participant_info["vas70"]) / 2, 1
     )
-    participant_info["temperature_range"] = round(
-        participant_info["vas70"] - participant_info["vas0"], 1
-    )
+    participant_info["temperature_range"] = temperature_range
     participant_info["vas70_temps"] = estimator_vas70.temps
     participant_info["vas0_temps"] = estimator_vas0.temps
     add_participant_info(
@@ -323,7 +322,7 @@ def main():
     # End of Experiment
     SCRIPT["bye"].present()
     AUDIO["bye"].play()
-    exp.clock.wait_seconds(7)
+    exp.clock.wait_seconds(5)
 
     control.end()
     thermoino.close()
