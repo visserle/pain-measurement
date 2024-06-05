@@ -3,12 +3,15 @@
 # create quality assessment functions that check if each trial is valid
 # add support for excluding trials
 
+import json
 from dataclasses import dataclass, field
+from pathlib import Path
 
-PARTICIPANT_IDS = ["1", "2"]
-EXCLUDED = {
-    "2": "Pain calibration failed because of too narrow range (< 1˚C)",
-}
+PARTICIPANTS_JSON = Path("src/data/participants.json")
+with open(PARTICIPANTS_JSON, "r") as f:
+    participants = json.load(f)
+    PARTICIPANT_IDS = participants["PARTICIPANT_IDS"]
+    EXCLUDED = participants["EXCLUDED"]
 
 
 @dataclass
