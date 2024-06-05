@@ -17,8 +17,10 @@ def ask_for_calibration_start() -> bool:
     items = [
         "MMS Programm pain-calibration?",
         "MMS Trigger-bereit?",
+        "Thermoino-Port konfiguriert?",
         "Thermodenkopf am Hautareal? (5 bei ungerader Probanden-ID, 2 bei gerader ID)",
         "Jalousien unten?",
+        "Alle Sensoren in iMotions connected?"
         "Sensor Preview mit PPG, EDA und Pupillometrie?",
         "Terminal, iMotions, NIC mit EEG Qualitätssignalen?",
     ]
