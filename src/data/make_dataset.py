@@ -73,7 +73,7 @@ def load_dataset(
         file_path,
         columns=data_config.load_columns,
         skip_rows=file_start_index,
-        dtypes={
+        schema_overrides={
             load_column: pl.Float64 for load_column in data_config.load_columns
         },  # FIXME TODO dirty hack, add data schema instead
         # infer_schema_length=10000  # also not optimal
@@ -255,7 +255,10 @@ def _imotions_transformation(
                 participant_data.datasets[data_config.name].df = (
                     participant_data.datasets[data_config.name]
                     .df.join(
-                        participant_data.trial, on="Timestamp", how="outer_coalesce"
+                        participant_data.trial,
+                        on="Timestamp",
+                        how="full",
+                        coalesce=True,
                     )
                     .sort("Timestamp")
                 )
