@@ -3,6 +3,7 @@ import copy
 import logging
 import random
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -121,6 +122,7 @@ logging.info(f"Use skin area {SKIN_AREAS[-2]} for calibration.")
 
 # Pop-up window before expyriment starts
 ask_for_calibration_start()
+time.sleep(1)  # wait for the pop-up to close
 exp = design.Experiment(name=EXP_NAME)
 control.initialize(exp)
 screen_size = exp.screen.size

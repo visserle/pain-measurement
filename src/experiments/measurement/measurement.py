@@ -3,6 +3,7 @@ import copy
 import logging
 import random
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -157,6 +158,7 @@ if not ask_for_eyetracker_calibration():
     raise SystemExit("Eye-tracker calibration denied.")
 imotions_control.start_study(mode=IMOTIONS["start_study_mode"])
 ask_for_measurement_start()
+time.sleep(1)
 
 # Experiment setup
 exp = design.Experiment(name=EXP_NAME)
@@ -313,7 +315,8 @@ def main():
 
     # End of Experiment
     SCRIPT["bye"].present()
-    exp.clock.wait_seconds(3)
+    AUDIO["bye"].play()
+    exp.clock.wait_seconds(7)
 
     control.end()
     imotions_control.end_study()
