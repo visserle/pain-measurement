@@ -1,13 +1,6 @@
 # Log and data files
 /runs
-/data/_pilot_up_to_2024_05_26
-/data/experiments
-/data/imotions
-/data/interim
-/data/merged
-/data/raw
-/data/preprocessed
-/data/experiments/questionnaires/general_results.csv
+/data
 
 # work in progress
 notebooks/00_stimuli_function.ipynb
