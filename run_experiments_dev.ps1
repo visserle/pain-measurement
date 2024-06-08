@@ -44,27 +44,27 @@ Read-Host
 
 # Execute Python scripts
 Write-Host "1. Pre-Experiment Questionnaires"
-python -m src.experiments.participant_data  --debug
-python -m src.experiments.questionnaires.app general bdi-ii phq-15 panas --welcome --debug
+python -m src.experiments.participant_data  #--debug
+python -m src.experiments.questionnaires.app general bdi-ii phq-15 panas --welcome #--debug
 Write-Host ""
 Write-Host "Press [Enter] to continue with the calibration..."
 Read-Host
 
 Write-Host "2. Pain Calibration"
-python -m src.experiments.calibration.calibration --dummy_thermoino --dummy_stimulus --windowed --debug
+# python -m src.experiments.calibration.calibration --dummy_thermoino --dummy_stimulus # --windowed --debug
+
 Write-Host ""
 Write-Host "Press [Enter] to continue with the measurement..."
 Read-Host
 
 Write-Host "3. Pain Measurement"
-python -m src.experiments.measurement.measurement --dummy_imotions --dummy_thermoino --dummy_stimulus --windowed --debug
+# python -m src.experiments.measurement.measurement --dummy_imotions --windowed --debug
 Write-Host ""
 Write-Host "Press [Enter] to continue with the questionnaires..."
 Read-Host
 
 Write-Host "4. Post-Experiment Questionnaires"
-python -m src.experiments.questionnaires.app panas pcs pvaq stai-t-10 --debug
-
+python -m src.experiments.questionnaires.app panas pcs pvaq stai-t-10 maas --debug
 # Print the completion message
 Write-Host "Experiment completed."
 Write-Host ""

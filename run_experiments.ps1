@@ -62,7 +62,7 @@ Write-Host "Press [Enter] to continue with the questionnaires..."
 Read-Host
 
 Write-Host "4. Post-Experiment Questionnaires"
-python -m src.experiments.questionnaires.app panas pcs pvaq stai-t-10
+python -m src.experiments.questionnaires.app panas pcs pvaq stai-t-10 maas
 
 # Print the completion message
 Write-Host "Experiment completed."

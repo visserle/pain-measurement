@@ -7,6 +7,12 @@ SCORING_SCHEMAS = {
         "alert_threshold": 14,
         "alert_message": "depression",
     },
+    "maas": {
+        "components": {
+            "total": range(1, 16),
+        },
+        "metric": "mean",
+    },
     "panas": {
         "components": {
             "positive_affect": [1, 3, 4, 6, 10, 11, 13, 15, 17, 18],
