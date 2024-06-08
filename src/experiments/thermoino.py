@@ -628,7 +628,8 @@ class ThermoinoComplexTimeCourses(Thermoino):
         logger.info(
             "Preparing the starting temperature of the complex temperature course (CTC)."  # noqa: E501
         )
-        prep_duration, success = self.set_temp(self.temp_course_start)
+        # rounded numbers look better in the log
+        prep_duration, success = self.set_temp(round(self.temp_course_start, 2))
         if not success:
             logger.error("Preparing complex temperature course (CTC) failed.")
         return prep_duration
