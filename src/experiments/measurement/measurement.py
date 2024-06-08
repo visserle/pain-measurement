@@ -143,6 +143,7 @@ id_is_odd = int(participant_info["id"]) % 2
 SKIN_AREAS = range(1, 7) if id_is_odd else range(6, 0, -1)
 logging.info(f"Start with skin area {SKIN_AREAS[0]}.")
 STIMULUS.update(participant_info)
+# shuffle seeds for randomization
 random.shuffle(STIMULUS["seeds"])
 
 # Initialize iMotions
@@ -301,7 +302,6 @@ def main():
         # Show halfway message
         if trial == 5:  # after 6th trial
             SCRIPT["halfway"].present()
-            AUDIO["halfway"].play()
             exp.keyboard.wait(K_SPACE)
         SCRIPT["approve"].present()
         exp.keyboard.wait(K_SPACE)
