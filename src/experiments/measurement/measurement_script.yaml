@@ -11,7 +11,7 @@ welcome:
     Willkommen zum Haupt-Experiment!
 
 
-    Bitte drücken Sie die Leertaste, um zu beginnen.
+    (Leertaste drücken, um fortzufahren)
   2: |-
 
 
@@ -129,11 +129,9 @@ ready:
 
 
 
+    Wir möchten Sie bitten, bei Ihrer Schmerzbewertung nicht zu sprechen, nicht zu trinken, auf den Monitor zu schauen und Ihre Augen immer geöffnet zu halten (Blinzeln ist erlaubt).
 
-
-
-
-    Wir möchten Sie bitten, bei der Schmerzstimulation nicht zu sprechen, nicht zu trinken, auf den Monitor zu schauen und Ihre Augen immer geöffnet zu halten (Blinzeln ist erlaubt).
+    Nach jedem Block wechselt die Versuchsleitung die Hautstelle am Arm. Dabei können Sie sich entspannen. Bitte warten Sie mit dem Start des jeweils nächsten Blocks, bis die Versuchsleitung wieder Platz genommen hat.
 
 
     (Leertaste drücken, um fortzufahren)
@@ -214,7 +212,7 @@ halfway: |-
 
 
 
-  Sie haben die Hälfte des Experiments erfolgreich abgeschlossen (6 von 12 Blöcken).
+  Sie haben die Hälfte des Experiments geschafft.
 
 
   (Leertaste drücken, um fortzufahren)
