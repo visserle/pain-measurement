@@ -276,6 +276,7 @@ def main():
         # Correlation check for reward
         data_points = pd.DataFrame(imotions_event.data_points)
         data_points.set_index("timestamp", inplace=True)
+        logging.info(f"The highest VAS rating was: {int(data_points['rating'].max())}.")
         correlation = round(data_points.corr()["temperature"]["rating"], 2)
         correlations.append(correlation)
         logging.info(f"Correlation between temperature and rating: {correlation:.2f}.")
