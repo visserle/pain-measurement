@@ -56,6 +56,7 @@ class StimulusGenerator:
 
     def _extract_config(self):
         """Extracts and sets the configuration parameters."""
+
         # Basic parameters
         self.sample_rate = self.config.get("sample_rate", 10)
         self.half_cycle_num = self.config.get("half_cycle_num", 10)
@@ -66,18 +67,18 @@ class StimulusGenerator:
         )
         self.shorten_expected_duration = self.config.get("shorten_expected_duration", 7)
 
-        # Big decreasing half cycles
-        self.big_decreasing_half_cycle_num = self.config.get(
-            "big_decreasing_half_cycle_num", 3
+        # major decreasing half cycles
+        self.major_decreasing_half_cycle_num = self.config.get(
+            "major_decreasing_half_cycle_num", 3
         )
-        self.big_decreasing_half_cycle_period = self.config.get(
-            "big_decreasing_half_cycle_period", 20
+        self.major_decreasing_half_cycle_period = self.config.get(
+            "major_decreasing_half_cycle_period", 20
         )
-        self.big_decreasing_half_cycle_amplitude = self.config.get(
-            "big_decreasing_half_cycle_amplitude", 0.925
+        self.major_decreasing_half_cycle_amplitude = self.config.get(
+            "major_decreasing_half_cycle_amplitude", 0.925
         )  # * 2 = the full range of the half cycle
-        self.big_decreasing_half_cycle_min_y_intercept = self.config.get(
-            "big_decreasing_half_cycle_min_y_intercept", 0.9
+        self.major_decreasing_half_cycle_min_y_intercept = self.config.get(
+            "major_decreasing_half_cycle_min_y_intercept", 0.9
         )  # based on the curve without temperature calibration
 
         # Plateaus
@@ -98,16 +99,16 @@ class StimulusGenerator:
     def _validate_parameters(self):
         """Validates the configuration parameters."""
         assert (
-            self.big_decreasing_half_cycle_min_y_intercept < self.amplitude_range[1]
+            self.major_decreasing_half_cycle_min_y_intercept < self.amplitude_range[1]
         ), (
-            "The minimum y intercept for the big decreasing half cycles "
+            "The minimum y intercept for the major decreasing half cycles "
             "must be less than the maximum amplitude."
         )
         assert (
-            self.config.get("big_decreasing_half_cycle_amplitude", 0.925)
+            self.config.get("major_decreasing_half_cycle_amplitude", 0.925)
             < self.amplitude_range[1]
         ), (
-            "The amplitude of the big decreasing half cycles "
+            "The amplitude of the major decreasing half cycles "
             "must be less than the maximum amplitude."
         )
 
@@ -119,15 +120,17 @@ class StimulusGenerator:
                 shorten=self.shorten_expected_duration
             )
         )
-        self.desired_length_big_decreasing_half_cycles = (
-            self._get_desired_length_big_decreasing_half_cycles()
+        self.desired_length_major_decreasing_half_cycles = (
+            self._get_desired_length_major_decreasing_half_cycles()
         )
         self.desired_length = self._get_desired_length()
 
-        # Determine big decreasing half cycle indexes
-        self.big_decreasing_half_cycle_idx = self._get_big_decreasing_half_cycle_idx()
-        self.big_decreasing_half_cycle_idx_for_insert = (
-            self._get_big_decreasing_half_cycle_idx_for_insert()
+        # Determine major decreasing half cycle indexes
+        self.major_decreasing_half_cycle_idx = (
+            self._get_major_decreasing_half_cycle_idx()
+        )
+        self.major_decreasing_half_cycle_idx_for_insert = (
+            self._get_major_decreasing_half_cycle_idx_for_insert()
         )
 
         # Get periods and amplitudes for the random half cycles with the expected length
@@ -147,17 +150,17 @@ class StimulusGenerator:
         return np.gradient(self.y, 1 / self.sample_rate)  # dx in seconds
 
     @property
-    def big_decreasing_intervals(self) -> list[tuple[int, int]]:
+    def major_decreasing_intervals(self) -> list[tuple[int, int]]:
         """
-        Get the start and end indices of the big decreasing half cycles for labeling.
+        Get the start and end indices of the major decreasing half cycles for labeling.
         """
         intervals = []
-        for idx in self.big_decreasing_half_cycle_idx:
+        for idx in self.major_decreasing_half_cycle_idx:
             start = sum(self.periods[:idx]) * self.sample_rate
             for extension in self._extensions:
                 if extension[0] <= start:
                     start += extension[1]
-            end = start + self.big_decreasing_half_cycle_period * self.sample_rate
+            end = start + self.major_decreasing_half_cycle_period * self.sample_rate
             intervals.append((start, end))
         return intervals
 
@@ -173,7 +176,7 @@ class StimulusGenerator:
         """
         desired_length_random_half_cycles = (
             ((self.period_range[0] + (self.period_range[1])) / 2)
-            * (self.half_cycle_num - self.big_decreasing_half_cycle_num)
+            * (self.half_cycle_num - self.major_decreasing_half_cycle_num)
             * self.sample_rate
         ) - (shorten * self.sample_rate)
         desired_length_random_half_cycles -= (
@@ -181,33 +184,33 @@ class StimulusGenerator:
         )  # necessary for even boundaries, round to nearest sample
         return desired_length_random_half_cycles
 
-    def _get_desired_length_big_decreasing_half_cycles(self) -> int:
+    def _get_desired_length_major_decreasing_half_cycles(self) -> int:
         return (
-            self.big_decreasing_half_cycle_period
-            * self.big_decreasing_half_cycle_num
+            self.major_decreasing_half_cycle_period
+            * self.major_decreasing_half_cycle_num
             * self.sample_rate
         )
 
     def _get_desired_length(self) -> int:
         desired_length = (
             self.desired_length_random_half_cycles
-            + self.desired_length_big_decreasing_half_cycles
+            + self.desired_length_major_decreasing_half_cycles
         )
         desired_length -= desired_length % self.sample_rate  # round to nearest sample
         return desired_length
 
-    def _get_big_decreasing_half_cycle_idx(self) -> np.ndarray:
+    def _get_major_decreasing_half_cycle_idx(self) -> np.ndarray:
         return np.sort(
             self.rng_numpy.choice(
                 range(1, self.half_cycle_num, 2),
-                self.big_decreasing_half_cycle_num,
+                self.major_decreasing_half_cycle_num,
                 replace=False,
             )
         )
 
-    def _get_big_decreasing_half_cycle_idx_for_insert(self) -> np.ndarray:
+    def _get_major_decreasing_half_cycle_idx_for_insert(self) -> np.ndarray:
         """Indices for np.insert."""
-        return [i - idx for idx, i in enumerate(self.big_decreasing_half_cycle_idx)]
+        return [i - idx for idx, i in enumerate(self.major_decreasing_half_cycle_idx)]
 
     def _get_periods(self) -> np.ndarray:
         """
@@ -223,7 +226,7 @@ class StimulusGenerator:
             periods = self.rng_numpy.integers(
                 self.period_range[0],
                 self.period_range[1],
-                self.half_cycle_num - self.big_decreasing_half_cycle_num,
+                self.half_cycle_num - self.major_decreasing_half_cycle_num,
                 endpoint=True,
             )
             if (
@@ -231,11 +234,11 @@ class StimulusGenerator:
                 == self.desired_length_random_half_cycles
             ):
                 break
-        # Insert the big decreasing half cycle periods
+        # Insert the major decreasing half cycle periods
         periods = np.insert(
             periods,
-            self.big_decreasing_half_cycle_idx_for_insert,
-            self.big_decreasing_half_cycle_period,
+            self.major_decreasing_half_cycle_idx_for_insert,
+            self.major_decreasing_half_cycle_period,
         )
         if self.debug:
             print(f"Periods: {counter} iterations to converge")
@@ -254,8 +257,8 @@ class StimulusGenerator:
 
         Contraints:
         - The resulting function must be within -1 and 1.
-        - The y_intercept of each big decrease is greater than
-          big_decreasing_half_cycle_min_y_intercept.
+        - The y_intercept of each major decrease is greater than
+          major_decreasing_half_cycle_min_y_intercept.
         - The inflection point of each cosine segment is within inflection_point_range.
         """
         retry_limit_per_half_cycle = 5
@@ -275,8 +278,8 @@ class StimulusGenerator:
                 # Try to find a valid amplitude for the current half cycle
                 while retries > 0 and not valid_amplitude_found:
                     counter += 1
-                    if i in self.big_decreasing_half_cycle_idx:
-                        amplitude = self.big_decreasing_half_cycle_amplitude
+                    if i in self.major_decreasing_half_cycle_idx:
+                        amplitude = self.major_decreasing_half_cycle_amplitude
                     else:
                         amplitude = self.rng_numpy.uniform(
                             self.amplitude_range[0], self.amplitude_range[1]
@@ -306,12 +309,12 @@ class StimulusGenerator:
             if not success:
                 continue
 
-            # Final check for the big decreasing half cycles
-            big_decreases_high_enough = np.all(
-                np.array(y_intercepts)[self.big_decreasing_half_cycle_idx]
-                > self.big_decreasing_half_cycle_min_y_intercept
+            # Final check for the major decreasing half cycles
+            major_decreases_high_enough = np.all(
+                np.array(y_intercepts)[self.major_decreasing_half_cycle_idx]
+                > self.major_decreasing_half_cycle_min_y_intercept
             )
-            if big_decreases_high_enough:
+            if major_decreases_high_enough:
                 break
 
         if self.debug:
@@ -431,4 +434,4 @@ class StimulusGenerator:
 if __name__ == "__main__":
     # for debugging
     stimulus = StimulusGenerator(seed=246)
-    print(stimulus.big_decreasing_intervals)
+    print(stimulus.major_decreasing_intervals)
