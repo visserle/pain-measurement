@@ -49,26 +49,9 @@ class BayesianEstimatorVAS:
 
     print(f"Estimated temperature for VAS 50: {estimator_vas50.get_estimate()} °C")
     ```
-
-    Insights
-    --------
-    The usual temperature range between pain threshold and pain tolerance is
-    around 3-4°C without Capsaicin.
-
-    From Andreas Strube's Neuron paper (2023) with stimuli of 8 s and with Capsaicin: \n
-    "During experiment 1, pain levels were calibrated to achieve \n
-    - VAS10 (M = 38.1°C, SD = 3.5°C, Min = 31.8°C, Max = 44.8°C),
-    - VAS30 (M = 39°C, SD = 3.5°C, Min = 32.2°C, Max = 45.3°C),
-    - VAS50 (M = 39.9°C, SD = 3.6°C, Min = 32.5°C, Max = 46.2°C) and
-    - VAS70 (M = 40.8°C, SD = 3.8°C, Min = 32.8°C, Max = 47.2°C) pain levels
-    During experiment 2, pain levels were calibrated to achieve \n
-    - VAS10 (M = 38.2°C, SD = 3.1°C, Min = 31.72°C, Max = 44.5°C)
-    - VAS30 (M = 39°C, SD = 3.1°C, Min = 32.1°C, Max = 45.3°C),
-    - VAS50 (M = 38.19°C, SD = 3.1°C, Min = 32.5°C, Max = 46.1°C) and
-    - VAS70 (M = 40.5°C, SD = 3.2°C, Min = 32.8°C, Max = 46.9°C) pain levels
     """
 
-    MAX_TEMP = 47.0
+    MAX_TEMP = 48.0
 
     def __init__(
         self,
@@ -118,7 +101,7 @@ class BayesianEstimatorVAS:
 
         current_temp : float
             Current best estimate of the temperature.
-            The current temperate cannot exceed the MAX_TEMP.
+            If the current temperate exceeds the MAX_TEMP, a warning is logged.
 
         temps, priors, likelihoods, posteriors : list
             Lists to store temperature, prior distributions, likelihood functions, and
@@ -139,7 +122,7 @@ class BayesianEstimatorVAS:
         elif int(self.temp_std) == 2:
             range_width = 3.0
         elif int(self.temp_std) == 3:
-            range_width = 5.0
+            range_width = 4.0
         else:
             raise ValueError(
                 "int(temp_std) must be 0, 1, 2, or 3 "
@@ -165,7 +148,7 @@ class BayesianEstimatorVAS:
     @property
     def current_temp(self):
         """Ensure the current temperature is never above MAX_TEMP."""
-        return min(self._current_temp, self.MAX_TEMP)
+        return self._current_temp
 
     @current_temp.setter
     def current_temp(self, value):
@@ -220,7 +203,7 @@ class BayesianEstimatorVAS:
         posterior /= np.sum(posterior)  # normalize
 
         # Choose the temperature for the next trial based on the posterior distribution
-        self.current_temp = np.round(self.range_temp[np.argmax(posterior)], 1)
+        self.current_temp = np.round(self.range_temp[np.argmax(posterior)], 1).item()
 
         # Store the distributions and temperature
         self.priors.append(self.prior)

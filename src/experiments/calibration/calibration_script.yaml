@@ -110,26 +110,13 @@ info_vas70:
 
 
 
-
     Da wir Ihre erlebten Schmerzen so genau wie möglich bestimmen möchten, bekommen Sie die Schmerzreize von ca. 8 Sekunden Dauer mehrfach zu spüren.
 
-    Nach jedem Durchgang fragen wir Sie nach einem kurzen Feedback und passen die Temperatur graduell an Ihre Schmerzempfindung an.
+    Nach jedem Durchgang fragen wir Sie nach einem kurzen Feedback und passen die Temperatur graduell an Ihre Schmerzempfindung an. Zu keinem Zeitpunkt ist Ihre Haut dabei durch Verbrennungen oder Ähnliches bedroht.
 
 
     (Leertaste drücken, um fortzufahren)
   5: |-
-
-
-
-
-
-    Aufgrund der Capsaicin-Creme verspüren Sie dabei starke Schmerzen schneller als gewöhnlich.
-
-    Aber keine Sorge: Zu keinem Zeitpunkt ist Ihre Haut durch Verbrennungen oder Ähnliches bedroht.
-
-
-    (Leertaste drücken, um fortzufahren)
-  6: |-
 
 
 
@@ -175,9 +162,10 @@ info_vas0:
 
 
 
+
     Als Nächstes möchten wir bestimmen, ab wann Sie erste, leichte Schmerzen verspüren.
 
-    Wichtig dabei: Erste Schmerzen erkennen Sie daran, dass Sie zusätzlich zu den eventuellen Wirkungen der Capsaicin-Creme eine "neue Qualität" wie z. B. ein leichtes Stechen wahrnehmen.
+    Wichtig dabei: Erste Schmerzen erkennen Sie daran, dass Sie eine "neue Qualität" wie z. B. ein leichtes Stechen oder Brennen wahrnehmen.
 
 
     (Leertaste drücken, um fortzufahren)
@@ -195,7 +183,7 @@ info_vas0:
 
     (Leertaste drücken, um fortzufahren)
 question_vas0: |-
-  
+
 
 
 
@@ -253,6 +241,6 @@ fail: |-
 
 
 
-  Die Kalibrierung konnte nicht abgeschlossen werden.
+  Die Kalibrierung konnte leider nicht abgeschlossen werden.
 
   Bitte melden Sie sich bei der Versuchsleitung.

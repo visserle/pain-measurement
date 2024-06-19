@@ -138,6 +138,44 @@ control.defaults.initialize_delay = 3
 
 # Load participant info and update stimulus config with calibration data
 participant_info = read_last_participant(CALIBRATION_RESULTS)
+participant_info["vas0"] = float(participant_info["vas0"])
+participant_info["vas70"] = float(participant_info["vas70"])
+# check if VAS 70 and VAS 0 are too high (risk of burns)
+recalibrated = False
+if participant_info["vas70"] > 48.0 and participant_info["vas0"] > 46.0:
+    participant_info["temperature_baseline"] = 47.0
+    participant_info["temperature_range"] = 2.0
+    logging.warning(
+        "VAS 70 and VAS 0 are too high. Temperature baseline set to 47.0°C and range to 2.0°C."
+    )
+    recalibrated = True
+if participant_info["vas70"] > 48.0 and participant_info["vas0"] < 46.0:
+    participant_info["temperature_baseline"] = round(
+        (participant_info["vas0"] + 48.0) / 2, 1
+    )
+    participant_info["temperature_range"] = round(
+        (48.0 - participant_info["vas0"]) / 2, 1
+    )
+    logging.warning(
+        f"VAS 70 is too high. Temperature baseline set to "
+        f"{participant_info['temperature_baseline']}°C and range to "
+        f"{participant_info['temperature_range']}°C."
+    )
+    recalibrated = True
+# edge case: we also check between 47.5 and 48.0 because 1.5 is the minimal allowed
+# difference from the calibration
+if 47.5 <= participant_info["vas70"] <= 48.0 and participant_info["vas0"] > 46.0:
+    participant_info["temperature_baseline"] = round(
+        (participant_info["vas70"] + 46.0) / 2, 1
+    )
+    participant_info["temperature_range"] = round(participant_info["vas70"] - 46.0, 1)
+    logging.warning(
+        f"VAS 0 is too high. Temperature baseline set to "
+        f"{participant_info['temperature_baseline']}°C and range to "
+        f"{participant_info['temperature_range']}°C."
+    )
+    recalibrated = True
+
 # determine order of skin areas based on participant ID
 id_is_odd = int(participant_info["id"]) % 2
 SKIN_AREAS = range(1, 7) if id_is_odd else range(6, 0, -1)
@@ -276,10 +314,16 @@ def main():
         # Correlation check for reward
         data_points = pd.DataFrame(imotions_event.data_points)
         data_points.set_index("timestamp", inplace=True)
-        logging.info(f"The highest VAS rating was: {int(data_points['rating'].max())}.")
-        correlation = round(data_points.corr()["temperature"]["rating"], 2)
+        correlation = np.round(data_points.corr()["temperature"]["rating"], 2).item()
         correlations.append(correlation)
-        logging.info(f"Correlation between temperature and rating: {correlation:.2f}.")
+        logging.info(
+            f"VAS ratings: "
+            f"min = {int(data_points['rating'].min())}, "
+            f"max = {int(data_points['rating'].max())}, "
+            f"mean = {int(data_points['rating'].mean())}, "
+            f"std = {int(data_points['rating'].std())}."
+        )
+        logging.info(f"Correlation between temperature and rating: {correlation}")
         if correlation > 0.6:
             reward += 0.5
             logging.info("Rewarding participant.")
@@ -309,6 +353,7 @@ def main():
 
     # Save participant data
     participant_info_ = read_last_participant()  # reload to remove calibration data
+    participant_info_["recalibrated"] = recalibrated
     participant_info_["seed_order"] = STIMULUS["seeds"]
     participant_info_["correlations"] = correlations
     participant_info_["reward"] = reward

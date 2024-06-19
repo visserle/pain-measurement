@@ -92,7 +92,7 @@ instruction:
 
 
     Ganz links bedeutet "keine Schmerzen" und ganz rechts "Sehr starke Schmerzen".
-    ("Sehr starke Schmerzen" entsprechen der 7 von 10 aus Ihrer Schmerz-Kalibrierung.)
+    ("Sehr starke Schmerzen" entsprechen der 7 von 10 aus der Schmerz-Kalibrierung.)
 
 
 
@@ -110,7 +110,7 @@ instruction:
 
 
 
-    Während des Experiments haben Sie die Aufgabe, Ihren Schmerz mittels der Skala durchgehend zu bewerten. Dies geschieht ausschließlich über Ihre Mausbewegungen; Sie müssen nichts klicken.
+    Während des Experiments haben Sie die Aufgabe, Ihren Schmerz mittels der Skala innerhalb eines Blocks durchgehend zu bewerten. Dies geschieht ausschließlich über Ihre Mausbewegungen; Sie müssen nichts klicken.
 
 
 
@@ -129,7 +129,8 @@ ready:
 
 
 
-    Wir möchten Sie bitten, bei Ihrer Schmerzbewertung nicht zu sprechen, nicht zu trinken, auf den Monitor zu schauen und Ihre Augen immer geöffnet zu halten (Blinzeln ist erlaubt).
+
+
 
     Nach jedem Block wechselt die Versuchsleitung die Hautstelle am Arm. Dabei können Sie sich entspannen. Bitte warten Sie mit dem Start des jeweils nächsten Blocks, bis die Versuchsleitung wieder Platz genommen hat.
 
@@ -143,9 +144,22 @@ ready:
 
 
 
+
+    Wir möchten Sie bitten, bei Ihrer Schmerzbewertung nicht zu sprechen, nicht zu trinken, die Maus ständig in der Hand zu halten, auf den Monitor zu schauen und Ihre Augen immer geöffnet zu halten (Blinzeln ist erlaubt).
+
+
+    (Leertaste drücken, um fortzufahren)
+  3: |-
+
+
+
+
+
+
+
     Sollten Sie noch Fragen haben, richten Sie sich bitte jetzt an die Versuchsleitung.
     
-    Als Nächstes startet das Experiment. Bitte fangen Sie sogleich an, Ihre Schmerzempfindung zu bewerten.
+    Als Nächstes startet das Experiment mit dem ersten Block. Bitte fangen Sie sogleich an, Ihre Schmerzempfindung zu bewerten.
     
     
     (Leertaste drücken, um fortzufahren)
@@ -197,7 +211,7 @@ approve : |-
 
 
 
-  Sind Sie bereit für den nächsten Durchgang?
+  Sind Sie bereit für den nächsten Block?
 
 
   (Leertaste drücken, um fortzufahren)

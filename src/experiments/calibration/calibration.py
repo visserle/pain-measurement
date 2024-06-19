@@ -297,8 +297,10 @@ def main():
     # Check if the temperature range is reasonable
     temperature_range = round(participant_info["vas70"] - participant_info["vas0"], 1)
     logging.info(f"Temperature range: {temperature_range}.")
-    if not 1 <= temperature_range <= 5:
-        range_error = "close together" if temperature_range < 1 else "far apart"
+    min_range = 1.5
+    max_range = 5
+    if not min_range <= temperature_range <= max_range:
+        range_error = "close together" if temperature_range < min_range else "far apart"
         logging.error(
             f"VAS 70 and VAS 0 are too {range_error}. Please repeat the calibration."
         )
