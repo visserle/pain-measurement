@@ -88,6 +88,8 @@ class Thermoino:
 
     The class provides methods to initialize the device and set target temperatures.
 
+    Note that MMS shuts down, when stimulating > 50°C for over 5 s or > 49°C for over 10 s.
+
     Attributes
     ----------
     PORT : `str`
@@ -208,8 +210,10 @@ class Thermoino:
             logger.debug("Connection established.")
             time.sleep(1)
         except serial.SerialException:
-            logger.error("Connection failed @ %s.", self.PORT)
-            logger.error(f"Available serial ports are:\n\n{list_com_ports()}\n\n")
+            logger.error(
+                f"Connection failed @ {self.PORT}. "
+                f"Available serial ports are:\n\n{list_com_ports()}\n\n"
+            )
             raise serial.SerialException(f"Thermoino connection failed @ {self.PORT}.")
 
     def close(self):
@@ -429,11 +433,11 @@ class ThermoinoComplexTimeCourses(Thermoino):
     thermoino.connect()
     thermoino.flush_ctc()  # to be sure that no old CTC is loaded
     thermoino.init_ctc(bin_size_ms=500)
-    thermoino.create_ctc(temp_course=stimulus.wave, sample_rate=stimulus.sample_rate)
+    thermoino.create_ctc(temp_course=stimulus.y, sample_rate=stimulus.sample_rate)
     thermoino.load_ctc()
     thermoino.trigger()
     time_to_ramp_up = thermoino.prep_ctc()
-    thermoino.sleep(duration_ms=time_to_ramp_up)
+    thermoino.sleep(duration=time_to_ramp_up)
     time_to_exec_ctc = thermoino.exec_ctc()
     thermoino.sleep(time_to_exec_ctc)
     # Account for some delay at the end of the complex time course
@@ -629,7 +633,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             "Preparing the starting temperature of the complex temperature course (CTC)."  # noqa: E501
         )
         # rounded numbers look better in the log
-        prep_duration, success = self.set_temp(round(self.temp_course_start, 2))
+        prep_duration, success = self.set_temp(self.temp_course_start)
         if not success:
             logger.error("Preparing complex temperature course (CTC) failed.")
         return prep_duration
