@@ -161,9 +161,9 @@ class Thermoino:
 
     def __init__(
         self,
-        port: str,
         mms_baseline: int,
         mms_rate_of_rise: int,
+        port: str | None = None,
         dummy: bool = False,
     ):
         """
@@ -186,27 +186,56 @@ class Thermoino:
         dummy : `bool`, optional
             If True, the class will run in dummy mode. Default is False.
         """
-        self.PORT = port
-        self.ser = None  # will be set to the serial object in connect()
+
         self.mms_baseline = mms_baseline
         self.temp = mms_baseline  # start at the baseline temperature
         self.mms_rate_of_rise = mms_rate_of_rise
+        self.port = port
+        self.ser = None  # will be set to the serial object in connect()
         self.dummy = dummy
         if self.dummy:
             logger.debug("Running in dummy mode.")
 
+
     def connect(self):
+        if self.dummy is True:
+            self.ser = DummySerial()
+            return
+
+        if self.port is None:
+            self._connect_auto()
+        else:
+            self._connect_manual()
+
+    def _connect_auto(self):
         """
-        Connect to the Thermoino device.
+        Automatically connect to the Thermoino device.
+
+        Establish a serial connection to the device and waits for it (1 s) to boot up.
+        """
+
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+            self.ser = serial.Serial(port.device, self.BAUD_RATE)
+            time.sleep(1)
+            # dirty hack to get the right port
+            response = self._send_command("FLUSH_CTC\n")
+            if response == ErrorCodes(-2).name:  # error means that the thermoino is there
+                logger.debug(f"Connected to {port.device}.")
+                break
+            else:
+                self.ser.close()
+                logger.debug(f"No thermoino found on {port.device}.")
+
+            
+    def _connect_manual(self):
+        """
+        Manually connect to the Thermoino device.
 
         Establish a serial connection to the device and waits for it (1 s) to boot up.
         """
         try:
-            self.ser = (
-                serial.Serial(self.PORT, self.BAUD_RATE)
-                if not self.dummy
-                else DummySerial()
-            )
+            self.ser = (serial.Serial(self.PORT, self.BAUD_RATE))
             logger.debug("Connection established.")
             time.sleep(1)
         except serial.SerialException:
@@ -215,6 +244,7 @@ class Thermoino:
                 f"Available serial ports are:\n\n{list_com_ports()}\n\n"
             )
             raise serial.SerialException(f"Thermoino connection failed @ {self.PORT}.")
+
 
     def close(self):
         """
@@ -269,11 +299,15 @@ class Thermoino:
             response = OkCodes(decoded_response).name
         return response
 
-    def diag(self):
-        """Send a 'DIAG' command to the Thermoino to get basic diagnostic
-        information."""
+    def diag(self) -> str:
+        """
+        Send a 'DIAG' command to the Thermoino to get basic diagnostic information.
+
+        Also used to check if the Thermoino is connected and ready to receive commands.
+        """
         output = self._send_command("DIAG\n")
         logger.info("Diagnostic information: %s.", output)
+        return output
 
     def trigger(self):
         """Trigger MMS to get ready for action."""
@@ -461,12 +495,12 @@ class ThermoinoComplexTimeCourses(Thermoino):
 
     def __init__(
         self,
-        port: str,
         mms_baseline: int,
         mms_rate_of_rise: int,
+        port: str | None = None,
         dummy: bool = False,
     ):
-        super().__init__(port, mms_baseline, mms_rate_of_rise, dummy)
+        super().__init__(mms_baseline=mms_baseline, mms_rate_of_rise=mms_rate_of_rise, port=port, dummy=dummy)
         self.bin_size_ms = None
         self.temp_course_duration = None
         self.temp_course_start = None
@@ -693,12 +727,10 @@ def main():
 
     # List all available serial ports
     print(list_com_ports())
-    port = "COM3"
     dummy = False
 
     # Set up the Thermoino in dummy mode
     thermoino = Thermoino(
-        port=port,
         mms_baseline=28,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
         dummy=dummy,
@@ -707,6 +739,7 @@ def main():
     # Use thermoino to set temperatures:
     thermoino.connect()
     thermoino.trigger()
+
     time_to_ramp_up, _ = thermoino.set_temp(42.3)
     thermoino.sleep(duration=time_to_ramp_up)
     # 4 s plateau of 42°C
@@ -721,7 +754,6 @@ def main():
     sample_rate = 10
 
     thermoino = ThermoinoComplexTimeCourses(
-        port=port,
         mms_baseline=28,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
         dummy=dummy,
@@ -738,7 +770,8 @@ def main():
     time_to_exec_ctc = thermoino.exec_ctc()
     thermoino.sleep(time_to_exec_ctc)
     # Account for some delay at the end of the complex time course
-    time.sleep(0.4)
+    time.sleep(0.5)
+    thermoino.flush_ctc()  # to be sure that no old CTC is loaded
     time_to_ramp_down, _ = thermoino.set_temp(28)  # back to baseline
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()

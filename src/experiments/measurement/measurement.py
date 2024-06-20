@@ -214,7 +214,6 @@ vas_slider = VisualAnalogueScale(experiment=exp, config=VAS)
 
 # Initialize Thermoino
 thermoino = ThermoinoComplexTimeCourses(
-    port=THERMOINO["port"],
     mms_baseline=THERMOINO["mms_baseline"],
     mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
     dummy=args.dummy_thermoino,

@@ -1,17 +1,4 @@
-# COM-ports for Thermoino
-# (to find out the COM-port manually, open the 'Geräte-Manager'
-# with a right-click on the windows logo in the taskbar)
-
-# "COM4" for Bowser
-# "COM7" for Luigi
-# "COM5" for Mario
-
-# Adapt the value on the right-hand side of the following line accordingly:
-
-port = "COM5"  
-
-
-# More stuff (do not edit)
-mms_baseline = 28.0  # must be the same as in MMS
-mms_rate_of_rise = 10.0  # must be the same as in MMS
+# Make sure that all MMS values are the same as in the specified MMS program
+mms_baseline = 28.0
+mms_rate_of_rise = 10.0
 bin_size_ms = 500

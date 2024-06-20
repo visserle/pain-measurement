@@ -162,7 +162,6 @@ for pic in ["unmarked", "marked"]:
 # where we may need to change the port in the config file)
 THERMOINO = load_configuration(THERMOINO_CONFIG_FILE)
 thermoino = Thermoino(
-    port=THERMOINO["port"],
     mms_baseline=THERMOINO["mms_baseline"],
     mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
     dummy=args.dummy_thermoino,

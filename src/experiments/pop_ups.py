@@ -17,12 +17,11 @@ def ask_for_calibration_start() -> bool:
     items = [
         "MMS Programm pain-calibration?",
         "MMS Trigger-bereit?",
-        "Thermoino-Port konfiguriert?",
-        "Thermodenkopf am Hautareal? (5 bei ungerader Probanden-ID, 2 bei gerader ID)",
         "Jalousien unten?",
         "Alle Sensoren in iMotions connected?"
         "Sensor Preview mit PPG, EDA und Pupillometrie?",
         "Terminal, iMotions, NIC mit EEG Qualitätssignalen?",
+        "Thermodenkopf am Hautareal? (5 bei ungerader Probanden-ID, 2 bei gerader ID)",
     ]
     return _start_window(items, "calibration")
 
@@ -32,13 +31,13 @@ def ask_for_measurement_start() -> bool:
     items = [
         "MMS Programm auf pain-measurement umgestellt?",
         "MMS Trigger-bereit?",
-        "Hautareal gewechselt?",
         "iMotions' Kalibrierung bestätigt?",
         "Sensor Preview geöffnet?",
         "Signale überprüft (PPG, EDA, Pupillometrie)?",
         "Hintergrundbeleuchtung blendet nicht?",
         "Eye-Tracker Postionsfeedback sichtbar?",
         "Terminal, iMotions, NIC mit EEG Qualitätssignalen?",
+        "Hautareal gewechselt?",
     ]
     return _start_window(items, "measurement")
 
