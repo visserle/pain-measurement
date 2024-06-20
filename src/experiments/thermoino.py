@@ -196,7 +196,6 @@ class Thermoino:
         if self.dummy:
             logger.debug("Running in dummy mode.")
 
-
     def connect(self):
         if self.dummy is True:
             self.ser = DummySerial()
@@ -220,14 +219,17 @@ class Thermoino:
             time.sleep(1)
             # dirty hack to get the right port
             response = self._send_command("FLUSH_CTC\n")
-            if response == ErrorCodes(-2).name:  # error means that the thermoino is there
+            if (
+                response == ErrorCodes(-2).name
+            ):  # error means that the thermoino is there
                 logger.debug(f"Connected to {port.device}.")
-                break
+                return
             else:
                 self.ser.close()
                 logger.debug(f"No thermoino found on {port.device}.")
+        logger.error("No Thermoino found. Please check if it is connected.")
+        raise serial.SerialException("Thermoino connection failed.")
 
-            
     def _connect_manual(self):
         """
         Manually connect to the Thermoino device.
@@ -235,7 +237,7 @@ class Thermoino:
         Establish a serial connection to the device and waits for it (1 s) to boot up.
         """
         try:
-            self.ser = (serial.Serial(self.PORT, self.BAUD_RATE))
+            self.ser = serial.Serial(self.PORT, self.BAUD_RATE)
             logger.debug("Connection established.")
             time.sleep(1)
         except serial.SerialException:
@@ -244,7 +246,6 @@ class Thermoino:
                 f"Available serial ports are:\n\n{list_com_ports()}\n\n"
             )
             raise serial.SerialException(f"Thermoino connection failed @ {self.PORT}.")
-
 
     def close(self):
         """
@@ -500,7 +501,12 @@ class ThermoinoComplexTimeCourses(Thermoino):
         port: str | None = None,
         dummy: bool = False,
     ):
-        super().__init__(mms_baseline=mms_baseline, mms_rate_of_rise=mms_rate_of_rise, port=port, dummy=dummy)
+        super().__init__(
+            mms_baseline=mms_baseline,
+            mms_rate_of_rise=mms_rate_of_rise,
+            port=port,
+            dummy=dummy,
+        )
         self.bin_size_ms = None
         self.temp_course_duration = None
         self.temp_course_start = None
