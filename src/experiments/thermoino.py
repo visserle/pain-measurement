@@ -167,7 +167,8 @@ class Thermoino:
         dummy: bool = False,
     ):
         """
-        Constructs a Thermoino object.
+        Constructs a Thermoino object. Do not specify the port if you want to connect
+        automatically.
 
         Parameters
         ----------
@@ -218,16 +219,17 @@ class Thermoino:
             self.ser = serial.Serial(port.device, self.BAUD_RATE)
             time.sleep(1)
             # dirty hack to get the right port
-            response = self._send_command("FLUSH_CTC\n")
-            if (
-                response == ErrorCodes(-2).name
-            ):  # error means that the thermoino is there
-                logger.debug(f"Connected to {port.device}.")
+            response = self._send_command("UNKNOWN_CMD_XYZ\n")
+            # ERR_CMD_NOT_FOUND means that the thermoino is there
+            if response == ErrorCodes(-2).name:
+                logger.debug(f"Connection established @ {port.device}.")
                 return
             else:
                 self.ser.close()
                 logger.debug(f"No thermoino found on {port.device}.")
-        logger.error("No Thermoino found. Please check if it is connected.")
+        logger.error(
+            "Automatic connection failed. Please check if Thermoino is available."
+        )
         raise serial.SerialException("Thermoino connection failed.")
 
     def _connect_manual(self):
@@ -237,15 +239,15 @@ class Thermoino:
         Establish a serial connection to the device and waits for it (1 s) to boot up.
         """
         try:
-            self.ser = serial.Serial(self.PORT, self.BAUD_RATE)
-            logger.debug("Connection established.")
+            self.ser = serial.Serial(self.port, self.BAUD_RATE)
+            logger.debug(f"Connection established @ {self.port}.")
             time.sleep(1)
         except serial.SerialException:
             logger.error(
-                f"Connection failed @ {self.PORT}. "
+                f"Manual connection failed @ {self.port}. "
                 f"Available serial ports are:\n\n{list_com_ports()}\n\n"
             )
-            raise serial.SerialException(f"Thermoino connection failed @ {self.PORT}.")
+            raise serial.SerialException(f"Thermoino connection failed @ {self.port}.")
 
     def close(self):
         """
