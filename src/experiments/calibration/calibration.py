@@ -111,6 +111,15 @@ io.defaults.outputfile_time_stamp = True
 io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 
+# Initialize Thermoino
+THERMOINO = load_configuration(THERMOINO_CONFIG_FILE)
+thermoino = Thermoino(
+    mms_baseline=THERMOINO["mms_baseline"],
+    mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
+    dummy=args.dummy_thermoino,
+)
+thermoino.connect()
+
 # Experiment setup
 participant_info = (
     read_last_participant() if not args.debug else config["dummy_participant"]
@@ -157,17 +166,6 @@ for pic in ["unmarked", "marked"]:
     vas_pictures[pic].scale(scale_1d_value(1.5, screen_size))
     vas_pictures[pic].preload()
 
-# Initialize Thermoino
-# (we load the config here and not at the top because of ask_for_calibration_start
-# where we may need to change the port in the config file)
-THERMOINO = load_configuration(THERMOINO_CONFIG_FILE)
-thermoino = Thermoino(
-    mms_baseline=THERMOINO["mms_baseline"],
-    mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
-    dummy=args.dummy_thermoino,
-)
-thermoino.connect()
-
 
 def run_estimation_trials(estimator: BayesianEstimatorVAS) -> None:
     """Run estimation trials and return the final estimate."""
@@ -191,14 +189,6 @@ def run_estimation_trials(estimator: BayesianEstimatorVAS) -> None:
             estimator.conduct_trial(response="n", trial=trial)
             SCRIPT["answer_no"].present()
         exp.clock.wait_seconds(1)
-    success = estimator.validate_steps()
-    if not success:
-        logging.error("Please repeat the calibration if applicable.")
-        SCRIPT["fail"].present()
-        AUDIO["fail"].play()
-        exp.clock.wait_seconds(3)
-        control.end()
-        sys.exit(1)
 
 
 def main():
@@ -293,21 +283,9 @@ def main():
     run_estimation_trials(estimator=estimator_vas0)
     participant_info["vas0"] = estimator_vas0.get_estimate()
 
-    # Check if the temperature range is reasonable
+    # Check if the temperature range
     temperature_range = round(participant_info["vas70"] - participant_info["vas0"], 1)
     logging.info(f"Temperature range: {temperature_range}.")
-    min_range = 1.5
-    max_range = 5
-    if not min_range <= temperature_range <= max_range:
-        range_error = "close together" if temperature_range < min_range else "far apart"
-        logging.error(
-            f"VAS 70 and VAS 0 are too {range_error}. Please repeat the calibration."
-        )
-        SCRIPT["fail"].present()
-        AUDIO["fail"].play()
-        exp.clock.wait_seconds(3)
-        control.end()
-        sys.exit(1)
 
     # Save participant data
     participant_info["temperature_baseline"] = round(
