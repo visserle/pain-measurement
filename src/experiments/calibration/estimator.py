@@ -17,9 +17,6 @@ class BayesianEstimatorVAS:
        VAS value.
     2. Decide the temperature for the succeeding trial based on the updated belief.
 
-    This class has a class attribute MAX_TEMP, which is set to 47°C (maximum temperature
-    considered by the estimator).
-
     Methods
     -------
     conduct_trial(response: str, trial: int) -> None:
@@ -41,13 +38,12 @@ class BayesianEstimatorVAS:
         trials=7,
         temp_start=40.0,
         temp_std=3.5,
+        likelihood_std=1.0,
     )
 
     for trial in range(estimator_vas50.trials):
         response = input(f"Is this stimulus painful? (y/n) ")
         estimator_vas50.conduct_trial(response, trial=trial)
-
-    print(f"Estimated temperature for VAS 50: {estimator_vas50.get_estimate()} °C")
     ```
     """
 
@@ -55,12 +51,12 @@ class BayesianEstimatorVAS:
 
     def __init__(
         self,
-        vas_value: int,
+        vas_value: int | float,
         trials: int,
         temp_start: float,
         temp_std: float,
-        likelihood_std: float = 1,
-        reduction_factor: float = 0.9,
+        likelihood_std: float,
+        reduction_factor: float = 0.85,
     ):
         """
         Initialize the VAS_Estimator object for recursive Bayesian estimation of
@@ -82,7 +78,7 @@ class BayesianEstimatorVAS:
             Standard deviation of the initial Gaussian prior distribution for
             temperature.
 
-        likelihood_std : float, optional, default=1
+        likelihood_std : float
             Standard deviation of the likelihood function used in Bayesian updating.
 
         reduction_factor : float, optional, default=0.9
@@ -92,10 +88,6 @@ class BayesianEstimatorVAS:
 
         Attributes
         ----------
-        range_temp : np.ndarray
-            The range of temperatures considered for estimation, generated based on the
-            temp_start and temp_std.
-
         prior : np.ndarray
             Initial prior probability distribution over the range of temperatures.
 
@@ -114,27 +106,15 @@ class BayesianEstimatorVAS:
         self.likelihood_std = likelihood_std
         self.reduction_factor = reduction_factor
 
-        # Define the range of temperatures to consider based on the given std
-        if int(self.temp_std) == 0:
-            range_width = 1.0  # e.g., 38.0 ± 1.0
-        elif int(self.temp_std) == 1:
-            range_width = 2.0
-        elif int(self.temp_std) == 2:
-            range_width = 3.0
-        elif int(self.temp_std) == 3:
-            range_width = 4.0
-        else:
-            raise ValueError(
-                "int(temp_std) must be 0, 1, 2, or 3 "
-                "(or add more cases for other ranges)."
-            )
-        self.min_temp = self.temp_start - range_width
-        self.max_temp = self.temp_start + range_width
-        num = int((self.max_temp - self.min_temp) / 0.1) + 1
-        self.range_temp = np.linspace(self.min_temp, self.max_temp, num)
+        # Define the range of temperatures to consider
+        self.minumum, self.maximum = 38.0, 49.9
+        num = int((self.maximum - self.minumum) / 0.1) + 1
+        self.range_temp = np.linspace(self.minumum, self.maximum, num)
 
         self.prior = stats.norm.pdf(
-            self.range_temp, loc=self.temp_start, scale=self.temp_std
+            self.range_temp,
+            loc=self.temp_start,
+            scale=self.temp_std,
         )
         self.prior /= np.sum(self.prior)  # normalize
 
@@ -146,8 +126,7 @@ class BayesianEstimatorVAS:
         self.posteriors = []
 
     @property
-    def current_temp(self):
-        """Ensure the current temperature is never above MAX_TEMP."""
+    def current_temp(self) -> float:
         return self._current_temp
 
     @current_temp.setter
@@ -215,21 +194,24 @@ class BayesianEstimatorVAS:
         self.prior = np.copy(posterior)
 
         if trial == self.trials - 1:  # last trial
-            logger.info(
-                "Calibration estimate for VAS %s: %s °C.",
+            self._log_results()
+
+    def _log_results(self) -> None:
+        logger.info(
+            "Calibration estimate for VAS %s: %s °C.",
+            self.vas_value,
+            self.get_estimate(),
+        )
+        logger.debug(
+            "Calibration steps for VAS %s were (°C): %s.",
+            self.vas_value,
+            self.steps,
+        )
+        if not self.validate_steps():
+            logger.warning(
+                "Calibration steps for VAS %s were all in the same direction.",
                 self.vas_value,
-                self.get_estimate(),
             )
-            logger.debug(
-                "Calibration steps for VAS %s were (°C): %s.",
-                self.vas_value,
-                self.steps,
-            )
-            if not self.validate_steps():
-                logger.error(
-                    "Calibration steps for VAS %s were all in the same direction.",
-                    self.vas_value,
-                )
 
     def validate_steps(self) -> bool:
         """
