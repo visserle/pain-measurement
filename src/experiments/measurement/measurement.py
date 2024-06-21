@@ -136,45 +136,51 @@ io.defaults.outputfile_time_stamp = True
 io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 
+# Initialize Thermoino
+thermoino = ThermoinoComplexTimeCourses(
+    mms_baseline=THERMOINO["mms_baseline"],
+    mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
+    dummy=args.dummy_thermoino,
+    port="COM5",
+)
+thermoino.connect()
+
 # Load participant info and update stimulus config with calibration data
 participant_info = read_last_participant(CALIBRATION_RESULTS)
 participant_info["vas0"] = float(participant_info["vas0"])
 participant_info["vas70"] = float(participant_info["vas70"])
-# check if VAS 70 and VAS 0 are too high (risk of burns)
-recalibrated = False
-if participant_info["vas70"] > 48.0 and participant_info["vas0"] > 46.0:
-    participant_info["temperature_baseline"] = 47.0
-    participant_info["temperature_range"] = 2.0
-    logging.warning(
-        "VAS 70 and VAS 0 are too high. Temperature baseline set to 47.0°C and range to 2.0°C."
-    )
-    recalibrated = True
-if participant_info["vas70"] > 48.0 and participant_info["vas0"] < 46.0:
+# check if VAS 70 is too high (risk of burn)
+readjustment = False
+if participant_info["vas70"] > 48.0:
+    readjustment = True
+    participant_info["vas70"] = 48.0
+    logging.warning("VAS 70 is too high. Adjusting maximum temperature to 48.0 °C.")
+# check if delta is too low (under 1.5 °C); round results to avoid float weirdness
+temp_range = participant_info["vas70"] - participant_info["vas0"]
+if temp_range < 1.5:
+    readjustment = True
+    missing_amount = 1.5 - temp_range
+    participant_info["vas70"] = round(participant_info["vas70"] + missing_amount, 1)
+
+    if participant_info["vas70"] > 48.0:
+        overflow = participant_info["vas70"] - 48.0
+        participant_info["vas0"] = round(participant_info["vas0"] - overflow, 1)
+        participant_info["vas70"] = 48.0
+    logging.warning("Temperature range is too low. Adjusting delta to 1.5 °C.")
+# calculate new baseline and range
+if readjustment:
     participant_info["temperature_baseline"] = round(
-        (participant_info["vas0"] + 48.0) / 2, 1
+        (participant_info["vas0"] + participant_info["vas70"]) / 2, 1
     )
     participant_info["temperature_range"] = round(
-        (48.0 - participant_info["vas0"]) / 2, 1
+        (participant_info["vas70"] - participant_info["vas0"]), 1
     )
-    logging.warning(
-        f"VAS 70 is too high. Temperature baseline set to "
-        f"{participant_info['temperature_baseline']}°C and range to "
-        f"{participant_info['temperature_range']}°C."
+    logging.info(
+        f"New values: VAS 70 = {participant_info['vas70']} °C, "
+        f"VAS 0 = {participant_info['vas0']} °C., "
+        f"baseline = {participant_info['temperature_baseline']} °C, "
+        f"range = {participant_info['temperature_range']} °C."
     )
-    recalibrated = True
-# edge case: we also check between 47.5 and 48.0 because 1.5 is the minimal allowed
-# difference from the calibration
-if 47.5 <= participant_info["vas70"] <= 48.0 and participant_info["vas0"] > 46.0:
-    participant_info["temperature_baseline"] = round(
-        (participant_info["vas70"] + 46.0) / 2, 1
-    )
-    participant_info["temperature_range"] = round(participant_info["vas70"] - 46.0, 1)
-    logging.warning(
-        f"VAS 0 is too high. Temperature baseline set to "
-        f"{participant_info['temperature_baseline']}°C and range to "
-        f"{participant_info['temperature_range']}°C."
-    )
-    recalibrated = True
 
 # determine order of skin areas based on participant ID
 id_is_odd = int(participant_info["id"]) % 2
@@ -211,14 +217,6 @@ prepare_script(
 )
 prepare_audio(AUDIO, AUDIO_DIR)
 vas_slider = VisualAnalogueScale(experiment=exp, config=VAS)
-
-# Initialize Thermoino
-thermoino = ThermoinoComplexTimeCourses(
-    mms_baseline=THERMOINO["mms_baseline"],
-    mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
-    dummy=args.dummy_thermoino,
-)
-thermoino.connect()
 
 
 def get_data_points(temp_course) -> None:
@@ -352,7 +350,7 @@ def main():
 
     # Save participant data
     participant_info_ = read_last_participant()  # reload to remove calibration data
-    participant_info_["recalibrated"] = recalibrated
+    participant_info_["readjustment"] = readjustment
     participant_info_["seed_order"] = STIMULUS["seeds"]
     participant_info_["correlations"] = correlations
     participant_info_["reward"] = reward
