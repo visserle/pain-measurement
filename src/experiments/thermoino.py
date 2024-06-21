@@ -88,7 +88,7 @@ class Thermoino:
 
     The class provides methods to initialize the device and set target temperatures.
 
-    Note that MMS shuts down, when stimulating > 50°C for over 5 s or > 49°C for over 10 s.
+    Note that MMS shuts down, when stimulating > 50 °C for over 5 s or > 49 °C for over 10 s.
 
     Attributes
     ----------
@@ -148,7 +148,7 @@ class Thermoino:
     thermoino.trigger()
     time_to_ramp_up, _ = thermoino.set_temp(42)
     thermoino.sleep(duration=time_to_ramp_up)
-    # 4 s plateau of 42°C
+    # 4 s plateau of 42 °C
     thermoino.sleep(4)
     # always update the temperature in the thermoino object
     time_to_ramp_down, _ = thermoino.set_temp(28)
@@ -156,8 +156,6 @@ class Thermoino:
     thermoino.close()
     ```
     """
-
-    BAUD_RATE = 115200
 
     def __init__(
         self,
@@ -214,12 +212,17 @@ class Thermoino:
         Establish a serial connection to the device and waits for it (1 s) to boot up.
         """
 
-        ports = serial.tools.list_ports.comports()
+        ports = sorted(serial.tools.list_ports.comports())
+        ports = [port for port in ports if "COM" in port.device]  # only COM ports
         for port in ports:
-            self.ser = serial.Serial(port.device, self.BAUD_RATE)
-            time.sleep(1)
-            # dirty hack to get the right port
-            response = self._send_command("UNKNOWN_CMD_XYZ\n")
+            try:
+                self.ser = serial.Serial(port.device, baudrate=115200, timeout=2)
+                time.sleep(1)
+                # dirty hack to get the right port
+                response = self._send_command("UNKNOWN_CMD_XYZ\n")
+            except serial.SerialException:
+                self.ser.close()
+                continue
             # ERR_CMD_NOT_FOUND means that the thermoino is there
             if response == ErrorCodes(-2).name:
                 logger.debug(f"Connection established @ {port.device}.")
@@ -227,10 +230,11 @@ class Thermoino:
             else:
                 self.ser.close()
                 logger.debug(f"No thermoino found on {port.device}.")
+
         logger.error(
             "Automatic connection failed. Please check if Thermoino is available."
         )
-        raise serial.SerialException("Thermoino connection failed.")
+        raise serial.SerialException("Automatic Thermoino connection failed.")
 
     def _connect_manual(self):
         """
@@ -343,14 +347,16 @@ class Thermoino:
             self.temp = temp_target
             success = True
             logger.info(
-                "Change temperature to %s°C in %s s: %s.",
+                "Change temperature to %s °C in %s s: %s.",
                 temp_target,
                 round(duration, 2),
                 output,
             )
         elif output in ErrorCodes.__members__:
             success = False
-            logger.error("Setting temperature to %s°C failed: %s.", temp_target, output)
+            logger.error(
+                "Setting temperature to %s °C failed: %s.", temp_target, output
+            )
         return (duration, success)
 
     def sleep(self, duration: float) -> None:
@@ -488,7 +494,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     thermoino.trigger()
     time_to_ramp_up, _ = thermoino.set_temp(42)
     thermoino.sleep(duration=time_to_ramp_up)
-    # 4 s plateau of 42°C
+    # 4 s plateau of 42 °C
     thermoino.sleep(4)
     time_to_ramp_down, _ = thermoino.set_temp(28)
     thermoino.sleep(time_to_ramp_down)
@@ -701,7 +707,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
             self.temp = self.temp_course_end
             logger.info("Complex temperature course (CTC) started.")
             logger.debug("This will take %s s to finish.", round(exec_duration_s, 2))
-            logger.debug("Temperature after execution: %s°C.", round(self.temp, 2))
+            logger.debug("Temperature after execution: %s °C.", round(self.temp, 2))
         elif output in ErrorCodes.__members__:
             logger.error(
                 "Executing complex temperature course (CTC) failed: %s.", output
@@ -750,7 +756,7 @@ def main():
 
     time_to_ramp_up, _ = thermoino.set_temp(42.3)
     thermoino.sleep(duration=time_to_ramp_up)
-    # 4 s plateau of 42°C
+    # 4 s plateau of 42 °C
     thermoino.sleep(4)
     # always update the temperature in the thermoino object
     time_to_ramp_down, _ = thermoino.set_temp(28)
