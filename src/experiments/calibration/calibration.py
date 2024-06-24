@@ -117,7 +117,6 @@ thermoino = Thermoino(
     mms_baseline=THERMOINO["mms_baseline"],
     mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
     dummy=args.dummy_thermoino,
-    port="COM5",
 )
 thermoino.connect()
 
@@ -287,8 +286,10 @@ def main():
     # Check temperature range
     temperature_range = round(participant_info["vas70"] - participant_info["vas0"], 1)
     logging.info(
-        f"VAS 70: {participant_info['vas70']}, VAS 0: {participant_info['vas0']}, "
-        f"Range: {temperature_range}"
+        f"Calibrated values: VAS 70 = {participant_info['vas70']}, "
+        f"VAS 0 = {participant_info['vas0']}, "
+        f"baseline = {participant_info['temperature_baseline']}, "
+        f"range = {temperature_range}."
     )
 
     # Save participant data

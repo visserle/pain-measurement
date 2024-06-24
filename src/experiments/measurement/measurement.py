@@ -141,7 +141,6 @@ thermoino = ThermoinoComplexTimeCourses(
     mms_baseline=THERMOINO["mms_baseline"],
     mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
     dummy=args.dummy_thermoino,
-    port="COM5",
 )
 thermoino.connect()
 
@@ -177,7 +176,7 @@ if readjustment:
     )
     logging.info(
         f"New values: VAS 70 = {participant_info['vas70']} °C, "
-        f"VAS 0 = {participant_info['vas0']} °C., "
+        f"VAS 0 = {participant_info['vas0']} °C, "
         f"baseline = {participant_info['temperature_baseline']} °C, "
         f"range = {participant_info['temperature_range']} °C."
     )
