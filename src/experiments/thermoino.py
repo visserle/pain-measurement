@@ -589,9 +589,15 @@ class ThermoinoComplexTimeCourses(Thermoino):
             .to_numpy()
             .flatten()
         )
-        self.temp_course_start = round(
-            temp_course_resampled[0], 6
-        )  # to avoid windows floating point weirdness for cos function
+        if len(temp_course_resampled) > 2000:  # CTC_MAX_N (number of bins)
+            msg = (
+                "The resampled temperature course is longer than the maximum allowed number of bins (2000). "
+                "Please adjust the bin size or the temperature course."
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+
+        self.temp_course_start = round(temp_course_resampled[0], 6)  # round to 6 digits
         self.temp_course_end = temp_course_resampled[-1]
         temp_course_resampled_diff = np.diff(temp_course_resampled)
         if np.any(np.abs(temp_course_resampled_diff) > self.mms_rate_of_rise):
