@@ -88,14 +88,13 @@ class Thermoino:
 
     The class provides methods to initialize the device and set target temperatures.
 
-    Note that MMS shuts down, when stimulating > 50 °C for over 5 s or > 49 °C for over 10 s.
+    Note: MMS shuts down, when stimulating:
+        - > 50 °C for over 5 s or
+        - > 49 °C for over 10 s
+        - > 47 °C for over 60 s
 
     Attributes
     ----------
-    PORT : `str`
-        The serial port that the Thermoino is connected to.
-    BAUD_RATE : `int`
-        The baud rate for the serial communication. Default is 115200.
     ser : `serial.Serial or DummySerial`
         Serial object for communication with the Thermoino.
     temp : `int`
@@ -138,9 +137,9 @@ class Thermoino:
 
     # Set up thermoino
     thermoino = Thermoino(
-        port=port,
         mms_baseline=28,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
+        port=None,  # do not specify the port if you want to connect automatically
     )
 
     # Use thermoino to set temperatures:
@@ -156,6 +155,9 @@ class Thermoino:
     thermoino.close()
     ```
     """
+
+    BAUDRATE = 115200
+    TIMEOUT = 2
 
     def __init__(
         self,
@@ -195,7 +197,10 @@ class Thermoino:
         if self.dummy:
             logger.debug("Running in dummy mode.")
 
-    def connect(self):
+    def connect(self) -> None:
+        """
+        Establish a serial connection to the Thermoino device.
+        """
         if self.dummy is True:
             self.ser = DummySerial()
             return
@@ -206,22 +211,18 @@ class Thermoino:
             self._connect_manual()
 
     def _connect_auto(self):
-        """
-        Automatically connect to the Thermoino device.
-
-        Establish a serial connection to the device and waits for it (1 s) to boot up.
-        """
-
         ports = sorted(serial.tools.list_ports.comports())
         ports = [port for port in ports if "COM" in port.device]  # only COM ports
         for port in ports:
             try:
-                self.ser = serial.Serial(port.device, baudrate=115200, timeout=2)
+                self.ser = serial.Serial(
+                    port.device, self.BAUDRATE, timeout=self.TIMEOUT
+                )
                 time.sleep(1)
                 # dirty hack to get the right port
-                response = self._send_command("UNKNOWN_CMD_XYZ\n")
+                response = self._send_command("XYZ_UNKNOWN_CMD\n")
             except serial.SerialException:
-                self.ser.close()
+                logger.debug(f"No Thermoino found on {port.device}.")
                 continue
             # ERR_CMD_NOT_FOUND means that the thermoino is there
             if response == ErrorCodes(-2).name:
@@ -237,28 +238,21 @@ class Thermoino:
         raise serial.SerialException("Automatic Thermoino connection failed.")
 
     def _connect_manual(self):
-        """
-        Manually connect to the Thermoino device.
-
-        Establish a serial connection to the device and waits for it (1 s) to boot up.
-        """
         try:
-            self.ser = serial.Serial(self.port, self.BAUD_RATE)
+            self.ser = serial.Serial(self.port, self.BAUDRATE, timeout=self.TIMEOUT)
             logger.debug(f"Connection established @ {self.port}.")
             time.sleep(1)
-        except serial.SerialException:
-            logger.error(
-                f"Manual connection failed @ {self.port}. "
-                f"Available serial ports are:\n\n{list_com_ports()}\n\n"
-            )
+        except serial.SerialException as e:
+            logger.error(f"Manual connection failed @ {self.port}. Error: {e}.")
+            logger.error(f"Available serial ports are:\n{list_com_ports()}\n")
             raise serial.SerialException(f"Thermoino connection failed @ {self.port}.")
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the serial connection.
 
-        This method should be called manually to close the connection when it's no
-        longer needed.
+        This method should be called at the end of the experiment to close the
+        connection to the Thermoino.
         """
         self.ser.close()
         logger.debug("Connection closed.")
@@ -281,8 +275,8 @@ class Thermoino:
         return None
 
     def _handle_response(self, decoded_response):
-        """T
-        ake the decoded response from _send_command, determine if it's an error or
+        """
+        Take the decoded response from _send_command, determine if it's an error or
         success code based on whether it's less than 0, and convert it to the
         corresponding enum value.
         """
@@ -316,7 +310,7 @@ class Thermoino:
         logger.info("Diagnostic information: %s.", output)
         return output
 
-    def trigger(self):
+    def trigger(self) -> None:
         """Trigger MMS to get ready for action."""
         output = self._send_command("START\n")
         if output in OkCodes.__members__:
@@ -521,7 +515,10 @@ class ThermoinoComplexTimeCourses(Thermoino):
         self.temp_course_end = None
         self.ctc = None
 
-    def init_ctc(self, bin_size_ms: int):
+    def init_ctc(
+        self,
+        bin_size_ms: int,
+    ) -> None:
         """
         Initialize a complex temperature course (CTC) on the Thermoino device.
 
@@ -573,9 +570,13 @@ class ThermoinoComplexTimeCourses(Thermoino):
         `ctc` : `numpy.array`
             The created CTC.
         """
+        if self.bin_size_ms is None:
+            msg = "Please initialize the complex temperature course (CTC) first."
+            logger.error(msg)
+            raise ValueError(msg)
         self.temp_course_duration = temp_course.shape[0] / sample_rate
         # Resample the temperature course to the bin size using pandas
-        # (reliable way to resample time series data)
+        # (most reliable way to resample time series data)
         temp_course_resampled = (
             pd.DataFrame(
                 {"temp": temp_course},
@@ -588,9 +589,19 @@ class ThermoinoComplexTimeCourses(Thermoino):
             .to_numpy()
             .flatten()
         )
-        self.temp_course_start = temp_course_resampled[0]
+        self.temp_course_start = round(
+            temp_course_resampled[0], 6
+        )  # to avoid windows floating point weirdness for cos function
         self.temp_course_end = temp_course_resampled[-1]
         temp_course_resampled_diff = np.diff(temp_course_resampled)
+        if np.any(np.abs(temp_course_resampled_diff) > self.mms_rate_of_rise):
+            msg = (
+                "Temperature change in the temperature course is larger than the rate "
+                "of rise. Please adjust the rate of rise or the temperature course."
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+
         mms_rate_of_rise_ms = self.mms_rate_of_rise / 1e3
         # scale to mms_rate_of_rise (in milliseconds)
         temp_course_resampled_diff_binned = (
@@ -607,7 +618,10 @@ class ThermoinoComplexTimeCourses(Thermoino):
             self.bin_size_ms,
         )
 
-    def load_ctc(self, debug: bool = False) -> None:
+    def load_ctc(
+        self,
+        debug: bool = False,
+    ) -> None:
         """
         Load the created CTC into the Thermoino device by sending single bins in a
         for-loop to the Thermoino.
@@ -646,7 +660,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     def query_ctc(self, queryLvl, statAbort):
         """
         Query information about the complex temperature course (CTC) on the Thermoino
-        device. Note: not tested yet.
+        device. NOTE: not tested / implemented yet.
 
         This method sends a 'QUERYCTC' command to the device.
         Depending on the query level (`queryLvl`), different types of information are
@@ -680,7 +694,6 @@ class ThermoinoComplexTimeCourses(Thermoino):
         logger.info(
             "Preparing the starting temperature of the complex temperature course (CTC)."  # noqa: E501
         )
-        # rounded numbers look better in the log
         prep_duration, success = self.set_temp(self.temp_course_start)
         if not success:
             logger.error("Preparing complex temperature course (CTC) failed.")
@@ -692,7 +705,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
 
         Returns the duration in s of the CTC.
         """
-        if self.temp != self.temp_course_start:
+        if not np.isclose(self.temp, self.temp_course_start):
             msg = (
                 "Temperature is not set at the starting temperature of the "
                 "temperature course. Please run prep_ctc first."
@@ -753,11 +766,10 @@ def main():
     # Use thermoino to set temperatures:
     thermoino.connect()
     thermoino.trigger()
-
-    time_to_ramp_up, _ = thermoino.set_temp(42.3)
+    time_to_ramp_up, _ = thermoino.set_temp(48.5)
     thermoino.sleep(duration=time_to_ramp_up)
-    # 4 s plateau of 42 °C
-    thermoino.sleep(4)
+    # plateau
+    thermoino.sleep(6)
     # always update the temperature in the thermoino object
     time_to_ramp_down, _ = thermoino.set_temp(28)
     thermoino.sleep(time_to_ramp_down)
