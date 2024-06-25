@@ -75,6 +75,7 @@ parser.add_argument(
 parser.add_argument(
     "-w", "--windowed", action="store_true", help="Run in windowed mode"
 )
+parser.add_argument("-m", "--mute", action="store_true", help="Mute the audio output.")
 parser.add_argument(
     "-ds", "--dummy_stimulus", action="store_true", help="Use dummy stimulus"
 )
@@ -242,12 +243,12 @@ def main():
     # Introduction
     for text, audio in zip(SCRIPT[s := "welcome"].values(), AUDIO[s].values()):
         text.present()
-        audio.play()
+        audio.play(maxtime=args.mute)
         exp.keyboard.wait(K_SPACE)
 
     # Instruction
     for text, audio in zip(SCRIPT[s := "instruction"].values(), AUDIO[s].values()):
-        audio.play()
+        audio.play(maxtime=args.mute)
         exp.keyboard.wait(
             K_SPACE,
             callback_function=lambda text=text: vas_slider.rate(text),
@@ -256,7 +257,7 @@ def main():
     # Ready
     for text, audio in zip(SCRIPT[s := "ready"].values(), AUDIO[s].values()):
         text.present()
-        audio.play()
+        audio.play(maxtime=args.mute)
         exp.keyboard.wait(K_SPACE)
 
     # Trial loop
@@ -338,7 +339,7 @@ def main():
             f"Next, use skin area {SKIN_AREAS[(trial + 1) % len(SKIN_AREAS)]}."
         )
         SCRIPT["next_trial"].present()
-        AUDIO["next_trial"].play()
+        AUDIO["next_trial"].play(maxtime=args.mute)
         exp.keyboard.wait(K_SPACE)
         # Show halfway message
         if trial == 5:  # after 6th trial
@@ -357,7 +358,7 @@ def main():
 
     # End of Experiment
     SCRIPT["bye"].present()
-    AUDIO["bye"].play()
+    AUDIO["bye"].play(maxtime=args.mute)
     exp.clock.wait_seconds(7)
 
     control.end()

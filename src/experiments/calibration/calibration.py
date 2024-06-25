@@ -62,6 +62,7 @@ parser.add_argument(
 parser.add_argument(
     "-w", "--windowed", action="store_true", help="Run in windowed mode."
 )
+parser.add_argument("-m", "--mute", action="store_true", help="Mute the audio output.")
 parser.add_argument(
     "-ds", "--dummy_stimulus", action="store_true", help="Use dummy stimulus."
 )
@@ -199,7 +200,7 @@ def main():
     # Introduction
     for text, audio in zip(SCRIPT[s := "welcome"].values(), AUDIO[s].values()):
         text.present()
-        audio.play()
+        audio.play(maxtime=args.mute)
         exp.keyboard.wait(K_SPACE)
 
     # Pre-exposure Trials
@@ -220,7 +221,7 @@ def main():
 
     # Pre-exposure Feedback
     SCRIPT["question_preexposure"].present()
-    AUDIO["question_preexposure"].play()
+    AUDIO["question_preexposure"].play(maxtime=args.mute)
     found, _ = exp.keyboard.wait(keys=[K_y, K_n])
     if found == K_y:
         participant_info["preexposure_painful"] = True
@@ -246,11 +247,11 @@ def main():
             else:
                 vas_pictures["marked"].present(clear=True, update=False)
                 text.present(clear=False, update=True)
-                audio.play()
+                audio.play(maxtime=args.mute)
                 exp.keyboard.wait(K_SPACE)
             continue
         text.present()
-        audio.play()
+        audio.play(maxtime=args.mute)
         exp.keyboard.wait(K_SPACE)
 
     estimator_vas70 = BayesianEstimatorVAS(
@@ -264,13 +265,13 @@ def main():
     run_estimation_trials(estimator=estimator_vas70)
     participant_info["vas70"] = estimator_vas70.get_estimate()
     SCRIPT["excellent"].present()  # say something nice to the participant
-    AUDIO["excellent"].play()
+    AUDIO["excellent"].play(maxtime=args.mute)
     exp.clock.wait_seconds(1.5)
 
     # Pain threshold (VAS 0) estimation
     for (key, text), audio in zip(SCRIPT[s := "info_vas0"].items(), AUDIO[s].values()):
         text.present()
-        audio.play()
+        audio.play(maxtime=args.mute)
         exp.keyboard.wait(K_SPACE)
     estimator_vas0 = BayesianEstimatorVAS(
         vas_value=0,
@@ -307,7 +308,7 @@ def main():
 
     # End of Experiment
     SCRIPT["bye"].present()
-    AUDIO["bye"].play()
+    AUDIO["bye"].play(maxtime=args.mute)
     exp.clock.wait_seconds(5)
 
     control.end()
