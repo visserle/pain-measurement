@@ -94,6 +94,8 @@ if args.debug:
 if args.windowed:
     logging.debug("Running in windowed mode.")
     control.defaults.window_size = (860, 600)
+if args.mute:
+    logging.debug("Muting the audio output.")
 if args.dummy_stimulus:
     logging.debug("Using dummy stimulus.")
     STIMULUS["iti_duration"] = 0.2
@@ -284,22 +286,21 @@ def main():
     run_estimation_trials(estimator=estimator_vas0)
     participant_info["vas0"] = estimator_vas0.get_estimate()
 
-    # Check temperature range
-    temperature_range = round(participant_info["vas70"] - participant_info["vas0"], 1)
-    logging.info(
-        f"Calibrated values: VAS 70 = {participant_info['vas70']}, "
-        f"VAS 0 = {participant_info['vas0']}, "
-        f"baseline = {participant_info['temperature_baseline']}, "
-        f"range = {temperature_range}."
-    )
-
     # Save participant data
     participant_info["temperature_baseline"] = round(
         (participant_info["vas0"] + participant_info["vas70"]) / 2, 1
     )
-    participant_info["temperature_range"] = temperature_range
+    participant_info["temperature_range"] = round(
+        participant_info["vas70"] - participant_info["vas0"], 1
+    )
     participant_info["vas70_temps"] = estimator_vas70.temps
     participant_info["vas0_temps"] = estimator_vas0.temps
+    logging.info(
+        f"Calibrated values: VAS 70 = {participant_info['vas70']}, "
+        f"VAS 0 = {participant_info['vas0']}, "
+        f"baseline = {participant_info['temperature_baseline']}, "
+        f"range = {participant_info['temperature_range']}."
+    )
     add_participant_info(
         participant_info, CALIBRATION_RESULTS
     ) if not args.debug else None
