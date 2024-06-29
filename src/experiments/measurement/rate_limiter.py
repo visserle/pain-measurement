@@ -2,13 +2,12 @@ class RateLimiter:
     """
     Rate limiter to limit the number of operations per second.
 
-    With an optional interval-based limiting feature to enforce operation execution at
-    precise, predefined intervals. This feature allows for more granular control over
-    the timing of operations, making it ideal for scenarios where it's crucial to
-    maintain a consistent rate of operation execution over time. When enabled, this mode
-    ensures operations are initiated only at specific, regular intervals (e.g., every
-    100 ms), as opposed to simply limiting the number of operations per second without
-    regard to their temporal distribution.
+    Initializes with a specified rate and an optional interval-based limiting feature,
+    to enforce operation execution at precise, predefined intervals.
+
+    Parameters:
+    - rate (int): allowed number of operations per second
+    - use_intervals (bool, optional): enables interval-based limiting (default: False)
     """
 
     def __init__(
@@ -20,19 +19,19 @@ class RateLimiter:
         Initialize the rate limiter with the specified rate and interval-based limiting
         option.
 
-        - rate is the allowed number of operations per second.
-        - use_intervals is a flag to enable interval-based limiting.
+        Parameters:
+        - rate (int): allowed number of operations per second
+        - use_intervals (bool, optional): enables interval-based limiting
+            (default: False)
         """
-        self.rate = rate  # Allowed operations per second
-        self.use_intervals = use_intervals  # Whether to use interval-based limiting
+        self.rate = rate
+        self.use_intervals = use_intervals
         if use_intervals:
             # Interval in milliseconds for allowed operations
             self.interval = 1000 / rate
-            self.next_allowed_time = 0  # Track the next allowed time directly
+            self.next_allowed_time = 0
         else:
-            self.last_checked = (
-                None  # Track the last checked time for simple rate limiting
-            )
+            self.last_checked = None
 
     def reset(self) -> None:
         """
