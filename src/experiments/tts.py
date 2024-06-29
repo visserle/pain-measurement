@@ -11,7 +11,7 @@ from src.experiments.utils import load_script
 def text_to_speech(
     text: str,
     output_path: str,
-    model: str,
+    model: str = "de-DE-Wavenet-B",
 ) -> None:
     """
     Generate and save an audio file from the given text.
@@ -24,8 +24,8 @@ def text_to_speech(
 
     # Build the voice request
     voice = texttospeech.VoiceSelectionParams(
-        language_code="de-DE",
-        name="de-DE-Wavenet-B",
+        language_code=model[:5],
+        name=model,
     )
 
     # Select the type of audio file
@@ -78,7 +78,7 @@ def script_to_speech(
                 else Path(audio_dir) / f"{key}.wav"
             )
             audio_path.parent.mkdir(parents=True, exist_ok=True)
-            text_to_speech(value, audio_path, model="google")
+            text_to_speech(value, audio_path)
 
 
 def main_tts():
