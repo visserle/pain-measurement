@@ -31,13 +31,25 @@ welcome:
 
 
 
+    Im ersten Teil der Kalibrierung müssen Sie nichts weiter tun, als auf darauf zu achten, was Sie fühlen.
 
-    Als Erstes wärmen wir Ihre Hautstelle auf.
-
-    Hierbei müssen Sie nichts weiter tun.
+    Wir starten mit dem Aufwärmen Ihrer Hautstelle.
 
 
     (Leertaste drücken, um fortzufahren)
+post_warmup: |-
+
+
+
+
+
+
+  Nachdem wir Ihre Hautstelle aufgewärmt haben, folgen als Nächstes drei Reize, die Sie eventuell als unangenehm oder leicht schmerzhaft empfinden werden.
+
+  Hierbei müssen Sie nichts weiter tun, als auf Ihre Empfindungen zu achten.
+
+
+  (Leertaste drücken, um fortzufahren)
 question_preexposure: |-
 
 
@@ -48,9 +60,71 @@ question_preexposure: |-
 
 
 
-  War einer dieser Reize für Sie schmerzhaft?
+  War einer dieser Reize für Sie unangenehm oder leicht schmerzhaft?
 
   (Drücken Sie "y" für Ja oder "n" für Nein.)
+info_vas0:
+  1: |-
+
+
+
+
+    Als Nächstes möchten wir genau herausfinden, ab wann Sie leichte und starke Schmerzen verspüren. 
+    
+    Die Kalibrierung erfolgt dabei in mehreren Durchgängen. Nach jedem Durchgang fragen wir Sie nach einem kurzen Feedback und passen die Intensität des Reizes graduell an Ihre Empfindung an.
+
+
+    (Leertaste drücken, um fortzufahren)
+  2: |-
+
+
+
+
+
+    Wir beginnen mit der Kalibrierung leichter Schmerzen.
+
+    Wichtig dabei: Erste leichte Schmerzen erkennen Sie daran, dass Sie zusätzlich zu der Hitzeempfindung eine "neue Qualität" wie z. B. ein leichtes Stechen oder Brennen wahrnehmen.
+
+
+    (Leertaste drücken, um fortzufahren)
+  3: |-
+
+
+
+
+
+
+    Wenn Sie sich nach einem Durchgang nicht sicher waren, ob Sie erste leichte Schmerzen gespürt haben oder nicht, können Sie sich gerne an die Versuchsleitung wenden.
+
+    Auf der nächsten Seite startet die Schmerz-Kalibrierung.
+
+
+    (Leertaste drücken, um fortzufahren)
+question_vas0: |-
+
+
+
+
+
+
+
+
+
+  War dieser Reiz für Sie schmerzhaft?
+
+  (y/n)
+excellent: |-
+
+
+
+
+
+
+
+
+
+
+  Ausgezeichnet!
 info_vas70:
   1: |-
 
@@ -58,9 +132,11 @@ info_vas70:
 
 
 
-    Nachdem wir Ihre Hautstelle aufgewärmt haben, möchten wir nun bestimmen, ab wann Sie starke Schmerzen verspüren.
 
-    Dazu orientieren wir uns an einer Schmerz-Skala von 1 bis 10, die Sie auf der nächsten Seite sehen.
+
+    Als Nächstes möchten wir bestimmen, ab wann Sie starke Schmerzen verspüren.
+
+    Dazu orientieren wir uns an einer Schmerz-Skala, die Sie auf der nächsten Seite sehen.
 
 
     (Leertaste drücken, um fortzufahren)
@@ -101,6 +177,26 @@ info_vas70:
 
 
 
+    Der stärkste Schmerz entspricht dem Schmerz, den Sie - im Rahmen des psychologischen Experiments - maximal ertragen können.
+
+
+    (Leertaste drücken, um fortzufahren)
+  4_picture_marked: |-
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     Wir möchten herausfinden, ab wann Sie eine 7 von 10 (also starke bis sehr starke Schmerzen) verspüren.
 
 
@@ -110,23 +206,12 @@ info_vas70:
 
 
 
-    Da wir Ihre erlebten Schmerzen so genau wie möglich bestimmen möchten, bekommen Sie die Schmerzreize von ca. 8 Sekunden Dauer mehrfach zu spüren.
-
-    Nach jedem Durchgang fragen wir Sie nach einem kurzen Feedback und passen die Temperatur graduell an Ihre Schmerzempfindung an. Zu keinem Zeitpunkt ist Ihre Haut dabei durch Verbrennungen oder Ähnliches bedroht.
-
-
-    (Leertaste drücken, um fortzufahren)
-  5: |-
 
 
 
+    Als Nächstes startet die Kalibrierung starker Schmerzen. 
 
-
-
-
-    Als Nächstes startet die Schmerz-Kalibrierung.
-
-    Sollten Sie noch Fragen haben, richten Sie sich bitte jetzt an die Versuchsleitung.
+    Zu keinem Zeitpunkt ist Ihre Haut dabei durch Verbrennungen oder Ähnliches bedroht.
 
 
     (Leertaste drücken, um fortzufahren)
@@ -141,58 +226,6 @@ question_vas70: |-
 
 
   War dieser Reiz mindestens eine 7 von 10 (starker / sehr starker Schmerz)?
-
-  (y/n)
-excellent: |-
-
-
-
-
-
-
-
-
-
-
-  Ausgezeichnet!
-info_vas0:
-  1: |-
-
-
-
-
-
-
-    Als Nächstes möchten wir bestimmen, ab wann Sie erste, leichte Schmerzen verspüren.
-
-    Wichtig dabei: Erste Schmerzen erkennen Sie daran, dass Sie eine "neue Qualität" wie z. B. ein leichtes Stechen oder Brennen wahrnehmen.
-
-
-    (Leertaste drücken, um fortzufahren)
-  2: |-
-
-
-
-
-
-
-    Wenn Sie sich nach einem Durchgang nicht sicher waren, ob Sie erste leichte Schmerzen gespürt haben oder nicht, können Sie sich gerne an die Versuchsleitung wenden.
-
-    Auf der nächsten Seite startet die Schmerz-Kalibrierung.
-
-
-    (Leertaste drücken, um fortzufahren)
-question_vas0: |-
-
-
-
-
-
-
-
-
-
-  War dieser Reiz für Sie schmerzhaft?
 
   (y/n)
 bye: |-
@@ -231,16 +264,3 @@ answer_no: |-
 
 
   Ihre Antwort war: Nein.
-fail: |-
-
-
-
-
-
-
-
-
-
-  Die Kalibrierung konnte leider nicht abgeschlossen werden.
-
-  Bitte melden Sie sich bei der Versuchsleitung.

@@ -306,7 +306,7 @@ def main():
         imotions_event.send_stimulus_markers(seed)
         exp.clock.wait_seconds(
             stimulus.duration,
-            callback_function=lambda: get_data_points(temp_course=stimulus.y),
+            callback_function=lambda: get_data_points(stimulus),
         )
         imotions_event.send_stimulus_markers(seed)
         logging.info("Complex temperature course (CTC) finished.")
