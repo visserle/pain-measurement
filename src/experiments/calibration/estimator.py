@@ -81,7 +81,7 @@ class BayesianEstimatorVAS:
         likelihood_std : float
             Standard deviation of the likelihood function used in Bayesian updating.
 
-        reduction_factor : float, optional, default=0.9
+        reduction_factor : float, optional, default=0.85
             Factor to reduce the standard deviation of the likelihood function after
             each trial. This allows the model to become more confident in its estimates
             as more data is collected.
@@ -101,13 +101,14 @@ class BayesianEstimatorVAS:
         """
         self.vas_value = vas_value
         self.trials = trials
-        self.temp_start = temp_start
+        self.temp_start = round(temp_start, 1)
         self.temp_std = temp_std
         self.likelihood_std = likelihood_std
         self.reduction_factor = reduction_factor
 
         # Define the range of temperatures to consider
-        self.minumum, self.maximum = 38.0, 49.9
+        self.minumum = 38.0
+        self.maximum = 49.9
         num = int((self.maximum - self.minumum) / 0.1) + 1
         self.range_temp = np.linspace(self.minumum, self.maximum, num)
 
@@ -133,7 +134,7 @@ class BayesianEstimatorVAS:
     def current_temp(self, value):
         self._current_temp = value
         if self._current_temp >= self.MAX_TEMP:
-            logger.warning("Maximum temperature of %s °C reached.", self.MAX_TEMP)
+            logger.warning(f"Estimated temperature exceeds {self.MAX_TEMP} °C.")
 
     @property
     def steps(self) -> np.ndarray:
@@ -151,7 +152,8 @@ class BayesianEstimatorVAS:
         Parameters
         ----------
         response : str
-            Subject's response to the trial stimulus. Must be either "y" or "n".
+            Subject's response to the trial stimulus. Must be either "y" or "n" for
+            painful or non-painful, respectively.
 
         trial : int
             Trial number (0-indexed).
