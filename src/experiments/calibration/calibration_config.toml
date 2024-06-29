@@ -7,26 +7,26 @@ cross_size = [100, 100]
 cross_line_width = 20
 
 [stimulus]
-stimulus_duration = 8
-iti_duration = 8
-iti_max_jitter = 3
-iti_duration_short = 1
-preexposure_temperatures = [38.0, 39.0, 40.0]
-preexposure_correction = 2  # we subtract this from the vas70 estimate if preexposure was painful
+stimulus_duration = 8  # duration of the plateau
+# Note that plateaus of 10 s over 49 °C lead to automatic shutdown of thermode
+iti_duration = 12
+warmup_temperatures = [39.0, 40.0]
+preexposure_temperatures = [42.0, 43.0, 44.0]
+preexposure_correction = 2  # we add this to the vas0 prediction if preexposure was not painful
 
 [estimator]
-# VAS 70
-trials_vas70 = 7
-temp_start_vas70 = 46
-temp_std_vas70 = 2
-likelihood_std_vas70 = 0.8
-
 # VAS 0
-trials_vas0 = 5
-temp_start_vas0 = inf  # will be set after VAS 70 estimate
-temp_start_vas0_offset = 3  # vas0 = vas70 - offset
-temp_std_vas0 = 1
-likelihood_std_vas0 = 0.9
+trials_vas0 = 6
+temp_start_vas0 = 42.0
+temp_std_vas0 = 1.75
+likelihood_std_vas0 = 0.75
+
+# VAS 70
+trials_vas70 = 6
+temp_start_vas70 = inf # will be set after VAS 0 estimate
+temp_start_vas70_offset = 2.8  # vas70 = vas0 + offset
+temp_std_vas70 = 1
+likelihood_std_vas70 = 0.9
 
 [dummy_participant]
 id = 0
