@@ -40,32 +40,21 @@ from src.log_config import configure_logging
 # Paths
 EXP_NAME = "pain-measurement"
 EXP_DIR = Path("src/experiments/measurement")
-AUDIO_DIR = EXP_DIR / "audio"
-RESULTS_DIR = Path("data/experiments")
-DATA_DIR = Path("data/imotions")
-RUN_DIR = Path("runs/experiments/measurement")
-RUN_DIR.mkdir(parents=True, exist_ok=True)  # needed for expyriment
-LOG_DIR = RUN_DIR / "logs"
+MEASUREMENT_RESULTS = Path("data/experiments/measurement_results.csv")
+CALIBRATION_RESULTS = Path("data/experiments/calibration_results.csv")
+LOG_FILE = Path("runs/experiments/measurement/logs") / datetime.now().strftime(
+    "%Y_%m_%d__%H_%M_%S.log"
+)
 
-SCRIPT_FILE = EXP_DIR / "measurement_script.yaml"
-CONFIG_FILE = EXP_DIR / "measurement_config.toml"
-THERMOINO_CONFIG_FILE = EXP_DIR.parent / "thermoino_config.toml"
-MEASUREMENT_RESULTS = RESULTS_DIR / "measurement_results.csv"
-CALIBRATION_RESULTS = RESULTS_DIR / "calibration_results.csv"
-log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
 
-# Load configurations and script
-config = load_configuration(CONFIG_FILE)
-SCRIPT = load_script(SCRIPT_FILE)
-THERMOINO = load_configuration(THERMOINO_CONFIG_FILE)
-EXPERIMENT = config["experiment"]
-STIMULUS = config["stimulus"]
-IMOTIONS = config["imotions"]
-VAS = config["visual_analogue_scale"]
-
-# Create an argument parser
+# Parse arguments
 parser = argparse.ArgumentParser(description="Run the pain-measurement experiment.")
-parser.add_argument("-a", "--all", action="store_true", help="Use all flags")
+parser.add_argument(
+    "-a",
+    "--all",
+    action="store_true",
+    help="Use all flags",
+)
 parser.add_argument(
     "-d",
     "--debug",
@@ -73,26 +62,55 @@ parser.add_argument(
     help="Enable debug mode using dummy participants. Results will not be saved.",
 )
 parser.add_argument(
-    "-w", "--windowed", action="store_true", help="Run in windowed mode"
-)
-parser.add_argument("-m", "--mute", action="store_true", help="Mute the audio output.")
-parser.add_argument(
-    "-ds", "--dummy_stimulus", action="store_true", help="Use dummy stimulus"
-)
-parser.add_argument(
-    "-dt", "--dummy_thermoino", action="store_true", help="Use dummy Thermoino device"
+    "-w",
+    "--windowed",
+    action="store_true",
+    help="Run in windowed mode",
 )
 parser.add_argument(
-    "-di", "--dummy_imotions", action="store_true", help="Use dummy iMotions"
+    "-m",
+    "--muted",
+    action="store_true",
+    help="Mute the audio output.",
+)
+parser.add_argument(
+    "-ds",
+    "--dummy_stimulus",
+    action="store_true",
+    help="Use dummy stimulus",
+)
+parser.add_argument(
+    "-dt",
+    "--dummy_thermoino",
+    action="store_true",
+    help="Use dummy Thermoino device",
+)
+parser.add_argument(
+    "-di",
+    "--dummy_imotions",
+    action="store_true",
+    help="Use dummy iMotions",
 )
 args = parser.parse_args()
 
 # Configure logging
 configure_logging(
     stream_level=logging.INFO if not (args.debug or args.all) else logging.DEBUG,
-    file_path=log_file if not (args.debug or args.all) else None,
+    file_path=LOG_FILE,
 )
 
+# Load configurations and script
+config = load_configuration(EXP_DIR / "measurement_config.toml")
+script = load_script(EXP_DIR / "measurement_script.yaml")
+thermoino_config = load_configuration(EXP_DIR.parent / "thermoino_config.toml")
+# Experiment settings
+design.defaults.experiment_background_colour = C_DARKGREY
+stimuli.defaults.textline_text_colour = config["experiment"]["element_color"]
+stimuli.defaults.textbox_text_colour = config["experiment"]["element_color"]
+stimuli.defaults.rectangle_colour = config["experiment"]["element_color"]
+io.defaults.outputfile_time_stamp = True
+io.defaults.mouse_show_cursor = False
+control.defaults.initialize_delay = 3
 # Adjust settings
 if args.all:
     logging.debug("Using all flags for a dry run.")
@@ -107,16 +125,16 @@ if args.debug:
     )
     logging.debug(
         "Enabled debug mode with dummy participant data. "
-        "Results (logs and participant data) will not be saved."
+        "Participant data will not be saved."
     )
 if args.windowed:
     logging.debug("Run in windowed mode.")
     control.defaults.window_size = (860, 600)
-if args.mute:
+if args.muted:
     logging.debug("Muting the audio output.")
 if args.dummy_stimulus:
     logging.debug("Using dummy stimulus.")
-    STIMULUS.update(config["dummy_stimulus"])
+    config["stimulus"].update(config["dummy_stimulus"])
 if args.dummy_imotions:
     ask_for_eyetracker_calibration = (  # noqa: E731
         lambda: logging.debug(
@@ -128,24 +146,6 @@ if args.dummy_imotions:
         "Skip asking for measurement start because of dummy iMotions."
     )
 
-# Expyriment defaults
-design.defaults.experiment_background_colour = C_DARKGREY
-stimuli.defaults.textline_text_colour = EXPERIMENT["element_color"]
-stimuli.defaults.textbox_text_colour = EXPERIMENT["element_color"]
-stimuli.defaults.rectangle_colour = EXPERIMENT["element_color"]
-io.defaults.eventfile_directory = (LOG_DIR.parent / "events").as_posix()
-io.defaults.datafile_directory = (LOG_DIR.parent / "data").as_posix()
-io.defaults.outputfile_time_stamp = True
-io.defaults.mouse_show_cursor = False
-control.defaults.initialize_delay = 3
-
-# Initialize Thermoino
-thermoino = ThermoinoComplexTimeCourses(
-    mms_baseline=THERMOINO["mms_baseline"],
-    mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
-    dummy=args.dummy_thermoino,
-)
-thermoino.connect()
 
 # Load participant info and update stimulus config with calibration data
 participant_info = read_last_participant(CALIBRATION_RESULTS)
@@ -186,11 +186,35 @@ if readjustment:
 
 # determine order of skin areas based on participant ID
 id_is_odd = int(participant_info["id"]) % 2
-SKIN_AREAS = range(1, 7) if id_is_odd else range(6, 0, -1)
-logging.info(f"Start with skin area {SKIN_AREAS[0]}.")
-STIMULUS.update(participant_info)
+skin_areas = range(1, 7) if id_is_odd else range(6, 0, -1)
+logging.info(f"Start with skin area {skin_areas[0]}.")
+config["stimulus"].update(participant_info)
 # shuffle seeds for randomization
-random.shuffle(STIMULUS["seeds"])
+random.shuffle(config["stimulus"]["seeds"])
+
+# Experiment setup
+exp = design.Experiment(name=EXP_NAME)
+exp.set_log_level(0)
+control.initialize(exp)
+screen_size = exp.screen.size
+audio = copy.deepcopy(script)  # audio needs the keys from the script
+prepare_script(
+    script,
+    text_box_size=scale_2d_tuple(config["experiment"]["text_box_size"], screen_size),
+    text_size=scale_1d_value(config["experiment"]["text_size"], screen_size),
+)
+prepare_audio(audio, EXP_DIR / "audio")
+vas_slider = VisualAnalogueScale(experiment=exp, config=config["visual_analogue_scale"])
+
+
+# Initialize Thermoino
+thermoino = ThermoinoComplexTimeCourses(
+    mms_baseline=thermoino_config["mms_baseline"],
+    mms_rate_of_rise=thermoino_config["mms_rate_of_rise"],
+    dummy=args.dummy_thermoino,
+)
+thermoino.connect()
+
 
 # Initialize iMotions
 imotions_control = RemoteControliMotions(
@@ -198,39 +222,27 @@ imotions_control = RemoteControliMotions(
 )
 imotions_control.connect()
 imotions_event = EventRecievingiMotions(
-    sample_rate=IMOTIONS["sample_rate"], dummy=args.dummy_imotions
+    sample_rate=config["imotions"]["sample_rate"], dummy=args.dummy_imotions
 )
 imotions_event.connect()
 if not ask_for_eyetracker_calibration():
     raise SystemExit("Eye-tracker calibration denied.")
-imotions_control.start_study(mode=IMOTIONS["start_study_mode"])
+imotions_control.start_study(mode=config["imotions"]["start_study_mode"])
 ask_for_measurement_start()
 time.sleep(1)
 
-# Experiment setup
-exp = design.Experiment(name=EXP_NAME)
-control.initialize(exp)
-screen_size = exp.screen.size
-AUDIO = copy.deepcopy(SCRIPT)  # audio needs the keys from the script
-prepare_script(
-    SCRIPT,
-    text_box_size=scale_2d_tuple(EXPERIMENT["text_box_size"], screen_size),
-    text_size=scale_1d_value(EXPERIMENT["text_size"], screen_size),
-)
-prepare_audio(AUDIO, AUDIO_DIR)
-vas_slider = VisualAnalogueScale(experiment=exp, config=VAS)
 
-
-def get_data_points(temp_course) -> None:
+def get_data_points(stimulus: StimulusGenerator) -> None:
     """
     Get rating and temperature data points and send them to iMotions (run in callback).
     """
+    vas_slider.rate()  # slider has its own rate limiters (see VisualAnalogueScale)
     stopped_time = exp.clock.stopwatch_time
-    vas_slider.rate()
-    index = int((stopped_time / 1000) * STIMULUS["sample_rate"])
+    index = int((stopped_time / 1000) * config["stimulus"]["sample_rate"])
+    index = min(index, len(stimulus.y) - 1)  # prevent index out of bounds
     imotions_event.send_data_rate_limited(
         timestamp=stopped_time,
-        temperature=temp_course[index],
+        temperature=stimulus.y[index],
         rating=vas_slider.rating,
         debug=args.dummy_imotions,
     )
@@ -238,43 +250,43 @@ def get_data_points(temp_course) -> None:
 
 def main():
     # Start experiment
-    reward = 0.0
     control.start(skip_ready_screen=True, subject_id=participant_info["id"])
-    logging.info(f"Started measurement with seed order {STIMULUS['seeds']}.")
+    logging.info(f"Started measurement with seed order {config['stimulus']['seeds']}.")
 
     # Introduction
-    for text, audio in zip(SCRIPT[s := "welcome"].values(), AUDIO[s].values()):
+    for text, sound in zip(script[s := "welcome"].values(), audio[s].values()):
         text.present()
-        audio.play(maxtime=args.mute)
+        sound.play(maxtime=args.muted)
         exp.keyboard.wait(K_SPACE)
 
-    # Instruction
-    for text, audio in zip(SCRIPT[s := "instruction"].values(), AUDIO[s].values()):
-        audio.play(maxtime=args.mute)
+    # Instruction with VAS slider
+    for text, sound in zip(script[s := "instruction"].values(), audio[s].values()):
+        sound.play(maxtime=args.muted)
         exp.keyboard.wait(
             K_SPACE,
             callback_function=lambda text=text: vas_slider.rate(text),
         )
 
     # Ready
-    for text, audio in zip(SCRIPT[s := "ready"].values(), AUDIO[s].values()):
+    for text, sound in zip(script[s := "ready"].values(), audio[s].values()):
         text.present()
-        audio.play(maxtime=args.mute)
+        sound.play(maxtime=args.muted)
         exp.keyboard.wait(K_SPACE)
 
     # Trial loop
-    total_trials = len(STIMULUS["seeds"])
+    total_trials = len(config["stimulus"]["seeds"])
     correlations = []  # between temperature and rating
-    for trial, seed in enumerate(STIMULUS["seeds"]):
+    reward = 0.0
+    for trial, seed in enumerate(config["stimulus"]["seeds"]):
         logging.info(f"Started trial ({trial + 1}/{total_trials}) with seed {seed}.")
 
         # Start with a waiting screen for the initalization of the complex time course
-        SCRIPT["wait"].present()
-        stimulus = StimulusGenerator(config=STIMULUS, seed=seed)
+        script["wait"].present()
+        stimulus = StimulusGenerator(config=config["stimulus"], seed=seed)
         thermoino.flush_ctc()
-        thermoino.init_ctc(bin_size_ms=THERMOINO["bin_size_ms"])
+        thermoino.init_ctc(bin_size_ms=thermoino_config["bin_size_ms"])
         thermoino.create_ctc(
-            temp_course=stimulus.y, sample_rate=STIMULUS["sample_rate"]
+            temp_course=stimulus.y, sample_rate=config["stimulus"]["sample_rate"]
         )
         thermoino.load_ctc()
         thermoino.trigger()
@@ -293,24 +305,24 @@ def main():
         exp.clock.reset_stopwatch()  # needed for the callback
         imotions_event.send_stimulus_markers(seed)
         exp.clock.wait_seconds(
-            stimulus.duration - 0.001,  # prevent index out of range error
+            stimulus.duration,
             callback_function=lambda: get_data_points(temp_course=stimulus.y),
         )
         imotions_event.send_stimulus_markers(seed)
         logging.info("Complex temperature course (CTC) finished.")
 
-        # Add delay at the end of the complex time course (see Thermoino class)
+        # Add delay at the end of the complex time course (see thermoino.py)
         exp.clock.wait_seconds(1, callback_function=lambda: vas_slider.rate())
 
         # Ramp down temperature
-        time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
+        time_to_ramp_down, _ = thermoino.set_temp(thermoino_config["mms_baseline"])
         exp.clock.wait_seconds(
             time_to_ramp_down, callback_function=lambda: vas_slider.rate()
         )
         imotions_event.send_prep_markers()
         logging.info(f"Finished trial ({trial + 1}/{total_trials}) with seed {seed}.")
 
-        # Correlation check for reward
+        # Log and reward participant
         data_points = pd.DataFrame(imotions_event.data_points)
         data_points.set_index("timestamp", inplace=True)
         correlation = np.round(data_points.corr()["temperature"]["rating"], 2).item()
@@ -322,7 +334,7 @@ def main():
             f"mean = {int(data_points['rating'].mean())}, "
             f"std = {int(data_points['rating'].std())}."
         )
-        # log warning if full spectrum of VAS is not used
+        # warning if pain rating is not covering the full spectrum
         if not (
             (data_points["rating"]).min() == 0 and data_points["rating"].max() == 100
         ):
@@ -331,7 +343,7 @@ def main():
         if correlation > 0.6:
             reward += 0.5
             logging.info("Rewarding participant.")
-            SCRIPT["reward"].present()
+            script["reward"].present()
             exp.clock.wait_seconds(2.5)
         elif correlation < 0.3 or np.isnan(correlation):
             logging.error(
@@ -343,29 +355,25 @@ def main():
         if trial == total_trials - 1:
             break
         logging.info(
-            f"Next, use skin area {SKIN_AREAS[(trial + 1) % len(SKIN_AREAS)]}."
+            f"Next, use skin area {skin_areas[(trial + 1) % len(skin_areas)]}."
         )
-        SCRIPT["next_trial"].present()
-        AUDIO["next_trial"].play(maxtime=args.mute)
+        script["next_trial"].present()
+        audio["next_trial"].play(maxtime=args.muted)
         exp.keyboard.wait(K_SPACE)
-        # Show halfway message
-        if trial == 5:  # after 6th trial
-            SCRIPT["halfway"].present()
-            exp.keyboard.wait(K_SPACE)
-        SCRIPT["approve"].present()
+        script["approve"].present()
         exp.keyboard.wait(K_SPACE)
 
     # Save participant data
     participant_info_ = read_last_participant()  # reload to remove calibration data
     participant_info_["readjustment"] = readjustment
-    participant_info_["seed_order"] = STIMULUS["seeds"]
+    participant_info_["seed_order"] = config["stimulus"]["seeds"]
     participant_info_["correlations"] = correlations
     participant_info_["reward"] = reward
     add_participant_info(participant_info_, MEASUREMENT_RESULTS)
 
     # End of Experiment
-    SCRIPT["bye"].present()
-    AUDIO["bye"].play(maxtime=args.mute)
+    script["bye"].present()
+    audio["bye"].play(maxtime=args.muted)
     exp.clock.wait_seconds(7)
 
     control.end()
