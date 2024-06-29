@@ -1,7 +1,26 @@
-from expyriment import stimuli
+from expyriment import control, stimuli
 
 from src.experiments.measurement.rate_limiter import RateLimiter
 from src.experiments.utils import scale_1d_value, scale_2d_tuple
+
+control.defaults.opengl = 0
+
+CONSTANTS = {
+    "SCREEN_REFRESH_RATE": 60,  # for 60 Hz monitors
+    "SAMPLE_RATE": 1000,
+}
+DEFAULTS = {
+    "bar_length": 800,
+    "bar_thickness": 30,
+    "bar_position": (0, 0),
+    "slider_width": 10,
+    "slider_height": 90,
+    "slider_color": (194, 24, 7),
+    "slider_initial_position": (0, 0),
+    "label_text_size": 40,
+    "label_text_box_size": [250, 100],
+}
+DEFAULTS.update(CONSTANTS)
 
 
 class VisualAnalogueScale:
@@ -10,53 +29,48 @@ class VisualAnalogueScale:
         experiment: object,
         config: dict | None = None,
     ):
-        self.config = config if config is not None else {}
+        if config is None:
+            config = {}
+        self.config = {**DEFAULTS, **config}
+        # Check for invalid keys in config
+        invalid_keys = [key for key in config.keys() if key not in DEFAULTS.keys()]
+        if invalid_keys:
+            raise ValueError(f"Invalid key(s) in config: {', '.join(invalid_keys)}")
+
         self.experiment = experiment
-        self.screen_size = self.experiment.screen.size
-        self.rate_limiter = RateLimiter(config.get("sample_rate", 60))
+        self.screen_size = experiment.screen.size
+        self.rate_limiter = RateLimiter(self.config["SAMPLE_RATE"], use_intervals=True)
+        self.rate_limiter_screen = RateLimiter(self.config["SCREEN_REFRESH_RATE"])
 
         self._extract_config()
         self._create_slider_elements()
 
-        # Initialize the last x position and the rating
-        self.last_x_pos = -1
-        self.rating = 50
+        # Initialize the x position and the rating
+        self.x_pos = None
+        self.rating = None
 
     def _extract_config(self):
-        self.bar_length = scale_1d_value(
-            self.config.get("bar_length", 800), self.screen_size
-        )
-        self.bar_thickness = scale_1d_value(
-            self.config.get("bar_thickness", 30), self.screen_size
-        )
-        self.bar_position = scale_2d_tuple(
-            self.config.get("bar_position", (0, 0)), self.screen_size
-        )
+        ss = self.screen_size
+        self.bar_length = scale_1d_value(self.config["bar_length"], ss)
+        self.bar_thickness = scale_1d_value(self.config["bar_thickness"], ss)
+        self.bar_position = scale_2d_tuple(self.config["bar_position"], ss)
 
-        self.slider_width = scale_1d_value(
-            self.config.get("slider_width", 10), self.screen_size
-        )
-        self.slider_height = scale_1d_value(
-            self.config.get("slider_height", 90), self.screen_size
-        )
-        self.slider_color = self.config.get("slider_color", (194, 24, 7))
+        self.slider_width = scale_1d_value(self.config["slider_width"], ss)
+        self.slider_height = scale_1d_value(self.config["slider_height"], ss)
+        self.slider_color = self.config["slider_color"]
         self.slider_initial_position = scale_2d_tuple(
-            self.config.get("slider_initial_position", (0, self.bar_position[1])),
-            self.screen_size,
+            self.config["slider_initial_position"], ss
         )
         self.slider_min_x = -(self.bar_length / 2)
         self.slider_max_x = self.bar_length / 2
 
-        self.label_text_size = scale_1d_value(
-            self.config.get("label_text_size", 40), self.screen_size
-        )
+        self.label_text_size = scale_1d_value(self.config["label_text_size"], ss)
         self.label_text_box_size = scale_2d_tuple(
-            self.config.get("label_text_box_size", [250, 100]),
-            self.screen_size,
+            self.config["label_text_box_size"], ss
         )
         self.label_right_position = (
             self.slider_max_x,
-            self.bar_position[1] - scale_1d_value(110, self.screen_size),
+            self.bar_position[1] - scale_1d_value(110, ss),
         )
         self.label_left_position = (
             self.label_right_position[0] - self.bar_length,
@@ -109,30 +123,40 @@ class VisualAnalogueScale:
 
     def rate(
         self,
-        instruction_textbox: stimuli.TextBox = None,
-        timestamp: int = None,
+        instruction_textbox: stimuli.TextBox | None = None,
+        timestamp: int | None = None,
     ) -> None:
+        """
+        Rate the stimulus by moving the slider and present the stimuli composition.
+
+        Note that the optional instruction_textbox should be preloaded for performance
+        reasons.
+        """
         # Use the provided timestamp if given, otherwise, retrieve from experiment
         if timestamp is None:
             timestamp = self.experiment.clock.time
 
-        # Check if the rate limiter allows a new rating
+        # Rate the stimulus if allowed
         if self.rate_limiter.is_allowed(timestamp):
-            # Adjust slider position based on mouse x-coordinate within boundaries
-            current_x_pos = self.experiment.mouse.position[0]
-            slider_x = max(min(current_x_pos, self.slider_max_x), self.slider_min_x)
-            rating = round(
+            # Update the slider position and rating
+            self.x_pos = self.experiment.mouse.position[0]
+            self.slider_x = max(min(self.x_pos, self.slider_max_x), self.slider_min_x)
+            self.rating = round(
                 (
-                    (slider_x - self.slider_min_x)
+                    (self.slider_x - self.slider_min_x)
                     / (self.slider_max_x - self.slider_min_x)
                     * 100
                 ),
-                3,
+                3,  # round to 3 decimal places (= max precision)
             )
 
-            # Create a composition to show multiple elements simultaneously
+            # Uncomment to print the rating
+            # print(f"Rating: {self.rating}")
+
+        # Present the stimuli composition if allowed
+        if self.rate_limiter_screen.is_allowed(timestamp):
             composition = stimuli.BlankScreen()
-            self.slider.position = (slider_x, 0)
+            self.slider.position = (self.slider_x, 0)
             stimuli_list = [
                 self.bar,
                 self.bar_end_left,
@@ -141,19 +165,13 @@ class VisualAnalogueScale:
                 self.label_left,
                 self.label_right,
             ]
-
             # Add optional textbox if provided (OpenGL must be inhibited)
             if instruction_textbox:
                 stimuli_list.append(instruction_textbox)
-
             # Plot all stimuli
             for stimulus in stimuli_list:
                 stimulus.plot(composition)
             composition.present()
-
-            # Update position
-            self.last_x_pos = current_x_pos
-            self.rating = rating
 
 
 if __name__ == "__main__":
