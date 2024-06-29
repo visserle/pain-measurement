@@ -8,7 +8,7 @@ from src.experiments.measurement.stimulus_generator import StimulusGenerator
 
 def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
     """
-    Plot the stimulus data with shapes for the big decreasing intervals.
+    Plot the stimulus data with shapes for the major decreasing intervals.
     """
     time = np.array(range(len(stimulus.y))) / stimulus.sample_rate
 
@@ -31,8 +31,8 @@ def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
         y=stimulus.y,
     )
 
-    # Add shapes for the big increasing intervals
-    for interval in stimulus.big_decreasing_intervals:
+    # Add shapes for the major increasing intervals
+    for interval in stimulus.major_decreasing_intervals:
         start_time, end_time = (
             interval[0] / stimulus.sample_rate,
             interval[1] / stimulus.sample_rate,
