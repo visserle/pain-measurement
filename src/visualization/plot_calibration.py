@@ -13,8 +13,8 @@ def plot_trials(
     likelihoods = estimator.likelihoods
     posteriors = estimator.posteriors
     range_temperature = estimator.range_temp
-    min_temperature = estimator.min_temp
-    max_temperature = estimator.max_temp
+    min_temperature = estimator.minumum
+    max_temperature = estimator.maximum
     trials = estimator.trials
 
     if interactive:
