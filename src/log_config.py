@@ -10,9 +10,10 @@ def configure_logging(
     stream_level: int = logging.INFO,
     file_level: int = logging.DEBUG,
     file_path: Path | str | None = None,
-    ignore_libs: list[str] | None = None,
     stream: bool = True,
     stream_milliseconds: bool = False,
+    ignore_libs: list[str] | None = None,
+    warn_instead_of_ignore: bool = False,
 ) -> None:
     """
     Configures the root logger for console and file logging with the specified parameters.
@@ -21,9 +22,10 @@ def configure_logging(
     - stream_level: The logging level for the stream handler.
     - file_level: The logging level for the file handler.
     - file_path: The path to the log file (if None, file logging is disabled).
-    - ignore_libs: A list of library names to ignore in the logs.
     - stream: Whether to enable console logging (default is True).
     - stream_milliseconds: Whether to include milliseconds in the console log timestamps (default is False).
+    - ignore_libs: A list of library names to ignore in the logs.
+    - warn_instead_of_ignore: Whether to log a warning instead of ignoring logs from specified libraries (default is False).
 
     Example usage:
     >>> import logging
@@ -69,9 +71,13 @@ def configure_logging(
         return ignore_logs
 
     if ignore_libs:
-        ignore_filter = create_filter(ignore_libs)
-        for handler in handlers:
-            handler.addFilter(ignore_filter)
+        if warn_instead_of_ignore:
+            for lib in ignore_libs:
+                logging.getLogger(lib).setLevel(logging.WARNING)
+        else:
+            ignore_filter = create_filter(ignore_libs)
+            for handler in handlers:
+                handler.addFilter(ignore_filter)
 
     # Clear any previously added handlers from the root logger
     logging.getLogger().handlers = []
@@ -148,12 +154,31 @@ class ColoredFormatter(logging.Formatter):
 
 def main():
     """Example usage of the configure_logging function."""
-    configure_logging(stream_level=logging.DEBUG, file_level=10, file_path="debug.log")
+    configure_logging(
+        stream_level=logging.DEBUG,
+        file_level=10,
+        file_path="debug.log",
+    )
     logging.debug("This is a debug message.")
     logging.info("This is an info message.")
     logging.warning("This is a warning message.")
     logging.error("This is an error message.")
     logging.critical("This is a critical message.")
+
+    # More advanced usage with ignored libraries
+    configure_logging(
+        ignore_libs=["ignored"],
+    )
+    logger = logging.getLogger("ignored")
+    logger.warning("This is a warning message and should be ignored.")
+
+    configure_logging(
+        ignore_libs=["partially_ignored"],
+        warn_instead_of_ignore=True,
+    )
+    another_logger = logging.getLogger("partially_ignored")
+    another_logger.info("This is a info message and should be ignored.")
+    another_logger.error("This is a error message and should be logged.")
 
 
 if __name__ == "__main__":
