@@ -266,7 +266,9 @@ def _imotions_transformation(
             participant_data.datasets[data_config.name].df = participant_data.datasets[
                 data_config.name
             ].df.with_columns(
-                pl.lit(participant_data.id).alias("Participant").cast(pl.Int8)
+                pl.lit(participant_data.id)
+                .alias("Participant")
+                .cast(pl.Int16)  # TODO back to int8
             )
         logger.debug(
             "Participant %s datasets are now merged with trial information",
@@ -281,7 +283,7 @@ def main():
     list_of_data_configs = [IMOTIONS_LIST, RAW_LIST]
 
     for data_configs in list_of_data_configs:
-        for participant_config in PARTICIPANT_LIST[:2]:
+        for participant_config in PARTICIPANT_LIST:
             participant_data = load_participant_datasets(
                 participant_config, data_configs
             )
