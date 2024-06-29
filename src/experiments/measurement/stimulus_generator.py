@@ -1,23 +1,25 @@
 import numpy as np
 import scipy
 
-
-def cosine_half_cycle(
-    period: float,
-    amplitude: float,
-    y_intercept: float = 0,
-    t_start: float = 0,
-    sample_rate: int = 10,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Generate a half cycle cosine function (1 pi) with the given parameters."""
-    frequency = 1 / period
-    num_steps = period * sample_rate
-    assert num_steps == int(num_steps), "Number of steps must be an integer"
-    num_steps = int(num_steps)
-    t = np.linspace(0, period, num_steps)
-    y = amplitude * np.cos(np.pi * frequency * t) + y_intercept - amplitude
-    t += t_start
-    return t, y
+DEFAULTS = {
+    "sample_rate": 10,
+    "half_cycle_num": 10,
+    "period_range": [5, 20],
+    "amplitude_range": [0.3, 1.0],
+    "inflection_point_range": [-0.5, 0.3],
+    "shorten_expected_duration": 7,
+    "major_decreasing_half_cycle_num": 3,
+    "major_decreasing_half_cycle_period": 20,
+    "major_decreasing_half_cycle_amplitude": 0.925,
+    "major_decreasing_half_cycle_min_y_intercept": 0.9,
+    "plateau_num": 2,
+    "plateau_duration": 15,
+    "plateau_percentile_range": [25, 50],
+    "prolonged_minima_num": 2,
+    "prolonged_minima_duration": 5,
+    "temperature_baseline": 40,
+    "temperature_range": 3,
+}
 
 
 class StimulusGenerator:
@@ -34,12 +36,15 @@ class StimulusGenerator:
         debug: bool = False,
     ):
         # Initialize parameters
-        self.config = config if config is not None else {}
+        if config is None:
+            config = {}
+        self.config = {**DEFAULTS, **config}
+
         self.seed = seed if seed is not None else np.random.randint(100, 1000)
         self.debug = debug
         self.rng_numpy = np.random.default_rng(self.seed)
 
-        # Extract and validate the configuration
+        # Extract and validate configuration
         self._extract_config()
         self._validate_parameters()
         self._initialize_dynamic_attributes()
@@ -56,45 +61,40 @@ class StimulusGenerator:
 
     def _extract_config(self):
         """Extracts and sets the configuration parameters."""
-
         # Basic parameters
-        self.sample_rate = self.config.get("sample_rate", 10)
-        self.half_cycle_num = self.config.get("half_cycle_num", 10)
-        self.period_range = self.config.get("period_range", [5, 20])
-        self.amplitude_range = self.config.get("amplitude_range", [0.3, 1.0])
-        self.inflection_point_range = self.config.get(
-            "inflection_point_range", [-0.5, 0.3]
-        )
-        self.shorten_expected_duration = self.config.get("shorten_expected_duration", 7)
+        self.sample_rate = self.config["sample_rate"]
+        self.half_cycle_num = self.config["half_cycle_num"]
+        self.period_range = self.config["period_range"]
+        self.amplitude_range = self.config["amplitude_range"]
+        self.inflection_point_range = self.config["inflection_point_range"]
+        self.shorten_expected_duration = self.config["shorten_expected_duration"]
 
-        # major decreasing half cycles
-        self.major_decreasing_half_cycle_num = self.config.get(
-            "major_decreasing_half_cycle_num", 3
-        )
-        self.major_decreasing_half_cycle_period = self.config.get(
-            "major_decreasing_half_cycle_period", 20
-        )
-        self.major_decreasing_half_cycle_amplitude = self.config.get(
-            "major_decreasing_half_cycle_amplitude", 0.925
-        )  # * 2 = the full range of the half cycle
-        self.major_decreasing_half_cycle_min_y_intercept = self.config.get(
-            "major_decreasing_half_cycle_min_y_intercept", 0.9
-        )  # based on the curve without temperature calibration
+        # Major decreasing half cycles
+        self.major_decreasing_half_cycle_num = self.config[
+            "major_decreasing_half_cycle_num"
+        ]
+        self.major_decreasing_half_cycle_period = self.config[
+            "major_decreasing_half_cycle_period"
+        ]
+        self.major_decreasing_half_cycle_amplitude = self.config[
+            "major_decreasing_half_cycle_amplitude"
+        ]
+        self.major_decreasing_half_cycle_min_y_intercept = self.config[
+            "major_decreasing_half_cycle_min_y_intercept"
+        ]
 
         # Plateaus
-        self.plateau_num = self.config.get("plateau_num", 2)
-        self.plateau_duration = self.config.get("plateau_duration", 15)
-        self.plateau_percentile_range = self.config.get(
-            "plateau_percentile_range", [25, 50]
-        )
+        self.plateau_num = self.config["plateau_num"]
+        self.plateau_duration = self.config["plateau_duration"]
+        self.plateau_percentile_range = self.config["plateau_percentile_range"]
 
         # Prolonged minima
-        self.prolonged_minima_num = self.config.get("prolonged_minima_num", 2)
-        self.prolonged_minima_duration = self.config.get("prolonged_minima_duration", 5)
+        self.prolonged_minima_num = self.config["prolonged_minima_num"]
+        self.prolonged_minima_duration = self.config["prolonged_minima_duration"]
 
         # Temperature
-        self.temperature_baseline = float(self.config.get("temperature_baseline", 40))
-        self.temperature_range = float(self.config.get("temperature_range", 3))
+        self.temperature_baseline = self.config["temperature_baseline"]
+        self.temperature_range = self.config["temperature_range"]
 
     def _validate_parameters(self):
         """Validates the configuration parameters."""
@@ -429,6 +429,24 @@ class StimulusGenerator:
         # Append any remaining values after the last index
         y_new = np.concatenate((y_new, self.y[last_idx:]))
         return y_new
+
+
+def cosine_half_cycle(
+    period: float,
+    amplitude: float,
+    y_intercept: float = 0,
+    t_start: float = 0,
+    sample_rate: int = 10,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Generate a half cycle cosine function (1 pi) with the given parameters."""
+    frequency = 1 / period
+    num_steps = period * sample_rate
+    assert num_steps == int(num_steps), "Number of steps must be an integer"
+    num_steps = int(num_steps)
+    t = np.linspace(0, period, num_steps)
+    y = amplitude * np.cos(np.pi * frequency * t) + y_intercept - amplitude
+    t += t_start
+    return t, y
 
 
 if __name__ == "__main__":
