@@ -89,7 +89,6 @@ thermoino_config = load_configuration(EXP_DIR.parent / "thermoino_config.toml")
 design.defaults.experiment_background_colour = C_DARKGREY
 stimuli.defaults.textline_text_colour = config["experiment"]["element_color"]
 stimuli.defaults.textbox_text_colour = config["experiment"]["element_color"]
-io.defaults.outputfile_time_stamp = True
 io.defaults.mouse_show_cursor = False
 control.defaults.initialize_delay = 3
 # Adjust settings
@@ -153,7 +152,6 @@ for name, color in zip(
         colour=color,
     )
     cross[name].preload()
-# l
 vas_pictures = {}  # load VAS pictures, scale and move them up for a better fit
 for pic in ["unmarked", "marked"]:
     vas_pictures[pic] = stimuli.Picture(
