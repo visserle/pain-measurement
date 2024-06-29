@@ -1,4 +1,4 @@
 # Make sure that all MMS values are the same as in the specified MMS program
-mms_baseline = 28.0
+mms_baseline = 32.0
 mms_rate_of_rise = 10.0
 bin_size_ms = 500

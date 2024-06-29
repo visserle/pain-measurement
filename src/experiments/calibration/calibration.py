@@ -27,32 +27,22 @@ from src.experiments.utils import (
 )
 from src.log_config import configure_logging
 
-# Paths
-EXP_NAME = "pain-calibration"
+EXP_NAME = "calibration"
 EXP_DIR = Path("src/experiments/calibration")
-AUDIO_DIR = EXP_DIR / "audio"
-RESULTS_DIR = Path("data/experiments")
-RUN_DIR = Path("runs/experiments/calibration")
-RUN_DIR.mkdir(parents=True, exist_ok=True)  # needed for expyriment
-LOG_DIR = RUN_DIR / "logs"
+RESULTS_FILE = Path("data/experiments/calibration_results.csv")
+LOG_FILE = Path("runs/experiments/calibration") / datetime.now().strftime(
+    "%Y_%m_%d__%H_%M_%S.log"
+)
 
-SCRIPT_FILE = EXP_DIR / "calibration_script.yaml"
-CONFIG_FILE = EXP_DIR / "calibration_config.toml"
-THERMOINO_CONFIG_FILE = EXP_DIR.parent / "thermoino_config.toml"
-CALIBRATION_RESULTS = RESULTS_DIR / "calibration_results.csv"
-log_file = LOG_DIR / datetime.now().strftime("%Y_%m_%d__%H_%M_%S.log")
 
-# Load configurations and script
-config = load_configuration(CONFIG_FILE)
-SCRIPT = load_script(SCRIPT_FILE)
-EXPERIMENT = config["experiment"]
-ESTIMATOR = config["estimator"]
-STIMULUS = config["stimulus"]
-JITTER = random.randint(0, STIMULUS["iti_max_jitter"])
-
-# Create an argument parser
+# Parse arguments
 parser = argparse.ArgumentParser(description="Run the pain-calibration experiment.")
-parser.add_argument("-a", "--all", action="store_true", help="Use all flags")
+parser.add_argument(
+    "-a",
+    "--all",
+    action="store_true",
+    help="Use all flags for a dry run.",
+)
 parser.add_argument(
     "-d",
     "--debug",
@@ -60,23 +50,48 @@ parser.add_argument(
     help="Enable debug mode with dummy participant data. Results will not be saved.",
 )
 parser.add_argument(
-    "-w", "--windowed", action="store_true", help="Run in windowed mode."
+    "-w",
+    "--windowed",
+    action="store_true",
+    help="Run in windowed mode.",
 )
-parser.add_argument("-m", "--mute", action="store_true", help="Mute the audio output.")
 parser.add_argument(
-    "-ds", "--dummy_stimulus", action="store_true", help="Use dummy stimulus."
+    "-m",
+    "--muted",
+    action="store_true",
+    help="Mute the audio output.",
 )
 parser.add_argument(
-    "-dt", "--dummy_thermoino", action="store_true", help="Use dummy Thermoino device."
+    "-ds",
+    "--dummy_stimulus",
+    action="store_true",
+    help="Use dummy stimulus.",
+)
+parser.add_argument(
+    "-dt",
+    "--dummy_thermoino",
+    action="store_true",
+    help="Use dummy Thermoino device.",
 )
 args = parser.parse_args()
 
 # Configure logging
 configure_logging(
     stream_level=logging.INFO if not (args.debug or args.all) else logging.DEBUG,
-    file_path=log_file if not (args.debug or args.all) else None,
+    file_path=LOG_FILE,
 )
 
+# Load configurations and script
+config = load_configuration(EXP_DIR / "calibration_config.toml")
+script = load_script(EXP_DIR / "calibration_script.yaml")
+thermoino_config = load_configuration(EXP_DIR.parent / "thermoino_config.toml")
+# Expyriment defaults
+design.defaults.experiment_background_colour = C_DARKGREY
+stimuli.defaults.textline_text_colour = config["experiment"]["element_color"]
+stimuli.defaults.textbox_text_colour = config["experiment"]["element_color"]
+io.defaults.outputfile_time_stamp = True
+io.defaults.mouse_show_cursor = False
+control.defaults.initialize_delay = 3
 # Adjust settings
 if args.all:
     logging.debug("Using all flags for a dry run.")
@@ -84,6 +99,7 @@ if args.all:
         setattr(args, flag, True)
 if args.debug or args.windowed:
     control.set_develop_mode(True)
+    control.defaults.window_mode = False
     ask_for_calibration_start = lambda: logging.debug(  # noqa: E731
         "Skip asking for calibration start in debug mode."
     )
@@ -93,74 +109,52 @@ if args.debug:
     )
 if args.windowed:
     logging.debug("Running in windowed mode.")
+    control.defaults.window_mode = True
     control.defaults.window_size = (860, 600)
-if args.mute:
+if args.muted:
     logging.debug("Muting the audio output.")
 if args.dummy_stimulus:
     logging.debug("Using dummy stimulus.")
-    STIMULUS["iti_duration"] = 0.2
-    STIMULUS["stimulus_duration"] = 0.2
-    JITTER = 0
-    ESTIMATOR["trials_vas70"] = 2
-    ESTIMATOR["trials_vas0"] = 2
+    config["stimulus"]["iti_duration"] = 0.2
+    config["stimulus"]["stimulus_duration"] = 0.2
+    config["estimator"]["trials_vas70"] = 2
+    config["estimator"]["trials_vas0"] = 2
 
-# Expyriment defaults
-design.defaults.experiment_background_colour = C_DARKGREY
-stimuli.defaults.textline_text_colour = EXPERIMENT["element_color"]
-stimuli.defaults.textbox_text_colour = EXPERIMENT["element_color"]
-io.defaults.eventfile_directory = (LOG_DIR.parent / "events").as_posix()
-io.defaults.datafile_directory = (LOG_DIR.parent / "data").as_posix()
-io.defaults.outputfile_time_stamp = True
-io.defaults.mouse_show_cursor = False
-control.defaults.initialize_delay = 3
 
-# Initialize Thermoino
-THERMOINO = load_configuration(THERMOINO_CONFIG_FILE)
-thermoino = Thermoino(
-    mms_baseline=THERMOINO["mms_baseline"],
-    mms_rate_of_rise=THERMOINO["mms_rate_of_rise"],
-    dummy=args.dummy_thermoino,
-)
-thermoino.connect()
-
-# Experiment setup
+# Setup experiment
 participant_info = (
     read_last_participant() if not args.debug else config["dummy_participant"]
 )
-# determine order of skin areas based on participant ID
-id_is_odd = int(participant_info["id"]) % 2
-SKIN_AREAS = range(1, 7) if id_is_odd else range(6, 0, -1)
-logging.info(f"Use skin area {SKIN_AREAS[-2]} for calibration.")
-
-# Pop-up window before expyriment starts
-ask_for_calibration_start()
+ask_for_calibration_start()  # pop-up window
 time.sleep(1)  # wait for the pop-up to close
 exp = design.Experiment(name=EXP_NAME)
+exp.set_log_level(0)
 control.initialize(exp)
 screen_size = exp.screen.size
 
-# Prepare stimuli objects
-AUDIO = copy.deepcopy(SCRIPT)  # audio needs the keys from the script
+# Prepare stimuli
+audio = copy.deepcopy(script)  # audio shares the same keys
+prepare_audio(audio, EXP_DIR / "audio")
 prepare_script(
-    SCRIPT,
-    text_size=scale_1d_value(EXPERIMENT["text_size"], screen_size),
-    text_box_size=scale_2d_tuple(EXPERIMENT["text_box_size"], screen_size),
+    script,
+    text_size=scale_1d_value(config["experiment"]["text_size"], screen_size),
+    text_box_size=scale_2d_tuple(config["experiment"]["text_box_size"], screen_size),
 )
-prepare_audio(AUDIO, AUDIO_DIR)
-
 cross = {}
 for name, color in zip(
-    ["idle", "pain"], [EXPERIMENT["element_color"], EXPERIMENT["cross_pain_color"]]
+    ["idle", "pain"],
+    [config["experiment"]["element_color"], config["experiment"]["cross_pain_color"]],
 ):
     cross[name] = stimuli.FixCross(
-        size=scale_2d_tuple(EXPERIMENT["cross_size"], screen_size),
-        line_width=scale_1d_value(EXPERIMENT["cross_line_width"], screen_size),
+        size=scale_2d_tuple(config["experiment"]["cross_size"], screen_size),
+        line_width=scale_1d_value(
+            config["experiment"]["cross_line_width"], screen_size
+        ),
         colour=color,
     )
     cross[name].preload()
-
-# Load VAS pictures, move it a bit up and scale it for a nice fit
-vas_pictures = {}
+# l
+vas_pictures = {}  # load VAS pictures, scale and move them up for a better fit
 for pic in ["unmarked", "marked"]:
     vas_pictures[pic] = stimuli.Picture(
         Path(EXP_DIR / f"vas_{pic}.png").as_posix(),
@@ -169,28 +163,60 @@ for pic in ["unmarked", "marked"]:
     vas_pictures[pic].scale(scale_1d_value(1.5, screen_size))
     vas_pictures[pic].preload()
 
+# Initialize Thermoino
+thermoino = Thermoino(
+    mms_baseline=thermoino_config["mms_baseline"],
+    mms_rate_of_rise=thermoino_config["mms_rate_of_rise"],
+    dummy=args.dummy_thermoino,
+)
+thermoino.connect()
+
+
+def apply_hardcoded_temperatures(temperatures: list[float]) -> None:
+    """Apply hardcoded temperatures from a list to the Thermoino device."""
+    for idx, temp in enumerate(temperatures):
+        cross["idle"].present()
+        exp.clock.wait_seconds(
+            (config["stimulus"]["iti_duration"] + random.randint(0, 1))
+            if idx != 0
+            else 3
+        )
+        thermoino.trigger()
+        time_to_ramp_up, _ = thermoino.set_temp(temp)
+        cross["pain"].present()
+        exp.clock.wait_seconds(
+            config["stimulus"]["stimulus_duration"] + time_to_ramp_up
+        )
+        time_to_ramp_down, _ = thermoino.set_temp(thermoino_config["mms_baseline"])
+        cross["idle"].present()
+        exp.clock.wait_seconds(time_to_ramp_down)
+
 
 def run_estimation_trials(estimator: BayesianEstimatorVAS) -> None:
     """Run estimation trials and return the final estimate."""
     for trial in range(estimator.trials):
         cross["idle"].present()
-        exp.clock.wait_seconds(STIMULUS["iti_duration"] + JITTER)
+        exp.clock.wait_seconds(
+            config["stimulus"]["iti_duration"] + random.randint(0, 1)
+        )
         thermoino.trigger()
         time_to_ramp_up, _ = thermoino.set_temp(estimator.get_estimate())
         cross["pain"].present()
-        exp.clock.wait_seconds(STIMULUS["stimulus_duration"] + time_to_ramp_up)
-        time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
+        exp.clock.wait_seconds(
+            config["stimulus"]["stimulus_duration"] + time_to_ramp_up
+        )
+        time_to_ramp_down, _ = thermoino.set_temp(thermoino_config["mms_baseline"])
         cross["idle"].present()
         exp.clock.wait_seconds(time_to_ramp_down)
 
-        SCRIPT[f"question_vas{estimator.vas_value}"].present()
+        script[f"question_vas{estimator.vas_value}"].present()
         found, _ = exp.keyboard.wait(keys=[K_y, K_n])
         if found == K_y:
-            estimator.conduct_trial(response="y", trial=trial)
-            SCRIPT["answer_yes"].present()
+            estimator.conduct_trial(response="y", trial=trial)  # chr(K_y) = 'y'
+            script["answer_yes"].present()
         elif found == K_n:
             estimator.conduct_trial(response="n", trial=trial)
-            SCRIPT["answer_no"].present()
+            script["answer_no"].present()
         exp.clock.wait_seconds(1)
 
 
@@ -200,44 +226,60 @@ def main():
     logging.info("Started calibration.")
 
     # Introduction
-    for text, audio in zip(SCRIPT[s := "welcome"].values(), AUDIO[s].values()):
+    for text, sound in zip(script[s := "welcome"].values(), audio[s].values()):
         text.present()
-        audio.play(maxtime=args.mute)
+        # only plays for 1 ms if args.muted is True, otherwise plays the whole audio
+        sound.play(maxtime=args.muted)
         exp.keyboard.wait(K_SPACE)
 
-    # Pre-exposure Trials
-    logging.info("Started pre-exposure trials.")
-    for idx, temp in enumerate(STIMULUS["preexposure_temperatures"]):
-        cross["idle"].present()
-        iti_duration = (
-            STIMULUS["iti_duration"] if idx != 0 else STIMULUS["iti_duration_short"]
-        )
-        exp.clock.wait_seconds(iti_duration + JITTER)
-        thermoino.trigger()
-        time_to_ramp_up, _ = thermoino.set_temp(temp)
-        cross["pain"].present()
-        exp.clock.wait_seconds(STIMULUS["stimulus_duration"] + time_to_ramp_up)
-        time_to_ramp_down, _ = thermoino.set_temp(THERMOINO["mms_baseline"])
-        cross["idle"].present()
-        exp.clock.wait_seconds(time_to_ramp_down)
+    # Warm-up trials
+    logging.info("Started warm-up trials.")
+    apply_hardcoded_temperatures(config["stimulus"]["warmup_temperatures"])
+    script["post_warmup"].present()
+    audio["post_warmup"].play(maxtime=args.muted)
+    exp.keyboard.wait(K_SPACE)
 
-    # Pre-exposure Feedback
-    SCRIPT["question_preexposure"].present()
-    AUDIO["question_preexposure"].play(maxtime=args.mute)
+    # Pre-exposure trials
+    logging.info("Started pre-exposure trials.")
+    apply_hardcoded_temperatures(config["stimulus"]["preexposure_temperatures"])
+
+    # Pre-exposure feedback
+    script["question_preexposure"].present()
+    audio["question_preexposure"].play(maxtime=args.muted)
     found, _ = exp.keyboard.wait(keys=[K_y, K_n])
     if found == K_y:
         participant_info["preexposure_painful"] = True
-        ESTIMATOR["temp_start_vas70"] -= STIMULUS["preexposure_correction"]
-        SCRIPT["answer_yes"].present()
+        script["answer_yes"].present()
         logging.info("Pre-exposure was painful.")
     elif found == K_n:
         participant_info["preexposure_painful"] = False
-        SCRIPT["answer_no"].present()
+        config["estimator"]["temp_start_vas0"] += config["stimulus"][
+            "preexposure_correction"
+        ]
+        script["answer_no"].present()
         logging.info("Pre-exposure was not painful.")
     exp.clock.wait_seconds(1)
 
+    # Pain threshold (VAS 0) estimation
+    for (key, text), sound in zip(script[s := "info_vas0"].items(), audio[s].values()):
+        text.present()
+        sound.play(maxtime=args.muted)
+        exp.keyboard.wait(K_SPACE)
+    estimator_vas0 = BayesianEstimatorVAS(
+        vas_value=0,
+        trials=config["estimator"]["trials_vas0"],
+        temp_start=config["estimator"]["temp_start_vas0"],
+        temp_std=config["estimator"]["temp_std_vas0"],
+        likelihood_std=config["estimator"]["likelihood_std_vas0"],
+    )
+    logging.info("Started VAS 0 (pain threshold) estimation.")
+    run_estimation_trials(estimator=estimator_vas0)
+    script["excellent"].present()  # say something nice to the participant
+    audio["excellent"].play(maxtime=args.muted)
+    exp.clock.wait_seconds(1.5)
+
     # VAS 70 estimation
-    for (key, text), audio in zip(SCRIPT[s := "info_vas70"].items(), AUDIO[s].values()):
+    for (key, text), sound in zip(script[s := "info_vas70"].items(), audio[s].values()):
         # Show VAS pictures, first the unmarked, then the marked one
         if "picture" in str(key):
             if "wait" in str(key):
@@ -247,69 +289,49 @@ def main():
                 vas_pictures["unmarked"].present(clear=False, update=True)
                 exp.keyboard.wait(K_SPACE)
             else:
-                vas_pictures["marked"].present(clear=True, update=False)
+                if "marked" in str(key):
+                    vas_pictures["marked"].present(clear=True, update=False)
+                else:
+                    vas_pictures["unmarked"].present(clear=True, update=False)
                 text.present(clear=False, update=True)
-                audio.play(maxtime=args.mute)
+                sound.play(maxtime=args.muted)
                 exp.keyboard.wait(K_SPACE)
             continue
         text.present()
-        audio.play(maxtime=args.mute)
+        sound.play(maxtime=args.muted)
         exp.keyboard.wait(K_SPACE)
 
     estimator_vas70 = BayesianEstimatorVAS(
         vas_value=70,
-        trials=ESTIMATOR["trials_vas70"],
-        temp_start=ESTIMATOR["temp_start_vas70"],
-        temp_std=ESTIMATOR["temp_std_vas70"],
-        likelihood_std=ESTIMATOR["likelihood_std_vas70"],
+        trials=config["estimator"]["trials_vas70"],
+        temp_start=estimator_vas0.get_estimate()
+        + config["estimator"]["temp_start_vas70_offset"],
+        temp_std=config["estimator"]["temp_std_vas70"],
+        likelihood_std=config["estimator"]["likelihood_std_vas70"],
     )
     logging.info("Started VAS 70 estimation.")
     run_estimation_trials(estimator=estimator_vas70)
-    participant_info["vas70"] = estimator_vas70.get_estimate()
-    SCRIPT["excellent"].present()  # say something nice to the participant
-    AUDIO["excellent"].play(maxtime=args.mute)
-    exp.clock.wait_seconds(1.5)
-
-    # Pain threshold (VAS 0) estimation
-    for (key, text), audio in zip(SCRIPT[s := "info_vas0"].items(), AUDIO[s].values()):
-        text.present()
-        audio.play(maxtime=args.mute)
-        exp.keyboard.wait(K_SPACE)
-    estimator_vas0 = BayesianEstimatorVAS(
-        vas_value=0,
-        trials=ESTIMATOR["trials_vas0"],
-        temp_start=estimator_vas70.get_estimate() - ESTIMATOR["temp_start_vas0_offset"],
-        temp_std=ESTIMATOR["temp_std_vas0"],
-        likelihood_std=ESTIMATOR["likelihood_std_vas0"],
-    )
-    logging.info("Started VAS 0 (pain threshold) estimation.")
-    run_estimation_trials(estimator=estimator_vas0)
-    participant_info["vas0"] = estimator_vas0.get_estimate()
 
     # Save participant data
-    participant_info["temperature_baseline"] = round(
-        (participant_info["vas0"] + participant_info["vas70"]) / 2, 1
-    )
+    participant_info["vas0"] = estimator_vas0.get_estimate()
+    participant_info["vas70"] = estimator_vas70.get_estimate()
     participant_info["temperature_range"] = round(
         participant_info["vas70"] - participant_info["vas0"], 1
     )
-    participant_info["vas70_temps"] = estimator_vas70.temps
     participant_info["vas0_temps"] = estimator_vas0.temps
+    participant_info["vas70_temps"] = estimator_vas70.temps
     logging.info(
-        f"Calibrated values: VAS 70 = {participant_info['vas70']}, "
-        f"VAS 0 = {participant_info['vas0']}, "
-        f"baseline = {participant_info['temperature_baseline']}, "
+        f"Calibrated values: VAS 0 = {participant_info['vas0']}, "
+        f"VAS 70 = {participant_info['vas70']}, "
         f"range = {participant_info['temperature_range']}."
     )
-    add_participant_info(
-        participant_info, CALIBRATION_RESULTS
-    ) if not args.debug else None
+    add_participant_info(participant_info, RESULTS_FILE) if not args.debug else None
     if args.debug:
         logging.debug(f"Participant data: {participant_info}")
 
     # End of Experiment
-    SCRIPT["bye"].present()
-    AUDIO["bye"].play(maxtime=args.mute)
+    script["bye"].present()
+    audio["bye"].play(maxtime=args.muted)
     exp.clock.wait_seconds(5)
 
     control.end()
