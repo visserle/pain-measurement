@@ -112,6 +112,8 @@ if args.debug:
 if args.windowed:
     logging.debug("Run in windowed mode.")
     control.defaults.window_size = (860, 600)
+if args.mute:
+    logging.debug("Muting the audio output.")
 if args.dummy_stimulus:
     logging.debug("Using dummy stimulus.")
     STIMULUS.update(config["dummy_stimulus"])
@@ -320,6 +322,11 @@ def main():
             f"mean = {int(data_points['rating'].mean())}, "
             f"std = {int(data_points['rating'].std())}."
         )
+        # log warning if full spectrum of VAS is not used
+        if not (
+            (data_points["rating"]).min() == 0 and data_points["rating"].max() == 100
+        ):
+            logging.warning("Pain rating is not covering the full spectrum. ")
         logging.info(f"Correlation between temperature and rating: {correlation}")
         if correlation > 0.6:
             reward += 0.5
