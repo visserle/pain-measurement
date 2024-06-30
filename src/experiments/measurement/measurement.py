@@ -192,6 +192,21 @@ config["stimulus"].update(participant_info)
 # shuffle seeds for randomization
 random.shuffle(config["stimulus"]["seeds"])
 
+# Initialize iMotions
+imotions_control = RemoteControliMotions(
+    study=EXP_NAME, participant_info=participant_info, dummy=args.dummy_imotions
+)
+imotions_control.connect()
+imotions_event = EventRecievingiMotions(
+    sample_rate=config["imotions"]["sample_rate"], dummy=args.dummy_imotions
+)
+imotions_event.connect()
+if not ask_for_eyetracker_calibration():
+    raise SystemExit("Eye-tracker calibration denied.")
+imotions_control.start_study(mode=config["imotions"]["start_study_mode"])
+ask_for_measurement_start()
+time.sleep(1)
+
 # Experiment setup
 exp = design.Experiment(name=EXP_NAME)
 exp.set_log_level(0)
@@ -214,22 +229,6 @@ thermoino = ThermoinoComplexTimeCourses(
     dummy=args.dummy_thermoino,
 )
 thermoino.connect()
-
-
-# Initialize iMotions
-imotions_control = RemoteControliMotions(
-    study=EXP_NAME, participant_info=participant_info, dummy=args.dummy_imotions
-)
-imotions_control.connect()
-imotions_event = EventRecievingiMotions(
-    sample_rate=config["imotions"]["sample_rate"], dummy=args.dummy_imotions
-)
-imotions_event.connect()
-if not ask_for_eyetracker_calibration():
-    raise SystemExit("Eye-tracker calibration denied.")
-imotions_control.start_study(mode=config["imotions"]["start_study_mode"])
-ask_for_measurement_start()
-time.sleep(1)
 
 
 def get_data_points(stimulus: StimulusGenerator) -> None:

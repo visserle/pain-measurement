@@ -31,7 +31,7 @@ welcome:
 
 
 
-    Im ersten Teil der Kalibrierung müssen Sie nichts weiter tun, als auf darauf zu achten, was Sie fühlen.
+    Im ersten Teil der Kalibrierung müssen Sie nichts weiter tun, als darauf zu achten, was Sie fühlen.
 
     Wir starten mit dem Aufwärmen Ihrer Hautstelle.
 
@@ -44,9 +44,9 @@ post_warmup: |-
 
 
 
-  Nachdem wir Ihre Hautstelle aufgewärmt haben, folgen als Nächstes drei Reize, die Sie eventuell als unangenehm oder leicht schmerzhaft empfinden werden.
 
-  Hierbei müssen Sie ebenfalls nur auf Ihre Empfindungen achten.
+
+  Nachdem wir Ihre Hautstelle aufgewärmt haben, folgen als Nächstes drei Reize, die Sie eventuell als unangenehm oder schmerzhaft erleben werden.
 
 
   (Leertaste drücken, um fortzufahren)
@@ -60,7 +60,7 @@ question_preexposure: |-
 
 
 
-  War einer dieser Reize für Sie unangenehm oder leicht schmerzhaft?
+  War einer dieser Reize für Sie unangenehm oder schmerzhaft?
 
   (Drücken Sie "y" für Ja oder "n" für Nein.)
 info_vas0:
@@ -71,7 +71,7 @@ info_vas0:
 
     Als Nächstes möchten wir herausfinden, ab wann genau Sie leichte und starke Schmerzen verspüren. 
     
-    Die Kalibrierung erfolgt dabei in mehreren Durchgängen. Nach jedem Durchgang fragen wir Sie nach einem kurzen Feedback und passen die Intensität des Reizes graduell an Ihre Empfindung an.
+    Die Kalibrierung erfolgt dabei in mehreren Durchgängen. Nach jedem Durchgang fragen wir Sie nach einem kurzen Feedback und passen die Intensität des Reizes an Ihre Empfindung an.
 
 
     (Leertaste drücken, um fortzufahren)
@@ -110,7 +110,7 @@ question_vas0: |-
 
 
 
-  War dieser Reiz für Sie schmerzhaft?
+  Haben Sie erste leichte Schmerzen gespürt?
 
   (y/n)
 excellent: |-
