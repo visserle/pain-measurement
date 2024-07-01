@@ -137,7 +137,7 @@ class Thermoino:
 
     # Set up thermoino
     thermoino = Thermoino(
-        mms_baseline=28,  # has to be the same as in MMS
+        mms_baseline=32,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
         port=None,  # do not specify the port if you want to connect automatically
     )
@@ -150,7 +150,7 @@ class Thermoino:
     # 4 s plateau of 42 °C
     thermoino.sleep(4)
     # always update the temperature in the thermoino object
-    time_to_ramp_down, _ = thermoino.set_temp(28)
+    time_to_ramp_down, _ = thermoino.set_temp(32)
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
     ```
@@ -461,16 +461,21 @@ class ThermoinoComplexTimeCourses(Thermoino):
 
     # Set up thermoino
     thermoino = ThermoinoComplexTimeCourses(
-        port=port,
-        mms_baseline=28,  # has to be the same as in MMS
+        mms_baseline=32,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
+        port=None,  # do not specify the port if you want to connect automatically
     )
+
+    # Create a simple sinusoidal temperature course
+    sample_rate = 10
+    duration = 30
+    stimulus = -np.cos(np.linspace(0, 2 * np.pi, (duration * sample_rate))) * 4 + 40
 
     # Use thermoino for complex temperature courses:
     thermoino.connect()
     thermoino.flush_ctc()  # to be sure that no old CTC is loaded
     thermoino.init_ctc(bin_size_ms=500)
-    thermoino.create_ctc(temp_course=stimulus.y, sample_rate=stimulus.sample_rate)
+    thermoino.create_ctc(temp_course=stimulus, sample_rate=sample_rate)
     thermoino.load_ctc()
     thermoino.trigger()
     time_to_ramp_up = thermoino.prep_ctc()
@@ -490,7 +495,7 @@ class ThermoinoComplexTimeCourses(Thermoino):
     thermoino.sleep(duration=time_to_ramp_up)
     # 4 s plateau of 42 °C
     thermoino.sleep(4)
-    time_to_ramp_down, _ = thermoino.set_temp(28)
+    time_to_ramp_down, _ = thermoino.set_temp(32)
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
     ````
@@ -764,7 +769,7 @@ def main():
 
     # Set up the Thermoino in dummy mode
     thermoino = Thermoino(
-        mms_baseline=28,  # has to be the same as in MMS
+        mms_baseline=32,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
         dummy=dummy,
     )
@@ -777,16 +782,17 @@ def main():
     # plateau
     thermoino.sleep(6)
     # always update the temperature in the thermoino object
-    time_to_ramp_down, _ = thermoino.set_temp(28)
+    time_to_ramp_down, _ = thermoino.set_temp(32)
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
 
     # Use thermoino for complex temperature courses:
-    temp_course = -np.cos(np.linspace(0, 2 * np.pi, 50)) * 4 + 40
+    duration = 30
     sample_rate = 10
+    temp_course = -np.cos(np.linspace(0, 2 * np.pi, (duration * sample_rate))) * 4 + 40
 
     thermoino = ThermoinoComplexTimeCourses(
-        mms_baseline=28,  # has to be the same as in MMS
+        mms_baseline=32,  # has to be the same as in MMS
         mms_rate_of_rise=10,  # has to be the same as in MMS
         dummy=dummy,
     )
@@ -804,7 +810,7 @@ def main():
     # Account for some delay at the end of the complex time course
     time.sleep(0.5)
     thermoino.flush_ctc()  # to be sure that no old CTC is loaded
-    time_to_ramp_down, _ = thermoino.set_temp(28)  # back to baseline
+    time_to_ramp_down, _ = thermoino.set_temp(32)  # back to baseline
     thermoino.sleep(time_to_ramp_down)
     thermoino.close()
 

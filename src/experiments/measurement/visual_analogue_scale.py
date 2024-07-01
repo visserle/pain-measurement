@@ -1,14 +1,13 @@
-from expyriment import control, stimuli
+from expyriment import stimuli
 
 from src.experiments.measurement.rate_limiter import RateLimiter
 from src.experiments.utils import scale_1d_value, scale_2d_tuple
 
-control.defaults.opengl = 0
-
 CONSTANTS = {
-    "SCREEN_REFRESH_RATE": 60,  # for 60 Hz monitors
-    "SAMPLE_RATE": 1000,
+    "screen_refresh_rate": 60,  # for 60 Hz monitors
+    "sample_rate": 1000,
 }
+
 DEFAULTS = {
     "bar_length": 800,
     "bar_thickness": 30,
@@ -39,8 +38,8 @@ class VisualAnalogueScale:
 
         self.experiment = experiment
         self.screen_size = experiment.screen.size
-        self.rate_limiter = RateLimiter(self.config["SAMPLE_RATE"], use_intervals=True)
-        self.rate_limiter_screen = RateLimiter(self.config["SCREEN_REFRESH_RATE"])
+        self.rate_limiter = RateLimiter(self.config["sample_rate"], use_intervals=True)
+        self.rate_limiter_screen = RateLimiter(self.config["screen_refresh_rate"])
 
         self._extract_config()
         self._create_slider_elements()
@@ -50,6 +49,7 @@ class VisualAnalogueScale:
         self.rating = None
 
     def _extract_config(self):
+        """Extract and scale the configuration values."""
         ss = self.screen_size
         self.bar_length = scale_1d_value(self.config["bar_length"], ss)
         self.bar_thickness = scale_1d_value(self.config["bar_thickness"], ss)

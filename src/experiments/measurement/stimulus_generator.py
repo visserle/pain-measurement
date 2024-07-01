@@ -45,7 +45,8 @@ class StimulusGenerator:
         self.rng_numpy = np.random.default_rng(self.seed)
 
         # Extract and validate configuration
-        self._extract_config()
+        for key, value in self.config.items():
+            setattr(self, key, value)
         self._validate_parameters()
         self._initialize_dynamic_attributes()
 
@@ -59,43 +60,6 @@ class StimulusGenerator:
             self.add_prolonged_minima()
             self.add_calibration()
 
-    def _extract_config(self):
-        """Extracts and sets the configuration parameters."""
-        # Basic parameters
-        self.sample_rate = self.config["sample_rate"]
-        self.half_cycle_num = self.config["half_cycle_num"]
-        self.period_range = self.config["period_range"]
-        self.amplitude_range = self.config["amplitude_range"]
-        self.inflection_point_range = self.config["inflection_point_range"]
-        self.shorten_expected_duration = self.config["shorten_expected_duration"]
-
-        # Major decreasing half cycles
-        self.major_decreasing_half_cycle_num = self.config[
-            "major_decreasing_half_cycle_num"
-        ]
-        self.major_decreasing_half_cycle_period = self.config[
-            "major_decreasing_half_cycle_period"
-        ]
-        self.major_decreasing_half_cycle_amplitude = self.config[
-            "major_decreasing_half_cycle_amplitude"
-        ]
-        self.major_decreasing_half_cycle_min_y_intercept = self.config[
-            "major_decreasing_half_cycle_min_y_intercept"
-        ]
-
-        # Plateaus
-        self.plateau_num = self.config["plateau_num"]
-        self.plateau_duration = self.config["plateau_duration"]
-        self.plateau_percentile_range = self.config["plateau_percentile_range"]
-
-        # Prolonged minima
-        self.prolonged_minima_num = self.config["prolonged_minima_num"]
-        self.prolonged_minima_duration = self.config["prolonged_minima_duration"]
-
-        # Temperature
-        self.temperature_baseline = self.config["temperature_baseline"]
-        self.temperature_range = self.config["temperature_range"]
-
     def _validate_parameters(self):
         """Validates the configuration parameters."""
         assert (
@@ -104,10 +68,7 @@ class StimulusGenerator:
             "The minimum y intercept for the major decreasing half cycles "
             "must be less than the maximum amplitude."
         )
-        assert (
-            self.config.get("major_decreasing_half_cycle_amplitude", 0.925)
-            < self.amplitude_range[1]
-        ), (
+        assert self.major_decreasing_half_cycle_amplitude < self.amplitude_range[1], (
             "The amplitude of the major decreasing half cycles "
             "must be less than the maximum amplitude."
         )

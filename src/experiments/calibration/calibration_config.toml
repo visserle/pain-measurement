@@ -7,7 +7,7 @@ cross_size = [100, 100]
 cross_line_width = 20
 
 [stimulus]
-stimulus_duration = 8  # duration of the plateau
+stimulus_duration = 9  # duration of the plateau
 # Note that plateaus of 10 s over 49 °C lead to automatic shutdown of thermode
 iti_duration = 12
 warmup_temperatures = [39.0, 40.0]
