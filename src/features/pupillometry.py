@@ -196,7 +196,7 @@ def interpolate_pupillometry(
     eye_columns: str | list[str] = EYE_COLUMNS,
 ) -> pl.DataFrame:
     # Linearly interpolate and fill edge cases when the first or last value is null
-    # NOTE: cubic spline?
+    # NOTE: cubic spline? TODO
     for eye in ensure_list(eye_columns):
         df = df.with_columns(
             pl.col(eye)

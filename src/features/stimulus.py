@@ -38,7 +38,7 @@ def process_stimulus(df: pl.DataFrame) -> pl.DataFrame:
     [0, 1].
 
     NOTE: This function should not be used in the ML pipeline due to data leakage of
-    the 'Temperature' column. However, we don't yet if temperature is a feature or a
+    the 'Temperature' column. However, we don't yet if want to use 'Temperature' as a
     target, so this function is included for now. Also the data leakeage is not
     significant. TODO
     """
@@ -53,7 +53,12 @@ def scale_rating(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def scale_temperature(df: pl.DataFrame) -> pl.DataFrame:
-    """Normalize the 'Temperature' column using min-max scaling (for each trial)."""
+    """Normalize the 'Temperature' column using min-max scaling (for each trial).
+
+    NOTE: This function should not be used in the ML pipeline due to data leakage of
+    the 'Temperature' column. However, we don't yet if want to use 'Temperature' as a
+    target, so this function is included for now. Also the data leakeage is not
+    significant. TODO"""
     return scale_min_max(df, exclude_additional_columns=["Rating"])
 
 
