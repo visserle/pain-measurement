@@ -151,6 +151,9 @@ if args.dummy_imotions:
 participant_info = read_last_participant(CALIBRATION_RESULTS)
 participant_info["vas0"] = float(participant_info["vas0"])
 participant_info["vas70"] = float(participant_info["vas70"])
+participant_info["temperature_range"] = float(participant_info["temperature_range"])
+participant_info["temperature_baseline"] = round((participant_info["vas0"] + 
+    participant_info["vas70"]) / 2, 2)
 # check if VAS 70 is too high (risk of burn)
 readjustment = False
 if participant_info["vas70"] > 48.0:
