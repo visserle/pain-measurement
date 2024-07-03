@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-import toml
+import tomllib
 import yaml
 from expyriment.stimuli import Audio, TextBox
 
@@ -78,8 +78,8 @@ def scale_2d_tuple(
 
 def load_configuration(file_path: str) -> dict:
     """Load configuration from a TOML file."""
-    with open(file_path, "r", encoding="utf8") as file:
-        return toml.load(file)
+    with open(file_path, "rb") as file:
+        return tomllib.load(file)
 
 
 def load_script(file_path: str) -> dict:
