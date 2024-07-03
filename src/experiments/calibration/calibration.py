@@ -124,6 +124,9 @@ if args.dummy_stimulus:
 participant_info = (
     read_last_participant() if not args.debug else config["dummy_participant"]
 )
+id_is_odd = int(participant_info["id"]) % 2  # determine skin area for calibration
+skind_areas = range(1, 7) if id_is_odd else range(6, 0, -1)
+logging.info(f"Use skin area {skind_areas[-2]} for calibration.")
 ask_for_calibration_start()  # pop-up window
 time.sleep(1)  # wait for the pop-up to close
 exp = design.Experiment(name=EXP_NAME)
