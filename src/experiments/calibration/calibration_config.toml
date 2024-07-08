@@ -24,9 +24,9 @@ likelihood_std_vas0 = 0.75
 # VAS 70
 trials_vas70 = 6
 temp_start_vas70 = inf # will be set after VAS 0 estimate
-temp_start_vas70_offset = 2.7  # vas70 = vas0 + offset
+temp_start_vas70_offset = 2.5  # vas70 = vas0 + offset
 temp_std_vas70 = 1
-likelihood_std_vas70 = 0.9
+likelihood_std_vas70 = 0.7
 
 [dummy_participant]
 id = 0

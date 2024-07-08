@@ -21,7 +21,7 @@ def ask_for_calibration_start() -> bool:
         "Alle Sensoren in iMotions connected?"
         "Sensor Preview mit PPG, EDA und Pupillometrie?",
         "Terminal, iMotions, NIC mit EEG Qualitätssignalen?",
-        "Thermodenkopf am Hautareal? (5 bei ungerader Probanden-ID, 2 bei gerader ID)",
+        "Thermodenkopf angebracht?",
     ]
     return _start_window(items, "calibration")
 
