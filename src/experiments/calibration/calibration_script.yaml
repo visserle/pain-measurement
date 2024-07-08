@@ -69,6 +69,7 @@ info_vas0:
 
 
 
+
     Als Nächstes möchten wir herausfinden, ab wann genau Sie leichte und starke Schmerzen verspüren. 
     
     Die Kalibrierung erfolgt dabei in mehreren Durchgängen. Nach jedem Durchgang fragen wir Sie nach einem kurzen Feedback und passen die Intensität des Reizes an Ihre Empfindung an.
@@ -127,7 +128,6 @@ excellent: |-
   Ausgezeichnet!
 info_vas70:
   1: |-
-
 
 
 
@@ -209,9 +209,9 @@ info_vas70:
 
 
 
-    Als Nächstes startet die Kalibrierung starker Schmerzen. 
 
-    Zu keinem Zeitpunkt ist Ihre Haut dabei durch Verbrennungen oder Ähnliches bedroht.
+
+    Als Nächstes startet die Kalibrierung starker bis sehr starker Schmerzen. 
 
 
     (Leertaste drücken, um fortzufahren)
