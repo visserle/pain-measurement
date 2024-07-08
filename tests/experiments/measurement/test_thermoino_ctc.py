@@ -6,7 +6,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-import toml
+import tomllib
 
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 from src.experiments.thermoino import ThermoinoComplexTimeCourses
@@ -14,8 +14,8 @@ from src.experiments.thermoino import ThermoinoComplexTimeCourses
 
 def load_configuration(file_path: str) -> dict:
     """Load configuration from a TOML file."""
-    with open(file_path, "r", encoding="utf8") as file:
-        return toml.load(file)
+    with open(file_path, "rb") as file:
+        return tomllib.load(file)
 
 
 current_dir = Path(__file__).resolve().parent
