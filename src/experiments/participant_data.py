@@ -30,7 +30,7 @@ def add_participant_info(
     if file_path == PARTICIPANTS_FILE:
         # Add timestamp to main participants file at first position
         participant_info_ = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-        participant_info_.update(participant_info)
+        participant_info_ |= participant_info
         participant_info = participant_info_
     with open(file_path, mode="a+", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=participant_info.keys())

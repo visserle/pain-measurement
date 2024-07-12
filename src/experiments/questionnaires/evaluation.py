@@ -91,16 +91,12 @@ def save_results(
         prefix = ""
     else:
         # Update participant info with scores
-        local_participant_info.update(
-            {component: score[component] for component in score}
-        )
+        local_participant_info |= {component: score[component] for component in score}
         prefix = "q"  # e.g. q1, q2, etc.
 
     # Add raw answers to the participant info
-    local_participant_info.update(
-        {
-            f'{prefix}{question["id"]}': answers[f'{prefix}{question["id"]}']
-            for question in questionnaire.get("questions", [])
-        }
-    )
+    local_participant_info |= {
+        f'{prefix}{question["id"]}': answers[f'{prefix}{question["id"]}']
+        for question in questionnaire.get("questions", [])
+    }
     add_participant_info(local_participant_info, filename)

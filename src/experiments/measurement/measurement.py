@@ -134,7 +134,7 @@ if args.muted:
     logging.debug("Muting the audio output.")
 if args.dummy_stimulus:
     logging.debug("Using dummy stimulus.")
-    config["stimulus"].update(config["dummy_stimulus"])
+    config["stimulus"] |= config["dummy_stimulus"]
 if args.dummy_imotions:
     ask_for_eyetracker_calibration = (  # noqa: E731
         lambda: logging.debug(
@@ -152,8 +152,9 @@ participant_info = read_last_participant(CALIBRATION_RESULTS)
 participant_info["vas0"] = float(participant_info["vas0"])
 participant_info["vas70"] = float(participant_info["vas70"])
 participant_info["temperature_range"] = float(participant_info["temperature_range"])
-participant_info["temperature_baseline"] = round((participant_info["vas0"] + 
-    participant_info["vas70"]) / 2, 2)
+participant_info["temperature_baseline"] = round(
+    (participant_info["vas0"] + participant_info["vas70"]) / 2, 2
+)
 # check if VAS 70 is too high (risk of burn)
 readjustment = False
 if participant_info["vas70"] > 48.0:
@@ -191,7 +192,8 @@ if readjustment:
 id_is_odd = int(participant_info["id"]) % 2
 skin_areas = range(1, 7) if id_is_odd else range(6, 0, -1)
 logging.info(f"Start with skin area {skin_areas[0]}.")
-config["stimulus"].update(participant_info)
+# update config with calibration data
+config["stimulus"] |= participant_info
 # shuffle seeds for randomization
 random.shuffle(config["stimulus"]["seeds"])
 

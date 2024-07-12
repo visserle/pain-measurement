@@ -19,7 +19,7 @@ DEFAULTS = {
     "label_text_size": 40,
     "label_text_box_size": [250, 100],
 }
-DEFAULTS.update(CONSTANTS)
+DEFAULTS |= CONSTANTS
 
 
 class VisualAnalogueScale:
