@@ -6,8 +6,8 @@ DEFAULTS = {
     "half_cycle_num": 10,
     "period_range": [5, 20],
     "amplitude_range": [0.3, 1.0],
-    "inflection_point_range": [-0.5, 0.3],
-    "shorten_expected_duration": 7,
+    "inflection_point_range": [-0.4, 0.3],
+    "shorten_expected_duration": 2,
     "major_decreasing_half_cycle_num": 3,
     "major_decreasing_half_cycle_period": 20,
     "major_decreasing_half_cycle_amplitude": 0.925,
@@ -15,11 +15,15 @@ DEFAULTS = {
     "plateau_num": 2,
     "plateau_duration": 15,
     "plateau_percentile_range": [25, 50],
-    "prolonged_minima_num": 2,
+    "prolonged_minima_num": 1,
     "prolonged_minima_duration": 5,
+}
+
+DUMMY_VALUES = {
     "temperature_baseline": 40,
     "temperature_range": 3,
 }
+DEFAULTS |= DUMMY_VALUES
 
 
 class StimulusGenerator:
