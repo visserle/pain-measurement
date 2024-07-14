@@ -1,18 +1,11 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Questionnaire Not Found</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-</head>
-<body>
-    <div class="container">
-        <h1>Questionnaire Not Found</h1>
-        <form action="" method="post">
-            <button type="submit">Abschicken</button>
-        </form>
-    </div>
-</body>
-</html>
+{% extends "base.html.j2" %}
+
+{% block title %}Questionnaire Not Found{% endblock %}
+
+{% block heading %} Questionnaire "{{ title }}" Not Found {% endblock %}
+
+{% block content %}
+<form action="" method="post">
+    <button type="submit" class="submit-button">Abschicken</button>
+</form>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block heading %} {{ title }} {% endblock %}
+
+{% block content %}
+<div class="instructions"><p>{{ instructions|safe }}</p></div>
+<form action="" method="post">
+    {% for question in questions %}
+        <div class="question">
+            <p class="question-text">{{ question.text }}</p>
+            {% for option in question.options %}
+                <div class="option">
+                    <input type="radio" id="q{{ question.id }}_option{{ option.score }}" name="q{{ question.id }}" value="{{ option.score }}" required>
+                    <label for="q{{ question.id }}_option{{ option.score }}">{{ option.text }}</label>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+    <button type="submit" class="submit-button">Abschicken</button>
+</form>
+{% endblock %}

@@ -1,13 +1,12 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vielen Dank!</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-</head>
-<body>
-    <h1>{{ text }}</h1>
-</body>
-</html>
+{% extends "base.html.j2" %}
+
+{% block title %}Vielen Dank!{% endblock %}
+
+{% block heading %}
+<style>
+    h1 {
+        font-size: 1.5em; 
+    }
+</style>
+{{ title }}
+{% endblock %}

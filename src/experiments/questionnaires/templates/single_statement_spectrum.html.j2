@@ -1,0 +1,79 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block heading %} {{ title }} {% endblock %}
+
+{% block content %}
+<style>
+    .spectrum {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #f5f5f5;
+        border-radius: 25px;
+        padding: 5px;
+    }
+    .spectrum-label {
+        flex: 0 0 70px;
+        font-size: 0.85em;
+        color: #040404;
+        text-align: center;
+    }
+    .options-container {
+        display: flex;
+        justify-content: space-between;
+        flex-grow: 1;
+        margin: 0 10px;
+    }
+    .option-wrapper {
+        text-align: center;
+    }
+    .spectrum input[type="radio"] {
+        display: none;
+    }
+    .spectrum input[type="radio"] + label {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        text-align: center;
+        border-radius: 50%;
+        cursor: pointer;
+        background-color: transparent;
+        color: #666;
+        font-weight: normal;
+        transition: all 0.2s ease;
+    }
+    .spectrum input[type="radio"]:checked + label {
+        background-color: #000;
+        color: white;
+        font-weight: bold;
+    }
+</style>
+
+<div class="instructions">
+    <p>{{ instructions|safe }}</p>
+</div>
+<form method="post">
+    {% for question in questions %}
+    <div class="question">
+        <p class="question-text">{{ question.text }}</p>
+        <div class="spectrum">
+            <span class="spectrum-label"> {{ spectrum.left }}</span>
+            <div class="options-container">
+                {% for option in options %}
+                <div class="option-wrapper">
+                    <input type="radio" id="q{{ question.id }}_option{{ option.score }}" name="q{{ question.id }}" value="{{ option.score }}" required>
+                    <label for="q{{ question.id }}_option{{ option.score }}">{{ option.score }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <span class="spectrum-label"> {{ spectrum.right }}</span>
+        </div>
+    </div>
+    {% endfor %}
+    <button type="submit" class="submit-button">Abschicken</button>
+</form>
+
+{% endblock %}

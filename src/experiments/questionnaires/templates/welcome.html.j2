@@ -1,27 +1,15 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Willkommen!</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <style>
-        .transparent-form {
-            background: none;
-            border: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>{{ title }}</h1>
-        <div class="instructions">
-            <p>{{ instructions|safe }}</p>
-        </div>
-        <form action="{{ url_for('home') }}" method="post" class="transparent-form">
-            <button type="submit" >Mit den Fragebögen starten</button>
-        </form>
-    </div>
-</body>
-</html>
+{% extends "base.html.j2" %}
+
+{% block title %}Willkommen!{% endblock %}
+
+{% block heading %} {{ title }} {% endblock %}
+
+{% block content %}
+<div class="instructions">
+    <p>{{ instructions|safe }}</p>
+</div>
+<form action="{{ url_for('home') }}" method="post" class="transparent-form">
+    <button type="submit" class="submit-button">Mit den Fragebögen starten</button>
+
+</form>
+{% endblock %}

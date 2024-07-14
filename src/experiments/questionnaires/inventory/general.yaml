@@ -2,7 +2,7 @@ title: "Allgemeines"
 instructions: |
   Bitte beantworten Sie die folgenden Fragen zu Ihrer Person. Alle Angaben sind freiwillig und anonym.  
   Ihre Antworten werden vertraulich behandelt und dienen ausschließlich wissenschaftlichen Zwecken.
-layout: "general_questions"
+layout: "general"
 questions:
   - id: "gender"
     text: "Welches Geschlecht haben Sie?"
@@ -86,6 +86,14 @@ questions:
         text: "Nie"
   - id: "meditation"
     text: "Meditieren Sie regelmäßig?"
+    type: "select"
+    options:
+      - score: "Yes"
+        text: "Ja"
+      - score: "No"
+        text: "Nein"
+  - id: "contact_lenses"
+    text: "Tragen Sie momentan Kontaktlinsen?"
     type: "select"
     options:
       - score: "Yes"

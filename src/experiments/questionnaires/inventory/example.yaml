@@ -1,15 +1,16 @@
-# This is an example of how to structure a questionnaire yaml file.
+# This is a short example of how to structure a questionnaire yaml file.
 
 # The bdi.yaml is structured as follows:
 title: "BDI-II"
-instructions: "TEXT"
+layout: multi_statement  # each questionnaire has a layout
+instructions: "TEXT"  # text supports markdown
 questions:
   - id: 1
     text: "Negativ Feeling 1"
     options:
       - score: 0
         text: "I feel not negative"
-      - score: 1  # alternative options like 1a and 1b are supported
+      - score: 1  # alternative options like 1a and 1b are possible
         text: "I often feel negative"
       - score: 2
         text: "I always feel negative"
@@ -21,7 +22,8 @@ questions:
 
 # The pcs.yaml is structured as follows:
 title: "PCS"
-instructions: "TEXT"  # paragraphs are supported using markdown
+layout: single_statement
+instructions: "TEXT"  
 options:
   - score: 0
     text: "does not apply at all"
@@ -37,6 +39,6 @@ questions:
   - id: 1
     text: "I do not like to feel pain."
   - id: 2
-    text: "It is unbearable for me to feel pain."
+    text: "It is unbearable for me to feel any pain."
   - id: 3
     text: ...

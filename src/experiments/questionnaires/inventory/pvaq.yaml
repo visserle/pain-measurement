@@ -1,0 +1,57 @@
+title: PVAQ
+name: Pain Vigilance and Awareness Questionnaire
+url: https://link.springer.com/article/10.1007/s12529-016-9585-4
+layout: single_statement_spectrum
+instructions: |
+  Im Folgenden sind 16 Aussagen darüber aufgelistet, wie
+  Leute auf Schmerzen reagieren.
+  
+  Bitte geben Sie anhand der untenstehenden Skala an, wie
+  häufig jede Aussage auf Sie zutrifft (d. h., wie häufig Sie auf
+  die beschriebene Art und Weise reagieren). Berücksichtigen Sie
+  bei Ihren Bewertungen besonders die letzten zwei Wochen.
+  Halten Sie Ihre Bewertungen fest, indem Sie für jede Aussage
+  eine Zahl zwischen 0 (Niemals) und 5 (Immer) ankreuzen.
+spectrum:
+  left: "niemals"
+  right: "immer"
+options:
+  - score: 0
+  - score: 1
+  - score: 2
+  - score: 3
+  - score: 4
+  - score: 5
+questions:
+  - id: 1
+    text: "Ich bin sehr schmerzsensibel."
+  - id: 2
+    text: "Mir sind vorübergehende Änderungen von Schmerzen bewusst."
+  - id: 3
+    text: "Ich bemerke rasch Änderungen der Schmerzintensität."
+  - id: 4
+    text: "Ich bemerke rasch Wirkungen einer medikamentösen Behandlung auf Schmerzen."
+  - id: 5
+    text: "Ich merke rasch, wenn sich der Schmerz verlagert oder ausdehnt."
+  - id: 6
+    text: "Ich konzentriere mich auf Schmerzempfindungen."
+  - id: 7
+    text: "Ich bemerke Schmerzen selbst dann, wenn ich mit einer anderen Aktivität beschäftigt bin."
+  - id: 8
+    text: "Mir fällt es leicht, Schmerzen zu ignorieren."
+  - id: 9
+    text: "Ich weiß sofort, wenn Schmerzen anfangen oder stärker werden."
+  - id: 10
+    text: "Wenn ich etwas tue, das die Schmerzen steigert, muss ich als Erstes prüfen, um wieviel sich die Schmerzen verstärkt haben."
+  - id: 11
+    text: "Ich weiß es sofort, wenn die Schmerzen nachlassen."
+  - id: 12
+    text: "Mir scheinen Schmerzen bewusster zu sein als Anderen."
+  - id: 13
+    text: "Ich achte genau auf Schmerzen."
+  - id: 14
+    text: "Ich verfolge genau meine Schmerzstärke."
+  - id: 15
+    text: "Ich beschäftige mich mittlerweile nur noch mit Schmerzen."
+  - id: 16
+    text: "Ich brüte nicht über Schmerzen."

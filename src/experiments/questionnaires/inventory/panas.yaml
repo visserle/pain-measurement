@@ -1,0 +1,63 @@
+title: "PANAS"
+name: "Deutsche Version der Positive and Negative Affect Schedule PANAS (GESIS Panel)"
+url: "https://zis.gesis.org/skala/Breyer-Bluemke-Deutsche-Version-der-Positive-and-Negative-Affect-Schedule-PANAS-(GESIS-Panel)"
+layout: "single_statement_matrix"
+instructions: |
+  Nun möchten wir gerne von Ihnen wissen, wie Sie sich fühlen. 
+  Die folgenden Wörter beschreiben unterschiedliche Gefühle und
+  Empfindungen. Lesen Sie jedes Wort und tragen Sie dann in die 
+  Skala neben jedem Wort die Intensität ein. Sie haben die 
+  Möglichkeit, zwischen fünf Abstufungen zu wählen. Geben Sie 
+  bitte an, wie Sie sich *im Moment* fühlen.
+options:
+  - score: 1
+    text: "gar nicht"
+  - score: 2
+    text: "ein bisschen"
+  - score: 3
+    text: "einigermaßen"
+  - score: 4
+    text: "erheblich"
+  - score: 5
+    text: "äußerst"
+questions:
+  - id: 1
+    text: "aktiv"
+  - id: 2
+    text: "bekümmert"
+  - id: 3
+    text: "interessiert"
+  - id: 4
+    text: "freudig erregt"
+  - id: 5
+    text: "verärgert"
+  - id: 6 
+    text: "stark"
+  - id: 7
+    text: "schuldig"
+  - id: 8
+    text: "erschrocken"
+  - id: 9
+    text: "feindselig"
+  - id: 10
+    text: "angeregt"
+  - id: 11
+    text: "stolz"
+  - id: 12
+    text: "gereizt"
+  - id: 13
+    text: "begeistert"
+  - id: 14
+    text: "beschämt"
+  - id: 15
+    text: "wach"
+  - id: 16
+    text: "nervös"
+  - id: 17
+    text: "entschlossen"
+  - id: 18
+    text: "aufmerksam"
+  - id: 19
+    text: "durcheinander"
+  - id: 20
+    text: "ängstlich"

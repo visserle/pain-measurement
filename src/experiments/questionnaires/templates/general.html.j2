@@ -1,0 +1,44 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block heading %} {{ title }} {% endblock %}
+
+{% block content %}
+<style>
+    label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+
+    .text-input, .select-input {
+        width: calc(100% - 16px);
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+</style>
+
+<div class="instructions"><p>{{ instructions|safe }}</p></div>
+<form action="" method="post">
+    {% for question in questions %}
+        <div class="question">
+            <label for="{{ question.id }}">{{ question.text }}</label>
+            {% if question.type == "text" %}
+                <input type="text" id="{{ question.id }}" name="{{ question.id }}" class="text-input" aria-label="{{ question.text }}" required>
+            {% elif question.type == "select" %}
+                <select id="{{ question.id }}" name="{{ question.id }}" class="select-input" aria-label="{{ question.text }}" required>
+                    <option value="" disabled selected hidden>Bitte auswählen</option>
+                    {% for option in question.options %}
+                        <option value="{{ option.score }}">{{ option.text }}</option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+        </div>
+    {% endfor %}
+    <button type="submit" class="submit-button">Abschicken</button>
+</form>
+{% endblock %}

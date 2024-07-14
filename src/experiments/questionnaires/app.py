@@ -1,13 +1,3 @@
-# TODO
-# - add readme
-# - upload yaml of license free questionnaires
-# - improve html layout
-# - add welcome page with instructions, info on drinking water, which questionnaires
-# will be published etc.
-# - improve using https://github.com/vlevit/q10r
-# - misc doch datenschutz problematisch?
-# - open browser in full screen
-
 import argparse
 import logging
 import os
@@ -31,18 +21,20 @@ from src.experiments.questionnaires.evaluation import (
 )
 from src.log_config import configure_logging
 
-LOG_DIR = Path("runs/experiments/questionnaires/")
-INVENTORY_DIR = Path("src/experiments/questionnaires/inventory/")
 QUESTIONNAIRES = [
-    "general",  # no scoring, screening only
-    "bdi-ii",  # screening only
-    "phq-15",  # screening only
-    "panas",  # pre-post
+    "general",  # no scoring
+    "bdi-ii",
+    "phq-15",
     "panas",
     "pcs",
     "pvaq",
     "stai-t-10",
+    "maas",
 ]
+
+INVENTORY_DIR = Path("src/experiments/questionnaires/inventory/")
+LOG_DIR = Path("runs/experiments/questionnaires/")
+
 
 parser = argparse.ArgumentParser(
     description="Run the app with selected questionnaires."
@@ -59,14 +51,12 @@ parser.add_argument(
     action="store_true",
     help="Enable debug mode. Data will not be saved.",
 )
-
 parser.add_argument(
     "-w",
     "--welcome",
     action="store_true",
     help="Show welcome page with instructions and information.",
 )
-
 args = parser.parse_args()
 questionnaires = args.questionnaire
 
@@ -77,12 +67,11 @@ configure_logging(
     file_path=log_file if not args.debug else None,
     ignore_libs=["werkzeug", "urllib3", "requests"],
 )
-
-# Load participant data
-participant_info = read_last_participant() if not args.debug else dict(id=0)
 if args.debug:
     logging.debug("Debug mode is enabled. Data will not be saved.")
 
+# Load participant data
+participant_info = read_last_participant() if not args.debug else dict(id=0)
 
 app = Flask(__name__)
 
@@ -99,7 +88,7 @@ def load_questionnaire(scale: str) -> dict:
         return current_questionnaire
     except FileNotFoundError:
         logging.error(f"Questionnaire '{scale.upper()}' not found.")
-        return dict()
+        return dict(title=scale.upper())  # return empty questionnaire
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -134,12 +123,10 @@ def questionnaire_handler(scale):
     current_questionnaire = load_questionnaire(scale)
     if request.method == "POST":
         answers = request.form
-        logging.debug(
-            f"{scale.upper()} answers = {answers}",
-        ) if args.debug else None
+        logging.debug(f"{scale.upper()} answers = {answers}")
         score = (
             score_results(scale, answers) if scale.split("_")[0] != "general" else None
-        )
+        )  # general questionnaire has no scoring
         save_results(
             participant_info,
             scale,
@@ -175,7 +162,7 @@ def thanks():
 
     return render_template(
         "thanks.html.j2",
-        text="Vielen Dank für das Ausfüllen der Fragebögen!",
+        title="Vielen Dank für das Ausfüllen der Fragebögen!",
     )
 
 
@@ -203,8 +190,6 @@ def main():
     )
     webbrowser.open_new("http://localhost:5000")
     app.run(debug=args.debug, use_reloader=False)
-    # NOTE: possible to deploy to web via docker:
-    # https://www.youtube.com/watch?v=cw34KMPSt4k
 
 
 if __name__ == "__main__":
