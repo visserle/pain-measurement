@@ -1,8 +1,10 @@
 # Log and data files
 /runs
 /data
+src/data/participants.json
 
 # work in progress
+stuff.ipynb
 notebooks/00_stimuli_function.ipynb
 notebooks/03_dataset_size.ipynb
 notebooks/04_time_series.ipynb
@@ -17,18 +19,14 @@ src/models/models.py
 src/models/models_2.py
 src/questionnaires/archive
 src/experiments/oddball.py
-/src/experiments/questionnaires/archive
 
+# Licensed questionnaires
+src/experiments/questionnaires/archive
 src/experiments/questionnaires/inventory/bdi-ii.yaml
-src/experiments/questionnaires/inventory/panas.yaml
+src/experiments/questionnaires/inventory/maas.yaml
 src/experiments/questionnaires/inventory/pcs.yaml
-src/experiments/questionnaires/inventory/pvaq.yaml
 src/experiments/questionnaires/inventory/stai-t-10.yaml
-
-# excluded for now
-notebooks/_stuff.ipynb
-notebooks/10_skorch_doctor.ipynb
-plan.md
+src/experiments/questionnaires/inventory/phq-15.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -107,6 +105,8 @@ target/
 # Jupyter NB Checkpoints
 .ipynb_checkpoints/
 
+# Pytest
+.pytest_cache/
 
 # Mac OS-specific storage files
 .DS_Store
@@ -117,10 +117,3 @@ target/
 
 # Mypy cache
 .mypy_cache/
-
-.aider*
-src/experiments/questionnaires/inventory/phq-15.yaml
-
-/data/anonymized
-src/data/participants.json
-stuff.ipynb
