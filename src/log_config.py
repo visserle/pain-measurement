@@ -16,16 +16,19 @@ def configure_logging(
     warn_instead_of_ignore: bool = False,
 ) -> None:
     """
-    Configures the root logger for console and file logging with the specified parameters.
+    Configures the root logger for console and file logging with the specified
+    parameters.
 
     Parameters:
     - stream_level: The logging level for the stream handler.
     - file_level: The logging level for the file handler.
     - file_path: The path to the log file (if None, file logging is disabled).
     - stream: Whether to enable console logging (default is True).
-    - stream_milliseconds: Whether to include milliseconds in the console log timestamps (default is False).
+    - stream_milliseconds: Whether to include milliseconds in the console log timestamps
+    (default is False).
     - ignore_libs: A list of library names to ignore in the logs.
-    - warn_instead_of_ignore: Whether to log a warning instead of ignoring logs from specified libraries (default is False).
+    - warn_instead_of_ignore: Whether to log a warning instead of ignoring logs from
+    specified libraries (default is False).
 
     Example usage:
     >>> import logging
@@ -165,20 +168,22 @@ def main():
     logging.error("This is an error message.")
     logging.critical("This is a critical message.")
 
-    # More advanced usage with ignored libraries
+    # Ignore warnings from the 'ignored' library in this example
     configure_logging(
         ignore_libs=["ignored"],
     )
     logger = logging.getLogger("ignored")
-    logger.warning("This is a warning message and should be ignored.")
+    logger.warning("This warning from 'ignored' library will be ignored.")
+    logging.warning("This warning from root logger will be shown.")
 
+    # Ignore everything but warnings/errors from the 'partially_ignored' library
     configure_logging(
         ignore_libs=["partially_ignored"],
         warn_instead_of_ignore=True,
     )
     another_logger = logging.getLogger("partially_ignored")
-    another_logger.info("This is a info message and should be ignored.")
-    another_logger.error("This is a error message and should be logged.")
+    another_logger.info("This info message from 'partially_ignored' will be ignored.")
+    another_logger.error("This error message from 'partially_ignored' will be shown.")
 
 
 if __name__ == "__main__":
