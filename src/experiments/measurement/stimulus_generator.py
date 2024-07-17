@@ -23,7 +23,7 @@ DUMMY_VALUES = {
     "temperature_baseline": 40,
     "temperature_range": 3,
 }
-DEFAULTS |= DUMMY_VALUES
+DEFAULTS.update(DUMMY_VALUES)
 
 
 class StimulusGenerator:
@@ -126,7 +126,7 @@ class StimulusGenerator:
                 if extension[0] <= start:
                     start += extension[1]
             end = start + self.major_decreasing_half_cycle_period * self.sample_rate
-            intervals.append((start, end))
+            intervals.append((float(start), float(end)))
         return intervals
 
     def _get_desired_length_random_half_cycles(
