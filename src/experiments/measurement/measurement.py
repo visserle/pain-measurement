@@ -344,7 +344,7 @@ def main():
         ):
             logging.warning("Pain rating is not covering the full spectrum. ")
         logging.info(f"Correlation between temperature and rating: {correlation}")
-        if correlation > 0.6:
+        if correlation > 0.7:
             reward += 0.5
             logging.info("Rewarding participant.")
             script["reward"].present()

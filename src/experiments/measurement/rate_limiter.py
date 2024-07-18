@@ -15,15 +15,6 @@ class RateLimiter:
         rate: int,
         use_intervals: bool = False,
     ):
-        """
-        Initialize the rate limiter with the specified rate and interval-based limiting
-        option.
-
-        Parameters:
-        - rate (int): allowed number of operations per second
-        - use_intervals (bool, optional): enables interval-based limiting
-            (default: False)
-        """
         self.rate = rate
         self.use_intervals = use_intervals
         if use_intervals:
