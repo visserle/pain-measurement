@@ -50,7 +50,7 @@ def pl_schema_to_duckdb_schema(schema: pl.Schema) -> str:
             return f"DECIMAL({precision}, {scale})"
         elif isinstance(polars_type, pl.List):
             inner_type = get_duckdb_type(polars_type.inner)
-            return f"LIST({inner_type})"
+            return f"{inner_type}[]"
         elif isinstance(polars_type, pl.Struct):
             fields = [
                 f"{field[0]} {get_duckdb_type(field[1])}"
@@ -67,7 +67,7 @@ def pl_schema_to_duckdb_schema(schema: pl.Schema) -> str:
     duckdb_schema = []
     for column_name, polars_type in schema.items():
         duckdb_type = get_duckdb_type(polars_type)
-        duckdb_schema.append(f"{column_name} {duckdb_type}")
+        duckdb_schema.append(f"{column_name.lower()} {duckdb_type}")
 
     return ", ".join(duckdb_schema)
 
