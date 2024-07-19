@@ -2,7 +2,12 @@
 data_config = {
     "iMotions_Stimulus": {
         "file_name": "CustomCurves_CustomCurves@1_ET_EventAPI_ExternDevice",
-        "load_columns": ["Timestamp", "Temperature", "Rating"],
+        "load_columns": [
+            "RowNumber",
+            "Timestamp",
+            "Temperature",
+            "Rating",
+        ],
     },
     "iMotions_EDA": {
         "file_name": "Shimmer3_EDA_&_PPG_Shimmer3_EDA_&_PPG_ET_Shimmer_ShimmerDevice",
@@ -43,6 +48,7 @@ data_config = {
     "iMotions_EEG": {
         "file_name": "EEG_Enobio-USB_ENOBIO-8-NE-Device_(COM3)_ET_Lsl_LslSensor",
         "load_columns": [
+            "RowNumber",
             "Timestamp",
             "Ch1",
             "Ch2",
@@ -58,6 +64,7 @@ data_config = {
     "iMotions_Pupil": {
         "file_name": "ET_Eyetracker",
         "load_columns": [
+            "RowNumber",
             "Timestamp",
             "ET_PupilLeft",
             "ET_PupilRight",
@@ -74,6 +81,7 @@ data_config = {
     "iMotions_Face": {
         "file_name": "Affectiva_AFFDEX_ET_Affectiva_AffectivaCameraDevice",
         "load_columns": [
+            "RowNumber",
             "SampleNumber",
             "Timestamp",
             "Anger",
@@ -121,6 +129,7 @@ data_config = {
     "iMotions_System": {
         "file_name": "System_Load_Monitor_iMotions.SysMonitor@1_ET_EventAPI_ExternDevice",
         "load_columns": [
+            "RowNumber",
             "Timestamp",
             "CPU Sys",
             "Memory Sys",
