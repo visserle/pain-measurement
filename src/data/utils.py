@@ -12,11 +12,10 @@ def pl_schema_to_duckdb_schema(schema: pl.Schema) -> str:
     Convert a Polars DataFrame schema to a DuckDB schema string. Also lowercases all
     column names.
 
-    In an ideal world, this function would not be necessary, but DuckDB neihter does
-    support constraints in CREATE TABLE AS SELECT (CTAS) statements, nor does it support
-    and does not support
+    In an ideal world, this function would not be necessary, but DuckDB neither supports
+    constraints in CREATE TABLE AS SELECT (CTAS) statements, nor does it support
     altering tables to add primary keys. Therefore, we need to create the table schema
-    manually and insert the data afterwards.
+    manually and insert the data afterwards for key constraints.
 
     NOTE: Not tested for all Polars data types (especially nested types).
     NOTE: pl.Object is not accounted for here.
