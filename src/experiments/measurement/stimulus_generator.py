@@ -6,8 +6,8 @@ DEFAULTS = {
     "half_cycle_num": 10,
     "period_range": [5, 20],
     "amplitude_range": [0.3, 1.0],
-    "inflection_point_range": [-0.4, 0.3],
-    "shorten_expected_duration": 2,
+    "inflection_point_range": [-0.5, 0.3],
+    "shorten_expected_duration": 7,
     "major_decreasing_half_cycle_num": 3,
     "major_decreasing_half_cycle_period": 20,
     "major_decreasing_half_cycle_amplitude": 0.925,
@@ -15,10 +15,9 @@ DEFAULTS = {
     "plateau_num": 2,
     "plateau_duration": 15,
     "plateau_percentile_range": [25, 50],
-    "prolonged_minima_num": 1,
+    "prolonged_minima_num": 2,
     "prolonged_minima_duration": 5,
 }
-
 DUMMY_VALUES = {
     "temperature_baseline": 40,
     "temperature_range": 3,
@@ -115,7 +114,7 @@ class StimulusGenerator:
         return np.gradient(self.y, 1 / self.sample_rate)  # dx in seconds
 
     @property
-    def major_decreasing_intervals(self) -> list[tuple[int, int]]:
+    def major_decreasing_intervals_idx(self) -> list[tuple[int, int]]:
         """
         Get the start and end indices of the major decreasing half cycles for labeling.
         """
@@ -126,8 +125,16 @@ class StimulusGenerator:
                 if extension[0] <= start:
                     start += extension[1]
             end = start + self.major_decreasing_half_cycle_period * self.sample_rate
-            intervals.append((float(start), float(end)))
+            intervals.append((int(start), int(end)))
         return intervals
+
+    @property
+    def major_decreasing_intervals_ms(self) -> list[tuple[int, int]]:
+        """Major decreasing intervals in milliseconds."""
+        return [
+            (int(start * 1000 / self.sample_rate), int(end * 1000 / self.sample_rate))
+            for start, end in self.major_decreasing_intervals_idx
+        ]
 
     def _get_desired_length_random_half_cycles(
         self,
@@ -417,4 +424,4 @@ def cosine_half_cycle(
 if __name__ == "__main__":
     # for debugging
     stimulus = StimulusGenerator(seed=246)
-    print(stimulus.major_decreasing_intervals)
+    print(stimulus.major_decreasing_intervals_ms)
