@@ -113,29 +113,6 @@ class StimulusGenerator:
     def y_dot(self) -> np.ndarray:
         return np.gradient(self.y, 1 / self.sample_rate)  # dx in seconds
 
-    @property
-    def major_decreasing_intervals_idx(self) -> list[tuple[int, int]]:
-        """
-        Get the start and end indices of the major decreasing half cycles for labeling.
-        """
-        intervals = []
-        for idx in self.major_decreasing_half_cycle_idx:
-            start = sum(self.periods[:idx]) * self.sample_rate
-            for extension in self._extensions:
-                if extension[0] <= start:
-                    start += extension[1]
-            end = start + self.major_decreasing_half_cycle_period * self.sample_rate
-            intervals.append((int(start), int(end)))
-        return intervals
-
-    @property
-    def major_decreasing_intervals_ms(self) -> list[tuple[int, int]]:
-        """Major decreasing intervals in milliseconds."""
-        return [
-            (int(start * 1000 / self.sample_rate), int(end * 1000 / self.sample_rate))
-            for start, end in self.major_decreasing_intervals_idx
-        ]
-
     def _get_desired_length_random_half_cycles(
         self,
         shorten,
@@ -183,6 +160,29 @@ class StimulusGenerator:
     def _get_major_decreasing_half_cycle_idx_for_insert(self) -> np.ndarray:
         """Indices for np.insert."""
         return [i - idx for idx, i in enumerate(self.major_decreasing_half_cycle_idx)]
+
+    @property
+    def major_decreasing_intervals_idx(self) -> list[tuple[int, int]]:
+        """
+        Get the start and end indices of the major decreasing half cycles for labeling.
+        """
+        intervals = []
+        for idx in self.major_decreasing_half_cycle_idx:
+            start = sum(self.periods[:idx]) * self.sample_rate
+            for extension in self._extensions:
+                if extension[0] <= start:
+                    start += extension[1]
+            end = start + self.major_decreasing_half_cycle_period * self.sample_rate
+            intervals.append((int(start), int(end)))
+        return intervals
+
+    @property
+    def major_decreasing_intervals_ms(self) -> list[tuple[int, int]]:
+        """Major decreasing intervals in milliseconds."""
+        return [
+            (int(start * 1000 / self.sample_rate), int(end * 1000 / self.sample_rate))
+            for start, end in self.major_decreasing_intervals_idx
+        ]
 
     def _get_periods(self) -> np.ndarray:
         """
