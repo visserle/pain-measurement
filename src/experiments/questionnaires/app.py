@@ -158,7 +158,7 @@ def questionnaire_handler(scale):
 @app.route("/thanks")
 def thanks():
     logging.info("Completed all questionnaires.")
-    trigger_shutdown()
+    trigger_shutdown()  # shutdown the server after the response is sent
 
     return render_template(
         "thanks.html.j2",
