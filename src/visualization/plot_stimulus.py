@@ -32,7 +32,7 @@ def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
     )
 
     # Add shapes for the major increasing intervals
-    for interval in stimulus.major_decreasing_intervals:
+    for interval in stimulus.major_decreasing_intervals_idx:
         start_time, end_time = (
             interval[0] / stimulus.sample_rate,
             interval[1] / stimulus.sample_rate,
