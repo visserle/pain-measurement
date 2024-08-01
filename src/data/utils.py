@@ -1,10 +1,4 @@
-from functools import reduce
-
 import polars as pl
-
-from src.data.config_data import DataConfigBase
-from src.data.config_participant import ParticipantConfig
-from src.data.make_dataset import load_dataset
 
 
 def pl_schema_to_duckdb_schema(schema: pl.Schema) -> str:

@@ -1,4 +1,4 @@
-# Note that later on, all column names are converted to lowercase.
+# Note that all column names will be lowercased in the resulting table.
 data_config = {
     "iMotions_Stimulus": {
         "file_name": "CustomCurves_CustomCurves@1_ET_EventAPI_ExternDevice",

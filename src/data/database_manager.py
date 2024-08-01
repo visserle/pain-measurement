@@ -4,6 +4,7 @@ from pathlib import Path
 import duckdb
 import polars as pl
 
+from src.data.data_config import DB_FILE, imotions_data, participant_data
 from src.data.imotions_data import (
     create_raw_data_dfs,
     create_trials_df,
@@ -15,11 +16,6 @@ from src.data.seeds_data import seed_data  # noqa (used in query)
 from src.data.utils import pl_schema_to_duckdb_schema
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
-
-# Paths
-DB_FILE = Path("experiment.duckdb")
-participant_data = Path("runs/experiments/participants.csv")
-data = Path("data/imotions")
 
 
 class DatabaseSchema:
@@ -196,7 +192,9 @@ def main():
                 continue
 
             # Load polars dataframes into dictionary from config
-            load_imotions_data(data_config, data, participant_id=participant_id)
+            load_imotions_data(
+                data_config, imotions_data, participant_id=participant_id
+            )
 
             # Create metadata table
             trials = create_trials_df(data_config, participant_id=participant_id)
