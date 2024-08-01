@@ -10,6 +10,7 @@ from src.data.imotions_data import (
     load_imotions_data,
 )
 from src.data.imotions_data_config import data_config
+from src.data.preprocessed_data import create_preprocessed_data_dfs
 from src.data.seeds_data import seed_data  # noqa (used in query)
 from src.data.utils import pl_schema_to_duckdb_schema
 
@@ -23,7 +24,20 @@ data = Path("data/imotions")
 
 class DatabaseSchema:
     @staticmethod
-    def create_participants_table():
+    def create_database_tables():
+        pass
+
+    @staticmethod
+    def create_participants_table(
+        conn: duckdb.DuckDBPyConnection,
+    ) -> None:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS Participants (
+                participant_id INTEGER PRIMARY KEY,
+                age INTEGER,
+                gender CHAR
+            );
+        """)
         pass
 
     @staticmethod
@@ -42,6 +56,7 @@ class DatabaseSchema:
                 duration DOUBLE,
                 skin_area USMALLINT,
                 UNIQUE (trial_number, participant_id)
+                -- FOREIGN KEY (participant_id) REFERENCES participants(participant_id) #  TODO
             );
         """)
 
@@ -63,6 +78,20 @@ class DatabaseSchema:
                 trial_id USMALLINT,
                 {pl_schema_to_duckdb_schema(schema)},
                 UNIQUE (trial_id, rownumber)
+            );
+        """)
+        logger.info(f"Created table '{name}' in the database.")
+
+    @staticmethod
+    def create_preprocessed_data_table(
+        conn: duckdb.DuckDBPyConnection,
+        name: str,
+        schema: pl.Schema,
+    ) -> None:
+        conn.execute(f"""
+            CREATE TABLE IF NOT EXISTS {name} (
+                {pl_schema_to_duckdb_schema(schema)},
+            UNIQUE (trial_id, rownumber)
             );
         """)
         logger.info(f"Created table '{name}' in the database.")
@@ -121,19 +150,51 @@ class DatabaseManager:
         raw_data_df: pl.DataFrame,
     ):
         DatabaseSchema.create_raw_data_table(self.conn, name, raw_data_df.schema)
-        self.conn.execute(f"""
-            INSERT INTO {name}
-            SELECT t.trial_id, r.*
-            FROM raw_data_df AS r
-            JOIN Trials AS t ON r.trial_number = t.trial_number AND r.participant_id = t.participant_id
-            ORDER BY r.rownumber;
-        """)
+        try:
+            self.conn.execute(f"""
+                INSERT INTO {name}
+                SELECT t.trial_id, r.*
+                FROM raw_data_df AS r
+                JOIN Trials AS t ON r.trial_number = t.trial_number AND r.participant_id = t.participant_id
+                ORDER BY r.rownumber;
+            """)
+        except duckdb.ConstraintException as e:
+            logger.warning(f"Raw data '{name}' already exists in the database: {e}")
+
+    def load_preprocessed_data(
+        self,
+        name: str,
+        preprocessed_data_df: pl.DataFrame,
+    ):
+        DatabaseSchema.create_preprocessed_data_table(
+            self.conn, name, preprocessed_data_df.schema
+        )
+        try:
+            self.conn.execute(f"""
+                INSERT INTO {name}
+                SELECT *
+                FROM preprocessed_data_df
+                ORDER BY trial_id, timestamp;
+            """)
+        except duckdb.ConstraintException as e:
+            logger.warning(
+                f"Preprocessed data '{name}' already exists in the database: {e}"
+            )
 
 
 def main():
     db = DatabaseManager()
     with db:
-        for participant_id in range(1, 24):
+        for participant_id in range(1, 29):
+            # Check in the database if the participant exists via Trials table
+            if db.execute(
+                f"SELECT * FROM Trials WHERE participant_id = {participant_id}"
+            ).fetchone():
+                logging.debug(
+                    f"Participant {participant_id} already exists in the database."
+                )
+                continue
+
             # Load polars dataframes into dictionary from config
             load_imotions_data(data_config, data, participant_id=participant_id)
 
@@ -146,13 +207,18 @@ def main():
             for key, df in raw_data_dfs.items():
                 db.load_raw_data(key, df)
 
+        # Create preprocessed data tables
+        preprocessed_data_dfs = create_preprocessed_data_dfs()
+        for key, df in preprocessed_data_dfs.items():
+            db.load_preprocessed_data(key, df)
+
 
 if __name__ == "__main__":
     import time
 
     from src.log_config import configure_logging
 
-    configure_logging(stream_level=logging.DEBUG)
+    configure_logging(stream_level=logging.DEBUG, stream_milliseconds=True)
 
     start = time.time()
     main()
