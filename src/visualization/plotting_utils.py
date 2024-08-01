@@ -35,6 +35,7 @@ def prepare_multiline_hvplot(
     # Define columns where we don't want to add NaN separators
     info_columns = [
         "trial_id",
+        "trial_number",
         "participant_id",
         "stimulus_seed",
         "trial_specific_interval_id",
