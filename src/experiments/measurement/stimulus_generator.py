@@ -184,6 +184,42 @@ class StimulusGenerator:
             for start, end in self.major_decreasing_intervals_idx
         ]
 
+    @staticmethod
+    def cosine_half_cycle(
+        period: float,
+        amplitude: float,
+        y_intercept: float = 0,
+        t_start: float = 0,
+        sample_rate: int = 10,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Generate a half cycle cosine function (1 pi) with the given parameters."""
+        frequency = 1 / period
+        num_steps = period * sample_rate
+        assert num_steps == int(num_steps), "Number of steps must be an integer"
+        num_steps = int(num_steps)
+        t = np.linspace(0, period, num_steps)
+        y = amplitude * np.cos(np.pi * frequency * t) + y_intercept - amplitude
+        t += t_start
+        return t, y
+
+    def _generate_stimulus(self):
+        """Generates the stimulus based on the periods and amplitudes."""
+        yi = []
+        t_start = 0
+        y_intercept = -1
+
+        for i in range(self.half_cycle_num):
+            period = self.periods[i]
+            amplitude = self.amplitudes[i]
+            t, y = self.cosine_half_cycle(
+                period, amplitude, y_intercept, t_start, self.sample_rate
+            )
+            y_intercept = y[-1]
+            t_start = t[-1]
+            yi.append(y)
+
+        self.y = np.concatenate(yi)
+
     def _get_periods(self) -> np.ndarray:
         """
         Get periods for the half cycles.
@@ -293,24 +329,6 @@ class StimulusGenerator:
             print(f"Amplitudes: {counter} iterations to converge")
         return amplitudes
 
-    def _generate_stimulus(self):
-        """Generates the stimulus based on the periods and amplitudes."""
-        yi = []
-        t_start = 0
-        y_intercept = -1
-
-        for i in range(self.half_cycle_num):
-            period = self.periods[i]
-            amplitude = self.amplitudes[i]
-            t, y = cosine_half_cycle(
-                period, amplitude, y_intercept, t_start, self.sample_rate
-            )
-            y_intercept = y[-1]
-            t_start = t[-1]
-            yi.append(y)
-
-        self.y = np.concatenate(yi)
-
     def add_calibration(self):
         """Calibrates temperature range and baseline using participant data."""
         self.y *= round(self.temperature_range / 2, 2)  # avoid floating point weirdness
@@ -401,24 +419,6 @@ class StimulusGenerator:
         # Append any remaining values after the last index
         y_new = np.concatenate((y_new, self.y[last_idx:]))
         return y_new
-
-
-def cosine_half_cycle(
-    period: float,
-    amplitude: float,
-    y_intercept: float = 0,
-    t_start: float = 0,
-    sample_rate: int = 10,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Generate a half cycle cosine function (1 pi) with the given parameters."""
-    frequency = 1 / period
-    num_steps = period * sample_rate
-    assert num_steps == int(num_steps), "Number of steps must be an integer"
-    num_steps = int(num_steps)
-    t = np.linspace(0, period, num_steps)
-    y = amplitude * np.cos(np.pi * frequency * t) + y_intercept - amplitude
-    t += t_start
-    return t, y
 
 
 if __name__ == "__main__":
