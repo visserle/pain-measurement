@@ -7,7 +7,7 @@ import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from src.helpers import center_tk_window
+from src.experiments.utils import center_tk_window
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 

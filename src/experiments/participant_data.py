@@ -6,15 +6,15 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import messagebox, ttk
 
-from src.helpers import center_tk_window
+from src.experiments.utils import center_tk_window
 from src.log_config import close_root_logging, configure_logging
-
-logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 # The main participants file with all participants
 # and their basic information: timestamp, ID, age, gender
 # (stored in the non-disclosed runs folder for privacy reasons)
 PARTICIPANTS_FILE = Path("runs/experiments/participants.csv")
+
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 def add_participant_info(
