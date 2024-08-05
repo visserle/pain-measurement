@@ -1,8 +1,6 @@
 import ast
-import tkinter as tk
 
 import polars as pl
-from screeninfo import get_monitors
 
 
 def ensure_list(to_list: str | list[str]) -> list[str]:
@@ -50,29 +48,3 @@ def to_describe(
         pl.col(col).quantile(0.75).alias(f"{prefix}75%"),
         pl.col(col).max().alias(f"{prefix}max"),
     ]
-
-
-def center_tk_window(
-    window: tk.Tk,
-    primary_screen: bool = False,
-) -> None:
-    """
-    Center a window, by default on the first available non-primary screen if available,
-    otherwise on the primary screen.
-    """
-    # Get sorted list of monitors
-    monitors = sorted(get_monitors(), key=lambda m: m.is_primary)
-    # non-primary monitor comes first (False < True)
-    monitor = monitors[0] if not primary_screen else monitors[-1]
-
-    # Get window size
-    window.update_idletasks()
-    window_width = window.winfo_width()
-    window_height = window.winfo_height()
-
-    # Calculate center coordinates
-    center_x = int(monitor.x + (monitor.width / 2 - window_width / 2))
-    center_y = int(monitor.y + (monitor.height / 2 - window_height / 2))
-
-    # Move window to the center of the chosen monitor
-    window.geometry(f"+{center_x}+{center_y}")
