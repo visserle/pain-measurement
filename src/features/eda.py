@@ -4,6 +4,8 @@ import neurokit2 as nk
 import pandas as pd
 import polars as pl
 
+from src.features.transformations import map_trials
+
 
 def clean_eda(df: pl.DataFrame) -> pl.DataFrame:
     # TODO: drop irrelevant columns, downsample, etc.
@@ -15,6 +17,7 @@ def feature_eda(df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 
+@map_trials
 def nk_process_eda(
     df: pl.DataFrame,
     sampling_rate: int = 100,
