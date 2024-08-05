@@ -11,6 +11,9 @@ def prepare_multiline_hvplot(
     per category in hvplot.
 
     https://hvplot.holoviz.org/user_guide/Large_Timeseries.html#multiple-lines-per-category-example
+
+    Note that this workaround prevents the use of time data types in the DataFrame as
+    NaN values are not supported for time data types.
     """
 
     # Define columns where we don't want to add NaN separators
@@ -39,11 +42,10 @@ def prepare_multiline_hvplot(
     nan_df = nan_df.with_columns(pl.lit(1).alias("temp_sort"))
 
     # Concatenate the original DataFrame with the NaN DataFrame
-    result = pl.concat(
-        [df, nan_df],
-        how="diagonal_relaxed",  # FIXME: maybe we can do better than just ignoring the schema
-        rechunk=True,
-    ).sort([trial_column, "temp_sort", time_column])
+    result = (
+        pl.concat([df, nan_df], how="diagonal_relaxed", rechunk=True)
+        .sort([trial_column, "temp_sort", time_column])
+        .drop("temp_sort")
+    )
 
-    # Remove the temporary sorting column and return the result
-    return result.drop("temp_sort")
+    return result

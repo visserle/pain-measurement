@@ -5,10 +5,10 @@ from pathlib import Path
 from src.experiments.participant_data import add_participant_info
 from src.experiments.questionnaires.scoring_schemas import SCORING_SCHEMAS
 
-logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
-
 RESULTS_DIR = Path("data/experiments/questionnaires")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 def _extract_number(string: str) -> int:
