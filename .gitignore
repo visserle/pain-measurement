@@ -2,6 +2,7 @@
 /runs
 /data
 src/data/participants.json
+Experiment.duckdb.tmp
 
 # work in progress
 stuff.ipynb
@@ -117,3 +118,15 @@ target/
 
 # Mypy cache
 .mypy_cache/
+
+# Stuff
+*.duckdb
+src/data/protocols.md
+_stuff.ipynb
+notebooks/skorch_doctor.ipynb
+notebooks/stuff_modeling.ipynb
+notebooks/stuff_time_series.ipynb
+notebooks/thermode.ipynb
+notebooks/preprocess_data.ipynb
+notebooks/kalman.ipynb
+notebooks/dataset_size.ipynb
