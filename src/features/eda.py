@@ -5,9 +5,13 @@ import pandas as pd
 import polars as pl
 
 
-def preprocess_eda(df: pl.DataFrame) -> pl.DataFrame:
-    df = nk_process_eda(df)
+def clean_eda(df: pl.DataFrame) -> pl.DataFrame:
     # TODO: drop irrelevant columns, downsample, etc.
+    return df
+
+
+def feature_eda(df: pl.DataFrame) -> pl.DataFrame:
+    df = nk_process_eda(df)
     return df
 
 
