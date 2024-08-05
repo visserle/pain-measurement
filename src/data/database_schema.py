@@ -3,7 +3,7 @@ import logging
 import duckdb
 import polars as pl
 
-from src.data.seeds_data import seed_data  # noqa (used in db query)
+from src.data.seeds_data import get_seeds_data
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -14,7 +14,7 @@ class DatabaseSchema:
 
     Consists of:
         - metadata tables for participants, trials, seeds, etc. and
-        - data tables for raw, preprocessed, and feature data.
+        - data tables for raw, clean, and feature data.
 
     Note: participant_id and trial_number are denormalized columns to avoid joins.
     """
@@ -44,15 +44,14 @@ class DatabaseSchema:
             CREATE SEQUENCE IF NOT EXISTS seq_trials_trial_id START 1;
             CREATE TABLE IF NOT EXISTS Trials (
                 trial_id USMALLINT NOT NULL DEFAULT NEXTVAL('seq_trials_trial_id'),
-                trial_number USMALLINT,
-                participant_id USMALLINT,
+                trial_number UTINYINT,
+                participant_id UTINYINT,
                 stimulus_seed USMALLINT,
+                skin_area UTINYINT,
                 timestamp_start DOUBLE,
                 timestamp_end DOUBLE,
                 duration DOUBLE,
-                skin_area USMALLINT,
                 UNIQUE (trial_number, participant_id)
-                -- FOREIGN KEY (participant_id) REFERENCES participants(participant_id) #  TODO
             );
         """)
 
@@ -60,46 +59,47 @@ class DatabaseSchema:
     def create_seeds_table(
         conn: duckdb.DuckDBPyConnection,
     ) -> None:
-        # Load directly into the database (not from CSV)
-        conn.execute("CREATE OR REPLACE TABLE Seeds AS SELECT * FROM seed_data")
+        # Exception: we directly load the seed data into the table to make life easier
+        conn.execute(
+            f"CREATE TABLE IF NOT EXISTS Seeds AS SELECT * FROM {get_seeds_data()}"
+        )
 
     @staticmethod
-    def create_raw_data_table(
+    def create_data_table(
         conn: duckdb.DuckDBPyConnection,
         name: str,
         schema: pl.Schema,
     ) -> None:
+        if DatabaseSchema.table_exists(conn, name):
+            return
+        # For clean and feature data, we replace the table if it already exists
+        table_query = (
+            "CREATE TABLE IF NOT EXISTS" if "Raw" in name else "CREATE OR REPLACE TABLE"
+        )
+        # For raw data, a trial_id will be added via join with Trials
+        trial_query = "trial_id USMALLINT," if "Raw" in name else ""
         conn.execute(f"""
-            CREATE TABLE IF NOT EXISTS {name} (
-                trial_id USMALLINT,
+            {table_query} {name} (
+                {trial_query}
                 {map_polars_schema_to_duckdb(schema)},
                 UNIQUE (trial_id, rownumber)
             );
-        """)  # trial_id will be added via join with Trials
-        logger.info(f"Created table '{name}' in the database.")
-
-    @staticmethod
-    def create_preprocessed_data_table(
-        conn: duckdb.DuckDBPyConnection,
-        name: str,
-        schema: pl.Schema,
-    ) -> None:
-        conn.execute(f"""
-            CREATE TABLE IF NOT EXISTS {name} (
-            {map_polars_schema_to_duckdb(schema)},
-            UNIQUE (trial_id, rownumber)
-            );
         """)
-        logger.info(f"Created table '{name}' in the database.")
+        logger.debug(f"Created table '{name}' in the database.")
 
     @staticmethod
-    def create_feature_data_table(
+    def table_exists(
         conn: duckdb.DuckDBPyConnection,
         name: str,
-        schema: pl.Schema,
-    ) -> None:
-        # same schema as preprocessed data
-        return DatabaseSchema.create_preprocessed_data_table(conn, name, schema)
+    ) -> bool:
+        return (
+            conn.execute(f"""
+                SELECT COUNT(*) 
+                FROM information_schema.tables
+                WHERE table_name = '{name}'
+                """).fetchone()[0]
+            > 0
+        )
 
 
 def map_polars_schema_to_duckdb(schema: pl.Schema) -> str:
@@ -128,7 +128,7 @@ def map_polars_schema_to_duckdb(schema: pl.Schema) -> str:
         pl.Boolean: "BOOLEAN",
         pl.Utf8: "VARCHAR",
         pl.Date: "DATE",
-        pl.Datetime: "tIMESTAMP",
+        pl.Datetime: "TIMESTAMP",
         pl.Duration: "INTERVAL",
         pl.Time: "TIME",
         pl.Categorical: "VARCHAR",
@@ -150,7 +150,7 @@ def map_polars_schema_to_duckdb(schema: pl.Schema) -> str:
                 for field in polars_type.fields
             ]
             return f"STRUCT({', '.join(fields)})"
-        # Base types
+        # Base types and unsupported types
         else:
             duckdb_type = type_mapping.get(polars_type)
             if duckdb_type is None:

@@ -1,21 +1,36 @@
+# TODO:
+# - check if modality already exists in the database before preprocessing it
+# - add labels function for feature data
+# - remove duplcate timestamps from shimmer sensor data (maybe this also exists in eeg data)
+# - add database for quality control (e.g. if the number of rows in the raw data is the same as in the clean data)
+# - performance https://docs.pola.rs/user-guide/expressions/user-defined-functions/ (maybe)
+# - add participant data to the database
+# - add questionnaires to the database
+# - add calibration data to the database
+# - add measurement data to the database
+# - add excluded data information to the database and check in the cleaning process if the data is excluded
+
 import logging
 
 import duckdb
 import polars as pl
 
 from src.data.data_config import DataConfig
-from src.data.database_schema import DatabaseSchema
-from src.data.feature_data import create_feature_data_dfs
-from src.data.imotions_data_to_raw_data import (
-    create_raw_data_dfs,
+from src.data.data_processing import (
+    create_clean_data_df,
+    create_feature_data_df,
+    create_raw_data_df,
     create_trials_df,
-    load_imotions_data_dfs,
 )
-from src.data.preprocessed_data import create_preprocessed_data_dfs
-from src.data.seeds_data import seed_data  # noqa (used in db query)
+from src.data.database_schema import DatabaseSchema
+from src.data.imotions_data import load_imotions_data_df
+
+MODALITIES = DataConfig.MODALITIES
+METADATA = DataConfig.METADATA
 
 NUM_PARTICIPANTS = DataConfig.NUM_PARTICIPANTS
 DB_FILE = DataConfig.DB_FILE
+
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -24,14 +39,19 @@ class DatabaseManager:
     """
     Database manager for the experiment data.
 
-    Note that DuckDB and Polars share the same memory space.
+    Note that DuckDB and Polars share the same memory space, so it is possible to
+    pass Polars DataFrames to DuckDB queries. As the data is highly compressed by Apache
+    Arrow, for each processing step, all modalities are loaded into memory at once,
+    processed, and then inserted into the database.
+
+    DuckDB allows only one connection at a time, so the usage as a context manager is
+    recommended.
 
     Example usage:
     >>> db = DatabaseManager()
     >>> with db:
     >>>    df = db.execute("SELECT * FROM Trials").pl()
     >>>    df.head()
-
     """
 
     def __init__(self):
@@ -65,7 +85,7 @@ class DatabaseManager:
         """Execute a SQL query."""
         if self.conn is None:
             raise ConnectionError(
-                "Database is not connected. Use 'with' statement or call connect() first."
+                "Database not connected. Use 'with' statement or call connect() first."
             )
         return self.conn.execute(query)
 
@@ -75,9 +95,44 @@ class DatabaseManager:
         """
         if self.conn is None:
             raise ConnectionError(
-                "Database is not connected. Use 'with' statement or call connect() first."
+                "Database not connected. Use 'with' statement or call connect() first."
             )
         return self.conn.sql(query)
+
+    def read_table(
+        self,
+        table_name: str,
+    ) -> pl.DataFrame:
+        """Quickly read a table from the database."""
+        try:
+            return self.execute(f"SELECT * FROM {table_name}").pl()
+        except duckdb.CatalogException as e:
+            logger.warning(f"Table '{table_name}' does not exist in the database: {e}")
+            return pl.DataFrame()
+
+    def participant_exists(
+        self,
+        participant_id: int,
+        table_name: str = "Trials",
+    ) -> bool:
+        """Check if a participant exists in the database.
+
+        If they exist in Trials, they exist in all raw data tables.
+        """
+        if "Raw" in table_name:
+            table_name = "Trials"
+        if not self.table_exists(table_name):
+            return False
+        result = self.execute(
+            f"SELECT True FROM {table_name} WHERE participant_id = {participant_id} LIMIT 1"
+        ).fetchone()
+        return bool(result)
+
+    def table_exists(
+        self,
+        table_name: str,
+    ) -> bool:
+        return DatabaseSchema.table_exists(self.conn, table_name)
 
     def insert_trials(
         self,
@@ -89,100 +144,99 @@ class DatabaseManager:
         except duckdb.ConstraintException as e:
             logger.warning(f"Trial data already exists in the database: {e}")
 
-    def _participant_exists(
-        self,
-        participant_id: int,
-    ) -> bool:
-        result = self.execute(
-            f"SELECT 1 FROM Trials WHERE participant_id = {participant_id} LIMIT 1"
-        )
-        return bool(result.fetchone())
-
     def insert_raw_data(
         self,
+        participant_id: int,
+        table_name: str,
+        raw_data_df: pl.DataFrame,
     ) -> None:
-        """
-        Load iMotions data from CSV files into the database.
+        DatabaseSchema.create_data_table(
+            self.conn,
+            table_name,
+            raw_data_df.schema,
+        )
+        self.conn.execute(f"""
+            INSERT INTO {table_name}
+            SELECT t.trial_id, r.*
+            FROM raw_data_df AS r
+            JOIN Trials AS t 
+                ON r.trial_number = t.trial_number 
+                AND r.participant_id = t.participant_id
+            ORDER BY r.rownumber;
+        """)
 
-        As data extraction from the iMotions output is more complex, most of it is
-        done in the `imotions_data_to_raw_data.py` module.
-        """
-        for participant_id in range(1, NUM_PARTICIPANTS + 1):
-            # Check if participant exists
-            if self._participant_exists(participant_id):
-                logger.debug(
-                    f"Participant {participant_id} already exists in the database."
-                )
-                continue
-
-            # Load iMotions data
-            imotions_data_dfs = load_imotions_data_dfs(participant_id)
-            # Create trials DataFrame
-            trials_df = create_trials_df(
-                participant_id,
-                imotions_data_dfs["iMotions_Marker"],
-            )
-            # Create raw data DataFrames
-            raw_data_dfs = create_raw_data_dfs(imotions_data_dfs, trials_df)
-            # Insert trials into database for the trial_id
-            self.insert_trials(trials_df)
-            # Insert raw data into database
-            for table_name, df in raw_data_dfs.items():
-                DatabaseSchema.create_raw_data_table(
-                    self.conn,
-                    table_name,
-                    df.schema,
-                )
-                self.conn.execute(f"""
-                INSERT INTO {table_name}
-                SELECT t.trial_id, r.*
-                FROM {table_name} AS r
-                JOIN Trials AS t ON r.trial_number = t.trial_number AND r.participant_id = t.participant_id
-                ORDER BY r.rownumber;
-                """)
-
-    def insert_preprocessed_data(
+    # Note that in constrast to raw data, cleaned and feature-engineered data is not
+    # inserted into the database per participant, but per modality over all
+    # participants.
+    def insert_clean_data(
         self,
-        preprocessed_data_dfs: dict[str, pl.DataFrame],
+        table_name: str,
+        clean_data_df: pl.DataFrame,
     ) -> None:
-        # TODO: add exclusion of participants and trials
-        for table_name, df in preprocessed_data_dfs.items():
-            DatabaseSchema.create_preprocessed_data_table(
-                self.conn,
-                table_name,
-                df.schema,
-            )
-            try:
-                self.conn.execute(f"""
-                    INSERT INTO {table_name}
-                    SELECT *
-                    FROM {table_name}
-                    ORDER BY trial_id, timestamp;
-                """)
-            except duckdb.ConstraintException:
-                logger.debug(
-                    f"Preprocessed data '{table_name}' already exists in the database."
-                )
+        if self.table_exists(table_name):
+            self.execute(f"DROP TABLE {table_name}")
+        DatabaseSchema.create_data_table(
+            self.conn,
+            table_name,
+            clean_data_df.schema,
+        )
+        self.conn.execute(f"""
+            INSERT INTO {table_name}
+            SELECT *
+            FROM clean_data_df
+            ORDER BY trial_id, timestamp;
+        """)
+        logger.info(f"Inserted '{table_name}' into the database.")
 
     def insert_feature_data(
         self,
-        feature_data_dfs: dict[str, pl.DataFrame],
+        table_name: str,
+        feature_data_df: pl.DataFrame,
     ) -> None:
-        pass
+        # same as clean data for now TODO FIXME
+        self.insert_clean_data(table_name, feature_data_df)
 
 
 def main():
     with DatabaseManager() as db:
-        # Insert raw participant data
-        db.insert_raw_data()
+        # Raw data
+        for participant_id in range(1, NUM_PARTICIPANTS + 1):
+            if db.participant_exists(participant_id):
+                logger.debug(
+                    f"Raw data for participant {participant_id} already exists in the database."
+                )
+                continue
+            for modality in METADATA + MODALITIES:
+                df = load_imotions_data_df(participant_id, modality)
+                table_name = f"Raw_{modality}"
+                if modality in METADATA:
+                    trials_df = create_trials_df(participant_id, df)
+                    db.insert_trials(trials_df)
+                else:
+                    df = create_raw_data_df(participant_id, df, trials_df)
+                    db.insert_raw_data(participant_id, table_name, df)
+            logger.debug(
+                f"Raw data for participant {participant_id} inserted into the database."
+            )
+        logger.info("Raw data inserted.")
 
-        # Insert preprocessed data
-        preprocessed_data_dfs = create_preprocessed_data_dfs()
-        db.insert_preprocessed_data(preprocessed_data_dfs)
+        # Cleaned data, no check for existing data
+        for modality in MODALITIES:
+            table_name = f"Clean_{modality}"
+            raw_data_df = db.read_table(f"Raw_{modality}")
+            clean_data_df = create_clean_data_df(table_name, raw_data_df)
+            db.insert_clean_data(table_name, clean_data_df)
+        logger.info("Data cleaned.")
 
-        # Insert feature data
-        feature_data_dfs = create_feature_data_dfs()
-        db.insert_feature_data(feature_data_dfs)
+        # Feature-engineered data
+        # for modality in MODALITIES:
+        #     table_name = f"Feature_{modality}"
+        #     clean_data_df = db.read_table(f"Clean_{modality}")
+        #     feature_data_df = create_feature_data_df(table_name, clean_data_df)
+        #     db.insert_feature_data(table_name, feature_data_df)
+        # logger.info("Data feature-engineered.")
+
+        logger.info("Database processing complete.")
 
 
 if __name__ == "__main__":
@@ -196,3 +250,11 @@ if __name__ == "__main__":
     main()
     end = time.time()
     print(f"Runtime: {end - start:.2f} seconds.")
+
+
+# TODO
+# if self._participant_exists(participant_id):
+# logger.debug(
+#     f"Raw data for participant {participant_id} already exists in the database."
+# )
+# continue

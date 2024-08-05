@@ -4,34 +4,6 @@ from src.features.aggregation import calculate_corr
 from src.features.scaling import scale_min_max, scale_percent_to_decimal
 
 
-def add_skin_area(df: pl.DataFrame) -> pl.DataFrame:
-    """
-    Reconstructs the applied skin areas on the left forearm from the participant id and
-    trial number.
-
-    The skin area distribution is as follows:
-
-    |---|---|
-    | 1 | 4 |
-    | 5 | 2 |
-    | 3 | 6 |
-    |---|---|
-
-    Each skin area is stimulated twice, where one trial is 3 minutes long.
-    For particpants with an even id the stimulation order is:
-    6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> end.
-    For participants with an odd id the stimulation order is:
-    1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> end.
-    """
-    return df.with_columns(
-        pl.when(pl.col("Participant") % 2 == 1)
-        .then((pl.col("Trial") % 6) + 1)
-        .otherwise(6 - (pl.col("Trial") % 6))
-        .alias("Skin_Area")
-        .cast(pl.Int8)
-    )
-
-
 def process_stimulus(df: pl.DataFrame) -> pl.DataFrame:
     """
     Normalize the 'Stimulus' data by scaling the 'Rating' and 'Temperature' columns to
