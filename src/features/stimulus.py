@@ -1,7 +1,18 @@
 import polars as pl
 
-from src.features.aggregation import calculate_corr
 from src.features.scaling import scale_min_max, scale_percent_to_decimal
+
+
+def clean_stimulus(df: pl.DataFrame) -> pl.DataFrame:
+    """Clean the 'Stimulus' data by removing unnecessary columns."""
+    return df.drop_in_place(["Stimulus_Seed", "Skin_Area"])
+
+
+def feature_stimulus(df: pl.DataFrame) -> pl.DataFrame:
+    """Feature engineer the 'Stimulus' data by normalizing the 'Rating' and 'Temperature'
+    columns."""
+    df = process_stimulus(df)
+    return df
 
 
 def process_stimulus(df: pl.DataFrame) -> pl.DataFrame:
@@ -32,8 +43,3 @@ def scale_temperature(df: pl.DataFrame) -> pl.DataFrame:
     target, so this function is included for now. Also the data leakeage is not
     significant. TODO"""
     return scale_min_max(df, exclude_additional_columns=["Rating"])
-
-
-def corr_temperature_rating(df: pl.DataFrame) -> pl.DataFrame:
-    """Calculate the correlation between 'Temperature' and 'Rating' for each trial."""
-    return calculate_corr(df, "Temperature", "Rating")

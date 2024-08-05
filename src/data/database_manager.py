@@ -91,7 +91,7 @@ class DatabaseManager:
 
     def sql(self, query: str):
         """Run a SQL query. If it is a SELECT statement, create a relation object from
-        the given SQL query, otherwise run the query as-is.
+        the given SQL query, otherwise run the query as-is. (see DuckDB docs)
         """
         if self.conn is None:
             raise ConnectionError(
@@ -109,6 +109,19 @@ class DatabaseManager:
         except duckdb.CatalogException as e:
             logger.warning(f"Table '{table_name}' does not exist in the database: {e}")
             return pl.DataFrame()
+
+    def table_exists(
+        self,
+        name: str,
+    ) -> bool:
+        return (
+            self.execute(f"""
+                SELECT COUNT(*) 
+                FROM information_schema.tables
+                WHERE table_name = '{name}'
+                """).fetchone()[0]
+            > 0
+        )
 
     def participant_exists(
         self,
@@ -128,12 +141,6 @@ class DatabaseManager:
         ).fetchone()
         return bool(result)
 
-    def table_exists(
-        self,
-        table_name: str,
-    ) -> bool:
-        return DatabaseSchema.table_exists(self.conn, table_name)
-
     def insert_trials(
         self,
         trials_df: pl.DataFrame,
@@ -150,7 +157,7 @@ class DatabaseManager:
         table_name: str,
         raw_data_df: pl.DataFrame,
     ) -> None:
-        DatabaseSchema.create_data_table(
+        DatabaseSchema.create_raw_data_table(
             self.conn,
             table_name,
             raw_data_df.schema,
@@ -173,9 +180,7 @@ class DatabaseManager:
         table_name: str,
         clean_data_df: pl.DataFrame,
     ) -> None:
-        if self.table_exists(table_name):
-            self.execute(f"DROP TABLE {table_name}")
-        DatabaseSchema.create_data_table(
+        DatabaseSchema.create_clean_data_table(
             self.conn,
             table_name,
             clean_data_df.schema,
@@ -186,7 +191,6 @@ class DatabaseManager:
             FROM clean_data_df
             ORDER BY trial_id, timestamp;
         """)
-        logger.info(f"Inserted '{table_name}' into the database.")
 
     def insert_feature_data(
         self,
@@ -203,24 +207,24 @@ def main():
         for participant_id in range(1, NUM_PARTICIPANTS + 1):
             if db.participant_exists(participant_id):
                 logger.debug(
-                    f"Raw data for participant {participant_id} already exists in the database."
+                    f"Raw data for participant {participant_id} already exists."
                 )
                 continue
-            for modality in METADATA + MODALITIES:
+            # Metadata
+            df = load_imotions_data_df(participant_id, METADATA)
+            trials_df = create_trials_df(participant_id, df)
+            db.insert_trials(trials_df)
+            # Data
+            for modality in MODALITIES:
                 df = load_imotions_data_df(participant_id, modality)
                 table_name = f"Raw_{modality}"
-                if modality in METADATA:
-                    trials_df = create_trials_df(participant_id, df)
-                    db.insert_trials(trials_df)
-                else:
-                    df = create_raw_data_df(participant_id, df, trials_df)
-                    db.insert_raw_data(participant_id, table_name, df)
-            logger.debug(
-                f"Raw data for participant {participant_id} inserted into the database."
-            )
+                df = create_raw_data_df(participant_id, df, trials_df)
+                db.insert_raw_data(participant_id, table_name, df)
+            logger.debug(f"Raw data for participant {participant_id} inserted.")
         logger.info("Raw data inserted.")
 
-        # Cleaned data, no check for existing data
+        # Cleaned data
+        # no check for existing data since it is overwritten every time
         for modality in MODALITIES:
             table_name = f"Clean_{modality}"
             raw_data_df = db.read_table(f"Raw_{modality}")
@@ -244,17 +248,9 @@ if __name__ == "__main__":
 
     from src.log_config import configure_logging
 
-    configure_logging(stream_level=logging.DEBUG, stream_milliseconds=True)
+    configure_logging(stream_level=logging.DEBUG)
 
     start = time.time()
     main()
     end = time.time()
     print(f"Runtime: {end - start:.2f} seconds.")
-
-
-# TODO
-# if self._participant_exists(participant_id):
-# logger.debug(
-#     f"Raw data for participant {participant_id} already exists in the database."
-# )
-# continue

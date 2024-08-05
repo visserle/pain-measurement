@@ -60,46 +60,46 @@ class DatabaseSchema:
         conn: duckdb.DuckDBPyConnection,
     ) -> None:
         # Exception: we directly load the seed data into the table to make life easier
-        conn.execute(
-            f"CREATE TABLE IF NOT EXISTS Seeds AS SELECT * FROM {get_seeds_data()}"
-        )
+        seeds_data = get_seeds_data()  # noqa
+        conn.execute("CREATE TABLE IF NOT EXISTS Seeds AS SELECT * FROM seeds_data")
 
     @staticmethod
-    def create_data_table(
+    def create_raw_data_table(
         conn: duckdb.DuckDBPyConnection,
         name: str,
         schema: pl.Schema,
     ) -> None:
-        if DatabaseSchema.table_exists(conn, name):
-            return
-        # For clean and feature data, we replace the table if it already exists
-        table_query = (
-            "CREATE TABLE IF NOT EXISTS" if "Raw" in name else "CREATE OR REPLACE TABLE"
-        )
-        # For raw data, a trial_id will be added via join with Trials
-        trial_query = "trial_id USMALLINT," if "Raw" in name else ""
         conn.execute(f"""
-            {table_query} {name} (
-                {trial_query}
+            CREATE TABLE IF NOT EXISTS {name} (
+                trial_id USMALLINT,
                 {map_polars_schema_to_duckdb(schema)},
                 UNIQUE (trial_id, rownumber)
             );
         """)
-        logger.debug(f"Created table '{name}' in the database.")
+        logger.debug(f"Created table '{name}'.")
 
     @staticmethod
-    def table_exists(
+    def create_clean_data_table(
         conn: duckdb.DuckDBPyConnection,
         name: str,
-    ) -> bool:
-        return (
-            conn.execute(f"""
-                SELECT COUNT(*) 
-                FROM information_schema.tables
-                WHERE table_name = '{name}'
-                """).fetchone()[0]
-            > 0
-        )
+        schema: pl.Schema,
+    ) -> None:
+        conn.execute(f"""
+            CREATE OR REPLACE TABLE {name} (
+                {map_polars_schema_to_duckdb(schema)},
+                UNIQUE (trial_id, rownumber)
+            );
+        """)
+        logger.debug(f"Created table '{name}'.")
+
+    @staticmethod
+    def create_feature_data_table(
+        conn: duckdb.DuckDBPyConnection,
+        name: str,
+        schema: pl.Schema,
+    ) -> None:
+        # same schema as clean data
+        return DatabaseSchema.create_clean_data_table(conn, name, schema)
 
 
 def map_polars_schema_to_duckdb(schema: pl.Schema) -> str:

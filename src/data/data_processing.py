@@ -7,6 +7,7 @@ from src.features.eeg import clean_eeg, feature_eeg
 from src.features.face import clean_face, feature_face
 from src.features.ppg import clean_ppg, feature_ppg
 from src.features.pupil import clean_pupil, feature_pupil
+from src.features.stimulus import clean_stimulus, feature_stimulus
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -15,7 +16,9 @@ def create_clean_data_df(
     name: str,
     df: pl.DataFrame,
 ) -> pl.DataFrame:
-    if name == "EDA":
+    if name == "Stimulus":
+        pass
+    elif name == "EDA":
         df = clean_eda(df)
     elif name == "EEG":
         pass
@@ -33,7 +36,9 @@ def create_feature_data_df(
     name: str,
     df: pl.DataFrame,
 ) -> dict[str, pl.DataFrame]:
-    if name == "EDA":
+    if name == "Stimulus":
+        pass
+    elif name == "EDA":
         df = feature_eda(df)
     elif name == "EEG":
         pass
