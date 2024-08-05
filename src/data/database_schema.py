@@ -20,10 +20,6 @@ class DatabaseSchema:
     """
 
     @staticmethod
-    def create_database_tables():
-        pass
-
-    @staticmethod
     def create_participants_table(
         conn: duckdb.DuckDBPyConnection,
     ) -> None:
@@ -59,9 +55,10 @@ class DatabaseSchema:
     def create_seeds_table(
         conn: duckdb.DuckDBPyConnection,
     ) -> None:
-        # Exception: we directly load the seed data into the table to make life easier
-        seeds_data = get_seeds_data()  # noqa
-        conn.execute("CREATE TABLE IF NOT EXISTS Seeds AS SELECT * FROM seeds_data")
+        if not DatabaseSchema.table_exists(conn, "Seeds"):
+            # we directly load the seed data into the table to make life easier
+            seeds_data = get_seeds_data()  # noqa
+            conn.execute("CREATE TABLE Seeds AS SELECT * FROM seeds_data")
 
     @staticmethod
     def create_raw_data_table(
@@ -100,6 +97,20 @@ class DatabaseSchema:
     ) -> None:
         # same schema as clean data
         return DatabaseSchema.create_clean_data_table(conn, name, schema)
+
+    @staticmethod
+    def table_exists(
+        conn: duckdb.DuckDBPyConnection,
+        name: str,
+    ) -> bool:
+        return (
+            conn.execute(f"""
+                SELECT COUNT(*) 
+                FROM information_schema.tables
+                WHERE table_name = '{name}'
+                """).fetchone()[0]
+            > 0
+        )
 
 
 def map_polars_schema_to_duckdb(schema: pl.Schema) -> str:
