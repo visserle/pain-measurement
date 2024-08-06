@@ -50,8 +50,10 @@ class DatabaseManager:
     Example usage:
     >>> db = DatabaseManager()
     >>> with db:
-    >>>    df = db.execute("SELECT * FROM Trials").pl()
-    >>>    df.head()
+    >>>    df = db.execute("SELECT * FROM Trials").pl()  # .pl() for Polars DataFrame
+    >>> # alternatively
+    >>>    df = db.read_table("Trials")
+    >>> df.head()
     """
 
     def __init__(self):
@@ -108,7 +110,7 @@ class DatabaseManager:
             return self.execute(f"SELECT * FROM {table_name}").pl()
         except duckdb.CatalogException as e:
             logger.warning(f"Table '{table_name}' does not exist in the database: {e}")
-            return pl.DataFrame()
+            raise e
 
     def table_exists(
         self,
@@ -210,11 +212,10 @@ def main():
                     f"Raw data for participant {participant_id} already exists."
                 )
                 continue
-            # Metadata
             df = load_imotions_data_df(participant_id, METADATA)
             trials_df = create_trials_df(participant_id, df)
             db.insert_trials(trials_df)
-            # Data
+
             for modality in MODALITIES:
                 df = load_imotions_data_df(participant_id, modality)
                 table_name = f"Raw_{modality}"
@@ -233,12 +234,12 @@ def main():
         logger.info("Data cleaned.")
 
         # Feature-engineered data
-        # for modality in MODALITIES:
-        #     table_name = f"Feature_{modality}"
-        #     clean_data_df = db.read_table(f"Clean_{modality}")
-        #     feature_data_df = create_feature_data_df(table_name, clean_data_df)
-        #     db.insert_feature_data(table_name, feature_data_df)
-        # logger.info("Data feature-engineered.")
+        for modality in MODALITIES:
+            table_name = f"Feature_{modality}"
+            clean_data_df = db.read_table(f"Clean_{modality}")
+            feature_data_df = create_feature_data_df(table_name, clean_data_df)
+            db.insert_feature_data(table_name, feature_data_df)
+        logger.info("Data feature-engineered.")
 
         logger.info("Database processing complete.")
 
