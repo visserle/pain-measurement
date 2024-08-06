@@ -24,6 +24,19 @@ def map_trials(func: callable):
     return wrapper
 
 
+def remove_dulpicate_timestamps(
+    df: pl.DataFrame,
+) -> pl.DataFrame:
+    """
+    Remove duplicate timestamps from the DataFrame.
+
+    Pertains mostly to Shimmer3 data where the timestamps can be duplicated.
+    For instance, in 1 seconds the GSR+ unit sometimes collects roughly 128 samples,
+    but only 100 unique timestamps.
+    """
+    return df.unique("timestamp")
+
+
 def add_time_column(
     df: pl.DataFrame,
 ) -> pl.DataFrame:

@@ -1,14 +1,16 @@
 # NOTE: GSR data collected at 100 Hz can be safely downsampled to 10 Hz or even less.
+# TODO: drop irrelevant columns, downsample, etc.
 
 import neurokit2 as nk
 import pandas as pd
 import polars as pl
 
-from src.features.transformations import map_trials
+from src.features.transformations import map_trials, remove_dulpicate_timestamps
 
 
 def clean_eda(df: pl.DataFrame) -> pl.DataFrame:
-    # TODO: drop irrelevant columns, downsample, etc.
+    df = remove_dulpicate_timestamps(df)
+
     return df
 
 
