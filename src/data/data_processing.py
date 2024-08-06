@@ -1,3 +1,7 @@
+"""
+Dataframe functions for each step in the pipeline. 
+Results will be inserted into the database.
+"""
 import logging
 
 import polars as pl
@@ -17,19 +21,17 @@ def create_clean_data_df(
     df: pl.DataFrame,
 ) -> pl.DataFrame:
     if name == "Stimulus":
-        pass
+        return clean_stimulus(df)
     elif name == "EDA":
-        df = clean_eda(df)
+        return clean_eda(df)
     elif name == "EEG":
-        pass
+        return clean_eeg(df)
     elif name == "PPG":
-        pass
+        return clean_ppg(df)
     elif name == "Pupil":
-        pass
+        return clean_pupil(df)
     elif name == "Face":
-        pass
-
-    return df
+        return clean_face(df)
 
 
 def create_feature_data_df(
@@ -37,19 +39,17 @@ def create_feature_data_df(
     df: pl.DataFrame,
 ) -> dict[str, pl.DataFrame]:
     if name == "Stimulus":
-        pass
+        return feature_stimulus(df)
     elif name == "EDA":
-        df = feature_eda(df)
+        return feature_eda(df)
     elif name == "EEG":
-        pass
+        return feature_eeg(df)
     elif name == "PPG":
-        pass
+        return feature_ppg(df)
     elif name == "Pupil":
-        pass
+        return feature_pupil(df)
     elif name == "Face":
-        pass
-
-    return df
+        return feature_face(df)
 
 
 # All functions below pertain to the creation of the raw data and metadata tables from
