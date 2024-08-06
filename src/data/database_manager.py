@@ -104,8 +104,11 @@ class DatabaseManager:
     def read_table(
         self,
         table_name: str,
+        exclude_data: bool: False,
     ) -> pl.DataFrame:
         """Quickly read a table from the database."""
+        if exclude_data:
+            pass
         try:
             return self.execute(f"SELECT * FROM {table_name}").pl()
         except duckdb.CatalogException as e:
