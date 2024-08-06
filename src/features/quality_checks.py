@@ -1,3 +1,4 @@
+# NOTE: this are functions from the old pipeline, they need to be adapted, mapped tp trials, etc.
 import logging
 
 import numpy as np
