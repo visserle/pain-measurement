@@ -1,7 +1,7 @@
 # TODO:
 # - distrubution of blinks vs look-aways
 # - interpolation with cubic spline, resampling and low-pass filtering + sync, see matlab
-# - get the mean using a kalman filter?
+# - get the 'mean' using a kalman filter?
 # - average only when len list > 1
 
 # - check if facial expression and eeg fall into blink segments
@@ -16,9 +16,6 @@ import scipy.signal as signal
 from src.features.transformations import map_trials
 from src.helpers import ensure_list
 
-logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
-
-
 EYE_COLUMNS = ["Pupillometry_R", "Pupillometry_L"]
 RESULT_COLUMN = "Pupillometry"
 
@@ -26,6 +23,8 @@ SAMPLE_RATE = 60
 BLINK_THRESHOLD = 1.5
 BLINK_PERIOD_REMOVAL = 120
 CUTOFF_FREQUENCY = 0.5
+
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 @map_trials
@@ -48,6 +47,8 @@ def add_blink_threshold(
     eye_columns: str | list[str] = EYE_COLUMNS,
     threshold: int = BLINK_THRESHOLD,
 ) -> pl.DataFrame:
+    """pupil size should not approach the physiological lower and upper lim-
+    its of 2 and 8 mm,  Mathôt & Vilotijević (2023)"""
     for eye in ensure_list(eye_columns):
         df = df.with_columns(
             pl.when(pl.col(eye) < threshold)
@@ -110,7 +111,10 @@ def _get_blink_segments(
 
     # Create a DataFrame from the blink segments list
     blink_segments_df = pl.DataFrame(
-        blink_segments_data, schema=["eye", "start_timestamp", "end_timestamp"]
+        blink_segments_data,
+        schema=["eye", "start_timestamp", "end_timestamp"],
+        strict=False,
+        orient="row",
     )
 
     # Add a duration column if there are any segments,
