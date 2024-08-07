@@ -13,7 +13,7 @@ def prepare_multiline_hvplot(
     https://hvplot.holoviz.org/user_guide/Large_Timeseries.html#multiple-lines-per-category-example
 
     Note that this workaround prevents the use of time data types in the DataFrame as
-    NaN values are not supported for time data types.
+    NaN values are not supported for time data types in Polars.
     """
 
     # Define columns where we don't want to add NaN separators
