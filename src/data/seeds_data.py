@@ -8,7 +8,7 @@ from src.experiments.measurement.stimulus_generator import StimulusGenerator
 STIMULUS_CONFIG_PATH = Path("src/experiments/measurement/measurement_config.toml")
 
 
-def get_seeds_data():
+def create_seeds_data_df():
     with open(STIMULUS_CONFIG_PATH, "rb") as f:
         config = tomllib.load(f)["stimulus"]
 
