@@ -93,12 +93,9 @@ def close_root_logging() -> None:
     """
     Safely closes and removes all handlers associated with the root logger.
 
-    This function can be called when you no longer need logging or before re-configuring
-    logging. It is particularly useful for ensuring that FileHandlers release
-    their file resources.
-
-    Note that you typically do not need to manually close and remove handlers,
-    as Python's logging module will handle the cleanup when the program exits.
+    Note that handlers typically do not require manual closing and removal,
+    as Python's logging module automatically manages this process when the program
+    terminates.
     """
     root_logger = logging.getLogger()
     for handler in root_logger.handlers[:]:
