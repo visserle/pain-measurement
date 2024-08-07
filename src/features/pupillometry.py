@@ -12,6 +12,8 @@ import logging
 import numpy as np
 import polars as pl
 import scipy.signal as signal
+from numba import jit
+from polars import col
 
 from src.features.transformations import map_trials
 from src.helpers import ensure_list
@@ -263,3 +265,53 @@ def mean_pupil_size(
     return df.with_columns(
         ((pl.col(eye_columns[0]) + pl.col(eye_columns[1])) / 2).alias(new_column)
     )
+
+
+@jit(nopython=True)
+def setup_kalman_filter():
+    """Initialize Kalman filter parameters."""
+    F = np.array([[1.0]])  # State transition matrix
+    H = np.array([[1.0], [1.0]])  # Measurement matrix
+    R = np.array([[0.1, 0.0], [0.0, 0.1]])  # Measurement noise covariance
+    Q = np.array([[0.01]])  # Process noise covariance
+    x = np.array([[0.0]])  # Initial state estimate
+    P = np.array([[1.0]])  # Initial state covariance
+    return F, H, R, Q, x, P
+
+
+@jit(nopython=True)
+def process_pupil_data(left_pupil, right_pupil):
+    """
+    Process bivariate pupil data using a Kalman filter.
+
+    Args:
+        left_pupil (np.array): Left pupil dilation measurements.
+        right_pupil (np.array): Right pupil dilation measurements.
+
+    Returns:
+        np.array: Estimated true pupil dilation time series.
+    """
+    F, H, R, Q, x, P = setup_kalman_filter()
+    n = len(left_pupil)
+    true_dilation = np.zeros(n)
+    z = np.zeros((2, 1))
+    I = np.eye(1)
+    HT = H.T
+
+    for i in range(n):
+        # Prediction step
+        x = F @ x
+        P = F @ P @ F.T + Q
+
+        # Update step
+        z[0, 0] = left_pupil[i]
+        z[1, 0] = right_pupil[i]
+        y = z - H @ x
+        S = H @ P @ HT + R
+        K = P @ HT @ np.linalg.inv(S)
+        x = x + K @ y
+        P = (I - K @ H) @ P
+
+        true_dilation[i] = x[0, 0]
+
+    return true_dilation
