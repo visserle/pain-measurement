@@ -4,17 +4,14 @@ from src.features.scaling import scale_min_max, scale_percent_to_decimal
 
 
 def clean_stimulus(df: pl.DataFrame) -> pl.DataFrame:
-    """Clean the 'Stimulus' data by removing unnecessary columns."""
-    return df.drop_in_place(["Stimulus_Seed", "Skin_Area"])
-
-
-def feature_stimulus(df: pl.DataFrame) -> pl.DataFrame:
-    """Feature engineer the 'Stimulus' data by normalizing the 'Rating' and 'Temperature'
-    columns."""
-    df = process_stimulus(df)
     return df
 
 
+def feature_stimulus(df: pl.DataFrame) -> pl.DataFrame:
+    return df
+
+
+# REMOVE TODO
 def process_stimulus(df: pl.DataFrame) -> pl.DataFrame:
     """
     Normalize the 'Stimulus' data by scaling the 'Rating' and 'Temperature' columns to

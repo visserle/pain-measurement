@@ -14,6 +14,7 @@ import logging
 
 import duckdb
 import polars as pl
+from icecream import ic
 
 from src.data.data_config import DataConfig
 from src.data.data_processing import (
@@ -104,7 +105,7 @@ class DatabaseManager:
     def read_table(
         self,
         table_name: str,
-        exclude_data: bool: False,
+        exclude_data: bool = False,
     ) -> pl.DataFrame:
         """Quickly read a table from the database."""
         if exclude_data:

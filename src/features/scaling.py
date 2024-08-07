@@ -4,12 +4,12 @@ from src.features.transformations import map_trials
 
 # As long as we are not using a schema, we need to exclude these columns from scaling
 EXCLUDE_COLUMNS = [
-    "Timestamp",
-    "SampleNumber",
-    "Participant",
-    "Trial",
-    "Stimulus_Seed",
-    "Skin_Area",
+    "trial_id",
+    "trial_number",
+    "participant_id",
+    "stimulus_seed",
+    "skin_area",
+    "timestamp",
 ]
 
 
