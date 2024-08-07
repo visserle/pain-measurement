@@ -1,7 +1,8 @@
 """
-Dataframe functions for each step in the pipeline. 
+Dataframe functions for each step in the pipeline.
 Results will be inserted into the database.
 """
+
 import logging
 
 import polars as pl
@@ -16,44 +17,81 @@ from src.features.stimulus import clean_stimulus, feature_stimulus
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-def create_clean_data_df(
-    name: str,
-    df: pl.DataFrame,
+def create_trials_df(
+    participant_id: str,
+    iMotions_Marker: pl.DataFrame,
 ) -> pl.DataFrame:
-    if name == "Stimulus":
-        return clean_stimulus(df)
-    elif name == "EDA":
-        return clean_eda(df)
-    elif name == "EEG":
-        return clean_eeg(df)
-    elif name == "PPG":
-        return clean_ppg(df)
-    elif name == "Pupil":
-        return clean_pupil(df)
-    elif name == "Face":
-        return clean_face(df)
+    """
+    Create a table with trial information (metadata) for each participant from iMotions
+    marker data.
+    """
+    trials_df = (
+        # 'markerdescription' from imotions contains the onset and offset of each
+        # stimulus
+        # drop all rows where the markerdescription is null to get the start and end
+        # of each stimulus
+        iMotions_Marker.filter(pl.col("markerdescription").is_not_null())
+        .select(
+            [
+                pl.col("markerdescription").alias("stimulus_seed").cast(pl.UInt16),
+                pl.col("timestamp").alias("timestamp_start"),
+            ]
+        )
+        # group by stimulus_seed to ensure one row per stimulus
+        .group_by("stimulus_seed")
+        # create columns for start and end of each stimulus
+        .agg(
+            [
+                pl.col("timestamp_start").min().alias("timestamp_start"),
+                pl.col("timestamp_start").max().alias("timestamp_end"),
+            ]
+        )
+        .sort("timestamp_start")
+    )
+    # add column for duration of each stimulus
+    trials_df = trials_df.with_columns(
+        trials_df.select(
+            (pl.col("timestamp_end") - pl.col("timestamp_start")).alias("duration")
+        )
+    )
+    # add column for trial number
+    trials_df = trials_df.with_columns(
+        pl.arange(1, trials_df.height + 1).alias("trial_number").cast(pl.UInt8)
+    )
+    # add column for participant id
+    trials_df = trials_df.with_columns(
+        pl.lit(participant_id).alias("participant_id").cast(pl.UInt8)
+    )
+    # add column for skin area
+    """
+    Skin areas were distributed as follows:
+    |---|---|
+    | 1 | 4 |
+    | 5 | 2 |
+    | 3 | 6 |
+    |---|---|
+    Each skin area was stimulated twice (with 1 trial of 3 min each).
+    For particpants with an even id the stimulation order is:
+    6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> end.
+    For participants with an odd id the stimulation order is:
+    1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> end.
+    """
+    trials_df = trials_df.with_columns(
+        pl.when(pl.col("participant_id") % 2 == 1)
+        .then(((pl.col("trial_number") - 1) % 6) + 1)
+        .otherwise(6 - ((pl.col("trial_number") - 1) % 6))
+        .alias("skin_area")
+        .cast(pl.UInt8)
+    )
 
-
-def create_feature_data_df(
-    name: str,
-    df: pl.DataFrame,
-) -> dict[str, pl.DataFrame]:
-    if name == "Stimulus":
-        return feature_stimulus(df)
-    elif name == "EDA":
-        return feature_eda(df)
-    elif name == "EEG":
-        return feature_eeg(df)
-    elif name == "PPG":
-        return feature_ppg(df)
-    elif name == "Pupil":
-        return feature_pupil(df)
-    elif name == "Face":
-        return feature_face(df)
-
-
-# All functions below pertain to the creation of the raw data and metadata tables from
-# iMotions data
+    # change order of columns
+    trials_df = trials_df.select(
+        pl.col(a := "trial_number"),
+        pl.col(b := "participant_id"),
+        pl.all().exclude(a, b),
+    )
+    logger.debug("Created Trials DataFrame for participant %s.", participant_id)
+    return trials_df
 
 
 def create_raw_data_df(
@@ -115,89 +153,37 @@ def create_raw_data_df(
     return df
 
 
-def create_trials_df(
-    participant_id: str,
-    iMotions_Marker: pl.DataFrame,
+def create_clean_data_df(
+    name: str,
+    df: pl.DataFrame,
 ) -> pl.DataFrame:
-    """
-    Create a table with trial information (metadata) for each participant from iMotions
-    marker data.
-    """
-    trials_df = (
-        # 'markerdescription' from imotions contains the onset and offset of each
-        # stimulus
-        # drop all rows where the markerdescription is null to get the start and end
-        # of each stimulus
-        iMotions_Marker.filter(pl.col("markerdescription").is_not_null())
-        .select(
-            [
-                pl.col("markerdescription").alias("stimulus_seed").cast(pl.UInt16),
-                pl.col("timestamp").alias("timestamp_start"),
-            ]
-        )
-        # group by stimulus_seed to ensure one row per stimulus
-        .group_by("stimulus_seed")
-        # create columns for start and end of each stimulus
-        .agg(
-            [
-                pl.col("timestamp_start").min().alias("timestamp_start"),
-                pl.col("timestamp_start").max().alias("timestamp_end"),
-            ]
-        )
-        .sort("timestamp_start")
-    )
-    # add column for duration of each stimulus
-    trials_df = trials_df.with_columns(
-        trials_df.select(
-            (pl.col("timestamp_end") - pl.col("timestamp_start")).alias("duration")
-        )
-    )
-    # add column for trial number
-    trials_df = trials_df.with_columns(
-        pl.arange(1, trials_df.height + 1).alias("trial_number").cast(pl.UInt8)
-    )
-    # add column for participant id
-    trials_df = trials_df.with_columns(
-        pl.lit(participant_id).alias("participant_id").cast(pl.UInt8)
-    )
-    # add column for skin area
-    trials_df = _add_skin_area(trials_df)
-
-    # change order of columns
-    trials_df = trials_df.select(
-        pl.col(a := "trial_number"),
-        pl.col(b := "participant_id"),
-        pl.all().exclude(a, b),
-    )
-    logger.debug("Created Trials DataFrame for participant %s.", participant_id)
-    return trials_df
+    if "Stimulus" in name:
+        return clean_stimulus(df)
+    elif "EDA" in name:
+        return clean_eda(df)
+    elif "EEG" in name:
+        return clean_eeg(df)
+    elif "PPG" in name:
+        return clean_ppg(df)
+    elif "Pupil" in name:
+        return clean_pupil(df)
+    elif "Face" in name:
+        return clean_face(df)
 
 
-def _add_skin_area(
-    trials_df: pl.DataFrame,
-) -> pl.DataFrame:
-    """
-    Reconstructs the applied skin areas on the left forearm from the participant id and
-    trial number.
-
-    The skin areas are distributed as follows:
-
-    |---|---|
-    | 1 | 4 |
-    | 5 | 2 |
-    | 3 | 6 |
-    |---|---|
-
-    Each skin area is stimulated twice, where one trial is 3 minutes long.
-    For particpants with an even id the stimulation order is:
-    6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> end.
-    For participants with an odd id the stimulation order is:
-    1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> end.
-    """
-    return trials_df.with_columns(
-        pl.when(pl.col("participant_id") % 2 == 1)
-        .then(((pl.col("trial_number") - 1) % 6) + 1)
-        .otherwise(6 - ((pl.col("trial_number") - 1) % 6))
-        .alias("skin_area")
-        .cast(pl.UInt8)
-    )
+def create_feature_data_df(
+    name: str,
+    df: pl.DataFrame,
+) -> dict[str, pl.DataFrame]:
+    if "Stimulus" in name:
+        return feature_stimulus(df)
+    elif "EDA" in name:
+        return feature_eda(df)
+    elif "EEG" in name:
+        return feature_eeg(df)
+    elif "PPG" in name:
+        return feature_ppg(df)
+    elif "Pupil" in name:
+        return feature_pupil(df)
+    elif "Face" in name:
+        return feature_face(df)

@@ -73,7 +73,9 @@ class DatabaseSchema:
                 UNIQUE (trial_id, rownumber)
             );
         """)
-        logger.debug(f"Created table '{name}'.")
+        logger.debug(f"Created table '{name}'.") if not DatabaseSchema.table_exists(
+            conn, name
+        ) else None
 
     @staticmethod
     def create_clean_data_table(

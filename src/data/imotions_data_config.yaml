@@ -1,4 +1,5 @@
-# Note that all column names will be lowercased in the resulting table.
+# Note that all column names will be lowercased and all spaces in column names will be
+# replaced with underscores in the resulting database table.
 Stimulus:
   file_name: "CustomCurves_CustomCurves@1_ET_EventAPI_ExternDevice"
   load_columns:
@@ -64,10 +65,10 @@ Pupil:
     - "ET_DistanceLeft"
     - "ET_DistanceRight"
   rename_columns:
-    "ET_PupilLeft": "Pupillometry_L"
-    "ET_PupilRight": "Pupillometry_R"
-    "ET_DistanceLeft": "Pupillometry_L_Distance"
-    "ET_DistanceRight": "Pupillometry_R_Distance"
+    "ET_PupilLeft": "Pupil_L"
+    "ET_PupilRight": "Pupil_R"
+    "ET_DistanceLeft": "Pupil_L_Distance"
+    "ET_DistanceRight": "Pupil_R_Distance"
 
 Face:
   file_name: "Affectiva_AFFDEX_ET_Affectiva_AffectivaCameraDevice"
