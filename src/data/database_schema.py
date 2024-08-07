@@ -3,7 +3,7 @@ import logging
 import duckdb
 import polars as pl
 
-from src.data.seeds_data import get_seeds_data
+from src.data.data_processing import create_seeds_df
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -56,8 +56,8 @@ class DatabaseSchema:
         conn: duckdb.DuckDBPyConnection,
     ) -> None:
         if not DatabaseSchema.table_exists(conn, "Seeds"):
-            # we directly load the seed data into the table to make life easier
-            seeds_data = get_seeds_data()  # noqa
+            # we directly load the seed data into the table to make our life easier
+            seeds_data = create_seeds_df()  # noqa
             conn.execute("CREATE TABLE Seeds AS SELECT * FROM seeds_data")
 
     @staticmethod

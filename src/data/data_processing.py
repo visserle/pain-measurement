@@ -7,6 +7,8 @@ import logging
 
 import polars as pl
 
+from src.data.data_config import DataConfig
+from src.experiments.measurement.stimulus_generator import StimulusGenerator
 from src.features.eda import clean_eda, feature_eda
 from src.features.eeg import clean_eeg, feature_eeg
 from src.features.face import clean_face, feature_face
@@ -15,6 +17,34 @@ from src.features.pupil import clean_pupil, feature_pupil
 from src.features.stimulus import clean_stimulus, feature_stimulus
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
+
+
+def creates_participants_df():
+    pass
+
+
+def creates_questionnaire_df():
+    pass
+
+
+def create_seeds_df():
+    config = DataConfig.load_stimulus_config()
+    seeds = config["seeds"]
+    return pl.DataFrame(
+        {
+            "seed": seeds,
+            "major_decreasing_intervals": [
+                StimulusGenerator(
+                    config=config, seed=seed
+                ).major_decreasing_intervals_ms
+                for seed in seeds
+            ],
+        },
+        schema={
+            "seed": pl.UInt16,
+            "major_decreasing_intervals": pl.List(pl.List(pl.UInt32)),
+        },
+    )
 
 
 def create_trials_df(

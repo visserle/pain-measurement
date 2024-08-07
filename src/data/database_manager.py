@@ -27,8 +27,6 @@ from src.data.database_schema import DatabaseSchema
 from src.data.imotions_data import load_imotions_data_df
 
 MODALITIES = DataConfig.MODALITIES
-METADATA = DataConfig.METADATA
-
 NUM_PARTICIPANTS = DataConfig.NUM_PARTICIPANTS
 DB_FILE = DataConfig.DB_FILE
 
@@ -216,7 +214,7 @@ def main():
                     f"Raw data for participant {participant_id} already exists."
                 )
                 continue
-            df = load_imotions_data_df(participant_id, METADATA)
+            df = load_imotions_data_df(participant_id, "Trials")
             trials_df = create_trials_df(participant_id, df)
             db.insert_trials(trials_df)
 
