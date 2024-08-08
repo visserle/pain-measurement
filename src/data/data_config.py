@@ -6,7 +6,6 @@ import yaml
 
 class DataConfig:
     MODALITIES = ["Stimulus", "EDA", "EEG", "PPG", "Pupil", "Face"]
-    METADATA = "Trials"
     NUM_PARTICIPANTS = 28
 
     DB_FILE = Path("experiment.duckdb")
