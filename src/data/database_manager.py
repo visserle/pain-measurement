@@ -220,27 +220,26 @@ def main():
 
             for modality in MODALITIES:
                 df = load_imotions_data_df(participant_id, modality)
-                table_name = f"Raw_{modality}"
                 df = create_raw_data_df(participant_id, df, trials_df)
-                db.insert_raw_data(participant_id, table_name, df)
+                db.insert_raw_data(participant_id, "Raw_" + modality, df)
             logger.debug(f"Raw data for participant {participant_id} inserted.")
         logger.info("Raw data inserted.")
 
         # Cleaned data
         # no check for existing data since it is overwritten every time
         for modality in MODALITIES:
-            table_name = f"Clean_{modality}"
-            raw_data_df = db.read_table(f"Raw_{modality}")
-            clean_data_df = create_clean_data_df(table_name, raw_data_df)
-            db.insert_clean_data(table_name, clean_data_df)
+            table_name = "Clean_" + modality
+            df = db.read_table("Raw_" + modality)
+            df = create_clean_data_df(table_name, df)
+            db.insert_clean_data(table_name, df)
         logger.info("Data cleaned.")
 
         # Feature-engineered data
         for modality in MODALITIES:
             table_name = f"Feature_{modality}"
-            clean_data_df = db.read_table(f"Clean_{modality}")
-            feature_data_df = create_feature_data_df(table_name, clean_data_df)
-            db.insert_feature_data(table_name, feature_data_df)
+            df = db.read_table(f"Clean_{modality}")
+            df = create_feature_data_df(table_name, df)
+            db.insert_feature_data(table_name, df)
         logger.info("Data feature-engineered.")
 
         logger.info("Database processing complete.")
