@@ -105,14 +105,10 @@ class DatabaseManager:
         table_name: str,
         exclude_data: bool = False,
     ) -> pl.DataFrame:
-        """Quickly read a table from the database."""
+        """Return the data from a table as a Polars DataFrame."""
         if exclude_data:
-            pass
-        try:
-            return self.execute(f"SELECT * FROM {table_name}").pl()
-        except duckdb.CatalogException as e:
-            logger.warning(f"Table '{table_name}' does not exist in the database: {e}")
-            raise e
+            pass  # TODO
+        return self.execute(f"SELECT * FROM {table_name}").pl()
 
     def table_exists(
         self,
@@ -226,7 +222,7 @@ def main():
         logger.info("Raw data inserted.")
 
         # Cleaned data
-        # no check for existing data since it is overwritten every time
+        # no check for existing data as it will be overwritten
         for modality in MODALITIES:
             table_name = "Clean_" + modality
             df = db.read_table("Raw_" + modality)
