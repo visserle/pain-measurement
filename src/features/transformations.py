@@ -5,6 +5,15 @@ import polars as pl
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
+info_columns = [
+    "trial_id",
+    "trial_number",
+    "participant_id",
+    "stimulus_seed",
+    "trial_specific_interval_id",
+    "continuous_interval_id",
+]
+
 
 def map_trials(func: callable):
     """
@@ -30,9 +39,8 @@ def remove_dulpicate_timestamps(
     """
     Remove duplicate timestamps from the DataFrame.
 
-    Pertains mostly to Shimmer3 data where the timestamps can be duplicated.
-    For instance, in 1 seconds the GSR+ unit sometimes collects roughly 128 samples,
-    but only 100 unique timestamps.
+    For instance, the Shimmer3 GSR+ unit collects ca. 128 samples per second but with
+    only 100 unique timestamps. This function removes the duplicates.
     """
     return df.unique("timestamp")
 
@@ -42,8 +50,9 @@ def add_time_column(
 ) -> pl.DataFrame:
     """
     Create a new column that contains the time from Timestamp in ms.
-    Note: This runs into multiple issues with polars and DuckDB and is not recommended
-    for now.
+
+    Note: This datatype is not fully implemented in Polars and DuckDB yet and is not
+    recommended for saving to a database.
     """
     df = df.with_columns(
         pl.col("timestamp").cast(pl.Duration(time_unit="ms")).alias("time")
