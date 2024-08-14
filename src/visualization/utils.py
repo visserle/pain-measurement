@@ -41,7 +41,7 @@ def prepare_multiline_hvplot(
     df = df.with_columns(pl.lit(0).alias("temp_sort"))
     nan_df = nan_df.with_columns(pl.lit(1).alias("temp_sort"))
 
-    # Concatenate the original DataFrame with the NaN DataFrame
+    # Concatenate the original DataFrame with the NaN DataFrame and sort
     result = (
         pl.concat([df, nan_df], how="diagonal_relaxed", rechunk=True)
         .sort([trial_column, "temp_sort", time_column])
