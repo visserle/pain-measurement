@@ -28,27 +28,30 @@ def check_sample_rate(
 ) -> None:
     if unique_timestamp:
         # actually slightly faster than maintain_order=True (but not lazy)
-        df = df.unique("Timestamp").sort("Timestamp")
+        df = df.unique("timestamp").sort("timestamp")
         logger.info("Checking sample rate for unique timestamps.")
 
     # the question is why I chose not to use maintain_order=True here FIXME TODO
     timestamp_start = (
-        df.group_by("Trial")
-        .agg(pl.first("Timestamp"))
-        .sort("Trial")
-        .select("Timestamp")
+        df.group_by("trial_id")
+        .agg(pl.first("timestamp"))
+        .sort("trial_id")
+        .select("timestamp")
     )
     timestamp_end = (
-        df.group_by("Trial").agg(pl.last("Timestamp")).sort("Trial").select("Timestamp")
+        df.group_by("trial_id")
+        .agg(pl.last("timestamp"))
+        .sort("trial_id")
+        .select("timestamp")
     )
 
     duration_in_s = (timestamp_end - timestamp_start) / 1000
 
     samples = (
-        df.group_by("Trial")
-        .agg(pl.count("Timestamp"))
-        .sort("Trial")
-        .select("Timestamp")
+        df.group_by("trial_id")
+        .agg(pl.count("timestamp"))
+        .sort("trial_id")
+        .select("timestamp")
     )
 
     sample_rate_per_trial = samples / duration_in_s
