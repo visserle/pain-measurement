@@ -39,8 +39,11 @@ def remove_dulpicate_timestamps(
     """
     Remove duplicate timestamps from the DataFrame.
 
-    For instance, the Shimmer3 GSR+ unit collects ca. 128 samples per second but with
+    For instance, the Shimmer3 GSR+ unit collects 128 samples per second but with
     only 100 unique timestamps. This function removes the duplicates.
+
+    (As timestamp are collected for the whole experiment, there is no need for the
+    map_trials decorator.)
     """
     return df.unique("timestamp")
 
