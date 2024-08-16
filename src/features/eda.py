@@ -9,7 +9,7 @@ from src.features.transformations import map_trials, remove_duplicate_timestamps
 
 
 def preprocess_eda(df: pl.DataFrame) -> pl.DataFrame:
-    df = remove_duplicate_timestamps(df)  # after this, the sample rate is 100 Hz
+    df = remove_duplicate_timestamps(df)  # changes the sampling rate to 100 Hz
     df = nk_process_eda(df)
     return df
 
@@ -25,7 +25,7 @@ def nk_process_eda(
     method: str = "neurokit",
 ) -> pl.DataFrame:
     """
-    Process EDA signal using NeuroKit2.
+    Transform the raw EDA signal into phasic and tonic components using NeuroKit2.
 
     The default method "neurokit" is based on a high-pass filter of 0.05 Hz as used in
     the BIOPAC algorithm.
