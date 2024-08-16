@@ -14,7 +14,7 @@ class DatabaseSchema:
 
     Consists of:
         - metadata tables for participants, trials, seeds, etc. and
-        - data tables for raw, clean, and feature data.
+        - data tables for raw, preprocess, and feature data.
 
     Note: participant_id and trial_number are denormalized columns to avoid joins.
     """
@@ -78,7 +78,7 @@ class DatabaseSchema:
         ) else None
 
     @staticmethod
-    def create_clean_data_table(
+    def create_preprocess_data_table(
         conn: duckdb.DuckDBPyConnection,
         name: str,
         schema: pl.Schema,
@@ -97,8 +97,8 @@ class DatabaseSchema:
         name: str,
         schema: pl.Schema,
     ) -> None:
-        # same schema as clean data
-        return DatabaseSchema.create_clean_data_table(conn, name, schema)
+        # same schema as preprocess data
+        return DatabaseSchema.create_preprocess_data_table(conn, name, schema)
 
     @staticmethod
     def table_exists(

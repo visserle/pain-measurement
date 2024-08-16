@@ -2,13 +2,13 @@
 # - check if modality already exists in the database before preprocessing it
 # - add labels function for feature data
 # - remove duplcate timestamps from shimmer sensor data (maybe this also exists in eeg data)
-# - add database for quality control (e.g. if the number of rows in the raw data is the same as in the clean data)
+# - add database for quality control (e.g. if the number of rows in the raw data is the same as in the preprocess data)
 # - performance https://docs.pola.rs/user-guide/expressions/user-defined-functions/ (maybe)
 # - add participant data to the database
 # - add questionnaires to the database
 # - add calibration data to the database
 # - add measurement data to the database
-# - add excluded data information to the database and check in the cleaning process if the data is excluded
+# - add excluded data information to the database and check in the preprocessing process if the data is excluded
 
 import logging
 
@@ -18,8 +18,8 @@ from icecream import ic
 
 from src.data.data_config import DataConfig
 from src.data.data_processing import (
-    create_clean_data_df,
     create_feature_data_df,
+    create_preprocess_data_df,
     create_raw_data_df,
     create_trials_df,
 )
@@ -103,10 +103,10 @@ class DatabaseManager:
     def read_table(
         self,
         table_name: str,
-        exclude_data: bool = False,
+        remove_invalid: bool = False,
     ) -> pl.DataFrame:
         """Return the data from a table as a Polars DataFrame."""
-        if exclude_data:
+        if remove_invalid:
             pass  # TODO
         return self.execute(f"SELECT * FROM {table_name}").pl()
 
@@ -172,23 +172,23 @@ class DatabaseManager:
             ORDER BY r.rownumber;
         """)
 
-    # Note that in constrast to raw data, cleaned and feature-engineered data is not
+    # Note that in constrast to raw data, preprocessed and feature-engineered data is not
     # inserted into the database per participant, but per modality over all
     # participants.
-    def insert_clean_data(
+    def insert_preprocess_data(
         self,
         table_name: str,
-        clean_data_df: pl.DataFrame,
+        preprocess_data_df: pl.DataFrame,
     ) -> None:
-        DatabaseSchema.create_clean_data_table(
+        DatabaseSchema.create_preprocess_data_table(
             self.conn,
             table_name,
-            clean_data_df.schema,
+            preprocess_data_df.schema,
         )
         self.conn.execute(f"""
             INSERT INTO {table_name}
             SELECT *
-            FROM clean_data_df
+            FROM preprocess_data_df
             ORDER BY trial_id, timestamp;
         """)
 
@@ -197,8 +197,8 @@ class DatabaseManager:
         table_name: str,
         feature_data_df: pl.DataFrame,
     ) -> None:
-        # same as clean data for now TODO FIXME
-        self.insert_clean_data(table_name, feature_data_df)
+        # same as preprocess data for now TODO FIXME
+        self.insert_preprocess_data(table_name, feature_data_df)
 
 
 def main():
@@ -221,19 +221,19 @@ def main():
             logger.debug(f"Raw data for participant {participant_id} inserted.")
         logger.info("Raw data inserted.")
 
-        # Cleaned data
+        # preprocessed data
         # no check for existing data as it will be overwritten
         for modality in MODALITIES:
-            table_name = "Clean_" + modality
+            table_name = "Preprocess_" + modality
             df = db.read_table("Raw_" + modality)
-            df = create_clean_data_df(table_name, df)
-            db.insert_clean_data(table_name, df)
-        logger.info("Data cleaned.")
+            df = create_preprocess_data_df(table_name, df)
+            db.insert_preprocess_data(table_name, df)
+        logger.info("Data preprocessed.")
 
         # Feature-engineered data
         for modality in MODALITIES:
             table_name = f"Feature_{modality}"
-            df = db.read_table(f"Clean_{modality}")
+            df = db.read_table(f"Preprocess_{modality}")
             df = create_feature_data_df(table_name, df)
             db.insert_feature_data(table_name, df)
         logger.info("Data feature-engineered.")

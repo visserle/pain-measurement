@@ -8,14 +8,13 @@ import polars as pl
 from src.features.transformations import map_trials, remove_dulpicate_timestamps
 
 
-def clean_eda(df: pl.DataFrame) -> pl.DataFrame:
-    df = remove_dulpicate_timestamps(df)
-
+def preprocess_eda(df: pl.DataFrame) -> pl.DataFrame:
+    df = remove_dulpicate_timestamps(df)  # after this, the sample rate is 100 Hz
+    df = nk_process_eda(df)
     return df
 
 
 def feature_eda(df: pl.DataFrame) -> pl.DataFrame:
-    df = nk_process_eda(df)
     return df
 
 
@@ -23,11 +22,22 @@ def feature_eda(df: pl.DataFrame) -> pl.DataFrame:
 def nk_process_eda(
     df: pl.DataFrame,
     sampling_rate: int = 100,
+    method: str = "neurokit",
 ) -> pl.DataFrame:
-    eda_raw = df.select("eda_raw").to_numpy().flatten()
+    """
+    Process EDA signal using NeuroKit2.
+
+    The default method "neurokit" is based on a high-pass filter of 0.05 Hz as used in
+    the BIOPAC algorithm.
+
+    https://www.biopac.com/knowledge-base/phasic-eda-issue/,
+    https://github.com/neuropsychology/NeuroKit/blob/1aa8deee392f8098df4fd77a23f696c2ff2d29db/neurokit2/eda/eda_phasic.py#L141
+    """
+    eda_raw = df.get_column("eda_raw").to_numpy()
     eda_processed: pd.DataFrame = nk.eda_phasic(
         eda_signal=eda_raw,
         sampling_rate=sampling_rate,
-        method="neurokit",
+        method=method,
     )  # this returns EDA_Phasic and EDA_Tonic columns
-    return df.hstack(pl.from_pandas(eda_processed))
+    df = df.hstack(pl.from_pandas(eda_processed))
+    return df.select(pl.all().name.to_lowercase())

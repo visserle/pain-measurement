@@ -1,7 +1,7 @@
 import polars as pl
 
 
-def clean_eeg(df: pl.DataFrame) -> pl.DataFrame:
+def preprocess_eeg(df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 

@@ -3,7 +3,7 @@ import polars as pl
 from src.features.scaling import scale_min_max, scale_percent_to_decimal
 
 
-def clean_stimulus(df: pl.DataFrame) -> pl.DataFrame:
+def preprocess_stimulus(df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 

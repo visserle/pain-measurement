@@ -9,12 +9,12 @@ import polars as pl
 
 from src.data.data_config import DataConfig
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
-from src.features.eda import clean_eda, feature_eda
-from src.features.eeg import clean_eeg, feature_eeg
-from src.features.face import clean_face, feature_face
-from src.features.ppg import clean_ppg, feature_ppg
-from src.features.pupil import clean_pupil, feature_pupil
-from src.features.stimulus import clean_stimulus, feature_stimulus
+from src.features.eda import feature_eda, preprocess_eda
+from src.features.eeg import feature_eeg, preprocess_eeg
+from src.features.face import feature_face, preprocess_face
+from src.features.ppg import feature_ppg, preprocess_ppg
+from src.features.pupil import feature_pupil, preprocess_pupil
+from src.features.stimulus import feature_stimulus, preprocess_stimulus
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -183,22 +183,22 @@ def create_raw_data_df(
     return df
 
 
-def create_clean_data_df(
+def create_preprocess_data_df(
     name: str,
     df: pl.DataFrame,
 ) -> pl.DataFrame:
     if "Stimulus" in name:
-        return clean_stimulus(df)
+        return preprocess_stimulus(df)
     elif "EDA" in name:
-        return clean_eda(df)
+        return preprocess_eda(df)
     elif "EEG" in name:
-        return clean_eeg(df)
+        return preprocess_eeg(df)
     elif "PPG" in name:
-        return clean_ppg(df)
+        return preprocess_ppg(df)
     elif "Pupil" in name:
-        return clean_pupil(df)
+        return preprocess_pupil(df)
     elif "Face" in name:
-        return clean_face(df)
+        return preprocess_face(df)
 
 
 def create_feature_data_df(

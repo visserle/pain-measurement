@@ -1,9 +1,11 @@
 # Data Pipeline
 
-Processing steps: `Raw` → `Clean` → `Feature`.
+Processing steps: `Raw` → `Preprocess` → `Feature`.
 
 - `Raw`: Raw data as collected from each trial of the experiment.
-- `Clean`: Cleaned data with excluded trials and participants.
-- `Feature`: Extracted features from the cleaned data for analysis and modeling.
+- `Preprocess`: Preprocessed data with cleaned and transformed columns.
+- `Feature`: Extracted features from the preprocessed data for analysis and modeling.
+
+Invalid participants and trials can be removed at any stage of the pipeline using the `remove_invalid` key in the `read_table` method.
 
 Note that iMotions data is only available in the original .csv format and is not integrated into the database.

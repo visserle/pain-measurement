@@ -7,7 +7,7 @@ from polars import col
 from src.features.transformations import map_trials
 
 
-def clean_pupil(df: pl.DataFrame) -> pl.DataFrame:
+def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 
