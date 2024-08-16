@@ -5,11 +5,11 @@ import neurokit2 as nk
 import pandas as pd
 import polars as pl
 
-from src.features.transformations import map_trials, remove_dulpicate_timestamps
+from src.features.transformations import map_trials, remove_duplicate_timestamps
 
 
 def preprocess_eda(df: pl.DataFrame) -> pl.DataFrame:
-    df = remove_dulpicate_timestamps(df)  # after this, the sample rate is 100 Hz
+    df = remove_duplicate_timestamps(df)  # after this, the sample rate is 100 Hz
     df = nk_process_eda(df)
     return df
 

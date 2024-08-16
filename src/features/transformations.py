@@ -33,7 +33,7 @@ def map_trials(func: callable):
     return wrapper
 
 
-def remove_dulpicate_timestamps(
+def remove_duplicate_timestamps(
     df: pl.DataFrame,
 ) -> pl.DataFrame:
     """
