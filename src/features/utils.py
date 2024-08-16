@@ -12,8 +12,8 @@ def to_describe(
     Example:
     ````python
     out = stimuli.group_by("seed", maintain_order=True).agg(
-        *to_describe("y", "temperature_"),  # using list unpacking
-        *to_describe("time"),
+        *to_describe("y", prefix="temperature_"),
+        *to_describe("time"),  # using list unpacking to pass multiple expressions
     )
     ````
     """
