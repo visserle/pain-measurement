@@ -33,6 +33,7 @@ def map_trials(func: callable):
     return wrapper
 
 
+@map_trials
 def remove_duplicate_timestamps(
     df: pl.DataFrame,
 ) -> pl.DataFrame:
@@ -42,10 +43,10 @@ def remove_duplicate_timestamps(
     For instance, the Shimmer3 GSR+ unit collects 128 samples per second but with
     only 100 unique timestamps. This function removes the duplicates.
 
-    (As timestamp are collected for the whole experiment, there is no need for the
-    map_trials decorator.)
+    Note that timestamps can be duplicated across participants, so we need to group by
+    trial_id (or participant_id) before removing duplicates.
     """
-    return df.unique("timestamp")
+    return df.unique("timestamp").sort("timestamp")
 
 
 def add_time_column(

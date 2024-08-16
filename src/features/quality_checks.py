@@ -28,7 +28,9 @@ def check_sample_rate(
 ) -> None:
     if unique_timestamp:
         # actually slightly faster than maintain_order=True (but not lazy)
-        df = df.unique("timestamp").sort("timestamp")
+        df = df.unique("timestamp").sort(
+            "timestamp"
+        )  # FIXME BUG does not consider trial_id!
         logger.info("Checking sample rate for unique timestamps.")
 
     # the question is why I chose not to use maintain_order=True here FIXME TODO
