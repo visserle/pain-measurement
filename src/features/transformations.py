@@ -33,6 +33,24 @@ def map_trials(func: callable):
     return wrapper
 
 
+def map_participants(func: callable):
+    """
+    Decorator to apply a function to each participant in a pl.DataFrame.
+    """
+
+    @wraps(func)
+    def wrapper(
+        df: pl.DataFrame,
+        *args,
+        **kwargs,
+    ) -> pl.DataFrame:
+        return df.group_by("participant_id", maintain_order=True).map_groups(
+            lambda group: func(group, *args, **kwargs)
+        )
+
+    return wrapper
+
+
 @map_trials
 def remove_duplicate_timestamps(
     df: pl.DataFrame,
