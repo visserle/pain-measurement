@@ -10,19 +10,8 @@ EXCLUDE_COLUMNS = [
     "stimulus_seed",
     "skin_area",
     "timestamp",
+    "samplenumber",
 ]
-
-
-def _scale_min_max_col(col: pl.Expr) -> pl.Expr:
-    return (col - col.min()) / (col.max() - col.min())
-
-
-def _scale_standard_col(col: pl.Expr) -> pl.Expr:
-    return (col - col.mean()) / col.std()
-
-
-def _scale_percent_to_decimal_col(col: pl.Expr) -> pl.Expr:
-    return (col / 100).round(5)  # round to avoid floating point weirdness
 
 
 @map_trials
@@ -31,9 +20,9 @@ def scale_min_max(
     exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
     """
-    Scales Float64 columns to the range [0, 1].
+    Scales Float64 columns to the range [0, 1] for each trial.
 
-    NOTE: For exploratory analysis only, not for usage in ML pipeline (data leakage).
+    Note: Should be used with caution in ML pipelines to avoid **data leakage**.
     """
     exclude_columns = EXCLUDE_COLUMNS + (exclude_additional_columns or [])
     return df.with_columns(
@@ -47,9 +36,9 @@ def scale_standard(
     exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
     """
-    Scale Float64 columns to have mean 0 and standard deviation 1.
+    Scale Float64 columns to have mean 0 and standard deviation 1 for each trial.
 
-    NOTE: For exploratory analysis only, not for usage in ML pipeline (data leakage).
+    Note: Should be used with caution in ML pipelines to avoid **data leakage**.
     """
     exclude_columns = EXCLUDE_COLUMNS + (exclude_additional_columns or [])
     return df.with_columns(
@@ -72,3 +61,15 @@ def scale_percent_to_decimal(
     return df.with_columns(
         _scale_percent_to_decimal_col(pl.col(pl.Float64).exclude(exclude_columns))
     )
+
+
+def _scale_min_max_col(col: pl.Expr) -> pl.Expr:
+    return (col - col.min()) / (col.max() - col.min())
+
+
+def _scale_standard_col(col: pl.Expr) -> pl.Expr:
+    return (col - col.mean()) / col.std()
+
+
+def _scale_percent_to_decimal_col(col: pl.Expr) -> pl.Expr:
+    return (col / 100).round(5)  # round to avoid floating point weirdness
