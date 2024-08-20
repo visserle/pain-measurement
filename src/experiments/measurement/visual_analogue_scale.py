@@ -19,7 +19,7 @@ DEFAULTS = {
     "label_text_size": 40,
     "label_text_box_size": [250, 100],
 }
-DEFAULTS |= CONSTANTS
+DEFAULTS.update(CONSTANTS)
 
 
 class VisualAnalogueScale:
@@ -31,46 +31,40 @@ class VisualAnalogueScale:
         if config is None:
             config = {}
         self.config = {**DEFAULTS, **config}
-        # Check for invalid keys in config
-        invalid_keys = [key for key in config.keys() if key not in DEFAULTS.keys()]
-        if invalid_keys:
-            raise ValueError(f"Invalid key(s) in config: {', '.join(invalid_keys)}")
+        self.validate_config()
 
         self.experiment = experiment
         self.screen_size = experiment.screen.size
         self.rate_limiter = RateLimiter(self.config["sample_rate"], use_intervals=True)
         self.rate_limiter_screen = RateLimiter(self.config["screen_refresh_rate"])
 
-        self._extract_config()
+        self.extract_and_scale_config()
         self._create_slider_elements()
 
         # Initialize the x position and the rating
         self.x_pos = None
         self.rating = None
 
-    def _extract_config(self):
-        """Extract and scale the configuration values."""
-        ss = self.screen_size
-        self.bar_length = scale_1d_value(self.config["bar_length"], ss)
-        self.bar_thickness = scale_1d_value(self.config["bar_thickness"], ss)
-        self.bar_position = scale_2d_tuple(self.config["bar_position"], ss)
+    def validate_config(self):
+        invalid_keys = [key for key in self.config if key not in DEFAULTS]
+        if invalid_keys:
+            raise ValueError(f"Invalid key(s) in config: {', '.join(invalid_keys)}")
 
-        self.slider_width = scale_1d_value(self.config["slider_width"], ss)
-        self.slider_height = scale_1d_value(self.config["slider_height"], ss)
-        self.slider_color = self.config["slider_color"]
-        self.slider_initial_position = scale_2d_tuple(
-            self.config["slider_initial_position"], ss
-        )
+    def extract_and_scale_config(self):
+        for key, value in self.config.items():
+            if isinstance(value, (tuple, list)) and "color" not in key:
+                setattr(self, key, scale_2d_tuple(value, self.screen_size))
+            elif isinstance(value, (int, float)):
+                setattr(self, key, scale_1d_value(value, self.screen_size))
+            else:
+                setattr(self, key, value)  # directly assign if no scaling is needed
+
+        # Additional calculations based on scaled values
         self.slider_min_x = -(self.bar_length / 2)
         self.slider_max_x = self.bar_length / 2
-
-        self.label_text_size = scale_1d_value(self.config["label_text_size"], ss)
-        self.label_text_box_size = scale_2d_tuple(
-            self.config["label_text_box_size"], ss
-        )
         self.label_right_position = (
             self.slider_max_x,
-            self.bar_position[1] - scale_1d_value(110, ss),
+            self.bar_position[1] - scale_1d_value(110, self.screen_size),
         )
         self.label_left_position = (
             self.label_right_position[0] - self.bar_length,
@@ -147,7 +141,7 @@ class VisualAnalogueScale:
                     / (self.slider_max_x - self.slider_min_x)
                     * 100
                 ),
-                3,  # round to 3 decimal places (= max precision)
+                3,  # round to 3 decimal places (= max precision for screen resolution)
             )
 
             # Uncomment to print the rating
