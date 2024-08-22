@@ -5,11 +5,12 @@ import neurokit2 as nk
 import pandas as pd
 import polars as pl
 
-from src.features.transformations import map_trials, remove_duplicate_timestamps
+from src.features.transformations import map_trials
+
+SAMPLE_RATE = 100
 
 
 def preprocess_eda(df: pl.DataFrame) -> pl.DataFrame:
-    df = remove_duplicate_timestamps(df)  # changes the sampling rate to 100 Hz
     df = nk_process_eda(df)
     return df
 
@@ -21,7 +22,7 @@ def feature_eda(df: pl.DataFrame) -> pl.DataFrame:
 @map_trials
 def nk_process_eda(
     df: pl.DataFrame,
-    sampling_rate: int = 100,
+    sampling_rate: int = SAMPLE_RATE,
     method: str = "neurokit",
 ) -> pl.DataFrame:
     """

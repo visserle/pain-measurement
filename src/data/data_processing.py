@@ -171,9 +171,6 @@ def create_raw_data_df(
     # assert that rownumber is ascending
     assert df["rownumber"].is_sorted()
 
-    # Drop rows with null values
-    df = df.drop_nulls()  # this affects the rownumber in affectiva output (face)
-
     # Change order of columns
     df = df.select(
         pl.col(a := "trial_number"),

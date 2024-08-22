@@ -40,7 +40,7 @@ def _load_csv(
     load_columns: list[str],
     rename_columns: dict[str, str],
 ):
-    start_index = _get_start_index(file_name)
+    start_index = _get_start_index(str(file_name))
     df = pl.read_csv(
         file_name,
         skip_rows=start_index,
@@ -50,7 +50,7 @@ def _load_csv(
 
     if rename_columns:
         df = df.rename(rename_columns)
-    return _preprocess_df(df)
+    return _sanitize_df(df)
 
 
 def _get_start_index(
@@ -63,13 +63,14 @@ def _get_start_index(
     return file_start_index
 
 
-def _preprocess_df(
+def _sanitize_df(
     df: pl.DataFrame,
 ) -> pl.DataFrame:
-    """Lowercase and remove spaces from column names."""
+    """Sanitize the DataFrame by removing duplicate timestamps and renaming columns."""
     df = df.select([pl.col(col).alias(col.lower()) for col in df.columns])
     df = df.select([pl.col(col).alias(col.replace(" ", "_")) for col in df.columns])
-    df = _remove_duplicate_timestamps(df)
+    df = _remove_duplicate_timestamps(df)  # this affects shimmer output (eda, ppg)
+    df = df.drop_nulls()  # this affects the rownumber in affectiva output (face)
     return df
 
 
@@ -80,6 +81,6 @@ def _remove_duplicate_timestamps(
     Remove duplicate timestamps from the DataFrame.
 
     For instance, the Shimmer3 GSR+ unit collects 128 samples per second but with
-    only 100 unique timestamps. This function removes the duplicates.
+    only 100 unique timestamps. This affects EDA and PPG data.
     """
     return df.unique("timestamp").sort("timestamp")

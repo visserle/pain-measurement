@@ -1,11 +1,9 @@
 import polars as pl
 
-from src.features.transformations import map_trials, remove_duplicate_timestamps
+from src.features.transformations import map_trials
 
 
 def preprocess_ppg(df: pl.DataFrame) -> pl.DataFrame:
-    df = remove_duplicate_timestamps(df)
-
     return df
 
 
