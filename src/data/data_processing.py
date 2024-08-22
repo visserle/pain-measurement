@@ -19,11 +19,11 @@ from src.features.stimulus import feature_stimulus, preprocess_stimulus
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-def creates_participants_df():
+def create_participants_df():
     pass
 
 
-def creates_questionnaire_df():
+def create_questionnaire_df():
     pass
 
 
