@@ -69,4 +69,17 @@ def _preprocess_df(
     """Lowercase and remove spaces from column names."""
     df = df.select([pl.col(col).alias(col.lower()) for col in df.columns])
     df = df.select([pl.col(col).alias(col.replace(" ", "_")) for col in df.columns])
+    df = _remove_duplicate_timestamps(df)
     return df
+
+
+def _remove_duplicate_timestamps(
+    df: pl.DataFrame,
+) -> pl.DataFrame:
+    """
+    Remove duplicate timestamps from the DataFrame.
+
+    For instance, the Shimmer3 GSR+ unit collects 128 samples per second but with
+    only 100 unique timestamps. This function removes the duplicates.
+    """
+    return df.unique("timestamp").sort("timestamp")
