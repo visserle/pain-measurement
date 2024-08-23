@@ -1,17 +1,44 @@
 # TODO:
 # - improve docstrings
+# insightfull report: https://github.com/kinleyid/PuPL/blob/master/manual.pdf
 
 import polars as pl
 from polars import col
 
+from src.features.filters import filter_butterworth
 from src.features.transformations import map_trials
+
+# Pipeline functions
 
 
 def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
+    df = filter_pupil(df)  # quick and dirty TODO: improve
     return df
 
 
 def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
+    return df
+
+
+# Transformation functions
+
+
+# quick and dirty TODO: improve
+@map_trials
+def filter_pupil(
+    df: pl.DataFrame,
+    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
+) -> pl.DataFrame:
+    for pupil in pupil_columns:
+        data = filter_butterworth(
+            df.get_column(pupil),
+            60,
+            lowcut=0,
+            highcut=0.2,
+            order=2,
+        )
+        series = pl.Series(pupil + "_filtered", data)
+        df = df.with_columns(series)
     return df
 
 
