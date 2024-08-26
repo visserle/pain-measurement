@@ -1,5 +1,5 @@
 import logging
-from functools import wraps
+from functools import reduce, wraps
 
 import polars as pl
 from polars.exceptions import ColumnNotFoundError
@@ -66,6 +66,44 @@ def map_participants(func: callable):
         return df
 
     return wrapper
+
+
+def merge_data_dfs(
+    dfs: list[pl.DataFrame],
+    merge_on: list[str] = ["participant_id", "trial_id", "trial_number", "timestamp"],
+    sort_by: list[str] = ["trial_id", "timestamp"],
+) -> pl.DataFrame:
+    """
+    Merge multiple DataFrames into a single DataFrame.
+    """
+    if len(dfs) < 2:
+        return dfs[0]
+
+    df = reduce(
+        lambda left, right: left.join(
+            right,
+            on=merge_on,
+            how="full",
+            coalesce=True,
+        )
+        .sort(sort_by)
+        .drop(["rownumber_right", "samplenumber_right"], strict=False),
+        dfs,
+    )
+    return df
+
+
+@map_trials
+def interpolate_and_fill_nulls(df: pl.DataFrame) -> pl.DataFrame:
+    """
+    Interpolate and fill null values in a DataFrame.
+    """
+    # interpolate() casts every column to Float64 so we use pl.selectors for int columns
+    return (
+        df.with_columns(df.select(pl.selectors.by_dtype(pl.Float64)).interpolate())
+        .fill_null(strategy="forward")
+        .fill_null(strategy="backward")
+    )
 
 
 """
