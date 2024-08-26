@@ -9,7 +9,7 @@ def preprocess_face(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def feature_face(df: pl.DataFrame) -> pl.DataFrame:
-    # Drop irrelevant columns
+    # also drop irrelevant columns
     return df
 
 

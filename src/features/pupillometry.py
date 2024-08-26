@@ -15,7 +15,7 @@ import scipy.signal as signal
 from numba import jit
 from polars import col
 
-from src.features.transformations import map_trials
+from src.features.transforming import map_trials
 from src.helpers import ensure_list
 
 EYE_COLUMNS = ["Pupillometry_R", "Pupillometry_L"]
@@ -206,7 +206,7 @@ def interpolate_pupillometry(
     for eye in ensure_list(eye_columns):
         df = df.with_columns(
             pl.col(eye)
-            .interpolate()
+            .interpolate()  # BUG
             .forward_fill()  # Fill remaining edge cases
             .backward_fill()
             .alias(eye)

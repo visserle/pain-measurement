@@ -10,6 +10,7 @@ def preprocess_stimulus(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def feature_stimulus(df: pl.DataFrame) -> pl.DataFrame:
+    # no need to downsample, as the stimulus data is already at 10 Hz
     return df
 
 
@@ -28,8 +29,8 @@ def scale_temperature(df: pl.DataFrame) -> pl.DataFrame:
 
     NOTE: scale_min_max automatically maps to trials.
 
-    TODO, BUG: the actual min and max values should be retrieved from the calibration
+    TODO, BUG: the actual max values should be retrieved from the calibration
     results, not from the data itself. (low priority, bc temperature is not used as a
-    target)
+    target). Trial max =/= global max (inaccuaracy of about 5 %).
     """
     return scale_min_max(df, exclude_additional_columns=["rating"])

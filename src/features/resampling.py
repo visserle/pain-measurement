@@ -1,19 +1,19 @@
 """
-For our purposes, handling data with the duration data type in milliseconds would be
-optimal. Unfortunately, Polars support of its duration data types is not fully
-implemented yet: https://github.com/pola-rs/polars/issues/13560.
+Note that the usage of the pl.Duration data type is not fully supported in Polars yet.
+
+https://github.com/pola-rs/polars/issues/13560
 """
 
 import polars as pl
 from polars import col
 
-from src.features.transformations import map_participants, map_trials
+from src.features.transforming import map_participants, map_trials
 
 
 @map_trials
 def downsample(
     df: pl.DataFrame,
-    new_sample_rate: int,
+    new_sample_rate: int = 10,
 ) -> pl.DataFrame:
     # Find out current sampling rate
     current_sample_rate = round(
@@ -27,7 +27,8 @@ def downsample(
     )
     if new_sample_rate >= current_sample_rate:
         raise ValueError(
-            f"New sample rate {new_sample_rate} must be smaller than current sample rate {current_sample_rate}"
+            f"New sample rate {new_sample_rate} must be smaller than current sample "
+            f"rate {current_sample_rate}"
         )
 
     # Add time column in µs for integer data type so that group_by_dynamic works
@@ -39,6 +40,9 @@ def downsample(
     # Reverse the timestamp_µs column to timestamp in ms
     df = df.with_columns(
         (col("timestamp_µs") / 1000).alias("timestamp"),
+        col("trial_id").cast(pl.UInt16),
+        col(["trial_number", "participant_id"]).cast(pl.UInt8),
+        # we should also cast the other columns to the correct data type TODO
     ).drop("timestamp_µs")
 
     return df
@@ -53,8 +57,8 @@ def add_time_column(
     """
     Create a new column that contains the time from Timestamp in ms.
 
-    Note: This datatype is not fully implemented in Polars and DuckDB yet and is not
-    recommended for saving to a database.
+    Note: This datatype is not fully supported in Polars and DuckDB yet.
+    Use with caution.
     """
     df = df.with_columns(
         col(time_column).cast(pl.Duration(time_unit=time_unit)).alias(new_column_name)

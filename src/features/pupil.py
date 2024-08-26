@@ -2,13 +2,16 @@
 # - improve docstrings
 # insightfull report: https://github.com/kinleyid/PuPL/blob/master/manual.pdf
 
+import logging
+
 import polars as pl
 from polars import col
 
-from src.features.filters import filter_butterworth
-from src.features.transformations import map_trials
+from src.features.filtering import filter_butterworth
+from src.features.resampling import downsample
+from src.features.transforming import map_trials
 
-# Pipeline functions
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
@@ -17,10 +20,8 @@ def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
+    df = downsample(df, new_sample_rate=10)
     return df
-
-
-# Transformation functions
 
 
 # quick and dirty TODO: improve
@@ -228,5 +229,8 @@ def interpolate_pupillometry(
             .backward_fill()
             .alias(pupil)
         )
-
+    logger.warning(
+        "Interpolation method does not consider non-equidistant time stamps. "
+        "This is a bug that needs to be fixed by using interpolate_by."
+    )
     return df

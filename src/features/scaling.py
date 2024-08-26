@@ -1,6 +1,6 @@
 import polars as pl
 
-from src.features.transformations import map_trials
+from src.features.transforming import map_trials
 
 # As long as we are not using a schema, we need to exclude these columns from scaling
 EXCLUDE_COLUMNS = [
@@ -63,13 +63,13 @@ def scale_percent_to_decimal(
     )
 
 
-def _scale_min_max_col(col: pl.Expr) -> pl.Expr:
-    return (col - col.min()) / (col.max() - col.min())
+def _scale_min_max_col(column: pl.Expr) -> pl.Expr:
+    return (column - column.min()) / (column.max() - column.min())
 
 
-def _scale_standard_col(col: pl.Expr) -> pl.Expr:
-    return (col - col.mean()) / col.std()
+def _scale_standard_col(column: pl.Expr) -> pl.Expr:
+    return (column - column.mean()) / column.std()
 
 
-def _scale_percent_to_decimal_col(col: pl.Expr) -> pl.Expr:
-    return (col / 100).round(5)  # round to avoid floating point weirdness
+def _scale_percent_to_decimal_col(column: pl.Expr) -> pl.Expr:
+    return (column / 100).round(5)  # round to avoid floating point weirdness
