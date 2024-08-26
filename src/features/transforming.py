@@ -2,6 +2,7 @@ import logging
 from functools import wraps
 
 import polars as pl
+from polars.exceptions import ColumnNotFoundError
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -26,9 +27,17 @@ def map_trials(func: callable):
         *args,
         **kwargs,
     ) -> pl.DataFrame:
-        return df.group_by("trial_id", maintain_order=True).map_groups(
-            lambda group: func(group, *args, **kwargs)
-        )
+        try:
+            df = df.group_by("trial_id", maintain_order=True).map_groups(
+                lambda group: func(group, *args, **kwargs)
+            )
+        except ColumnNotFoundError:
+            logger.warning(
+                f"No 'trial_id' column found. Applying function {func.__name__} to the "
+                "entire DataFrame."
+            )
+            df = func(df, *args, **kwargs)
+        return df
 
     return wrapper
 
@@ -44,9 +53,17 @@ def map_participants(func: callable):
         *args,
         **kwargs,
     ) -> pl.DataFrame:
-        return df.group_by("participant_id", maintain_order=True).map_groups(
-            lambda group: func(group, *args, **kwargs)
-        )
+        try:
+            df = df.group_by("participant_id", maintain_order=True).map_groups(
+                lambda group: func(group, *args, **kwargs)
+            )
+        except ColumnNotFoundError:
+            logger.warning(
+                f"No 'participant_id' column found. Applying function {func.__name__} "
+                "to the entire DataFrame."
+            )
+            df = func(df, *args, **kwargs)
+        return df
 
     return wrapper
 
