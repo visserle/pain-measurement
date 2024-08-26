@@ -8,7 +8,7 @@ class DataConfig:
     MODALITIES = ["Stimulus", "EDA", "EEG", "PPG", "Pupil", "Face"]
     NUM_PARTICIPANTS = 28
 
-    DB_FILE = Path("experiment.duckdb")
+    DB_FILE = Path("data/experiment.duckdb")
     PARTICIPANT_DATA_FILE = Path("runs/experiments/participants.csv")
 
     IMOTIONS_DATA_PATH = Path("data/imotions")
