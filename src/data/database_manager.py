@@ -2,6 +2,7 @@
 # - check if modality already exists in the database before preprocessing it
 # - add labels function for feature data
 # - remove duplcate timestamps from shimmer sensor data (maybe this also exists in eeg data)
+# - remove uninformative columns from the database
 # - add database for quality control (e.g. if the number of rows in the raw data is the same as in the preprocess data)
 # - performance https://docs.pola.rs/user-guide/expressions/user-defined-functions/ (maybe)
 # - add participant data to the database
@@ -22,6 +23,7 @@ from src.data.data_processing import (
     create_preprocess_data_df,
     create_raw_data_df,
     create_trials_df,
+    merge_feature_data_dfs,
 )
 from src.data.database_schema import DatabaseSchema
 from src.data.imotions_data import load_imotions_data_df
@@ -50,8 +52,8 @@ class DatabaseManager:
     >>> db = DatabaseManager()
     >>> with db:
     >>>    df = db.execute("SELECT * FROM Trials").pl()  # .pl() for Polars DataFrame
-    >>> # alternatively
-    >>>    df = db.read_table("Trials")
+    >>> # or alternatively
+    >>>    df = db.get_table("Trials")
     >>> df.head()
     """
 
@@ -100,7 +102,7 @@ class DatabaseManager:
             )
         return self.conn.sql(query)
 
-    def read_table(
+    def get_table(
         self,
         table_name: str,
         remove_invalid: bool = False,
@@ -109,6 +111,10 @@ class DatabaseManager:
         if remove_invalid:
             pass  # TODO
         return self.execute(f"SELECT * FROM {table_name}").pl()
+
+    def get_final_feature_data(self) -> pl.DataFrame:
+        dfs = [self.get_table("Feature_" + modality) for modality in MODALITIES]
+        return merge_feature_data_dfs(dfs)
 
     def table_exists(
         self,
@@ -225,7 +231,7 @@ def main():
         # no check for existing data as it will be overwritten
         for modality in MODALITIES:
             table_name = "Preprocess_" + modality
-            df = db.read_table("Raw_" + modality)
+            df = db.get_table("Raw_" + modality)
             df = create_preprocess_data_df(table_name, df)
             db.insert_preprocess_data(table_name, df)
         logger.info("Data preprocessed.")
@@ -233,7 +239,7 @@ def main():
         # Feature-engineered data
         for modality in MODALITIES:
             table_name = f"Feature_{modality}"
-            df = db.read_table(f"Preprocess_{modality}")
+            df = db.get_table(f"Preprocess_{modality}")
             df = create_feature_data_df(table_name, df)
             db.insert_feature_data(table_name, df)
         logger.info("Data feature-engineered.")
