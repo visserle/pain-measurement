@@ -75,6 +75,9 @@ def merge_data_dfs(
 ) -> pl.DataFrame:
     """
     Merge multiple DataFrames into a single DataFrame.
+
+    Default merge_on and sort_by columns are set for data DataFrames (raw, preprocess,
+    feature).
     """
     if len(dfs) < 2:
         return dfs[0]
