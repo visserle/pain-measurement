@@ -68,6 +68,7 @@ def add_time_column(
 
 def add_timestamp_µs_column(
     df: pl.DataFrame,
+    time_column: str = "timestamp",
 ) -> pl.DataFrame:
     """
     Create a new column that contains the timestamp in microseconds (µs).
@@ -75,5 +76,5 @@ def add_timestamp_µs_column(
     Casts the datatype to Int64 which allow group_by_dynamic operations.
     """
     return df.with_columns(
-        (col("timestamp") * 1000).cast(pl.Int64).alias("timestamp_µs"),
+        (col(time_column) * 1000).cast(pl.Int64).alias(time_column + "_µs")
     )
