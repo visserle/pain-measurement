@@ -15,6 +15,7 @@ from src.features.face import feature_face, preprocess_face
 from src.features.ppg import feature_ppg, preprocess_ppg
 from src.features.pupil import feature_pupil, preprocess_pupil
 from src.features.stimulus import feature_stimulus, preprocess_stimulus
+from src.features.transforming import interpolate_and_fill_nulls, merge_data_dfs
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -214,3 +215,15 @@ def create_feature_data_df(
         return feature_pupil(df)
     elif "Face" in name:
         return feature_face(df)
+
+
+def merge_feature_data_dfs(
+    dfs: list[pl.DataFrame],
+) -> pl.DataFrame:
+    """
+    Merge multiple feature DataFrames into a single DataFrame.
+    """
+    df = merge_data_dfs(dfs)
+    df = interpolate_and_fill_nulls(df)
+    # TODO: add final downsample
+    return df
