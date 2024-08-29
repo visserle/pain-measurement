@@ -1,10 +1,12 @@
 # NOTE: this are functions from the old pipeline, they need to be adapted, mapped tp trials, etc.
+# -> inherit database manager for systems data
 import logging
 
 import numpy as np
 import polars as pl
 
-# TODO: write results to participant config json
+from src.data.database_manager import DatabaseManager
+
 # TODO: add more quality checks based on non-trialized imotions data
 # - packet loss
 # - battery
@@ -18,6 +20,7 @@ import polars as pl
 # also check for floating point weirdness in timestamps -> bad sign
 
 # check for number of imotions events = stim len * sample rate
+
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
