@@ -1,6 +1,7 @@
 # Data Pipeline
 
-Processing steps: `Raw` → `Preprocess` → `Feature`.
+The database creation takes place in `database_manager.py`.
+The data processing steps are: `Raw` → `Preprocess` → `Feature`.
 
 - `Raw`: Raw data as collected from each trial of the experiment.
 - `Preprocess`: Preprocessed data with cleaned and transformed columns.
@@ -8,4 +9,4 @@ Processing steps: `Raw` → `Preprocess` → `Feature`.
 
 Invalid participants and trials can be removed at any stage of the pipeline using the `remove_invalid` key in the `get_table` method.
 
-Note that iMotions data is only available in the original .csv format and is not integrated into the database.
+Note that iMotions' output is loaded into the database as `raw` data.
