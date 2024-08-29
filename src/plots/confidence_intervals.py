@@ -1,35 +1,53 @@
-import hvplot.polars  # noqa
 import polars as pl
+from icecream import ic
 from polars import col
 
 from src.data.database_manager import DatabaseManager
 from src.features.resampling import add_timestamp_μs_column
-from src.features.scaling import scale_min_max
+from src.features.scaling import scale_min_max, scale_standard
 from src.features.transforming import merge_data_dfs
 
+CONFIDENCE_LEVEL = 1.96  # 95% confidence interval
 MODALITY_MAP = {
     "stimulus": ["rating", "temperature"],
     "eda": ["eda_tonic", "eda_phasic"],
+    "eeg": "",
+    "ppg": "",
+    "pupil": ["pupil_r_filtered"],  # , "pupil_r"],  # TODO
+    "face": "",
 }
 
 
-def plot_confidence_interval(modality: str):
-    signals = MODALITY_MAP[modality]
-    # As we plot for each stimulus seed, we need trial metadata first
-    with DatabaseManager() as db:
-        df = db.get_table("feature_" + modality)
-        trials = db.get_table("trials")  # get trials for stimulus seeds
-    df = merge_data_dfs(
-        [df, trials],
-        merge_on=["participant_id", "trial_id", "trial_number"],
-    ).drop("duration", "skin_area", "timestamp_start", "timestamp_end", strict=False)
+def plot_confidence_intervals(
+    modality: str,
+    signals: list[str] = None,
+) -> pl.DataFrame:
+    """
+    Plot confidence intervals for the given modality.
 
-    #
-    df = aggregate_over_seeds(df, modality, bin_size=1)
-    # scale for better visualization, must come before adding confidence intervals
+    Use signals to specify which signals to plot. If None, all relevant signals for the
+    given modality are plotted.
+    """
+
+    # Select signals for the given modality
+    # note that we still calculate confidence intervals for all signals later (easier to
+    # implement)
+    signals = signals or MODALITY_MAP[modality]
+    # As we plot for each stimulus seed, we need additional metadata
+    df = load_modality_with_trial_metadata(modality)
+
+    # Scale data for better visualization (mapped over trial_id)
     df = scale_min_max(
-        df, exclude_additional_columns=["time_bin", "rating", "temperature"]
+        df,
+        exclude_additional_columns=[
+            "time_bin",
+            "rating",  # already normalized
+            "temperature",  # already normalized
+        ],
     )
+
+    # Calculate confidence intervals
+    df = aggregate_over_stimulus_seeds(df, modality, bin_size=1)
     df = add_confidence_interval(df, modality)
 
     # Create plot
@@ -41,6 +59,7 @@ def plot_confidence_interval(modality: str):
         xlabel="Time (s)",
         ylabel="Normalized value",
         grid=True,
+        label=signals[0] if len(signals) == 1 else modality,  # legend for univariate
     )
     for signal in signals:
         plots *= df.hvplot.area(
@@ -56,6 +75,16 @@ def plot_confidence_interval(modality: str):
     return plots
 
 
+def load_modality_with_trial_metadata(modality: str) -> pl.DataFrame:
+    with DatabaseManager() as db:
+        df = db.get_table("feature_" + modality)
+        trials = db.get_table("trials")  # get trials for stimulus seeds
+    return merge_data_dfs(
+        [df, trials],
+        merge_on=["participant_id", "trial_id", "trial_number"],
+    ).drop("duration", "skin_area", "timestamp_start", "timestamp_end", strict=False)
+
+
 def _zero_based_timestamps(df: pl.DataFrame) -> pl.DataFrame:
     return df.with_columns(
         (col("timestamp") - col("timestamp").min().over("trial_id")).alias(
@@ -64,12 +93,12 @@ def _zero_based_timestamps(df: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-def aggregate_over_seeds(
+def aggregate_over_stimulus_seeds(
     df: pl.DataFrame,
     modality: str,
     bin_size: int = 1,  # TODO
 ) -> pl.DataFrame:
-    """Aggregate over seeds for each trial using group_by_dynamic."""
+    """Aggregate over stimulus seeds for each trial using group_by_dynamic."""
     # Note: without group_by_dynamic, this would be something like
     # >>> df.with_columns(
     # >>>     [(col("zeroed_timestamp") // 1000).cast(pl.Int32).alias("time_bin")]
@@ -105,7 +134,6 @@ def aggregate_over_seeds(
                 ]
                 # Sample size for each bin
                 + [pl.len().alias("sample_size")]
-                # TODO find out why the sample sizes are not constant
             )
         )
         .with_columns((col("zeroed_timestamp_µs") / 1_000_000).alias("time_bin"))
@@ -124,14 +152,14 @@ def add_confidence_interval(
         [
             (
                 col(f"avg_{signal}")
-                - 1.96 * (col(f"std_{signal}") / col("sample_size").sqrt())
+                - CONFIDENCE_LEVEL * (col(f"std_{signal}") / col("sample_size").sqrt())
             ).alias(f"ci_lower_{signal}")
             for signal in MODALITY_MAP[modality]
         ]
         + [
             (
                 col(f"avg_{signal}")
-                + 1.96 * (col(f"std_{signal}") / col("sample_size").sqrt())
+                + CONFIDENCE_LEVEL * (col(f"std_{signal}") / col("sample_size").sqrt())
             ).alias(f"ci_upper_{signal}")
             for signal in MODALITY_MAP[modality]
         ]
