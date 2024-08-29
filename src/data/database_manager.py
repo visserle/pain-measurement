@@ -178,8 +178,8 @@ class DatabaseManager:
             ORDER BY r.rownumber;
         """)
 
-    # Note that in constrast to raw data, preprocessed and feature-engineered data is not
-    # inserted into the database per participant, but per modality over all
+    # Note that in constrast to raw data, preprocessed and feature-engineered data is
+    # not inserted into the database per participant, but per modality over all
     # participants.
     def insert_preprocess_data(
         self,
