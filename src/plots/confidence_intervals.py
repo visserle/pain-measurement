@@ -12,7 +12,7 @@ MODALITY_MAP = {
     "stimulus": ["rating", "temperature"],
     "eda": ["eda_tonic", "eda_phasic"],
     "eeg": "",
-    "ppg": "",
+    "ppg": ["ppg_rate", "ppg_quality"],
     "pupil": ["pupil_r_filtered"],  # , "pupil_r"],  # TODO
     "face": "",
 }
@@ -23,7 +23,8 @@ def plot_confidence_intervals(
     signals: list[str] = None,
 ) -> pl.DataFrame:
     """
-    Plot confidence intervals for the given modality.
+    Plot confidence intervals for the given modality for all participants over one
+    stimulus seed.
 
     Use signals to specify which signals to plot. If None, all relevant signals for the
     given modality are plotted.
@@ -77,7 +78,7 @@ def plot_confidence_intervals(
 
 def load_modality_with_trial_metadata(modality: str) -> pl.DataFrame:
     with DatabaseManager() as db:
-        df = db.get_table("feature_" + modality)
+        df = db.get_table("feature_" + modality)  # TODO: exclude invalid participants
         trials = db.get_table("trials")  # get trials for stimulus seeds
     return merge_data_dfs(
         [df, trials],
