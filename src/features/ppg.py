@@ -1,3 +1,8 @@
+# TODO
+# maybe we first should do:
+# - smooth the signal
+# - resample with equidistant timestamps
+
 import neurokit2 as nk
 import polars as pl
 
@@ -20,7 +25,7 @@ def nk_process_ppg(
     df: pl.DataFrame,
     sampling_rate: int = 100,
 ) -> pl.DataFrame:
-    ppg_raw = df.select("ppg_raw").to_numpy().flatten()
+    ppg_raw = df.get_column("ppg_raw").to_numpy()
     ppg_processed, _ = nk.ppg_process(
         ppg_raw,
         sampling_rate=sampling_rate,
