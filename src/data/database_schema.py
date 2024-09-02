@@ -55,9 +55,10 @@ class DatabaseSchema:
     def create_seeds_table(
         conn: duckdb.DuckDBPyConnection,
     ) -> None:
+        # check for existing table using custom function to avoid df creation
         if not DatabaseSchema.table_exists(conn, "Seeds"):
             # we directly load the seed data into the table to make our life easier
-            seeds_data = create_seeds_df()  # noqa
+            seeds_data = create_seeds_df()  # noqa : used in the string below
             conn.execute("CREATE TABLE Seeds AS SELECT * FROM seeds_data")
 
     @staticmethod
