@@ -11,6 +11,8 @@ from src.features.filtering import filter_butterworth
 from src.features.resampling import downsample
 from src.features.transforming import map_trials
 
+SAMPLE_RATE = 60
+
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
@@ -33,7 +35,7 @@ def filter_pupil(
     for pupil in pupil_columns:
         data = filter_butterworth(
             df.get_column(pupil),
-            60,
+            SAMPLE_RATE,
             lowcut=0,
             highcut=0.2,
             order=2,

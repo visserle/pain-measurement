@@ -8,6 +8,8 @@ import polars as pl
 from src.features.resampling import downsample
 from src.features.transforming import map_trials
 
+SAMPLE_RATE = 100
+
 
 def preprocess_eda(df: pl.DataFrame) -> pl.DataFrame:
     df = nk_process_eda(df)
@@ -22,7 +24,7 @@ def feature_eda(df: pl.DataFrame) -> pl.DataFrame:
 @map_trials
 def nk_process_eda(
     df: pl.DataFrame,
-    sampling_rate: int = 100,
+    sample_rate: int = 100,
     method: str = "neurokit",
 ) -> pl.DataFrame:
     """
@@ -37,7 +39,7 @@ def nk_process_eda(
     eda_raw = df.get_column("eda_raw").to_numpy()
     eda_processed: pd.DataFrame = nk.eda_phasic(
         eda_signal=eda_raw,
-        sampling_rate=sampling_rate,
+        sampling_rate=sample_rate,
         method=method,
     )  # this returns EDA_Phasic and EDA_Tonic columns
     df = df.hstack(pl.from_pandas(eda_processed))
