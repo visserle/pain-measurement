@@ -1,21 +1,55 @@
 # TODO;
+# read https://neuraldatascience.io/7-eeg/erp_filtering.html for filter_eeg function
 # Frequency-based analysis of EEG data
+# find out why after lowcut=0.5 the data is centered around 0
+# maybe improve code quality: https://stackoverflow.com/questions/75057003/how-to-apply-scipy-filter-in-polars-dataframe
 
 import numpy as np
 import polars as pl
 from scipy import signal
 
+from src.features.filtering import filter_butterworth
 from src.features.resampling import downsample
+from src.features.transforming import map_trials
+
+SAMPLE_RATE = 500
 
 
-# sample rate is 500Hz
 def preprocess_eeg(df: pl.DataFrame) -> pl.DataFrame:
-    # df = bandpower(df, [0.5, 4])
+    df = filter_eeg(df)
     return df
 
 
 def feature_eeg(df: pl.DataFrame) -> pl.DataFrame:
     df = downsample(df, new_sample_rate=10)
+    return df
+
+
+# quick and dirty TODO: improve
+@map_trials
+def filter_eeg(
+    df: pl.DataFrame,
+    sample_rate: int = SAMPLE_RATE,
+    channel_columns: list[str] = [
+        "ch1",
+        "ch2",
+        "ch3",
+        "ch4",
+        "ch5",
+        "ch6",
+        "ch7",
+        "ch8",
+    ],
+) -> pl.DataFrame:
+    for channel in channel_columns:
+        data = filter_butterworth(
+            df.get_column(channel),
+            sample_rate,
+            lowcut=1,
+            highcut=30,
+        )
+        series = pl.Series(channel + "_filtered", data)
+        df = df.with_columns(series)
     return df
 
 

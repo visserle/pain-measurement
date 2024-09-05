@@ -4,7 +4,7 @@ import scipy.signal
 
 def filter_butterworth(
     signal,
-    sampling_rate=1000,
+    sample_rate=1000,
     lowcut=None,
     highcut=None,
     order=5,
@@ -17,14 +17,14 @@ def filter_butterworth(
     freqs, filter_type = _filter_sanitize(
         lowcut=lowcut,
         highcut=highcut,
-        sampling_rate=sampling_rate,
+        sample_rate=sample_rate,
     )
     sos = scipy.signal.butter(
         order,
         freqs,
         btype=filter_type,
         output="sos",
-        fs=sampling_rate,
+        fs=sample_rate,
     )
     return scipy.signal.sosfiltfilt(sos, signal)
 
@@ -32,7 +32,7 @@ def filter_butterworth(
 def _filter_sanitize(
     lowcut=None,
     highcut=None,
-    sampling_rate=1000,
+    sample_rate=1000,
     normalize=False,
 ):
     """Sanitize the input for filtering.
@@ -44,7 +44,7 @@ def _filter_sanitize(
     https://github.com/neuropsychology/NeuroKit/blob/master/neurokit2/signal/signal_filter.py
     """
     # Sanity checks
-    nyquist_rate = sampling_rate / 2
+    nyquist_rate = sample_rate / 2
     max_freq = max(filter(None, [lowcut, highcut]))
     if lowcut is not None or highcut is not None:
         if nyquist_rate <= max_freq:
