@@ -2,6 +2,7 @@
 # maybe we first should do:
 # - smooth the signal
 # - resample with equidistant timestamps
+# NOTE: this approach is non-causal, i.e. it uses future data to smooth the signal. TODO
 
 import neurokit2 as nk
 import polars as pl
@@ -25,12 +26,29 @@ def nk_process_ppg(
     df: pl.DataFrame,
     sampling_rate: int = 100,
 ) -> pl.DataFrame:
-    ppg_raw = df.get_column("ppg_raw").to_numpy()
-    ppg_processed, _ = nk.ppg_process(
-        ppg_raw,
-        sampling_rate=sampling_rate,
-        method="elgendi",
+    """
+    Process the raw PPG signal using NeuroKit2 and the "elgendi" method.
+
+    Creates the following columns:
+    - ppg_clean
+    - ppg_rate
+    - ppg_quality
+    - ppg_peaks
+    """
+    return (
+        df.with_columns(
+            pl.col("ppg_raw")
+            .map_batches(
+                lambda x: pl.from_pandas(
+                    nk.ppg_process(  # returns a tuple, we only need the dataframe
+                        ppg_signal=x.to_numpy(),
+                        sampling_rate=sampling_rate,
+                        method="elgendi",
+                    )[0].drop("PPG_Raw", axis=1)
+                ).to_struct()
+            )
+            .alias("ppg_components")
+        )
+        .unnest("ppg_components")
+        .select(pl.all().name.to_lowercase())
     )
-    # the neurokit functions returns clean, rate, quality and binary peak columns
-    df = df.hstack(pl.from_pandas(ppg_processed).drop("PPG_Raw"))
-    return df.select(pl.all().name.to_lowercase())
