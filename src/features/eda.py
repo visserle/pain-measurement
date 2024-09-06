@@ -2,7 +2,6 @@
 # TODO: drop irrelevant columns, downsample, etc.
 
 import neurokit2 as nk
-import pandas as pd
 import polars as pl
 
 from src.features.resampling import downsample
