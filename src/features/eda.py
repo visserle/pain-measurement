@@ -45,14 +45,11 @@ def nk_process_eda(
                         eda_signal=x.to_numpy(),
                         sampling_rate=sample_rate,
                         method=method,
-                    )  # returns pd.DataFrame with EDA_Phasic and EDA_Tonic columns
+                    )
                 ).to_struct()
             )
             .alias("eda_components")
         )
-        .with_columns(
-            pl.col("eda_components").struct.field(field)
-            for field in ["EDA_Phasic", "EDA_Tonic"]
-        )
+        .unnest("eda_components")
         .select(pl.all().name.to_lowercase())
     )
