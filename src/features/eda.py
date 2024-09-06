@@ -36,19 +36,23 @@ def nk_process_eda(
     https://www.biopac.com/knowledge-base/phasic-eda-issue/,
     https://github.com/neuropsychology/NeuroKit/blob/1aa8deee392f8098df4fd77a23f696c2ff2d29db/neurokit2/eda/eda_phasic.py#L141
     """
-    return df.with_columns(
-        pl.col("eda_raw")
-        .map_batches(
-            lambda x: pl.from_pandas(
-                nk.eda_phasic(
-                    eda_signal=x.to_numpy(),
-                    sampling_rate=sample_rate,
-                    method=method,
-                )  # returns pd.DataFrame with EDA_Phasic and EDA_Tonic columns
-            ).to_struct()
+    return (
+        df.with_columns(
+            pl.col("eda_raw")
+            .map_batches(
+                lambda x: pl.from_pandas(
+                    nk.eda_phasic(
+                        eda_signal=x.to_numpy(),
+                        sampling_rate=sample_rate,
+                        method=method,
+                    )  # returns pd.DataFrame with EDA_Phasic and EDA_Tonic columns
+                ).to_struct()
+            )
+            .alias("eda_components")
         )
-        .alias("eda_components")
-    ).with_columns(
-        pl.col("eda_components").struct.field(field).alias(field.lower())
-        for field in ["EDA_Phasic", "EDA_Tonic"]
+        .with_columns(
+            pl.col("eda_components").struct.field(field)
+            for field in ["EDA_Phasic", "EDA_Tonic"]
+        )
+        .select(pl.all().name.to_lowercase())
     )
