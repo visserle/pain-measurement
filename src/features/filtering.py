@@ -44,6 +44,9 @@ def _filter_sanitize(
     https://github.com/neuropsychology/NeuroKit/blob/master/neurokit2/signal/signal_filter.py
     """
     # Sanity checks
+    if lowcut is None and highcut is None:
+        raise ValueError("At least one of lowcut or highcut must be specified.")
+
     nyquist_rate = sample_rate / 2
     max_freq = max(filter(None, [lowcut, highcut]))
     if lowcut is not None or highcut is not None:

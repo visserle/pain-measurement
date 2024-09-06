@@ -3,6 +3,7 @@
 
 import neurokit2 as nk
 import polars as pl
+from polars import col
 
 from src.features.resampling import downsample
 from src.features.transforming import map_trials
@@ -37,7 +38,7 @@ def nk_process_eda(
     """
     return (
         df.with_columns(
-            pl.col("eda_raw")
+            col("eda_raw")
             .map_batches(
                 lambda x: pl.from_pandas(
                     nk.eda_phasic(

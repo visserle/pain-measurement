@@ -6,6 +6,7 @@
 
 import numpy as np
 import polars as pl
+from polars import col
 from scipy import signal
 
 from src.features.filtering import filter_butterworth
@@ -13,6 +14,7 @@ from src.features.resampling import downsample
 from src.features.transforming import map_trials
 
 SAMPLE_RATE = 500
+CHANNELS = ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7", "ch8"]
 
 
 def preprocess_eeg(df: pl.DataFrame) -> pl.DataFrame:
@@ -25,32 +27,22 @@ def feature_eeg(df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 
-# quick and dirty TODO: improve
 @map_trials
 def filter_eeg(
     df: pl.DataFrame,
     sample_rate: int = SAMPLE_RATE,
-    channel_columns: list[str] = [
-        "ch1",
-        "ch2",
-        "ch3",
-        "ch4",
-        "ch5",
-        "ch6",
-        "ch7",
-        "ch8",
-    ],
+    channel_columns: list[str] = CHANNELS,
 ) -> pl.DataFrame:
-    for channel in channel_columns:
-        data = filter_butterworth(
-            df.get_column(channel),
-            sample_rate,
-            lowcut=1,
-            highcut=30,
-        )
-        series = pl.Series(channel + "_filtered", data)
-        df = df.with_columns(series)
-    return df
+    return df.with_columns(
+        col(channel_columns).map_batches(
+            lambda x: filter_butterworth(
+                x.to_numpy(),
+                sample_rate,
+                lowcut=1,
+                highcut=30,
+            )
+        )  # .name.suffix("_filtered") TODO naming convention
+    )
 
 
 # TODO
