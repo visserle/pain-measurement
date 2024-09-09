@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
-    df = filter_pupil(df)  # quick and dirty TODO: improve
+    df = filter_pupil(df)  # this is just a low pass filter, quick & dirty TODO: improve
     return df
 
 
@@ -26,23 +26,28 @@ def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 
-# quick and dirty TODO: improve
 @map_trials
 def filter_pupil(
     df: pl.DataFrame,
     pupil_columns: list[str] = ["pupil_r", "pupil_l"],
+    sample_rate: float = SAMPLE_RATE,
+    lowcut: float = 0,
+    highcut: float = 0.2,
+    order: int = 2,
 ) -> pl.DataFrame:
-    for pupil in pupil_columns:
-        data = filter_butterworth(
-            df.get_column(pupil),
-            SAMPLE_RATE,
-            lowcut=0,
-            highcut=0.2,
-            order=2,
+    return df.with_columns(
+        pl.col(pupil_columns)
+        .map_batches(  # use map_batches to apply the filter to each column
+            lambda x: filter_butterworth(
+                x,
+                SAMPLE_RATE,
+                lowcut=0,
+                highcut=0.2,
+                order=2,
+            )
         )
-        series = pl.Series(pupil + "_filtered", data)
-        df = df.with_columns(series)
-    return df
+        .name.suffix("_filtered")
+    )
 
 
 def add_blink_threshold(
