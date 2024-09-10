@@ -1,3 +1,5 @@
+# TODO: add anti-aliasing downsampling option
+
 """
 Note that the usage of the pl.Duration data type is not fully supported in Polars yet.
 
@@ -48,6 +50,20 @@ def downsample(
     return df
 
 
+def add_timestamp_µs_column(
+    df: pl.DataFrame,
+    time_column: str = "timestamp",
+) -> pl.DataFrame:
+    """
+    Create a new column that contains the timestamp in microseconds (µs).
+
+    Casts the datatype to Int64 which allow group_by_dynamic operations.
+    """
+    return df.with_columns(
+        (col(time_column) * 1000).cast(pl.Int64).alias(time_column + "_µs")
+    )
+
+
 def add_time_column(
     df: pl.DataFrame,
     time_column: str = "timestamp",
@@ -64,17 +80,3 @@ def add_time_column(
         col(time_column).cast(pl.Duration(time_unit=time_unit)).alias(new_column_name)
     )
     return df
-
-
-def add_timestamp_µs_column(
-    df: pl.DataFrame,
-    time_column: str = "timestamp",
-) -> pl.DataFrame:
-    """
-    Create a new column that contains the timestamp in microseconds (µs).
-
-    Casts the datatype to Int64 which allow group_by_dynamic operations.
-    """
-    return df.with_columns(
-        (col(time_column) * 1000).cast(pl.Int64).alias(time_column + "_µs")
-    )
