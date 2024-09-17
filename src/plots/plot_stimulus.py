@@ -1,51 +1,63 @@
-# TODO: add main function for figure generation for paper, etc.
-
 import numpy as np
-import plotly.graph_objects as go
+from bokeh.layouts import column
+from bokeh.models import BoxAnnotation, ColumnDataSource, FixedTicker, HoverTool, Title
+from bokeh.plotting import figure, show
 
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 
 
 def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
     """
-    Plot the stimulus data with shapes for the major decreasing intervals.
+    Plot the stimulus data with shapes for the major decreasing intervals using Bokeh.
+    Includes a hover tool for displaying point information.
     """
     time = np.array(range(len(stimulus.y))) / stimulus.sample_rate
 
-    # Plot functions and labels
-    fig = go.Figure()
-    fig.update_layout(
-        autosize=True,
-        height=300,
+    # Create a ColumnDataSource for the data
+    source = ColumnDataSource(data=dict(time=time, temperature=stimulus.y))
+
+    # Create a new plot
+    p = figure(
+        title=f"Seed: {stimulus.seed}",
+        x_axis_label="Time (s)",
+        y_axis_label="Temperature (°C)",
         width=900,
-        margin=dict(l=20, r=20, t=40, b=20),
-        title_text=f"Seed: {stimulus.seed}",
-    )
-    fig.update_xaxes(title_text="Time (s)", tickmode="linear", tick0=0, dtick=10)
-    fig.update_yaxes(
-        title_text=r"Temperature (°C)",
+        height=300,
+        tools="pan,wheel_zoom,box_zoom,reset,save",
     )
 
-    fig.add_scatter(
-        x=time,
-        y=stimulus.y,
-    )
+    # Plot the main line
+    p.line("time", "temperature", source=source, line_color="navy", line_width=2)
 
-    # Add shapes for the major increasing intervals
+    # Add shapes for the major decreasing intervals
     for interval in stimulus.major_decreasing_intervals_idx:
         start_time, end_time = (
             interval[0] / stimulus.sample_rate,
             interval[1] / stimulus.sample_rate,
         )
-        fig.add_shape(
-            type="rect",
-            x0=start_time,
-            y0=min(stimulus.y),
-            x1=end_time,
-            y1=max(stimulus.y),
-            line=dict(width=0),
-            fillcolor="salmon",
-            opacity=0.125,
+        p.add_layout(
+            BoxAnnotation(
+                left=start_time,
+                right=end_time,
+                fill_color="salmon",
+                fill_alpha=0.125,
+            )
         )
 
-    fig.show()
+    # Customize the plot
+    p.xaxis.axis_label_text_font_style = "bold"
+    p.yaxis.axis_label_text_font_style = "bold"
+    p.xaxis.ticker = FixedTicker(ticks=list(range(0, int(max(time)) + 1, 10)))
+
+    # Add hover tool
+    hover = HoverTool(
+        tooltips=[
+            ("Time", "@time{0.1f} s"),
+            ("Temperature", "@temperature{0.2f} °C"),
+        ],
+        mode="vline",
+    )
+    p.add_tools(hover)
+
+    # Show the plot
+    show(p)
