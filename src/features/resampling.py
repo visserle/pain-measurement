@@ -7,9 +7,36 @@ https://github.com/pola-rs/polars/issues/13560
 """
 
 import polars as pl
+import scipy.signal as signal
 from polars import col
 
 from src.features.transforming import map_participants, map_trials
+
+
+@map_trials
+def decimate(
+    df: pl.DataFrame,
+    factor: int = 10,
+) -> pl.DataFrame:
+    """Decimate all float columns by a factor of 10.
+
+    This function applies scipy.signal.decimate to all float columns in the DataFrame
+    and gathers every 10th row for all other columns.
+    """
+
+    def decimate_column(col):
+        if col.dtype in [pl.Float32, pl.Float64]:
+            return pl.from_numpy(
+                signal.decimate(
+                    col.to_numpy(),
+                    factor,
+                    ftype="iir",
+                )
+            ).to_series()
+        else:
+            return col.gather_every(10)
+
+    return df.select(pl.all().map_batches(decimate_column))
 
 
 @map_trials
