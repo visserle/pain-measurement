@@ -1,8 +1,9 @@
-# NOTE: There is one small detail I missed: The resulting curve should have been
-# normalized to [-1, 1] for smooth maximum values as determined by the calibration.
-# However, the resulting difference is negligible (for a max value of 47.75 °C, the mean
-# of the resulting max values over all seeds is 47.7369 °C). There is no difference in
-# the mean of the min values.
+# NOTE: There is one small detail I missed that would have made the analysis
+# slightly easier: The resulting curve should have been normalized to [-1, 1] for
+# smooth maximum values as determined by the calibration. However, the resulting
+# difference is negligible (for a max value of 47.75 °C, the mean of the resulting max
+# values over all seeds is 47.7369 °C). There is no difference in the mean of the min
+# values.
 
 import numpy as np
 import scipy
@@ -29,6 +30,24 @@ DUMMY_VALUES = {
     "temperature_range": 3,
 }
 DEFAULTS.update(DUMMY_VALUES)
+
+
+def cosine_half_cycle(
+    period: float,
+    amplitude: float,
+    y_intercept: float = 0,
+    t_start: float = 0,
+    sample_rate: int = 10,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Generate a half cycle cosine function (1 pi) with the given parameters."""
+    frequency = 1 / period
+    num_steps = period * sample_rate
+    assert num_steps == int(num_steps), "Number of steps must be an integer"
+    num_steps = int(num_steps)
+    t = np.linspace(0, period, num_steps)
+    y = amplitude * np.cos(np.pi * frequency * t) + y_intercept - amplitude
+    t += t_start
+    return t, y
 
 
 class StimulusGenerator:
@@ -164,23 +183,40 @@ class StimulusGenerator:
         )
 
     def _get_major_decreasing_half_cycle_idx_for_insert(self) -> np.ndarray:
-        """Indices for np.insert."""
+        """Indices for np.insert as the array is modified."""
         return [i - idx for idx, i in enumerate(self.major_decreasing_half_cycle_idx)]
+
+    @property
+    def decreasing_intervals_idx(self) -> list[tuple[int, int]]:
+        """
+        Get the start and end indices of the decreasing half cycles for labeling.
+
+        This includes the major decreasing half cycles.
+        """
+        intervals = []
+        for idx in range(self.half_cycle_num):
+            if self.amplitudes[idx - 1] < 0:
+                start = sum(self.periods[:idx]) * self.sample_rate
+                for extension in self._extensions:
+                    if extension[0] <= start:  # extension before the current half cycle
+                        start += extension[1]  # add the extension duration
+                end = start + self.periods[idx] * self.sample_rate
+                intervals.append((int(start), int(end)))
+        return intervals
 
     @property
     def major_decreasing_intervals_idx(self) -> list[tuple[int, int]]:
         """
         Get the start and end indices of the major decreasing half cycles for labeling.
         """
-        intervals = []
-        for idx in self.major_decreasing_half_cycle_idx:
-            start = sum(self.periods[:idx]) * self.sample_rate
-            for extension in self._extensions:
-                if extension[0] <= start:
-                    start += extension[1]
-            end = start + self.major_decreasing_half_cycle_period * self.sample_rate
-            intervals.append((int(start), int(end)))
-        return intervals
+        # Account for the subset of decreasing periods that are major
+        period_indices = np.ceil(self.major_decreasing_half_cycle_idx / 2) - 1
+        # Use fancy indexing to get the indices of the major decreasing intervals
+        interval_indices = np.array(self.decreasing_intervals_idx)[
+            [np.array(period_indices, dtype=int)]
+        ]
+        # Convert back to list of tuples and ensure all values are regular Python integers
+        return [tuple(map(int, pair)) for pair in interval_indices.reshape(-1, 2)]
 
     @property
     def major_decreasing_intervals_ms(self) -> list[tuple[int, int]]:
@@ -190,23 +226,27 @@ class StimulusGenerator:
             for start, end in self.major_decreasing_intervals_idx
         ]
 
-    @staticmethod
-    def cosine_half_cycle(
-        period: float,
-        amplitude: float,
-        y_intercept: float = 0,
-        t_start: float = 0,
-        sample_rate: int = 10,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Generate a half cycle cosine function (1 pi) with the given parameters."""
-        frequency = 1 / period
-        num_steps = period * sample_rate
-        assert num_steps == int(num_steps), "Number of steps must be an integer"
-        num_steps = int(num_steps)
-        t = np.linspace(0, period, num_steps)
-        y = amplitude * np.cos(np.pi * frequency * t) + y_intercept - amplitude
-        t += t_start
-        return t, y
+    @property
+    def increasing_intervals_idx(self) -> list[tuple[int, int]]:
+        """
+        Get the start and end indices of the increasing half cycles for labeling.
+
+        Plateaus can occur in increasing half cycles and are considered here.
+        """
+        intervals = []
+        for idx in range(self.half_cycle_num):
+            if self.amplitudes[idx - 1] > 0:
+                start = sum(self.periods[:idx]) * self.sample_rate
+                for extension in self._extensions:
+                    if extension[0] <= start:
+                        start += extension[1]
+                end = start + self.periods[idx] * self.sample_rate
+                # Acccount for plateaus that occur in increasing half cycles
+                for extension in self._extensions:
+                    if start <= extension[0] < end:
+                        end += extension[1]
+                intervals.append((int(start), int(end)))
+        return intervals
 
     def _generate_stimulus(self):
         """Generates the stimulus based on the periods and amplitudes."""
@@ -217,7 +257,7 @@ class StimulusGenerator:
         for i in range(self.half_cycle_num):
             period = self.periods[i]
             amplitude = self.amplitudes[i]
-            t, y = self.cosine_half_cycle(
+            t, y = cosine_half_cycle(
                 period, amplitude, y_intercept, t_start, self.sample_rate
             )
             y_intercept = y[-1]
@@ -411,6 +451,8 @@ class StimulusGenerator:
         """Extend the stimulus at specific indices by repeating their values."""
         y_new = np.array([], dtype=self.y.dtype)
         last_idx = 0
+        # track the number of extensions to adjust the indices accordingly
+        extensions_count = 0
         for idx in sorted(indices):
             repeat_count = int(duration * self.sample_rate)
             # Append everything up to the current index
@@ -421,7 +463,10 @@ class StimulusGenerator:
             )
             last_idx = idx
             # Track the extensions
-            self._extensions.append((idx, repeat_count))
+            self._extensions.append(
+                (idx + extensions_count * repeat_count, repeat_count)
+            )
+            extensions_count += 1
         # Append any remaining values after the last index
         y_new = np.concatenate((y_new, self.y[last_idx:]))
         return y_new
@@ -429,5 +474,5 @@ class StimulusGenerator:
 
 if __name__ == "__main__":
     # for debugging
-    stimulus = StimulusGenerator(seed=246)
-    print(stimulus.major_decreasing_intervals_ms)
+    stimulus = StimulusGenerator(seed=396)
+    print("Original intervals:", stimulus.increasing_intervals_idx)
