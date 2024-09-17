@@ -1,10 +1,11 @@
+import hvplot.polars
 import polars as pl
 from icecream import ic
 from polars import col
 
 from src.data.database_manager import DatabaseManager
 from src.features.resampling import add_timestamp_μs_column
-from src.features.scaling import scale_min_max, scale_standard
+from src.features.scaling import scale_min_max, scale_robust_standard, scale_standard
 from src.features.transforming import merge_data_dfs
 
 CONFIDENCE_LEVEL = 1.96  # 95% confidence interval
@@ -52,7 +53,7 @@ def plot_confidence_intervals(
     df = add_confidence_interval(df, modality)
 
     # Create plot
-    plots = df.plot(
+    plots = df.hvplot(
         x="time_bin",
         y=[f"avg_{signal}" for signal in signals],
         groupby="stimulus_seed",
