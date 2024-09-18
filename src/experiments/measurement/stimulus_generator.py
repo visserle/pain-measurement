@@ -2,7 +2,7 @@
 # slightly easier: The resulting curve should have been normalized to [-1, 1] for
 # smooth maximum values as determined by the calibration. However, the resulting
 # difference is negligible (for a max value of 47.75 °C, the mean of the resulting max
-# values over all seeds is 47.7369 °C). There is no difference in the mean of the min
+# values over all seeds is 47.74 °C). There is no difference in the mean of the min
 # values.
 
 import numpy as np
@@ -13,8 +13,8 @@ DEFAULTS = {
     "half_cycle_num": 10,
     "period_range": [5, 20],
     "amplitude_range": [0.3, 1.0],
-    "inflection_point_range": [-0.5, 0.3],
-    "shorten_expected_duration": 7,
+    "inflection_point_range": [-0.4, 0.3],
+    "shorten_expected_duration": 2,
     "major_decreasing_half_cycle_num": 3,
     "major_decreasing_half_cycle_period": 20,
     "major_decreasing_half_cycle_amplitude": 0.925,
@@ -22,12 +22,12 @@ DEFAULTS = {
     "plateau_num": 2,
     "plateau_duration": 15,
     "plateau_percentile_range": [25, 50],
-    "prolonged_minima_num": 2,
+    "prolonged_minima_num": 1,
     "prolonged_minima_duration": 5,
 }
 DUMMY_VALUES = {
-    "temperature_baseline": 40,
-    "temperature_range": 3,
+    "temperature_baseline": 47,
+    "temperature_range": 1.5,
 }
 DEFAULTS.update(DUMMY_VALUES)
 
@@ -100,6 +100,9 @@ class StimulusGenerator:
             "The amplitude of the major decreasing half cycles "
             "must be less than the maximum amplitude."
         )
+        assert self.plateau_duration != self.prolonged_minima_duration, (
+            "The plateau duration and prolonged minima duration must be different.",
+        )  # bit of a hack to keep the extensions identifiable (important for labeling)
 
     def _initialize_dynamic_attributes(self):
         """Initializes the dynamic attributes."""
@@ -185,68 +188,6 @@ class StimulusGenerator:
     def _get_major_decreasing_half_cycle_idx_for_insert(self) -> np.ndarray:
         """Indices for np.insert as the array is modified."""
         return [i - idx for idx, i in enumerate(self.major_decreasing_half_cycle_idx)]
-
-    @property
-    def decreasing_intervals_idx(self) -> list[tuple[int, int]]:
-        """
-        Get the start and end indices of the decreasing half cycles for labeling.
-
-        This includes the major decreasing half cycles.
-        """
-        intervals = []
-        for idx in range(self.half_cycle_num):
-            if self.amplitudes[idx - 1] < 0:
-                start = sum(self.periods[:idx]) * self.sample_rate
-                for extension in self._extensions:
-                    if extension[0] <= start:  # extension before the current half cycle
-                        start += extension[1]  # add the extension duration
-                end = start + self.periods[idx] * self.sample_rate
-                intervals.append((int(start), int(end)))
-        return intervals
-
-    @property
-    def major_decreasing_intervals_idx(self) -> list[tuple[int, int]]:
-        """
-        Get the start and end indices of the major decreasing half cycles for labeling.
-        """
-        # Account for the subset of decreasing periods that are major
-        period_indices = np.ceil(self.major_decreasing_half_cycle_idx / 2) - 1
-        # Use fancy indexing to get the indices of the major decreasing intervals
-        interval_indices = np.array(self.decreasing_intervals_idx)[
-            [np.array(period_indices, dtype=int)]
-        ]
-        # Convert back to list of tuples and ensure all values are regular Python integers
-        return [tuple(map(int, pair)) for pair in interval_indices.reshape(-1, 2)]
-
-    @property
-    def major_decreasing_intervals_ms(self) -> list[tuple[int, int]]:
-        """Major decreasing intervals in milliseconds."""
-        return [
-            (int(start * 1000 / self.sample_rate), int(end * 1000 / self.sample_rate))
-            for start, end in self.major_decreasing_intervals_idx
-        ]
-
-    @property
-    def increasing_intervals_idx(self) -> list[tuple[int, int]]:
-        """
-        Get the start and end indices of the increasing half cycles for labeling.
-
-        Plateaus can occur in increasing half cycles and are considered here.
-        """
-        intervals = []
-        for idx in range(self.half_cycle_num):
-            if self.amplitudes[idx - 1] > 0:
-                start = sum(self.periods[:idx]) * self.sample_rate
-                for extension in self._extensions:
-                    if extension[0] <= start:
-                        start += extension[1]
-                end = start + self.periods[idx] * self.sample_rate
-                # Acccount for plateaus that occur in increasing half cycles
-                for extension in self._extensions:
-                    if start <= extension[0] < end:
-                        end += extension[1]
-                intervals.append((int(start), int(end)))
-        return intervals
 
     def _generate_stimulus(self):
         """Generates the stimulus based on the periods and amplitudes."""
@@ -470,6 +411,100 @@ class StimulusGenerator:
         # Append any remaining values after the last index
         y_new = np.concatenate((y_new, self.y[last_idx:]))
         return y_new
+
+    # Labeling properties
+
+    @property
+    def labels(self) -> dict[str, list[tuple[int, int]]]:
+        """Get all the labels for the stimulus in seconds."""
+        labels = {
+            "decreasing_intervals": self.decreasing_intervals_idx,
+            "major_decreasing_intervals": self.major_decreasing_intervals_idx,
+            "increasing_intervals": self.increasing_intervals_idx,
+            "plateau_intervals": self.plateau_intervals_idx,
+            "prolonged_minima_intervals": self.prolonged_minima_intervals_idx,
+        }
+
+        def convert_interval(interval):
+            return tuple(int(t / self.sample_rate) for t in interval)  # add 1000 for ms
+
+        # Convert indexes to seconds
+        return {
+            key: [convert_interval(interval) for interval in intervals]
+            for key, intervals in labels.items()
+        }
+
+    @property
+    def decreasing_intervals_idx(self) -> list[tuple[int, int]]:
+        """
+        Get the start and end indices of the decreasing half cycles for labeling.
+
+        This includes the major decreasing half cycles.
+        """
+        intervals = []
+        for idx in range(self.half_cycle_num):
+            if self.amplitudes[idx - 1] < 0:
+                start = sum(self.periods[:idx]) * self.sample_rate
+                for extension in self._extensions:
+                    if extension[0] <= start:  # extension before the current half cycle
+                        start += extension[1]  # add the extension duration
+                end = start + self.periods[idx] * self.sample_rate
+                intervals.append((int(start), int(end)))
+        return intervals
+
+    @property
+    def major_decreasing_intervals_idx(self) -> list[tuple[int, int]]:
+        """
+        Get the start and end indices of the major decreasing half cycles for labeling.
+        """
+        # Account for the subset of decreasing periods that are major
+        period_indices = np.ceil(self.major_decreasing_half_cycle_idx / 2) - 1
+        # Use fancy indexing to get the indices of the major decreasing intervals
+        interval_indices = np.array(self.decreasing_intervals_idx)[
+            [np.array(period_indices, dtype=int)]
+        ]
+        # Convert back to list of tuples and ensure all values are regular Python integers
+        return [tuple(pair) for pair in interval_indices.reshape(-1, 2)]
+
+    @property
+    def increasing_intervals_idx(self) -> list[tuple[int, int]]:
+        """
+        Get the start and end indices of the increasing half cycles for labeling.
+
+        Plateaus can occur in increasing half cycles and are considered here.
+        """
+        intervals = []
+        for idx in range(self.half_cycle_num):
+            if self.amplitudes[idx - 1] > 0:
+                start = sum(self.periods[:idx]) * self.sample_rate
+                for extension in self._extensions:
+                    if extension[0] <= start:
+                        start += extension[1]
+                end = start + self.periods[idx] * self.sample_rate
+                # Acccount for plateaus that occur in increasing half cycles
+                for extension in self._extensions:
+                    if start <= extension[0] < end:
+                        end += extension[1]
+                intervals.append((int(start), int(end)))
+        return intervals
+
+    @property
+    def plateau_intervals_idx(self) -> list[tuple[int, int]]:
+        """Get the start and end indices of the plateaus for labeling."""
+        intervals = []
+        for extension in self._extensions:
+            if extension[1] == self.plateau_duration * self.sample_rate:
+                intervals.append((extension[0], extension[0] + extension[1]))
+        return intervals
+
+    @property
+    def prolonged_minima_intervals_idx(self) -> list[tuple[int, int]]:
+        """Get the start and end indices of the prolonged minima for labeling."""
+        intervals = []
+        for extension in self._extensions:
+            if extension[1] == self.prolonged_minima_duration * self.sample_rate:
+                intervals.append((extension[0], extension[0] + extension[1]))
+        return intervals
 
 
 if __name__ == "__main__":
