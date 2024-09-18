@@ -6,12 +6,14 @@ Results will be inserted into the database.
 import logging
 
 import polars as pl
+from polars import col
 
 from src.data.data_config import DataConfig
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 from src.features.eda import feature_eda, preprocess_eda
 from src.features.eeg import feature_eeg, preprocess_eeg
 from src.features.face import feature_face, preprocess_face
+from src.features.labels import process_labels
 from src.features.ppg import feature_ppg, preprocess_ppg
 from src.features.pupil import feature_pupil, preprocess_pupil
 from src.features.stimulus import feature_stimulus, preprocess_stimulus
@@ -61,11 +63,11 @@ def create_trials_df(
         # stimulus
         # drop all rows where the markerdescription is null to get the start and end
         # of each stimulus
-        iMotions_Marker.filter(pl.col("markerdescription").is_not_null())
+        iMotions_Marker.filter(col("markerdescription").is_not_null())
         .select(
             [
-                pl.col("markerdescription").alias("stimulus_seed").cast(pl.UInt16),
-                pl.col("timestamp").alias("timestamp_start"),
+                col("markerdescription").alias("stimulus_seed").cast(pl.UInt16),
+                col("timestamp").alias("timestamp_start"),
             ]
         )
         # group by stimulus_seed to ensure one row per stimulus
@@ -73,8 +75,8 @@ def create_trials_df(
         # create columns for start and end of each stimulus
         .agg(
             [
-                pl.col("timestamp_start").min().alias("timestamp_start"),
-                pl.col("timestamp_start").max().alias("timestamp_end"),
+                col("timestamp_start").min().alias("timestamp_start"),
+                col("timestamp_start").max().alias("timestamp_end"),
             ]
         )
         .sort("timestamp_start")
@@ -82,7 +84,7 @@ def create_trials_df(
     # add column for duration of each stimulus
     trials_df = trials_df.with_columns(
         trials_df.select(
-            (pl.col("timestamp_end") - pl.col("timestamp_start")).alias("duration")
+            (col("timestamp_end") - col("timestamp_start")).alias("duration")
         )
     )
     # add column for trial number
@@ -108,17 +110,17 @@ def create_trials_df(
     1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> end.
     """
     trials_df = trials_df.with_columns(
-        pl.when(pl.col("participant_id") % 2 == 1)
-        .then(((pl.col("trial_number") - 1) % 6) + 1)
-        .otherwise(6 - ((pl.col("trial_number") - 1) % 6))
+        pl.when(col("participant_id") % 2 == 1)
+        .then(((col("trial_number") - 1) % 6) + 1)
+        .otherwise(6 - ((col("trial_number") - 1) % 6))
         .alias("skin_area")
         .cast(pl.UInt8)
     )
 
     # change order of columns
     trials_df = trials_df.select(
-        pl.col(a := "trial_number"),
-        pl.col(b := "participant_id"),
+        col(a := "trial_number"),
+        col(b := "participant_id"),
         pl.all().exclude(a, b),
     )
     logger.debug("Created Trials DataFrame for participant %s.", participant_id)
@@ -136,10 +138,10 @@ def create_raw_data_df(
     """
     # Create a DataFrame with the trial information only
     trial_info_df = trials_df.select(
-        pl.col("timestamp_start").alias("trial_start"),
-        pl.col("timestamp_end").alias("trial_end"),
-        pl.col("trial_number"),
-        pl.col("participant_id"),
+        col("timestamp_start").alias("trial_start"),
+        col("timestamp_end").alias("trial_end"),
+        col("trial_number"),
+        col("participant_id"),
     )
 
     # Perform an asof join to assign trial numbers to each stimulus
@@ -154,28 +156,28 @@ def create_raw_data_df(
     df = (
         df.with_columns(
             pl.when(
-                pl.col("timestamp").is_between(
-                    pl.col("trial_start"),
-                    pl.col("trial_end"),
+                col("timestamp").is_between(
+                    col("trial_start"),
+                    col("trial_end"),
                 )
             )
-            .then(pl.col("trial_number"))
+            .then(col("trial_number"))
             .otherwise(None)
             .alias("trial_number")
         )
-        .filter(pl.col("trial_number").is_not_null())  # drop non-trial rows
+        .filter(col("trial_number").is_not_null())  # drop non-trial rows
         .drop(["trial_start", "trial_end"])
     )
 
     # Cast row number column
-    df = df.with_columns(pl.col("rownumber").cast(pl.UInt32))
+    df = df.with_columns(col("rownumber").cast(pl.UInt32))
     # assert that rownumber is ascending
     assert df["rownumber"].is_sorted()
 
     # Change order of columns
     df = df.select(
-        pl.col(a := "trial_number"),
-        pl.col(b := "participant_id"),
+        col(a := "trial_number"),
+        col(b := "participant_id"),
         pl.all().exclude(a, b),
     )
     return df
@@ -215,6 +217,26 @@ def create_feature_data_df(
         return feature_pupil(df)
     elif "Face" in name:
         return feature_face(df)
+
+
+def create_label_data_df(
+    stimulus: pl.DataFrame,
+    trials: pl.DataFrame,
+) -> pl.DataFrame:
+    # Merge stimulus and trials dataframes
+    df = merge_data_dfs(
+        [stimulus, trials], merge_on=["trial_id", "participant_id", "trial_number"]
+    )
+    # Normalize timestamps for each trial
+    df = df.with_columns(
+        [
+            (col("timestamp") - col("timestamp").min().over("trial_id")).alias(
+                "normalized_timestamp"
+            )
+        ]
+    ).drop("duration", "timestamp_end", "timestamp_start")
+
+    return process_labels(df)
 
 
 def merge_feature_data_dfs(

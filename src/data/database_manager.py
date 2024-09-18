@@ -20,6 +20,7 @@ from icecream import ic
 from src.data.data_config import DataConfig
 from src.data.data_processing import (
     create_feature_data_df,
+    create_label_data_df,
     create_preprocess_data_df,
     create_raw_data_df,
     create_trials_df,
@@ -206,8 +207,17 @@ class DatabaseManager:
         # same as preprocess data for now TODO FIXME
         self.insert_preprocess_data(table_name, feature_data_df)
 
+    def insert_label_data(
+        self,
+        table_name: str,
+        label_data_df: pl.DataFrame,
+    ) -> None:
+        # same as preprocess data for now TODO FIXME
+        self.insert_preprocess_data(table_name, label_data_df)
+
 
 def main():
+    # MODALITIES = ["EEG"]
     with DatabaseManager() as db:
         # Raw data
         for participant_id in range(1, NUM_PARTICIPANTS + 1):
@@ -227,22 +237,28 @@ def main():
             logger.debug(f"Raw data for participant {participant_id} inserted.")
         logger.info("Raw data inserted.")
 
-        # preprocessed data
-        # no check for existing data as it will be overwritten
-        for modality in MODALITIES:
-            table_name = "Preprocess_" + modality
-            df = db.get_table("Raw_" + modality)
-            df = create_preprocess_data_df(table_name, df)
-            db.insert_preprocess_data(table_name, df)
-        logger.info("Data preprocessed.")
+        # # Preprocessed data
+        # # no check for existing data as it will be overwritten
+        # for modality in MODALITIES:
+        #     table_name = "Preprocess_" + modality
+        #     df = db.get_table("Raw_" + modality)
+        #     df = create_preprocess_data_df(table_name, df)
+        #     db.insert_preprocess_data(table_name, df)
+        # logger.info("Data preprocessed.")
 
-        # Feature-engineered data
-        for modality in MODALITIES:
-            table_name = f"Feature_{modality}"
-            df = db.get_table(f"Preprocess_{modality}")
-            df = create_feature_data_df(table_name, df)
-            db.insert_feature_data(table_name, df)
-        logger.info("Data feature-engineered.")
+        # # Feature-engineered data
+        # for modality in MODALITIES:
+        #     table_name = f"Feature_{modality}"
+        #     df = db.get_table(f"Preprocess_{modality}")
+        #     df = create_feature_data_df(table_name, df)
+        #     db.insert_feature_data(table_name, df)
+        # logger.info("Data feature-engineered.")
+
+        # Add labels
+        stimulus_df = db.get_table("Feature_Stimulus")
+        trials_df = db.get_table("Trials")
+        label_df = create_label_data_df(stimulus_df, trials_df)
+        db.insert_label_data("Label", label_df)
 
         logger.info("Database processing complete.")
 
