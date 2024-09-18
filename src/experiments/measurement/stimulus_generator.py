@@ -412,11 +412,11 @@ class StimulusGenerator:
         y_new = np.concatenate((y_new, self.y[last_idx:]))
         return y_new
 
-    # Labeling properties
+    # Labeling
 
     @property
     def labels(self) -> dict[str, list[tuple[int, int]]]:
-        """Get all the labels for the stimulus in seconds."""
+        """Get all the labels for the stimulus in milliseconds."""
         labels = {
             "decreasing_intervals": self.decreasing_intervals_idx,
             "major_decreasing_intervals": self.major_decreasing_intervals_idx,
@@ -426,9 +426,9 @@ class StimulusGenerator:
         }
 
         def convert_interval(interval):
-            return tuple(int(t / self.sample_rate) for t in interval)  # add 1000 for ms
+            return tuple(int(t * 1000 / self.sample_rate) for t in interval)
 
-        # Convert indexes to seconds
+        # Convert indexes to milliseconds
         return {
             key: [convert_interval(interval) for interval in intervals]
             for key, intervals in labels.items()
