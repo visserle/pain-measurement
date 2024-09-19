@@ -407,6 +407,7 @@ class StimulusGenerator:
             self._extensions.append(
                 (idx + extensions_count * repeat_count, repeat_count)
             )
+            self._extensions.sort()  # sort the extensions by index
             extensions_count += 1
         # Append any remaining values after the last index
         y_new = np.concatenate((y_new, self.y[last_idx:]))
@@ -492,14 +493,32 @@ class StimulusGenerator:
     def plateau_intervals_idx(self) -> list[tuple[int, int]]:
         """Get the start and end indices of the plateaus for labeling."""
         intervals = []
+        prolonged_minima_extension_length = (
+            self.prolonged_minima_duration * self.sample_rate
+        )
+        prolonged_minima_extensions = 0
         for extension in self._extensions:
+            # Account for the prolonged minima extensions as they are added last (see
+            # self.__init__)
+            if extension[1] == prolonged_minima_extension_length:
+                prolonged_minima_extensions += 1
             if extension[1] == self.plateau_duration * self.sample_rate:
-                intervals.append((extension[0], extension[0] + extension[1]))
+                intervals.append(  # start and end indices of the plateau
+                    (
+                        start := extension[0]
+                        + (
+                            prolonged_minima_extensions
+                            * prolonged_minima_extension_length
+                        ),
+                        start + extension[1],  # length of the plateau
+                    )
+                )
         return intervals
 
     @property
     def prolonged_minima_intervals_idx(self) -> list[tuple[int, int]]:
         """Get the start and end indices of the prolonged minima for labeling."""
+        # No need to account for other extensions as they are added first
         intervals = []
         for extension in self._extensions:
             if extension[1] == self.prolonged_minima_duration * self.sample_rate:
