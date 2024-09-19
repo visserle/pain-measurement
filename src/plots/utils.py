@@ -10,11 +10,26 @@ def prepare_multiline_hvplot(
     Add NaN separators at the end of each trial to prepare plotting of multiple lines
     per category in hvplot.
 
+    The time column should be normalized to start at 0 for each trial as this is the
+    column you also want the multiple lines to be plotted against.
+
     https://hvplot.holoviz.org/user_guide/Large_Timeseries.html#multiple-lines-per-category-example
 
     Note that this workaround prevents the use of time data types in the DataFrame as
     NaN values are not supported for time data types in Polars.
     """
+    # Check if time column is normalized
+    if (
+        df.group_by("major_decreasing_intervals")
+        .agg(pl.col("normalized_time").min().alias("min_time"))
+        .select(pl.sum("min_time"))
+        .item()
+        != 0
+    ):
+        raise ValueError(
+            "Time column is not normalized to start at 0 for each trial. "
+            "Please normalize the time column before calling this function."
+        )
 
     # Define columns where we don't want to add NaN separators
     info_columns = [
@@ -22,10 +37,14 @@ def prepare_multiline_hvplot(
         "trial_number",
         "participant_id",
         "stimulus_seed",
-        "trial_specific_interval_id",
+        "trial_specific_interval_id",  # TODO: remove
         "continuous_interval_id",
+        "decreasing_intervals",
+        "major_decreasing_intervals",
+        "increasing_intervals",
+        "plateau_intervals",
+        "prolonged_minima_intervals",
     ]
-
     # Create a new DataFrame with NaN rows
     group_by_columns = [x for x in df.columns if x in info_columns]
 
