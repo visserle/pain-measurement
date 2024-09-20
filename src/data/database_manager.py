@@ -20,7 +20,7 @@ from icecream import ic
 from src.data.data_config import DataConfig
 from src.data.data_processing import (
     create_feature_data_df,
-    create_label_data_df,
+    create_labels_data_df,
     create_preprocess_data_df,
     create_raw_data_df,
     create_trials_df,
@@ -207,7 +207,7 @@ class DatabaseManager:
         # same as preprocess data for now TODO FIXME
         self.insert_preprocess_data(table_name, feature_data_df)
 
-    def insert_label_data(
+    def insert_labels_data(
         self,
         table_name: str,
         label_data_df: pl.DataFrame,
@@ -257,8 +257,8 @@ def main():
         # Add labels
         stimulus_df = db.get_table("Feature_Stimulus")
         trials_df = db.get_table("Trials")
-        label_df = create_label_data_df(stimulus_df, trials_df)
-        db.insert_label_data("Label", label_df)
+        labels_df = create_labels_data_df(stimulus_df, trials_df)
+        db.insert_labels_data("Labels", labels_df)
 
         logger.info("Database processing complete.")
 

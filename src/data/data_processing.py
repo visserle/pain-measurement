@@ -219,7 +219,7 @@ def create_feature_data_df(
         return feature_face(df)
 
 
-def create_label_data_df(
+def create_labels_data_df(
     stimulus: pl.DataFrame,
     trials: pl.DataFrame,
 ) -> pl.DataFrame:
@@ -227,15 +227,6 @@ def create_label_data_df(
     df = merge_data_dfs(
         [stimulus, trials], merge_on=["trial_id", "participant_id", "trial_number"]
     )
-    # Normalize timestamps for each trial
-    df = df.with_columns(
-        [
-            (col("timestamp") - col("timestamp").min().over("trial_id")).alias(
-                "normalized_timestamp"
-            )
-        ]
-    ).drop("duration", "timestamp_end", "timestamp_start")
-
     return process_labels(df)
 
 

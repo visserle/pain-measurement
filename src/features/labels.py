@@ -14,9 +14,16 @@ from src.experiments.measurement.stimulus_generator import StimulusGenerator
 
 
 def process_labels(df: pl.DataFrame) -> pl.DataFrame:
-    """Label the stimulus functions based on increasing and decreasing temperature
-    intervals."""
+    """Label the stimulus functions based on temperature intervals."""
+    # Get label intervals for all stimulus seeds
     labels = _get_label_intervals(df)
+    # Normalize timestamps for each trial
+    df = df.with_columns(
+        (col("timestamp") - col("timestamp").min().over("trial_id")).alias(
+            "normalized_timestamp"
+        )
+    ).drop("duration", "timestamp_end", "timestamp_start")
+    # Label the stimulus functions based on temperature intervals
     df = (
         df.group_by("stimulus_seed").map_groups(
             lambda group: label_intervals(group, labels)
@@ -75,7 +82,13 @@ def number_intervals(
     df: pl.DataFrame,
     labels: dict[int, dict[str, list[tuple[float, float]]]],
 ) -> pl.DataFrame:
-    """Give each interval a unique, consecutive number."""
+    """Give each interval a unique, consecutive number.
+
+    E.g.:
+    0-0-0-1-1-0-0-0-0-1-1-1-1-0-0-1-1-1
+    ->
+    0-0-0-1-1-0-0-0-0-2-2-2-2-0-0-3-3-3
+    """
     label_names = labels[list(labels)[0]].keys()
     return (
         df.with_columns(
