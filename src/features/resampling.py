@@ -21,16 +21,17 @@ def decimate(
     """Decimate all float columns by a factor of 10.
 
     This function applies scipy.signal.decimate to all float columns in the DataFrame
-    and gathers every 10th row for all other columns.
+    (except the timestamp column) and gathers every 10th row for all other columns.
     """
 
     def decimate_column(col):
-        if col.dtype in [pl.Float32, pl.Float64]:
+        if col.dtype in [pl.Float32, pl.Float64] and col.name != "timestamp":
             return pl.from_numpy(
                 signal.decimate(
-                    col.to_numpy(),
-                    factor,
+                    x=col.to_numpy(),
+                    q=factor,
                     ftype="iir",
+                    zero_phase=True,
                 )
             ).to_series()
         else:
