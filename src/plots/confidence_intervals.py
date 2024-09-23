@@ -8,6 +8,7 @@ from src.features.resampling import add_timestamp_μs_column
 from src.features.scaling import scale_min_max, scale_robust_standard, scale_standard
 from src.features.transforming import merge_data_dfs
 
+BIN_SIZE = 1  # seconds
 CONFIDENCE_LEVEL = 1.96  # 95% confidence interval
 MODALITY_MAP = {
     "stimulus": ["rating", "temperature"],
@@ -61,7 +62,9 @@ def plot_confidence_intervals(
         xlabel="Time (s)",
         ylabel="Normalized value",
         grid=True,
-        label=signals[0] if len(signals) == 1 else modality,  # legend for univariate
+        label=f"avg_{signals[0]}"
+        if len(signals) == 1
+        else modality,  # legend for univariate, else no legend
     )
     for signal in signals:
         plots *= df.hvplot.area(
@@ -98,7 +101,7 @@ def _zero_based_timestamps(df: pl.DataFrame) -> pl.DataFrame:
 def aggregate_over_stimulus_seeds(
     df: pl.DataFrame,
     modality: str,
-    bin_size: int = 1,  # TODO
+    bin_size: int = BIN_SIZE,
 ) -> pl.DataFrame:
     """Aggregate over stimulus seeds for each trial using group_by_dynamic."""
     # Note: without group_by_dynamic, this would be something like
