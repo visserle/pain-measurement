@@ -41,9 +41,9 @@ def filter_pupil(
             lambda x: filter_butterworth(
                 x,
                 SAMPLE_RATE,
-                lowcut=0,
-                highcut=0.2,
-                order=2,
+                lowcut=lowcut,
+                highcut=highcut,
+                order=order,
             )
         )
         .name.suffix("_filtered")

@@ -2,18 +2,8 @@ import logging
 from functools import reduce, wraps
 
 import polars as pl
-from polars.exceptions import ColumnNotFoundError
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
-
-info_columns = [
-    "trial_id",
-    "trial_number",
-    "participant_id",
-    "stimulus_seed",
-    "trial_specific_interval_id",
-    "continuous_interval_id",
-]
 
 
 def map_trials(func: callable):
@@ -31,7 +21,7 @@ def map_trials(func: callable):
             df = df.group_by("trial_id", maintain_order=True).map_groups(
                 lambda group: func(group, *args, **kwargs)
             )
-        except ColumnNotFoundError:
+        except pl.exceptions.ColumnNotFoundError:
             logger.warning(
                 f"No 'trial_id' column found. Applying function {func.__name__} to the "
                 "entire DataFrame."
@@ -57,7 +47,7 @@ def map_participants(func: callable):
             df = df.group_by("participant_id", maintain_order=True).map_groups(
                 lambda group: func(group, *args, **kwargs)
             )
-        except ColumnNotFoundError:
+        except pl.exceptions.ColumnNotFoundError:
             logger.warning(
                 f"No 'participant_id' column found. Applying function {func.__name__} "
                 "to the entire DataFrame."

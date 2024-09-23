@@ -27,12 +27,11 @@ def decimate(
     This function applies scipy.signal.decimate to all float columns in the DataFrame
     (except the 'timestamp' column) and gathers every 10th row for all other columns.
     """
-    if sum(s.count("time") for s in df.columns) > 0:
+    if sum(s.count("time") for s in df.columns) > 1:
         logger.warning(
             "More than one time column found. The additional time columns will be "
             "low-pass filtered which may lead to unexpected results."
         )
-    print(df.height)
 
     def decimate_column(col):
         if col.dtype in [pl.Float32, pl.Float64] and col.name != "timestamp":
