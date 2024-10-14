@@ -7,6 +7,7 @@
 
 import numpy as np
 import scipy
+from icecream import ic
 
 DEFAULTS = {
     "sample_rate": 10,
@@ -69,8 +70,9 @@ class StimulusGenerator:
         self.config = {**DEFAULTS, **config}
 
         self.seed = seed if seed is not None else np.random.randint(100, 1000)
-        self.debug = debug
         self.rng_numpy = np.random.default_rng(self.seed)
+
+        self.debug = debug
 
         # Extract and validate configuration
         for key, value in self.config.items():
@@ -280,7 +282,7 @@ class StimulusGenerator:
                             self.amplitude_range[0], self.amplitude_range[1]
                         )
                         if i % 2 == 0:
-                            # invert amplitude for increasing half cycles
+                            # invert amplitude for the increasing half cycles (cosine)
                             amplitude *= -1
                     next_y_intercept = y_intercept + amplitude * -2
 
@@ -427,7 +429,9 @@ class StimulusGenerator:
         }
 
         def convert_interval(interval):
-            return tuple(int(t * 1000 / self.sample_rate) for t in interval)
+            return tuple(
+                int(t * 1 / self.sample_rate) for t in interval
+            )  # TODO add *1000 for ms
 
         # Convert indexes to milliseconds
         return {
@@ -444,7 +448,7 @@ class StimulusGenerator:
         """
         intervals = []
         for idx in range(self.half_cycle_num):
-            if self.amplitudes[idx - 1] < 0:
+            if self.amplitudes[idx] > 0:
                 start = sum(self.periods[:idx]) * self.sample_rate
                 for extension in self._extensions:
                     if extension[0] <= start:  # extension before the current half cycle
@@ -464,7 +468,7 @@ class StimulusGenerator:
         interval_indices = np.array(self.decreasing_intervals_idx)[
             [np.array(period_indices, dtype=int)]
         ]
-        # Convert back to list of tuples and ensure all values are regular Python integers
+        # Convert back to list of tuples and ensure all values are regular Python ints
         return [tuple(pair) for pair in interval_indices.reshape(-1, 2)]
 
     @property
@@ -476,16 +480,22 @@ class StimulusGenerator:
         """
         intervals = []
         for idx in range(self.half_cycle_num):
-            if self.amplitudes[idx - 1] > 0:
+            if self.amplitudes[idx] < 0:  # negative because it is a cosine function
                 start = sum(self.periods[:idx]) * self.sample_rate
-                for extension in self._extensions:
-                    if extension[0] <= start:
+                # Account for the extensions that occur before the current half cycle
+                for idx_ex, extension in enumerate(self._extensions):
+                    other_extensions = np.sum(np.array(self._extensions)[:, 1][:idx_ex])
+                    if extension[0] + other_extensions <= start:
                         start += extension[1]
                 end = start + self.periods[idx] * self.sample_rate
                 # Acccount for plateaus that occur in increasing half cycles
-                for extension in self._extensions:
-                    if start <= extension[0] < end:
+                for idx_ex, extension in enumerate(self._extensions):
+                    other_extensions = np.sum(np.array(self._extensions)[:, 1][:idx_ex])
+                    if (start <= extension[0] + other_extensions) and (
+                        extension[0] + other_extensions < end + extension[1]
+                    ):
                         end += extension[1]
+                        ic(idx, end, extension[0], extension[1], other_extensions)
                 intervals.append((int(start), int(end)))
         return intervals
 
