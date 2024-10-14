@@ -7,7 +7,6 @@
 
 import numpy as np
 import scipy
-from icecream import ic
 
 DEFAULTS = {
     "sample_rate": 10,
@@ -415,7 +414,7 @@ class StimulusGenerator:
         y_new = np.concatenate((y_new, self.y[last_idx:]))
         return y_new
 
-    # Labeling
+    # Final section: Labeling
 
     @property
     def labels(self) -> dict[str, list[tuple[int, int]]]:
@@ -429,9 +428,7 @@ class StimulusGenerator:
         }
 
         def convert_interval(interval):
-            return tuple(
-                int(t * 1 / self.sample_rate) for t in interval
-            )  # TODO add *1000 for ms
+            return tuple(int(t * 1000 / self.sample_rate) for t in interval)
 
         # Convert indexes to milliseconds
         return {
@@ -475,28 +472,42 @@ class StimulusGenerator:
     def increasing_intervals_idx(self) -> list[tuple[int, int]]:
         """
         Get the start and end indices of the increasing half cycles for labeling.
+        Accounts for plateaus, prolonged minima, and ensures proper alignment with
+        decreasing intervals.
 
-        Plateaus can occur in increasing half cycles and are considered here.
+        (This is tricky to implement and relies on other intervals for alignment.)
         """
         intervals = []
+        prolonged_minima = self.prolonged_minima_intervals_idx
+        plateau_intervals = self.plateau_intervals_idx
+        decreasing_intervals = self.decreasing_intervals_idx
+
         for idx in range(self.half_cycle_num):
             if self.amplitudes[idx] < 0:  # negative because it is a cosine function
                 start = sum(self.periods[:idx]) * self.sample_rate
-                # Account for the extensions that occur before the current half cycle
-                for idx_ex, extension in enumerate(self._extensions):
-                    other_extensions = np.sum(np.array(self._extensions)[:, 1][:idx_ex])
-                    if extension[0] + other_extensions <= start:
-                        start += extension[1]
-                end = start + self.periods[idx] * self.sample_rate
-                # Acccount for plateaus that occur in increasing half cycles
-                for idx_ex, extension in enumerate(self._extensions):
-                    other_extensions = np.sum(np.array(self._extensions)[:, 1][:idx_ex])
-                    if (start <= extension[0] + other_extensions) and (
-                        extension[0] + other_extensions < end + extension[1]
-                    ):
-                        end += extension[1]
-                        ic(idx, end, extension[0], extension[1], other_extensions)
+
+                # Adjust start based on previous intervals and prolonged minima
+                if idx > 1:
+                    prev_decreasing_end = decreasing_intervals[idx // 2 - 1][1]
+                    start = max(start, prev_decreasing_end)
+
+                for minima_start, minima_end in prolonged_minima:
+                    if minima_start <= start < minima_end:
+                        start = minima_end
+
+                # Calculate end based on the next decreasing interval start
+                if idx // 2 < len(decreasing_intervals):
+                    end = decreasing_intervals[idx // 2][0]
+                else:
+                    end = start + self.periods[idx] * self.sample_rate
+
+                # Extend end for plateaus within this increasing interval
+                for plateau_start, plateau_end in plateau_intervals:
+                    if start <= plateau_start < end:
+                        end = max(end, plateau_end)
+
                 intervals.append((int(start), int(end)))
+
         return intervals
 
     @property
