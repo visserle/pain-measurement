@@ -110,7 +110,7 @@ class StimulusGenerator:
         # Calculate length of the stimulus
         self.desired_length_random_half_cycles = (
             self._get_desired_length_random_half_cycles(
-                shorten=self.shorten_expected_duration
+                modify_by=self.shorten_expected_duration
             )
         )
         self.desired_length_major_decreasing_half_cycles = (
@@ -144,19 +144,19 @@ class StimulusGenerator:
 
     def _get_desired_length_random_half_cycles(
         self,
-        shorten,
+        modify_by,
     ) -> int:
         """
         Get the desired length for the random half cycles.
 
-        Note that shorten [s] is used to force the length down by sampling from
+        Note that modify_by [s] is used to force the length down by sampling from
         under the expected value in the _get_periods method.
         """
         desired_length_random_half_cycles = (
             ((self.period_range[0] + (self.period_range[1])) / 2)
             * (self.half_cycle_num - self.major_decreasing_half_cycle_num)
             * self.sample_rate
-        ) - (shorten * self.sample_rate)
+        ) - (modify_by * self.sample_rate)
         desired_length_random_half_cycles -= (
             desired_length_random_half_cycles % self.sample_rate
         )  # necessary for even boundaries, round to nearest sample
@@ -539,7 +539,7 @@ class StimulusGenerator:
     @property
     def prolonged_minima_intervals_idx(self) -> list[tuple[int, int]]:
         """Get the start and end indices of the prolonged minima for labeling."""
-        # No need to account for other extensions as they are added first
+        # No need to account for other extensions as they are added last
         intervals = []
         for extension in self._extensions:
             if extension[1] == self.prolonged_minima_duration * self.sample_rate:
