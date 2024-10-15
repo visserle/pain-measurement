@@ -4,6 +4,7 @@
 # find out why after lowcut=0.5 the data is centered around 0
 # maybe improve code quality: https://stackoverflow.com/questions/75057003/how-to-apply-scipy-filter-in-polars-dataframe
 
+
 import numpy as np
 import polars as pl
 from polars import col
@@ -14,7 +15,7 @@ from src.features.resampling import downsample
 from src.features.transforming import map_trials
 
 SAMPLE_RATE = 500
-CHANNELS = ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7", "ch8"]
+CHANNELS = ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"]
 
 
 def preprocess_eeg(df: pl.DataFrame) -> pl.DataFrame:
@@ -39,7 +40,7 @@ def filter_eeg(
                 x.to_numpy(),
                 sample_rate,
                 lowcut=1,
-                highcut=30,
+                highcut=35,
             )
         )  # .name.suffix("_filtered") TODO naming convention
     )
