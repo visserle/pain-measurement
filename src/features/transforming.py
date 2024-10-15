@@ -67,10 +67,25 @@ def merge_data_dfs(
     Merge multiple DataFrames into a single DataFrame.
 
     Default merge_on and sort_by columns are set for data DataFrames (raw, preprocess,
-    feature).
+    feature), however, these can be adjusted as needed for other DataFrames (e.g.,
+    Trials).
+
+    For merging with Trials, use:
+    ````
+    df = merge_data_dfs(
+        dfs=[stimulus, trials],
+        merge_on=[
+            "trial_id",
+            "participant_id",
+            "trial_number",
+        ],
+    )
+    ````
     """
     if len(dfs) < 2:
-        return dfs[0]
+        raise ValueError(
+            "A list with at least two DataFrames are required for merging."
+        )
 
     df = reduce(
         lambda left, right: left.join(

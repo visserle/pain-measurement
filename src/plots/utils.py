@@ -18,8 +18,8 @@ def prepare_multiline_hvplot(
     Note that this workaround prevents the use of time data types in the DataFrame as
     NaN values are not supported for time data types in Polars.
     """
-    # Check if time column is normalized
-    if (
+    # Sanity check if time column is normalized if we are looking at intervals
+    if "major_decreasing_intervals" in df.columns and (
         df.group_by("major_decreasing_intervals")
         .agg(pl.col("normalized_time").min().alias("min_time"))
         .select(pl.sum("min_time"))
