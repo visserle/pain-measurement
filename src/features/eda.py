@@ -1,11 +1,14 @@
-# NOTE: GSR data collected at 100 Hz can be safely downsampled to 10 Hz or even less.
-# TODO: drop irrelevant columns, downsample, etc.
+# NOTE: one source states GSR data collected at 100 Hz can be safely downsampled to 10 Hz or even less.
+# TODO: bandpass filter with lowest and highest signal frequencies of EDA activity
+# and then downsample to 2*highest frequency (Nyquist frequency)
+
 
 import neurokit2 as nk
 import polars as pl
 from polars import col
+from scipy.signal import detrend
 
-from src.features.resampling import downsample
+from src.features.resampling import decimate
 from src.features.transforming import map_trials
 
 SAMPLE_RATE = 100
@@ -17,7 +20,8 @@ def preprocess_eda(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def feature_eda(df: pl.DataFrame) -> pl.DataFrame:
-    df = downsample(df, new_sample_rate=10)
+    df = detrend_tonic_component(df)
+    df = decimate(df, factor=10)
     return df
 
 
@@ -52,4 +56,19 @@ def nk_process_eda(
         )
         .unnest("eda_components")
         .select(pl.all().name.to_lowercase())
+    )
+
+
+@map_trials
+def detrend_tonic_component(
+    df: pl.DataFrame,
+) -> pl.DataFrame:
+    return df.with_columns(
+        col("eda_tonic")
+        .map_batches(
+            lambda x: detrend(
+                x.to_numpy(),
+            )
+        )
+        .name.suffix("_detrended")
     )
