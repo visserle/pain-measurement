@@ -37,9 +37,9 @@ def create_seeds_df():
         {
             "seed": seeds,
             "major_decreasing_intervals": [
-                StimulusGenerator(
-                    config=config, seed=seed
-                ).major_decreasing_intervals_ms
+                StimulusGenerator(config=config, seed=seed).labels[
+                    "major_decreasing_intervals"
+                ]
                 for seed in seeds
             ],
         },
