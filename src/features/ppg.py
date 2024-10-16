@@ -40,7 +40,7 @@ def nk_process_ppg(
             pl.col("ppg_raw")
             .map_batches(
                 lambda x: pl.from_pandas(
-                    nk.ppg_process(  # returns a tuple, we only need the dataframe
+                    nk.ppg_process(  # returns a tuple, we only need the pd.DataFrame
                         ppg_signal=x.to_numpy(),
                         sampling_rate=sampling_rate,
                         method="elgendi",
