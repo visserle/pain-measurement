@@ -237,22 +237,22 @@ def main():
             logger.debug(f"Raw data for participant {participant_id} inserted.")
         logger.info("Raw data inserted.")
 
-        # # Preprocessed data
-        # # no check for existing data as it will be overwritten
-        # for modality in MODALITIES:
-        #     table_name = "Preprocess_" + modality
-        #     df = db.get_table("Raw_" + modality)
-        #     df = create_preprocess_data_df(table_name, df)
-        #     db.insert_preprocess_data(table_name, df)
-        # logger.info("Data preprocessed.")
+        # Preprocessed data
+        # no check for existing data as it will be overwritten
+        for modality in MODALITIES:
+            table_name = "Preprocess_" + modality
+            df = db.get_table("Raw_" + modality)
+            df = create_preprocess_data_df(table_name, df)
+            db.insert_preprocess_data(table_name, df)
+        logger.info("Data preprocessed.")
 
-        # # Feature-engineered data
-        # for modality in MODALITIES:
-        #     table_name = f"Feature_{modality}"
-        #     df = db.get_table(f"Preprocess_{modality}")
-        #     df = create_feature_data_df(table_name, df)
-        #     db.insert_feature_data(table_name, df)
-        # logger.info("Data feature-engineered.")
+        # Feature-engineered data
+        for modality in MODALITIES:
+            table_name = f"Feature_{modality}"
+            df = db.get_table(f"Preprocess_{modality}")
+            df = create_feature_data_df(table_name, df)
+            db.insert_feature_data(table_name, df)
+        logger.info("Data feature-engineered.")
 
         # Add labels
         stimulus_df = db.get_table("Feature_Stimulus")
