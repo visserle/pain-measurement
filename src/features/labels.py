@@ -7,7 +7,6 @@ import operator
 from functools import reduce
 
 import polars as pl
-from icecream import ic
 from polars import col
 
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
@@ -32,7 +31,9 @@ def process_labels(df: pl.DataFrame) -> pl.DataFrame:
     return number_intervals(df, labels)
 
 
-def _get_label_intervals(df):
+def _get_label_intervals(
+    df: pl.DataFrame,
+) -> dict[int, dict[str, list[tuple[float, float]]]]:
     """Get label intervals for all stimulus seeds."""
     seeds = df.get_column("stimulus_seed").unique()
     return {seed: StimulusGenerator(seed=seed).labels for seed in seeds}
@@ -40,7 +41,7 @@ def _get_label_intervals(df):
 
 def _get_mask(
     group: pl.DataFrame,
-    labels: dict[int, dict[str, list[tuple[float, float]]]],
+    labels: dict[int, dict[str, list[tuple[int, int]]]],
     label_name: str,
 ) -> pl.Series:
     """Create a mask for each interval segment and combine them with an OR."""
@@ -59,7 +60,7 @@ def _get_mask(
 
 def label_intervals(
     group: pl.DataFrame,
-    labels: dict[int, dict[str, list[tuple[float, float]]]],
+    labels: dict[int, dict[str, list[tuple[int, int]]]],
 ) -> pl.DataFrame:
     """Create a binary column for each label that is 1 if the timestamp is within."""
     # Determine the stimulus seed for the group
@@ -80,9 +81,9 @@ def label_intervals(
 
 def number_intervals(
     df: pl.DataFrame,
-    labels: dict[int, dict[str, list[tuple[float, float]]]],
+    labels: dict[int, dict[str, list[tuple[int, int]]]],
 ) -> pl.DataFrame:
-    """Give each interval a unique, consecutive number.
+    """Give each interval a unique, consecutive number for each label.
 
     E.g.:
     0-0-0-1-1-0-0-0-0-1-1-1-1-0-0-1-1-1
