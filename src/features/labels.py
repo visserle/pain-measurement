@@ -28,7 +28,9 @@ def process_labels(df: pl.DataFrame) -> pl.DataFrame:
             lambda group: label_intervals(group, labels)
         )
     ).sort("trial_id", "timestamp")
-    return number_intervals(df, labels)
+    df = number_intervals(df, labels)
+    df = add_strictly_increasing_intervals(df)
+    return df
 
 
 def _get_label_intervals(
@@ -123,3 +125,47 @@ def number_intervals(
         )
         .drop(col(r"^temp_.*$"))
     ).tail(-1)  # remove dummy line
+
+
+def add_strictly_increasing_intervals(df: pl.DataFrame) -> pl.DataFrame:
+    """Add a column for strictly increasing intervals (meaning no plateaus)."""
+    return (
+        # Add column for increasing interval segments
+        df.with_columns(
+            col("plateau_intervals")
+            .max()
+            .over("increasing_intervals")
+            .alias("strictly_increasing_intervals")
+        )
+        .sort("trial_id", "timestamp")
+        .with_columns(
+            pl.when(col("strictly_increasing_intervals") > 0)
+            .then(0)
+            .otherwise(col("increasing_intervals"))
+            .alias("strictly_increasing_intervals")
+        )
+        .sort("trial_id", "timestamp")
+        # Recount segments to not have gaps in the numbering
+        .with_columns(
+            # Create a flag for the start of each new non-zero segment
+            (
+                (col("strictly_increasing_intervals") != 0)
+                & (
+                    col("strictly_increasing_intervals")
+                    != col("strictly_increasing_intervals").shift(1)
+                )
+            ).alias("new_interval_flag")
+        )
+        .sort("trial_id", "timestamp")
+        # Cumsum of the new segment flag to get unique identifiers for each non-zero
+        # segment
+        .with_columns(col("new_interval_flag").cum_sum().alias("interval_id"))
+        # Replace non-zero values with their corresponding segment_id
+        .with_columns(
+            pl.when(col("strictly_increasing_intervals") != 0)
+            .then(col("interval_id"))
+            .otherwise(0)
+            .alias("strictly_increasing_intervals")
+        )
+        .drop(["interval_id", "new_interval_flag"])
+    ).sort("trial_id", "timestamp")
