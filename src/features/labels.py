@@ -91,6 +91,12 @@ def number_intervals(
     0-0-0-1-1-0-0-0-0-2-2-2-2-0-0-3-3-3
     """
     label_names = labels[list(labels)[0]].keys()
+
+    # We need to temporarely insert a dummy line at the very beginning of the df to
+    # avoid missing the very first interval (increasing interval)
+    dummy_line = pl.DataFrame({column: 0 for column in df.columns}, schema=df.schema)
+    df = pl.concat([dummy_line, df]).sort("trial_id", "normalized_timestamp")
+
     return (
         df.with_columns(
             [
@@ -116,4 +122,4 @@ def number_intervals(
             ]
         )
         .drop(col(r"^temp_.*$"))
-    )
+    ).tail(-1)  # remove dummy line
