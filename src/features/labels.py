@@ -120,6 +120,7 @@ def number_intervals(
                 .then(col("temp_" + label_name))
                 .otherwise(0)
                 .alias(label_name)
+                .cast(pl.UInt16)
                 for label_name in label_names
             ]
         )
@@ -166,6 +167,7 @@ def add_strictly_increasing_intervals(df: pl.DataFrame) -> pl.DataFrame:
             .then(col("interval_id"))
             .otherwise(0)
             .alias("strictly_increasing_intervals")
+            .cast(pl.UInt16)
         )
         .drop(["interval_id", "new_interval_flag"])
     ).sort("trial_id", "timestamp")
