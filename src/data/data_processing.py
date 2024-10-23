@@ -17,7 +17,7 @@ from src.features.labels import process_labels
 from src.features.ppg import feature_ppg, preprocess_ppg
 from src.features.pupil import feature_pupil, preprocess_pupil
 from src.features.stimulus import feature_stimulus, preprocess_stimulus
-from src.features.transforming import interpolate_and_fill_nulls, merge_data_dfs
+from src.features.transforming import interpolate_and_fill_nulls, merge_dfs
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -224,8 +224,8 @@ def create_labels_data_df(
     trials: pl.DataFrame,
 ) -> pl.DataFrame:
     # Merge stimulus and trials dataframes
-    df = merge_data_dfs(
-        [stimulus, trials], merge_on=["trial_id", "participant_id", "trial_number"]
+    df = merge_dfs(
+        [stimulus, trials], on=["trial_id", "participant_id", "trial_number"]
     )
     return process_labels(df)
 
@@ -236,7 +236,7 @@ def merge_feature_data_dfs(
     """
     Merge multiple feature DataFrames into a single DataFrame.
     """
-    df = merge_data_dfs(dfs)
+    df = merge_dfs(dfs)
     df = interpolate_and_fill_nulls(df)
     # TODO: add final downsample
     return df

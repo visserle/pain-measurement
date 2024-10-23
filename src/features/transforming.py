@@ -58,23 +58,23 @@ def map_participants(func: callable):
     return wrapper
 
 
-def merge_data_dfs(
+def merge_dfs(
     dfs: list[pl.DataFrame],
-    merge_on: list[str] = ["participant_id", "trial_id", "trial_number", "timestamp"],
+    on: list[str] = ["participant_id", "trial_id", "trial_number", "timestamp"],
     sort_by: list[str] = ["trial_id", "timestamp"],
 ) -> pl.DataFrame:
     """
     Merge multiple DataFrames into a single DataFrame.
 
-    Default merge_on and sort_by columns are set for data DataFrames (raw, preprocess,
+    Default on and sort_by columns are set for data DataFrames (raw, preprocess,
     feature), however, these can be adjusted as needed for other DataFrames (e.g.,
     Trials).
 
     For merging with Trials, use:
     ````
-    df = merge_data_dfs(
+    df = merge_dfs(
         dfs=[stimulus, trials],
-        merge_on=[
+        on=[
             "trial_id",
             "participant_id",
             "trial_number",
@@ -90,7 +90,7 @@ def merge_data_dfs(
     df = reduce(
         lambda left, right: left.join(
             right,
-            on=merge_on,
+            on=on,
             how="full",
             coalesce=True,
         )
