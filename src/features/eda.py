@@ -20,7 +20,7 @@ def preprocess_eda(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def feature_eda(df: pl.DataFrame) -> pl.DataFrame:
-    df = detrend_tonic_component(df)
+    # df = detrend_tonic_component(df)  # TODO NOTE: a bit problematic with exponential decay of tonic component?
     df = decimate(df, factor=10)
     return df
 

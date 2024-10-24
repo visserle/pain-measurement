@@ -128,3 +128,6 @@ notebooks/thermode.ipynb
 notebooks/preprocess_data.ipynb
 notebooks/kalman.ipynb
 notebooks/dataset_size.ipynb
+/try
+db.sqlite3
+src/data/imotions_data_config_old.yaml

@@ -1,8 +1,10 @@
+# TODO: more explicit would be to use with column names instead of exclude additional columns
+
+
 import polars as pl
 
 from src.features.transforming import map_trials
 
-# As long as we are not using a schema, we need to exclude these columns from scaling
 EXCLUDE_COLUMNS = [
     "trial_id",
     "trial_number",
