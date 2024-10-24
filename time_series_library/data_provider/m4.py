@@ -18,19 +18,17 @@ M4 Dataset
 
 import logging
 import os
+import pathlib
+import sys
 from collections import OrderedDict
 from dataclasses import dataclass
 from glob import glob
+from urllib import request
 
 import numpy as np
 import pandas as pd
 import patoolib
 from tqdm import tqdm
-import logging
-import os
-import pathlib
-import sys
-from urllib import request
 
 
 def url_file_name(url: str) -> str:
@@ -136,7 +134,7 @@ class M4Meta:
     }  # from interpretable.gin
 
 
-def load_m4_info() -> pd.DataFrame:
+def load_m4_info(INFO_FILE_PATH) -> pd.DataFrame:
     """
     Load M4Info file.
 

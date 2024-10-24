@@ -1,8 +1,9 @@
 import torch
-from layers.Embed import PatchEmbedding
-from layers.SelfAttention_Family import AttentionLayer, FullAttention
-from layers.Transformer_EncDec import Encoder, EncoderLayer
 from torch import nn
+
+from .layers.Embed import PatchEmbedding
+from .layers.SelfAttention_Family import AttentionLayer, FullAttention
+from .layers.Transformer_EncDec import Encoder, EncoderLayer
 
 
 class Transpose(nn.Module):

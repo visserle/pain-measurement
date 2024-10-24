@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
-from layers.Embed import DataEmbedding
-from layers.ETSformer_EncDec import (
+
+from .layers.Embed import DataEmbedding
+from .layers.ETSformer_EncDec import (
     Decoder,
     DecoderLayer,
     Encoder,

@@ -4,15 +4,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange, repeat
-from layers.Crossformer_EncDec import Decoder, DecoderLayer, Encoder, scale_block
-from layers.Embed import PatchEmbedding
-from layers.SelfAttention_Family import (
+
+from models.PatchTST import FlattenHead
+
+from .layers.Crossformer_EncDec import Decoder, DecoderLayer, Encoder, scale_block
+from .layers.Embed import PatchEmbedding
+from .layers.SelfAttention_Family import (
     AttentionLayer,
     FullAttention,
     TwoStageAttentionLayer,
 )
-
-from models.PatchTST import FlattenHead
 
 
 class Model(nn.Module):

@@ -1,17 +1,19 @@
+import glob
 import os
+import re
+import warnings
+
 import numpy as np
 import pandas as pd
-import glob
-import re
 import torch
-from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
-from utils.timefeatures import time_features
-from data_provider.m4 import M4Dataset, M4Meta
-from data_provider.uea import subsample, interpolate_missing, Normalizer
 from sktime.datasets import load_from_tsfile_to_dataframe
-import warnings
+from torch.utils.data import DataLoader, Dataset
 from utils.augmentation import run_augmentation_single
+from utils.timefeatures import time_features
+
+from data_provider.m4 import M4Dataset, M4Meta
+from data_provider.uea import Normalizer, interpolate_missing, subsample
 
 warnings.filterwarnings("ignore")
 

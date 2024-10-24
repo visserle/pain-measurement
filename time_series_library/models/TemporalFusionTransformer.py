@@ -4,8 +4,9 @@ from typing import Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from layers.Embed import DataEmbedding, TemporalEmbedding
 from torch import Tensor
+
+from .layers.Embed import DataEmbedding, TemporalEmbedding
 
 # static: time-independent features
 # observed: time features of the past(e.g. predicted targets)
