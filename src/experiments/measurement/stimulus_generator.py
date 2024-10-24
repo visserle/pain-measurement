@@ -414,7 +414,9 @@ class StimulusGenerator:
         y_new = np.concatenate((y_new, self.y[last_idx:]))
         return y_new
 
-    # Final section: Labeling
+    ####################
+    # Labeling section #
+    ####################
 
     @property
     def labels(self) -> dict[str, list[tuple[int, int]]]:
