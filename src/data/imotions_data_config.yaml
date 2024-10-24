@@ -1,5 +1,15 @@
 # Note that all column names will be lowercased and all spaces in column names will be
 # replaced with underscores in the resulting database table.
+
+Trials:
+  file_name: "ExternalMarker_ET_EventAPI_ExternDevice"
+  load_columns:
+    - "Timestamp"
+    - "MarkerDescription"
+  comment:
+    - "This is metadata."
+    - "MarkerDescription contains the stimulus seed and is originally send once at the start and end of each trial."
+
 Stimulus:
   file_name: "CustomCurves_CustomCurves@1_ET_EventAPI_ExternDevice"
   load_columns:
@@ -15,12 +25,8 @@ EDA:
     - "SampleNumber"
     - "Timestamp"
     - "GSR Conductance CAL"
-    - "VSenseBatt CAL"
-    - "Packet reception rate RAW"
   rename_columns:
     "GSR Conductance CAL": "EDA_RAW"
-    "VSenseBatt CAL": "EDA_d_Battery"
-    "Packet reception rate RAW": "EDA_d_PacketReceptionRate"
 
 PPG:
   file_name: "Shimmer3_EDA_&_PPG_Shimmer3_EDA_&_PPG_ET_Shimmer_ShimmerDevice"
@@ -31,14 +37,11 @@ PPG:
     - "Internal ADC A13 PPG CAL"
     - "Heart Rate PPG ALG"
     - "IBI PPG ALG"
-    - "VSenseBatt CAL"
-    - "Packet reception rate RAW"
   rename_columns:
     "Internal ADC A13 PPG CAL": "PPG_RAW"
     "Heart Rate PPG ALG": "PPG_HeartRate"
     "IBI PPG ALG": "PPG_IBI"
-    "VSenseBatt CAL": "PPG_d_Battery"  # duplicate
-    "Packet reception rate RAW": "PPG_d_PacketReceptionRate"  # duplicate
+  comment: "same device as EDA"
 
 EEG:
   file_name: "EEG_Enobio-USB_ENOBIO-8-NE-Device_(COM3)_ET_Lsl_LslSensor"
@@ -53,6 +56,15 @@ EEG:
     - "Ch6"
     - "Ch7"
     - "Ch8"
+  rename_columns:
+    "Ch1": "f3"
+    "Ch2": "f4"
+    "Ch3": "c3"
+    "Ch4": "cz"
+    "Ch5": "c4"
+    "Ch6": "p3"
+    "Ch7": "p4"
+    "Ch8": "oz"
   comment: "has no SampleNumber column"
 
 Pupil:
@@ -62,13 +74,9 @@ Pupil:
     - "Timestamp"
     - "ET_PupilLeft"
     - "ET_PupilRight"
-    - "ET_DistanceLeft"
-    - "ET_DistanceRight"
   rename_columns:
     "ET_PupilLeft": "Pupil_L"
     "ET_PupilRight": "Pupil_R"
-    "ET_DistanceLeft": "Pupil_L_Distance"
-    "ET_DistanceRight": "Pupil_R_Distance"
 
 Face:
   file_name: "Affectiva_AFFDEX_ET_Affectiva_AffectivaCameraDevice"
@@ -116,23 +124,3 @@ Face:
     - "Roll"
     - "Interocular Distance"
   comment: "Affectiva data is not sampled at a constant rate and can contain NaNs."
-
-System:
-  file_name: "System_Load_Monitor_iMotions.SysMonitor@1_ET_EventAPI_ExternDevice"
-  load_columns:
-    - "RowNumber"
-    - "Timestamp"
-    - "CPU Sys"
-    - "Memory Sys"
-    - "CPU Proc"
-    - "Memory Proc"
-  comment: "has no SampleNumber column"
-
-Trials:
-  file_name: "ExternalMarker_ET_EventAPI_ExternDevice"
-  load_columns:
-    - "Timestamp"
-    - "MarkerDescription"
-  comment:
-    - "Metadata"
-    - "MarkerDescription contains the stimulus seed and is originally send once at the start and end of each trial."
