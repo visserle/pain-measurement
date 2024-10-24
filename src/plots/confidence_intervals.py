@@ -6,13 +6,13 @@ from polars import col
 from src.data.database_manager import DatabaseManager
 from src.features.resampling import add_timestamp_μs_column
 from src.features.scaling import scale_min_max, scale_robust_standard, scale_standard
-from src.features.transforming import merge_data_dfs
+from src.features.transforming import merge_dfs
 
 BIN_SIZE = 1  # seconds
 CONFIDENCE_LEVEL = 1.96  # 95% confidence interval
 MODALITY_MAP = {
     "stimulus": ["rating", "temperature"],
-    "eda": ["eda_tonic", "eda_phasic"],
+    "eda": ["eda_tonic", "eda_phasic", "eda_raw"],
     "eeg": "",
     "ppg": ["ppg_rate", "ppg_quality"],
     "pupil": ["pupil_r_filtered"],  # , "pupil_r"],  # TODO
@@ -84,9 +84,9 @@ def load_modality_with_trial_metadata(modality: str) -> pl.DataFrame:
     with DatabaseManager() as db:
         df = db.get_table("feature_" + modality)  # TODO: exclude invalid participants
         trials = db.get_table("trials")  # get trials for stimulus seeds
-    return merge_data_dfs(
+    return merge_dfs(
         [df, trials],
-        merge_on=["participant_id", "trial_id", "trial_number"],
+        on=["participant_id", "trial_id", "trial_number"],
     ).drop("duration", "skin_area", "timestamp_start", "timestamp_end", strict=False)
 
 
