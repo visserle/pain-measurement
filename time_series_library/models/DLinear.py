@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .layers.Autoformer_EncDec import series_decomp
+from time_series_library.layers.Autoformer_EncDec import series_decomp
 
 
 class Model(nn.Module):

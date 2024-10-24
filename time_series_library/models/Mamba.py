@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mamba_ssm import Mamba
 
-from .layers.Embed import DataEmbedding
+from time_series_library.layers.Embed import DataEmbedding
 
 
 class Model(nn.Module):

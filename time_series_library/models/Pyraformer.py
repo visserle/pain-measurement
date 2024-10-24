@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .layers.Pyraformer_EncDec import Encoder
+from time_series_library.layers.Pyraformer_EncDec import Encoder
 
 
 class Model(nn.Module):

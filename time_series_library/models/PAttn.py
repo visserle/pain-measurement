@@ -2,8 +2,11 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 
-from .layers.SelfAttention_Family import AttentionLayer, FullAttention
-from .layers.Transformer_EncDec import Encoder, EncoderLayer
+from time_series_library.layers.SelfAttention_Family import (
+    AttentionLayer,
+    FullAttention,
+)
+from time_series_library.layers.Transformer_EncDec import Encoder, EncoderLayer
 
 
 class Model(nn.Module):

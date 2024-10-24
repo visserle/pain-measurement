@@ -2,9 +2,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .layers.Embed import DataEmbedding
-from .layers.SelfAttention_Family import AttentionLayer, DSAttention
-from .layers.Transformer_EncDec import Decoder, DecoderLayer, Encoder, EncoderLayer
+from time_series_library.layers.Embed import DataEmbedding
+from time_series_library.layers.SelfAttention_Family import AttentionLayer, DSAttention
+from time_series_library.layers.Transformer_EncDec import (
+    Decoder,
+    DecoderLayer,
+    Encoder,
+    EncoderLayer,
+)
 
 
 class Projector(nn.Module):

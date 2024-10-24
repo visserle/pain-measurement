@@ -2,8 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .layers.Autoformer_EncDec import series_decomp, series_decomp_multi
-from .layers.Embed import DataEmbedding
+from time_series_library.layers.Autoformer_EncDec import (
+    series_decomp,
+    series_decomp_multi,
+)
+from time_series_library.layers.Embed import DataEmbedding
 
 
 class MIC(nn.Module):

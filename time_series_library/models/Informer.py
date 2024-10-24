@@ -2,9 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .layers.Embed import DataEmbedding
-from .layers.SelfAttention_Family import AttentionLayer, ProbAttention
-from .layers.Transformer_EncDec import (
+from time_series_library.layers.Embed import DataEmbedding
+from time_series_library.layers.SelfAttention_Family import (
+    AttentionLayer,
+    ProbAttention,
+)
+from time_series_library.layers.Transformer_EncDec import (
     ConvLayer,
     Decoder,
     DecoderLayer,

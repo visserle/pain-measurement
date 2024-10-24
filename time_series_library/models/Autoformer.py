@@ -5,8 +5,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .layers.AutoCorrelation import AutoCorrelation, AutoCorrelationLayer
-from .layers.Autoformer_EncDec import (
+from time_series_library.layers.AutoCorrelation import (
+    AutoCorrelation,
+    AutoCorrelationLayer,
+)
+from time_series_library.layers.Autoformer_EncDec import (
     Decoder,
     DecoderLayer,
     Encoder,
@@ -14,7 +17,7 @@ from .layers.Autoformer_EncDec import (
     my_Layernorm,
     series_decomp,
 )
-from .layers.Embed import DataEmbedding, DataEmbedding_wo_pos
+from time_series_library.layers.Embed import DataEmbedding, DataEmbedding_wo_pos
 
 
 class Model(nn.Module):

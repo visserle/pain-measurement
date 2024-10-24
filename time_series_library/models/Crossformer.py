@@ -6,10 +6,14 @@ import torch.nn.functional as F
 from einops import rearrange, repeat
 
 from models.PatchTST import FlattenHead
-
-from .layers.Crossformer_EncDec import Decoder, DecoderLayer, Encoder, scale_block
-from .layers.Embed import PatchEmbedding
-from .layers.SelfAttention_Family import (
+from time_series_library.layers.Crossformer_EncDec import (
+    Decoder,
+    DecoderLayer,
+    Encoder,
+    scale_block,
+)
+from time_series_library.layers.Embed import PatchEmbedding
+from time_series_library.layers.SelfAttention_Family import (
     AttentionLayer,
     FullAttention,
     TwoStageAttentionLayer,

@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import einsum, rearrange, repeat
 
-from .layers.Embed import DataEmbedding
+from time_series_library.layers.Embed import DataEmbedding
 
 
 class Model(nn.Module):

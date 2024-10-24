@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-from .layers.Embed import DataEmbedding
-from .layers.ETSformer_EncDec import (
+from time_series_library.layers.Embed import DataEmbedding
+from time_series_library.layers.ETSformer_EncDec import (
     Decoder,
     DecoderLayer,
     Encoder,
