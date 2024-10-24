@@ -15,8 +15,6 @@ src/data/05_preprocess_data Kopie.ipynb
 src/data/catboost.ipynb
 src/data/test.py
 src/models/mlp.py
-src/models/model.ipynb
-src/models/models.py
 src/models/models_2.py
 src/questionnaires/archive
 src/experiments/oddball.py
