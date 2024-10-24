@@ -1,4 +1,6 @@
-# TODO: add anti-aliasing downsampling option
+# TODO: add interpolation with zero-stuffing for up-sampling
+# TODO: use butterworth filter for low-pass filtering in the decimate function to avoid
+# ripple in the passband
 
 """
 Note that the usage of the pl.Duration data type is not fully supported in Polars yet.
@@ -20,9 +22,10 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 @map_trials
 def decimate(
     df: pl.DataFrame,
-    factor: int = 10,
+    factor: int,
 ) -> pl.DataFrame:
-    """Decimate all float columns by a factor of 10.
+    """Decimate all float columns using scipy.signal.decimate (order 8 Chebyshev type I
+    filter).
 
     This function applies scipy.signal.decimate to all float columns in the DataFrame
     (except the 'timestamp' column) and gathers every 10th row for all other columns.

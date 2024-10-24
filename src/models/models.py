@@ -34,7 +34,6 @@ device = (
     if torch.backends.mps.is_available()
     else torch.device("cpu")
 )
-is_cuda_available = device == torch.device("cuda")
 logging.debug(f"Using device: {device}")
 
 # Define Constants

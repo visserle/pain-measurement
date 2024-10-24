@@ -1,6 +1,5 @@
 import numpy as np
-from bokeh.layouts import column
-from bokeh.models import BoxAnnotation, ColumnDataSource, FixedTicker, HoverTool, Title
+from bokeh.models import BoxAnnotation, ColumnDataSource, FixedTicker, HoverTool
 from bokeh.plotting import figure, show
 
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
@@ -47,7 +46,7 @@ def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
     # Customize the plot
     p.xaxis.axis_label_text_font_style = "bold"
     p.yaxis.axis_label_text_font_style = "bold"
-    p.xaxis.ticker = FixedTicker(ticks=list(range(0, int(max(time)) + 1, 10)))
+    p.xaxis.ticker = FixedTicker(ticks=list(range(0, int(max(time)) + 2, 10)))
 
     # Add hover tool
     hover = HoverTool(

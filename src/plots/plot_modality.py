@@ -1,3 +1,4 @@
+import hvplot.polars  # noqa
 import polars as pl
 from icecream import ic
 from polars import col
@@ -5,7 +6,7 @@ from polars import col
 from src.data.database_manager import DatabaseManager
 from src.features.resampling import add_timestamp_μs_column
 from src.features.scaling import scale_min_max, scale_standard
-from src.features.transforming import merge_data_dfs
+from src.features.transforming import merge_dfs
 
 info_columns = [
     "trial_number",
@@ -21,6 +22,7 @@ def plot_modality_over_trials(
     processing_step: str = None,
     signals: list[str] = None,
     normalize: bool = True,
+    specific_trial: int = None,
 ) -> pl.DataFrame:
     processing_step = processing_step or "feature"
 
@@ -30,6 +32,8 @@ def plot_modality_over_trials(
         info_columns,
         strict=False,
     )
+    if specific_trial:
+        df = df.filter(col("trial_id") == specific_trial)
 
     if normalize:
         df = scale_min_max(
@@ -42,7 +46,7 @@ def plot_modality_over_trials(
             ],
         )
 
-    return df.plot(
+    return df.hvplot(
         x="timestamp",
         y=signals,
         groupby="trial_id",
