@@ -18,7 +18,7 @@ class IEBlock(nn.Module):
         self.spatial_proj = nn.Sequential(
             nn.Linear(self.input_dim, self.hid_dim),
             nn.LeakyReLU(),
-            nn.Linear(self.hid_dim, self.hid_dim // 4)
+            nn.Linear(self.hid_dim, self.hid_dim // 4),
         )
 
         self.channel_proj = nn.Linear(self.num_node, self.num_node)
@@ -48,27 +48,38 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.task_name = configs.task_name
         self.seq_len = configs.seq_len
-        if self.task_name == 'classification' or self.task_name == 'anomaly_detection' or self.task_name == 'imputation':
+        if (
+            self.task_name == "classification"
+            or self.task_name == "anomaly_detection"
+            or self.task_name == "imputation"
+        ):
             self.pred_len = configs.seq_len
         else:
             self.pred_len = configs.pred_len
 
-        if configs.task_name == 'long_term_forecast' or configs.task_name == 'short_term_forecast':
+        if (
+            configs.task_name == "long_term_forecast"
+            or configs.task_name == "short_term_forecast"
+        ):
             self.chunk_size = min(configs.pred_len, configs.seq_len, chunk_size)
         else:
             self.chunk_size = min(configs.seq_len, chunk_size)
         # assert (self.seq_len % self.chunk_size == 0)
         if self.seq_len % self.chunk_size != 0:
-            self.seq_len += (self.chunk_size - self.seq_len % self.chunk_size)  # padding in order to ensure complete division
+            self.seq_len += (
+                self.chunk_size - self.seq_len % self.chunk_size
+            )  # padding in order to ensure complete division
         self.num_chunks = self.seq_len // self.chunk_size
 
         self.d_model = configs.d_model
         self.enc_in = configs.enc_in
         self.dropout = configs.dropout
-        if self.task_name == 'classification':
+        if self.task_name == "classification":
             self.act = F.gelu
             self.dropout = nn.Dropout(configs.dropout)
-            self.projection = nn.Linear(configs.enc_in * configs.seq_len, configs.num_class)
+            self.projection = nn.Linear(
+                configs.enc_in * configs.seq_len, configs.num_class
+            )
         self._build()
 
     def _build(self):
@@ -76,7 +87,7 @@ class Model(nn.Module):
             input_dim=self.chunk_size,
             hid_dim=self.d_model // 4,
             output_dim=self.d_model // 4,
-            num_node=self.num_chunks
+            num_node=self.num_chunks,
         )
 
         self.chunk_proj_1 = nn.Linear(self.num_chunks, 1)
@@ -85,7 +96,7 @@ class Model(nn.Module):
             input_dim=self.chunk_size,
             hid_dim=self.d_model // 4,
             output_dim=self.d_model // 4,
-            num_node=self.num_chunks
+            num_node=self.num_chunks,
         )
 
         self.chunk_proj_2 = nn.Linear(self.num_chunks, 1)
@@ -94,7 +105,7 @@ class Model(nn.Module):
             input_dim=self.d_model // 2,
             hid_dim=self.d_model // 2,
             output_dim=self.pred_len,
-            num_node=self.enc_in
+            num_node=self.enc_in,
         )
 
         self.ar = nn.Linear(self.seq_len, self.pred_len)
@@ -140,26 +151,39 @@ class Model(nn.Module):
 
     def classification(self, x_enc, x_mark_enc):
         # padding
-        x_enc = torch.cat([x_enc, torch.zeros((x_enc.shape[0], self.seq_len-x_enc.shape[1], x_enc.shape[2])).to(x_enc.device)], dim=1)
+        x_enc = torch.cat(
+            [
+                x_enc,
+                torch.zeros(
+                    (x_enc.shape[0], self.seq_len - x_enc.shape[1], x_enc.shape[2])
+                ).to(x_enc.device),
+            ],
+            dim=1,
+        )
 
         enc_out = self.encoder(x_enc)
 
         # Output
-        output = enc_out.reshape(enc_out.shape[0], -1)  # (batch_size, seq_length * d_model)
+        output = enc_out.reshape(
+            enc_out.shape[0], -1
+        )  # (batch_size, seq_length * d_model)
         output = self.projection(output)  # (batch_size, num_classes)
         return output
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
-        if self.task_name == 'long_term_forecast' or self.task_name == 'short_term_forecast':
+        if (
+            self.task_name == "long_term_forecast"
+            or self.task_name == "short_term_forecast"
+        ):
             dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
-            return dec_out[:, -self.pred_len:, :]  # [B, L, D]
-        if self.task_name == 'imputation':
+            return dec_out[:, -self.pred_len :, :]  # [B, L, D]
+        if self.task_name == "imputation":
             dec_out = self.imputation(x_enc, x_mark_enc, x_dec, x_mark_dec, mask)
             return dec_out  # [B, L, D]
-        if self.task_name == 'anomaly_detection':
+        if self.task_name == "anomaly_detection":
             dec_out = self.anomaly_detection(x_enc)
             return dec_out  # [B, L, D]
-        if self.task_name == 'classification':
+        if self.task_name == "classification":
             dec_out = self.classification(x_enc, x_mark_enc)
             return dec_out  # [B, N]
         return None
