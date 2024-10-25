@@ -6,56 +6,50 @@ import polars as pl
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
+def map_by_group(group_col: str):
+    """
+    Generic decorator to apply a function to groups in a pl.DataFrame.
+
+    Args:
+        group_col (str): The column name to group by
+    """
+
+    def decorator(func: callable):
+        @wraps(func)
+        def wrapper(
+            df: pl.DataFrame,
+            *args,
+            **kwargs,
+        ) -> pl.DataFrame:
+            try:
+                df = df.group_by(group_col, maintain_order=True).map_groups(
+                    lambda group: func(group, *args, **kwargs)
+                )
+            except pl.exceptions.ColumnNotFoundError:
+                logger.warning(
+                    f"No '{group_col}' column found. Applying function {func.__name__} "
+                    "to the entire DataFrame."
+                )
+                df = func(df, *args, **kwargs)
+            return df
+
+        return wrapper
+
+    return decorator
+
+
 def map_trials(func: callable):
     """
     Decorator to apply a function to each trial in a pl.DataFrame.
     """
-
-    @wraps(func)
-    def wrapper(
-        df: pl.DataFrame,
-        *args,
-        **kwargs,
-    ) -> pl.DataFrame:
-        try:
-            df = df.group_by("trial_id", maintain_order=True).map_groups(
-                lambda group: func(group, *args, **kwargs)
-            )
-        except pl.exceptions.ColumnNotFoundError:
-            logger.warning(
-                f"No 'trial_id' column found. Applying function {func.__name__} to the "
-                "entire DataFrame."
-            )
-            df = func(df, *args, **kwargs)
-        return df
-
-    return wrapper
+    return map_by_group("trial_id")(func)
 
 
 def map_participants(func: callable):
     """
     Decorator to apply a function to each participant in a pl.DataFrame.
     """
-
-    @wraps(func)
-    def wrapper(
-        df: pl.DataFrame,
-        *args,
-        **kwargs,
-    ) -> pl.DataFrame:
-        try:
-            df = df.group_by("participant_id", maintain_order=True).map_groups(
-                lambda group: func(group, *args, **kwargs)
-            )
-        except pl.exceptions.ColumnNotFoundError:
-            logger.warning(
-                f"No 'participant_id' column found. Applying function {func.__name__} "
-                "to the entire DataFrame."
-            )
-            df = func(df, *args, **kwargs)
-        return df
-
-    return wrapper
+    return map_by_group("participant_id")(func)
 
 
 def merge_dfs(

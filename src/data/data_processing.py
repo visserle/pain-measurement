@@ -13,7 +13,7 @@ from src.experiments.measurement.stimulus_generator import StimulusGenerator
 from src.features.eda import feature_eda, preprocess_eda
 from src.features.eeg import feature_eeg, preprocess_eeg
 from src.features.face import feature_face, preprocess_face
-from src.features.labels import process_labels
+from src.features.labels import add_labels
 from src.features.ppg import feature_ppg, preprocess_ppg
 from src.features.pupil import feature_pupil, preprocess_pupil
 from src.features.stimulus import feature_stimulus, preprocess_stimulus
