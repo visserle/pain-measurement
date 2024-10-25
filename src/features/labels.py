@@ -10,6 +10,21 @@ import polars as pl
 from polars import col
 
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
+from src.features.transforming import merge_dfs
+
+
+def add_labels(
+    data_df: pl.DataFrame,
+    trials_df: pl.DataFrame,
+    based_on: str = "stimulus",  # TODO: add rating, etc.
+) -> pl.DataFrame:
+    """Add labels to the data DataFrame."""
+    # Merge data and trials DataFrames
+    df = merge_dfs(
+        [data_df, trials_df], on=["trial_id", "participant_id", "trial_number"]
+    )
+    # Process labels
+    return process_labels(df)
 
 
 def process_labels(df: pl.DataFrame) -> pl.DataFrame:

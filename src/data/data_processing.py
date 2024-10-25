@@ -219,17 +219,6 @@ def create_feature_data_df(
         return feature_face(df)
 
 
-def create_labels_data_df(
-    stimulus: pl.DataFrame,
-    trials: pl.DataFrame,
-) -> pl.DataFrame:
-    # Merge stimulus and trials dataframes
-    df = merge_dfs(
-        [stimulus, trials], on=["trial_id", "participant_id", "trial_number"]
-    )
-    return process_labels(df)
-
-
 def merge_feature_data_dfs(
     dfs: list[pl.DataFrame],
 ) -> pl.DataFrame:

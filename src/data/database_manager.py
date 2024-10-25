@@ -10,6 +10,7 @@
 # - add calibration data to the database
 # - add measurement data to the database
 # - add excluded data information to the database and check in the preprocessing process if the data is excluded
+# - label at the very end when merging all feature data
 
 import logging
 
@@ -20,7 +21,6 @@ from icecream import ic
 from src.data.data_config import DataConfig
 from src.data.data_processing import (
     create_feature_data_df,
-    create_labels_data_df,
     create_preprocess_data_df,
     create_raw_data_df,
     create_trials_df,
@@ -28,6 +28,7 @@ from src.data.data_processing import (
 )
 from src.data.database_schema import DatabaseSchema
 from src.data.imotions_data import load_imotions_data_df
+from src.features.labels import add_labels
 
 MODALITIES = DataConfig.MODALITIES
 NUM_PARTICIPANTS = DataConfig.NUM_PARTICIPANTS
@@ -95,7 +96,10 @@ class DatabaseManager:
             )
 
     def execute(self, query: str):
-        """Execute a SQL query."""
+        """Execute a SQL query.
+
+        Note: Add a .pl() to the return value to get a Polars DataFrame, e.g.
+        `db.execute("SELECT * FROM Feature_EDA").pl()`."""
         self._ensure_connection()
         return self.conn.execute(query)
 
@@ -258,10 +262,18 @@ def main():
         # logger.info("Data feature-engineered.")
 
         # Add labels
-        stimulus_df = db.get_table("Feature_Stimulus")
-        trials_df = db.get_table("Trials")
-        labels_df = create_labels_data_df(stimulus_df, trials_df)
-        db.insert_labels_data("Labels", labels_df)
+        # TODO
+        # add final merge of all feature data and label at the *very* end
+        # using a separate function for this
+        # something like this:
+        # query = """
+        # FROM sqlite_schema
+        # select tbl_name
+        # """
+        # with db:
+        #     tables = db.execute(query).pl()
+        # t = tables.get_column("tbl_name").to_list()
+        # list(filter(lambda x: x.startswith("Feature"), t))
 
         logger.info("Database processing complete.")
 
