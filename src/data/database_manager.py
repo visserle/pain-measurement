@@ -50,12 +50,14 @@ class DatabaseManager:
     recommended.
 
     Example usage:
-    >>> db = DatabaseManager()
-    >>> with db:
-    >>>    df = db.execute("SELECT * FROM Trials").pl()  # .pl() for Polars DataFrame
-    >>> # or alternatively
-    >>>    df = db.get_table("Trials")
-    >>> df.head()
+    ```python
+    db = DatabaseManager()
+    with db:
+        df = db.execute("SELECT * FROM Trials").pl()  # .pl() for Polars DataFrame
+        # or alternatively
+        df = db.get_table("Trials", remove_invalid_trials=False)
+    df.head()
+    ```
     """
 
     def __init__(self):
@@ -85,31 +87,32 @@ class DatabaseManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.disconnect()
 
-    def execute(self, query: str):
-        """Execute a SQL query."""
+    def _ensure_connection(self):
+        """Helper method to check connection status."""
         if self.conn is None:
             raise ConnectionError(
                 "Database not connected. Use 'with' statement or call connect() first."
             )
+
+    def execute(self, query: str):
+        """Execute a SQL query."""
+        self._ensure_connection()
         return self.conn.execute(query)
 
     def sql(self, query: str):
         """Run a SQL query. If it is a SELECT statement, create a relation object from
         the given SQL query, otherwise run the query as-is. (see DuckDB docs)
         """
-        if self.conn is None:
-            raise ConnectionError(
-                "Database not connected. Use 'with' statement or call connect() first."
-            )
+        self._ensure_connection()
         return self.conn.sql(query)
 
     def get_table(
         self,
         table_name: str,
-        remove_invalid: bool = False,
+        remove_invalid_trials: bool = True,
     ) -> pl.DataFrame:
         """Return the data from a table as a Polars DataFrame."""
-        if remove_invalid:
+        if remove_invalid_trials:
             pass  # TODO
         return self.execute(f"SELECT * FROM {table_name}").pl()
 
