@@ -26,7 +26,7 @@ EDA:
     - "Timestamp"
     - "GSR Conductance CAL"
   rename_columns:
-    "GSR Conductance CAL": "EDA_RAW"
+    "GSR Conductance CAL": "eda_raw"
 
 PPG:
   file_name: "Shimmer3_EDA_&_PPG_Shimmer3_EDA_&_PPG_ET_Shimmer_ShimmerDevice"
@@ -38,7 +38,7 @@ PPG:
     - "Heart Rate PPG ALG"
     - "IBI PPG ALG"
   rename_columns:
-    "Internal ADC A13 PPG CAL": "PPG_RAW"
+    "Internal ADC A13 PPG CAL": "ppg_raw"
     "Heart Rate PPG ALG": "PPG_HeartRate"
     "IBI PPG ALG": "PPG_IBI"
   comment: "same device as EDA"
@@ -75,8 +75,8 @@ Pupil:
     - "ET_PupilLeft"
     - "ET_PupilRight"
   rename_columns:
-    "ET_PupilLeft": "Pupil_L"
-    "ET_PupilRight": "Pupil_R"
+    "ET_PupilLeft": "pupil_l_raw"
+    "ET_PupilRight": "pupil_r_raw"
 
 Face:
   file_name: "Affectiva_AFFDEX_ET_Affectiva_AffectivaCameraDevice"
