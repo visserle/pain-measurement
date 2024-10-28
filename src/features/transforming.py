@@ -1,3 +1,5 @@
+# TODO: compare interpolate and interpolate_by (see below)
+
 import logging
 from functools import reduce, wraps
 
@@ -68,11 +70,7 @@ def merge_dfs(
     ````
     df = merge_dfs(
         dfs=[stimulus, trials],
-        on=[
-            "trial_id",
-            "participant_id",
-            "trial_number",
-        ],
+        on=["trial_id", "participant_id", "trial_number"],
     )
     ````
     """
@@ -97,6 +95,10 @@ def merge_dfs(
 
 @map_trials
 def interpolate_and_fill_nulls(df: pl.DataFrame) -> pl.DataFrame:
+    # NOTE TODO FIXME BUG
+    # ### Note that interpolating should always depend on the time vector.
+    # https://github.com/pola-rs/polars/issues/9616
+    # https://docs.pola.rs/api/python/stable/reference/expressions/api/polars.Expr.interpolate_by.html
     """
     Interpolate and fill null values in a DataFrame.
     """
