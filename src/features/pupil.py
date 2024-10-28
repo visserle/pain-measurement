@@ -9,7 +9,7 @@ from polars import col
 
 from src.features.filtering import filter_butterworth
 from src.features.resampling import downsample
-from src.features.transforming import map_trials
+from src.features.transforming import interpolate_and_fill_nulls, map_trials
 
 SAMPLE_RATE = 60
 
@@ -219,25 +219,3 @@ def extend_periods_around_blinks(
         )
 
     return data_extended
-
-
-@map_trials
-def interpolate_pupillometry(
-    df: pl.DataFrame,
-    pupil_columns: str | list[str] = ["pupil_r_extended", "pupil_l_extended"],
-) -> pl.DataFrame:
-    # Linearly interpolate and fill edge cases when the first or last value is null
-    # NOTE: cubic spline? TODO
-    for pupil in pupil_columns:
-        df = df.with_columns(
-            pl.col(pupil)
-            .interpolate()
-            .forward_fill()  # Fill remaining edge cases
-            .backward_fill()
-            .alias(pupil)
-        )
-    logger.warning(
-        "Interpolation method does not consider non-equidistant time stamps. "
-        "This is a bug that needs to be fixed by using interpolate_by."
-    )
-    return df
