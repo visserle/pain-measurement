@@ -5,6 +5,7 @@
 import logging
 
 import polars as pl
+import scipy.signal as signal
 from polars import col
 
 from src.features.filtering import filter_butterworth
@@ -17,37 +18,17 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
-    df = filter_pupil(df)  # this is just a low pass filter, quick & dirty TODO: improve
+    df = add_blink_threshold(df)
+    df = extend_periods_around_blinks(df)  # blink gaps are filled with nulls
+    df = interpolate_and_fill_nulls(df)
     return df
 
 
 def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
-    df = downsample(df, new_sample_rate=10)
+    df = median_filter_pupil(df)
+    df = low_pass_filter_pupil(df)
+    # df = downsample(df, sample_rate=SAMPLE_RATE)
     return df
-
-
-@map_trials
-def filter_pupil(
-    df: pl.DataFrame,
-    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
-    sample_rate: float = SAMPLE_RATE,
-    lowcut: float = 0,
-    highcut: float = 0.2,
-    order: int = 2,
-) -> pl.DataFrame:
-    return df.with_columns(
-        pl.col(pupil_columns)
-        .map_batches(  # use map_batches to apply the filter to each column
-            lambda x: filter_butterworth(
-                x,
-                SAMPLE_RATE,
-                lowcut=lowcut,
-                highcut=highcut,
-                order=order,
-            )
-        )
-        .name.suffix("_filtered")
-    )
 
 
 def add_blink_threshold(
@@ -60,7 +41,7 @@ def add_blink_threshold(
     1.5 and > 9.0 according to Kret et al., 2014
     # https://github.com/ElioS-S/pupil-size/blob/944523bff0ca583039039a3008ac1171ab46400a/code/helperFunctions/rawDataFilter.m#L66
 
-    physiological lower and upper limits of 2 and 8 mm,  Mathôt & Vilotijević (2023)"
+    physiological lower and upper limits of 2 and 8 mm,  Mathôt & Vilotijević (2023)" TODO FIXME
     """
     return df.with_columns(
         [
@@ -73,6 +54,56 @@ def add_blink_threshold(
             for pupil in pupil_columns
         ]
     )
+
+
+@map_trials
+def extend_periods_around_blinks(
+    data: pl.DataFrame,
+    pupil_columns: list[str] = ["pupil_r_thresholded", "pupil_l_thresholded"],
+    period: int = 120,
+) -> pl.DataFrame:
+    min_timestamp = data["timestamp"].min()
+    max_timestamp = data["timestamp"].max()
+
+    # Initialize the DataFrame to store the extended data
+    data_extended = data
+
+    for pupil in pupil_columns:
+        blinks = _get_blink_segments(data).filter(col("pupil") == pupil.split("_")[1])
+
+        # Expand the blink segments
+        blinks_extended = blinks.with_columns(
+            [
+                pl.col("start_timestamp")
+                .sub(period)
+                .clip(lower_bound=min_timestamp)
+                .alias("expanded_start"),
+                pl.col("end_timestamp")
+                .add(period)
+                .clip(upper_bound=max_timestamp)
+                .alias("expanded_end"),
+            ]
+        ).with_columns(
+            (col("expanded_end") - col("expanded_start")).alias("expanded_duration")
+        )
+
+        # Create the filter by combining the is_between conditions for each range
+        combined_filter = pl.lit(False)
+        for start, end in zip(
+            blinks_extended["expanded_start"], blinks_extended["expanded_end"]
+        ):
+            condition = pl.col("timestamp").is_between(start, end)
+            combined_filter |= condition
+
+        # Apply the filter to the DataFrame
+        data_extended = data_extended.with_columns(
+            pl.when(combined_filter)
+            .then(None)
+            .otherwise(pl.col(pupil))
+            .alias(pupil.replace("_thresholded", "_extended")),
+        )
+
+    return data_extended
 
 
 @map_trials
@@ -172,50 +203,31 @@ def _get_blink_segments(
 
 
 @map_trials
-def extend_periods_around_blinks(
-    data: pl.DataFrame,
-    pupil_columns: list[str] = ["pupil_r_thresholded", "pupil_l_thresholded"],
-    period: int = 120,
+def median_filter_pupil(
+    df: pl.DataFrame,
+):
+    pass
+
+
+@map_trials
+def low_pass_filter_pupil(
+    df: pl.DataFrame,
+    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
+    sample_rate: float = SAMPLE_RATE,
+    lowcut: float = 0,
+    highcut: float = 0.2,
+    order: int = 2,
 ) -> pl.DataFrame:
-    min_timestamp = data["timestamp"].min()
-    max_timestamp = data["timestamp"].max()
-
-    # Initialize the DataFrame to store the extended data
-    data_extended = data
-
-    for pupil in pupil_columns:
-        blinks = _get_blink_segments(data).filter(col("pupil") == pupil.split("_")[1])
-
-        # Expand the blink segments
-        blinks_extended = blinks.with_columns(
-            [
-                pl.col("start_timestamp")
-                .sub(period)
-                .clip(lower_bound=min_timestamp)
-                .alias("expanded_start"),
-                pl.col("end_timestamp")
-                .add(period)
-                .clip(upper_bound=max_timestamp)
-                .alias("expanded_end"),
-            ]
-        ).with_columns(
-            (col("expanded_end") - col("expanded_start")).alias("expanded_duration")
+    return df.with_columns(
+        pl.col(pupil_columns)
+        .map_batches(  # use map_batches to apply the filter to each column
+            lambda x: filter_butterworth(
+                x,
+                SAMPLE_RATE,
+                lowcut=lowcut,
+                highcut=highcut,
+                order=order,
+            )
         )
-
-        # Create the filter by combining the is_between conditions for each range
-        combined_filter = pl.lit(False)
-        for start, end in zip(
-            blinks_extended["expanded_start"], blinks_extended["expanded_end"]
-        ):
-            condition = pl.col("timestamp").is_between(start, end)
-            combined_filter |= condition
-
-        # Apply the filter to the DataFrame
-        data_extended = data_extended.with_columns(
-            pl.when(combined_filter)
-            .then(None)
-            .otherwise(pl.col(pupil))
-            .alias(pupil.replace("_thresholded", "_extended")),
-        )
-
-    return data_extended
+        .name.suffix("_filtered")
+    )
