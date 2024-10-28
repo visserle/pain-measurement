@@ -2,19 +2,19 @@ import numpy as np
 import scipy.signal
 
 
-def filter_butterworth(
-    signal,
-    sample_rate=1000,
+def butterworth_filter(
+    signal: np.ndarray,
+    sample_rate: int,
     lowcut=None,
     highcut=None,
-    order=5,
+    order: int = 5,
 ):
     """Filter a signal using IIR Butterworth SOS (Second-Order Sections) method.
 
     Applies the butterworth filter twice, once forward and once backwards using
     scipy.signal.sosfiltfilt.
     """
-    freqs, filter_type = _filter_sanitize(
+    freqs, filter_type = _sanitize_filter(
         lowcut=lowcut,
         highcut=highcut,
         sample_rate=sample_rate,
@@ -29,7 +29,7 @@ def filter_butterworth(
     return scipy.signal.sosfiltfilt(sos, signal)
 
 
-def _filter_sanitize(
+def _sanitize_filter(
     lowcut=None,
     highcut=None,
     sample_rate=1000,
