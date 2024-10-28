@@ -8,7 +8,7 @@ import polars as pl
 import scipy.signal as signal
 from polars import col
 
-from src.features.filtering import filter_butterworth
+from src.features.filtering import butterworth_filter
 from src.features.resampling import downsample
 from src.features.transforming import interpolate_and_fill_nulls, map_trials
 
@@ -33,9 +33,9 @@ def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
 
 def add_blink_threshold(
     df: pl.DataFrame,
-    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
     min_threshold: float = 1.5,
     max_threshold: float = 9.0,
+    pupil_columns: list[str] = ["pupil_r_raw", "pupil_l_raw"],
 ) -> pl.DataFrame:
     """
     1.5 and > 9.0 according to Kret et al., 2014
@@ -50,7 +50,9 @@ def add_blink_threshold(
             .when(pl.col(pupil) > max_threshold)
             .then(9.0)
             .otherwise(pl.col(pupil))
-            .alias(pupil + "_thresholded")
+            # with this first function we remove the "_raw" suffix, all other functions
+            # apply to the result of the previous function (on "pupil_r" or "pupil_l")
+            .alias(pupil.removesuffix("_raw"))
             for pupil in pupil_columns
         ]
     )
@@ -59,8 +61,8 @@ def add_blink_threshold(
 @map_trials
 def extend_periods_around_blinks(
     data: pl.DataFrame,
-    pupil_columns: list[str] = ["pupil_r_thresholded", "pupil_l_thresholded"],
     period: int = 120,
+    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
 ) -> pl.DataFrame:
     min_timestamp = data["timestamp"].min()
     max_timestamp = data["timestamp"].max()
@@ -97,10 +99,7 @@ def extend_periods_around_blinks(
 
         # Apply the filter to the DataFrame
         data_extended = data_extended.with_columns(
-            pl.when(combined_filter)
-            .then(None)
-            .otherwise(pl.col(pupil))
-            .alias(pupil.replace("_thresholded", "_extended")),
+            pl.when(combined_filter).then(None).otherwise(pl.col(pupil))
         )
 
     return data_extended
@@ -109,7 +108,7 @@ def extend_periods_around_blinks(
 @map_trials
 def _get_blink_segments(
     df: pl.DataFrame,
-    pupil_columns: list[str, str] = ["pupil_r_thresholded", "pupil_l_thresholded"],
+    pupil_columns: list[str, str] = ["pupil_r", "pupil_l"],
 ) -> pl.DataFrame:
     """
     Return start and end timestamps of blink segments in the pl.DataFrame.
@@ -205,23 +204,33 @@ def _get_blink_segments(
 @map_trials
 def median_filter_pupil(
     df: pl.DataFrame,
-):
-    pass
+    size_in_seconds: int = 1,
+    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
+) -> pl.DataFrame:
+    return df.with_columns(
+        pl.col(pupil_columns).map_batches(
+            lambda x: signal.medfilt(
+                x,
+                kernel_size=size_in_seconds * SAMPLE_RATE + 1,  # must be odd
+            )
+        )
+    )
 
 
 @map_trials
 def low_pass_filter_pupil(
     df: pl.DataFrame,
-    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
     sample_rate: float = SAMPLE_RATE,
     lowcut: float = 0,
     highcut: float = 0.2,
     order: int = 2,
+    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
 ) -> pl.DataFrame:
     return df.with_columns(
-        pl.col(pupil_columns)
-        .map_batches(  # use map_batches to apply the filter to each column
-            lambda x: filter_butterworth(
+        pl.col(
+            pupil_columns
+        ).map_batches(  # use map_batches to apply the filter to each column
+            lambda x: butterworth_filter(
                 x,
                 SAMPLE_RATE,
                 lowcut=lowcut,
@@ -229,5 +238,4 @@ def low_pass_filter_pupil(
                 order=order,
             )
         )
-        .name.suffix("_filtered")
     )
