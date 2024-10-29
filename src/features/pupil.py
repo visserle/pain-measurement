@@ -2,6 +2,10 @@
 # - improve docstrings
 # insightfull report: https://github.com/kinleyid/PuPL/blob/master/manual.pdf
 
+# TODO: trial 28 is invalid, half of pupil missing -> to be removed FIXME TODO
+# -> maybe trial 28 can be saved when we only only use the right eye,
+# maybe this can be implemented in the final mean calculation
+
 import logging
 
 import polars as pl
@@ -25,8 +29,9 @@ def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
-    df = median_filter_pupil(df)
+    df = median_filter_pupil(df, size_in_seconds=1)
     df = low_pass_filter_pupil(df)
+    df = average_pupils(df)
     # df = downsample(df, sample_rate=SAMPLE_RATE)
     return df
 
@@ -46,7 +51,7 @@ def add_blink_threshold(
     return df.with_columns(
         [
             pl.when(pl.col(pupil) < min_threshold)
-            .then(-1)
+            .then(None)
             .when(pl.col(pupil) > max_threshold)
             .then(9.0)
             .otherwise(pl.col(pupil))
@@ -204,7 +209,7 @@ def _get_blink_segments(
 @map_trials
 def median_filter_pupil(
     df: pl.DataFrame,
-    size_in_seconds: int = 1,
+    size_in_seconds: int,
     pupil_columns: list[str] = ["pupil_r", "pupil_l"],
 ) -> pl.DataFrame:
     return df.with_columns(
@@ -229,7 +234,7 @@ def low_pass_filter_pupil(
     return df.with_columns(
         pl.col(
             pupil_columns
-        ).map_batches(  # use map_batches to apply the filter to each column
+        ).map_batches(  # map_batches to apply the filter to each column
             lambda x: butterworth_filter(
                 x,
                 SAMPLE_RATE,
@@ -238,4 +243,14 @@ def low_pass_filter_pupil(
                 order=order,
             )
         )
+    )
+
+
+def average_pupils(
+    df: pl.DataFrame,
+    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
+    result_column: str = "pupil_mean",
+) -> pl.DataFrame:
+    return df.with_columns(
+        ((pl.col(pupil_columns[0]) + pl.col(pupil_columns[1])) / 2).alias(result_column)
     )
