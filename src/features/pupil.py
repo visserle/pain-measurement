@@ -7,6 +7,8 @@
 # maybe this can be implemented in the final mean calculation
 
 import logging
+import operator
+from functools import reduce
 
 import polars as pl
 import scipy.signal as signal
@@ -90,21 +92,23 @@ def extend_periods_around_blinks(
                 .clip(upper_bound=max_timestamp)
                 .alias("expanded_end"),
             ]
-        ).with_columns(
-            (col("expanded_end") - col("expanded_start")).alias("expanded_duration")
         )
 
-        # Create the filter by combining the is_between conditions for each range
-        combined_filter = pl.lit(False)
-        for start, end in zip(
-            blinks_extended["expanded_start"], blinks_extended["expanded_end"]
-        ):
-            condition = pl.col("timestamp").is_between(start, end)
-            combined_filter |= condition
+        # Create mask using reduce pattern
+        combined_filter = reduce(
+            operator.or_,
+            [
+                pl.col("timestamp").is_between(start, end)
+                for start, end in zip(
+                    blinks_extended["expanded_start"], blinks_extended["expanded_end"]
+                )
+            ],
+            pl.lit(False),  # neutral element
+        )
 
-        # Apply the filter to the DataFrame
+        # Apply the filter
         data_extended = data_extended.with_columns(
-            pl.when(combined_filter).then(None).otherwise(pl.col(pupil))
+            pl.when(combined_filter).then(None).otherwise(pl.col(pupil)).alias(pupil)
         )
 
     return data_extended
