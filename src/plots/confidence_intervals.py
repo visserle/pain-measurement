@@ -15,7 +15,7 @@ MODALITY_MAP = {
     "eda": ["eda_tonic", "eda_phasic", "eda_raw"],
     "eeg": "",
     "ppg": ["ppg_rate", "ppg_quality"],
-    "pupil": ["pupil_r_filtered"],  # , "pupil_r"],  # TODO
+    "pupil": ["pupil_mean"],  # , "pupil_r"],  # TODO
     "face": "",
 }
 
@@ -23,6 +23,7 @@ MODALITY_MAP = {
 def plot_confidence_intervals(
     modality: str,
     signals: list[str] = None,
+    pipeline_step: str = "feature",
 ) -> pl.DataFrame:
     """
     Plot confidence intervals for the given modality for all participants over one
@@ -37,7 +38,7 @@ def plot_confidence_intervals(
     # implement)
     signals = signals or MODALITY_MAP[modality]
     # As we plot for each stimulus seed, we need additional metadata
-    df = load_modality_with_trial_metadata(modality)
+    df = load_modality_with_trial_metadata(modality, pipeline_step)
 
     # Scale data for better visualization (mapped over trial_id)
     df = scale_min_max(
@@ -80,10 +81,14 @@ def plot_confidence_intervals(
     return plots
 
 
-def load_modality_with_trial_metadata(modality: str) -> pl.DataFrame:
+def load_modality_with_trial_metadata(
+    modality: str,
+    pipeline_step: str,
+) -> pl.DataFrame:
     with DatabaseManager() as db:
-        df = db.get_table("feature_" + modality)  # TODO: exclude invalid participants
-        trials = db.get_table("trials")  # get trials for stimulus seeds
+        # TODO: exclude invalid participants
+        df = db.get_table(pipeline_step + "_" + modality)
+        trials = db.get_table("Trials")  # get trials for stimulus seeds
     return merge_dfs(
         [df, trials],
         on=["participant_id", "trial_id", "trial_number"],
