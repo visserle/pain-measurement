@@ -128,7 +128,7 @@ def _get_blink_segments(
         trial_id = int(df["trial_id"].unique().item())
 
         # Missing data (blink or look-away) is marked with NaN
-        neg_ones = df.select(col("pupil_l").is_null()).to_series()
+        neg_ones = df.select(col(pupil).is_null()).to_series()
 
         # Skip if there are no blinks
         if neg_ones.sum() == 0:
@@ -204,9 +204,6 @@ def _get_blink_segments(
             ],
         )
     )
-
-
-_get_blink_segments(df)
 
 
 @map_trials
