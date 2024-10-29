@@ -127,8 +127,8 @@ def _get_blink_segments(
         trial_number = int(df["trial_number"][0])
         trial_id = int(df["trial_id"].unique().item())
 
-        # Missing data (blink or look-away) is marked with -1
-        neg_ones = df[pupil] == -1
+        # Missing data (blink or look-away) is marked with NaN
+        neg_ones = df.select(col("pupil_l").is_null()).to_series()
 
         # Skip if there are no blinks
         if neg_ones.sum() == 0:
@@ -143,10 +143,10 @@ def _get_blink_segments(
         start_indices = start_conditions.arg_true().to_list()
         end_indices = end_conditions.arg_true().to_list()
 
-        # Check for edge cases where the first or last value is -1
-        if df[pupil][0] == -1:
+        # Check for edge cases where the first or last value is NaN
+        if df[pupil][0] is None:
             start_indices.insert(0, 0)
-        if df[pupil][-1] == -1:
+        if df[pupil][-1] is None:
             end_indices.append(df.height - 1)
 
         # Get timestamps for the blink segments
@@ -204,6 +204,9 @@ def _get_blink_segments(
             ],
         )
     )
+
+
+_get_blink_segments(df)
 
 
 @map_trials
