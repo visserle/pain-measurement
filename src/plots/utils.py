@@ -1,14 +1,30 @@
 import polars as pl
+from polars import col
 
 
-def prepare_multiline_hvplot(
+def add_normalized_timestamp(
     df: pl.DataFrame,
     time_column: str = "timestamp",
     trial_column: str = "trial_id",
 ):
+    return df.with_columns(
+        [
+            (col(time_column) - col(time_column).min().over(trial_column)).alias(
+                "normalized_timestamp"
+            )
+        ]
+    )
+
+
+def prepare_multiline_hvplot(
+    df: pl.DataFrame,
+    time_column: str = "normalized_timestamp",
+    trial_column: str = "trial_id",
+):
     """
     Add NaN separators at the end of each trial to prepare plotting of multiple lines
-    per category in hvplot.
+    per category in hvplot using normalized timestamps (which start at 0 for each
+    trial).
 
     The time column should be normalized to start at 0 for each trial as this is the
     column you also want the multiple lines to be plotted against.
@@ -19,16 +35,17 @@ def prepare_multiline_hvplot(
     NaN values are not supported for time data types in Polars.
     """
     # Sanity check if time column is normalized if we are looking at intervals
-    if "major_decreasing_intervals" in df.columns and (
-        df.group_by("major_decreasing_intervals")
-        .agg(pl.col("normalized_time").min().alias("min_time"))
+    if (
+        df.group_by(trial_column)
+        .agg(pl.col(time_column).min().alias("min_time"))
         .select(pl.sum("min_time"))
         .item()
         != 0
     ):
         raise ValueError(
             "Time column is not normalized to start at 0 for each trial. "
-            "Please normalize the time column before calling this function."
+            "Please normalize the time column before calling this function "
+            "using add_normalized_timestamp."
         )
 
     # Define columns where we don't want to add NaN separators
@@ -42,6 +59,7 @@ def prepare_multiline_hvplot(
         "decreasing_intervals",
         "major_decreasing_intervals",
         "increasing_intervals",
+        "strictly_increasing",
         "plateau_intervals",
         "prolonged_minima_intervals",
     ]
