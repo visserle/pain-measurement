@@ -4,6 +4,7 @@ import logging
 from functools import reduce, wraps
 
 import polars as pl
+from polars import col
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -66,7 +67,7 @@ def merge_dfs(
     feature), however, these can be adjusted as needed for other DataFrames (e.g.,
     Trials).
 
-    For merging with Trials, use:
+    For merging e.g. Stimulus data with Trials information, use:
     ````
     df = merge_dfs(
         dfs=[stimulus, trials],
@@ -94,17 +95,32 @@ def merge_dfs(
 
 
 @map_trials
-def interpolate_and_fill_nulls(df: pl.DataFrame) -> pl.DataFrame:
-    # NOTE TODO FIXME BUG
-    # ### Note that interpolating should always depend on the time vector.
-    # https://github.com/pola-rs/polars/issues/9616
-    # https://docs.pola.rs/api/python/stable/reference/expressions/api/polars.Expr.interpolate_by.html
+def interpolate_and_fill_nulls(
+    df: pl.DataFrame,
+    columns: list[str] | None = None,
+    time_column: str = "timestamp",
+) -> pl.DataFrame:
     """
-    Interpolate and fill null values in a DataFrame.
+    Linearly interpolate and fill null values of float columns in a DataFrame.
+    The interpolation is done based on the time column.
+
+    Args:
+        df (pl.DataFrame): The DataFrame to interpolate
+        columns (list[str], optional): The columns to interpolate.
+            If None, all float columns are interpolated. Defaults to None.
+        time_column (str, optional): The time column. Defaults to "timestamp".
     """
-    # interpolate() casts every column to Float64 so we use pl.selectors for int columns
+    # Note that maybe using NaN as null value is better as NaN is a float in Polars
+    # (plus using fill_nan instead of fill_null)
+    # However, this would need a rewrite and testing of the whole pipeline
+    selected_columns = columns or df.select(pl.selectors.by_dtype(pl.Float64)).columns
     return (
-        df.with_columns(df.select(pl.selectors.by_dtype(pl.Float64)).interpolate())
+        df.with_columns(
+            [
+                col(column).interpolate_by(col("timestamp"))
+                for column in selected_columns
+            ]
+        )
         .fill_null(strategy="forward")
         .fill_null(strategy="backward")
     )
