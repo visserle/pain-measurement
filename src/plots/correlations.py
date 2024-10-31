@@ -265,8 +265,15 @@ def plot_correlations_by_participant(
     )
 
     error_bars = base.mark_rule().encode(y2=f"{ci_upper}:Q")
-    points = base.mark_circle(size=100, color="#1f77b4").encode(y=f"{mean_col}:Q")
-
+    points = base.mark_circle(size=100, color="#1f77b4").encode(
+        y=f"{mean_col}:Q",
+        tooltip=[
+            alt.Tooltip(f"{participant_column}:N", title="Participant"),
+            alt.Tooltip(f"{mean_col}:Q", title="Mean Correlation", format=".3f"),
+            alt.Tooltip(f"{ci_lower}:Q", title="CI Lower", format=".3f"),
+            alt.Tooltip(f"{ci_upper}:Q", title="CI Upper", format=".3f"),
+        ],
+    )
     chart_config = _get_base_chart_config(width, height, title)
 
     return (error_bars + points).properties(**chart_config)
