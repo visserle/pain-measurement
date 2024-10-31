@@ -4,18 +4,15 @@ two columns at trial and participant level.
 
 Example usage:
 ```python
-# Columns to be correlated
-col1 = "pupil"
-col2 = "rating"
+col1, col2 = "pupil", "temperature"
 
 corr_by_trial = calculate_correlations_by_trial(df, col1, col2)
 corr_by_participant = aggregate_correlations_fisher_z(
-    corr_by_trial, "pupil_rating_corr", "participant_id", include_ci=True
+    corr_by_trial, f"{col1}_{col2}_corr", "participant_id", include_ci=True
 )
-
-plot_correlations_by_trial(corr_by_trial, "pupil_rating_corr")
+plot_correlations_by_trial(corr_by_trial, f"{col1}_{col2}_corr")
 # or
-plot_correlations_by_participant(corr_by_participant, "pupil_rating_corr")
+plot_correlations_by_participant(corr_by_participant, f"{col1}_{col2}_corr")
 ```
 
 Note that the correlation of time series violates the assumption of independence
@@ -184,7 +181,7 @@ def plot_correlations_by_trial(
         )
 
     base = alt.Chart(df).encode(
-        x=alt.X(f"{trial_column}:Q", axis=alt.Axis(title="Trial Number")),
+        x=alt.X(f"{trial_column}:Q", axis=alt.Axis(title="Trial ID")),
         y=alt.Y(
             f"{correlation_column}:Q",
             axis=alt.Axis(title="Correlation"),
@@ -246,7 +243,7 @@ def plot_correlations_by_participant(
     """
 
     if title is None:
-        title = f"Mean {correlation_column} Correlations by Participant with 95% CI"
+        title = f"Mean {correlation_column.replace('_', ' ').title()} by Participant with 95% CI"
 
     # Create column names
     mean_col = f"{participant_column}_{correlation_column}_mean"
@@ -258,9 +255,7 @@ def plot_correlations_by_participant(
         y=alt.Y(
             f"{ci_lower}:Q",
             scale=alt.Scale(domain=y_domain),
-            axis=alt.Axis(
-                title=correlation_column.replace("_", " ").title() + " Correlation"
-            ),
+            axis=alt.Axis(title="Correlation"),
         ),
     )
 

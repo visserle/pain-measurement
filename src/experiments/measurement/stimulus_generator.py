@@ -532,7 +532,6 @@ class StimulusGenerator:
                 # Check if plateau overlaps with the increasing interval
                 if not (end <= plateau_start or start >= plateau_end):
                     has_plateau = True
-                    break
 
             if not has_plateau:
                 intervals.append((int(start), int(end)))
