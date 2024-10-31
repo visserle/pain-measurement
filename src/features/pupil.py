@@ -32,9 +32,11 @@ def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
 
 def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
     df = median_filter_pupil(df, size_in_seconds=1)
-    df = low_pass_filter_pupil(df)
-    df = average_pupils(df)
-    # df = downsample(df, sample_rate=SAMPLE_RATE)
+    df = low_pass_filter_pupil(
+        df, highcut=0.2
+    )  # TODO: there are studies, cite them in the function
+    df = average_pupils(df, result_column="pupil_mean")
+    # df = downsample(df, sample_rate=SAMPLE_RATE)  # TODO
     return df
 
 
@@ -94,7 +96,7 @@ def extend_periods_around_blinks(
             ]
         )
 
-        # Create mask using reduce pattern
+        # Create mask using reduce pattern and operator.or_
         combined_filter = reduce(
             operator.or_,
             [
@@ -103,7 +105,7 @@ def extend_periods_around_blinks(
                     blinks_extended["expanded_start"], blinks_extended["expanded_end"]
                 )
             ],
-            pl.lit(False),  # neutral element
+            pl.lit(False),
         )
 
         # Apply the filter
