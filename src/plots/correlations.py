@@ -146,6 +146,7 @@ def plot_correlations_by_trial(
     width: int = 800,
     height: int = 400,
     point_size: int = 60,
+    y_domain: tuple = (-1, 1),
 ):
     """
     Create an Altair chart showing correlations by trial, grouped by participant
@@ -168,6 +169,8 @@ def plot_correlations_by_trial(
         Chart height in pixels
     point_size : int
         Size of scatter points
+    y_domain : tuple
+        (min, max) values for y-axis domain
 
     Returns:
     --------
@@ -175,54 +178,36 @@ def plot_correlations_by_trial(
         Scatter plot with connected lines showing trial correlations by participant
     """
 
-    # Auto-generate title if not provided
     if title is None:
         title = (
             f"{correlation_column.replace('_', ' ').title()} by Trial and Participant"
         )
 
-    plot = (
-        alt.Chart(df)
-        .mark_line(opacity=0.3)
-        .encode(
-            x=alt.X(f"{trial_column}:Q", axis=alt.Axis(title="Trial Number")),
-            y=alt.Y(
-                f"{correlation_column}:Q",
-                axis=alt.Axis(title="Correlation"),
-            ),
-            color=alt.Color(
-                f"{participant_column}:N", legend=alt.Legend(title="Participant ID")
-            ),
-        )
+    base = alt.Chart(df).encode(
+        x=alt.X(f"{trial_column}:Q", axis=alt.Axis(title="Trial Number")),
+        y=alt.Y(
+            f"{correlation_column}:Q",
+            axis=alt.Axis(title="Correlation"),
+            scale=alt.Scale(domain=y_domain),
+        ),
+        color=alt.Color(
+            f"{participant_column}:N", legend=alt.Legend(title="Participant ID")
+        ),
     )
 
-    # Add points on top of lines
-    points = (
-        alt.Chart(df)
-        .mark_circle(size=point_size)
-        .encode(
-            x=f"{trial_column}:Q",
-            y=f"{correlation_column}:Q",
-            color=f"{participant_column}:N",
-            tooltip=[
-                f"{participant_column}:N",
-                f"{trial_column}:Q",
-                alt.Tooltip(f"{correlation_column}:Q", format=".3f"),
-            ],
-        )
+    lines = base.mark_line(opacity=0.5)
+
+    points = base.mark_circle(size=point_size).encode(
+        tooltip=[
+            f"{participant_column}:N",
+            f"{trial_column}:Q",
+            alt.Tooltip(f"{correlation_column}:Q", format=".3f"),
+        ]
     )
 
-    # Combine layers
-    combined_plot = (
-        (plot + points)
-        .properties(width=width, height=height, title=title)
-        .configure_axis(grid=True, gridColor="#ededed")
-        .configure_view(strokeWidth=0)
-        .configure_title(fontSize=16, anchor="middle")
-        .interactive()  # Makes the plot interactive for zooming/panning
-    )
+    chart_config = _get_base_chart_config(width, height, title)
 
-    return combined_plot
+    return (lines + points).properties(**chart_config).interactive()
 
 
 def plot_correlations_by_participant(
@@ -230,7 +215,7 @@ def plot_correlations_by_participant(
     correlation_column: str,
     participant_column: str = "participant_id",
     title: str = None,
-    width: int = 600,
+    width: int = 800,
     height: int = 400,
     y_domain: tuple = (-1, 1),
 ):
@@ -260,7 +245,6 @@ def plot_correlations_by_participant(
         Combined error bar and point chart
     """
 
-    # Auto-generate title if not provided
     if title is None:
         title = f"Mean {correlation_column} Correlations by Participant with 95% CI"
 
@@ -269,41 +253,38 @@ def plot_correlations_by_participant(
     ci_lower = f"{participant_column}_{correlation_column}_ci_lower"
     ci_upper = f"{participant_column}_{correlation_column}_ci_upper"
 
-    # Create error bars
-    error_bars = (
-        alt.Chart(df)
-        .mark_rule()
-        .encode(
-            x=alt.X(f"{participant_column}:O", axis=alt.Axis(title="Participant ID")),
-            y=alt.Y(
-                f"{ci_lower}:Q",
-                scale=alt.Scale(domain=y_domain),
-                axis=alt.Axis(
-                    title=correlation_column.replace("_", " ").title() + " Correlation"
-                ),
+    base = alt.Chart(df).encode(
+        x=alt.X(f"{participant_column}:O", axis=alt.Axis(title="Participant ID")),
+        y=alt.Y(
+            f"{ci_lower}:Q",
+            scale=alt.Scale(domain=y_domain),
+            axis=alt.Axis(
+                title=correlation_column.replace("_", " ").title() + " Correlation"
             ),
-            y2=f"{ci_upper}:Q",
-        )
+        ),
     )
 
-    # Create scatter points
-    points = (
-        alt.Chart(df)
-        .mark_circle(size=100, color="#1f77b4")
-        .encode(x=f"{participant_column}:O", y=f"{mean_col}:Q")
-    )
+    error_bars = base.mark_rule().encode(y2=f"{ci_upper}:Q")
+    points = base.mark_circle(size=100, color="#1f77b4").encode(y=f"{mean_col}:Q")
 
-    # Combine layers
-    plot = (
-        (error_bars + points)
-        .properties(
-            width=width,
-            height=height,
-            title=title,
-        )
-        .configure_axis(grid=True, gridColor="#ededed")
-        .configure_view(strokeWidth=0)
-        .configure_title(fontSize=16, anchor="middle")
-    )
+    chart_config = _get_base_chart_config(width, height, title)
 
-    return plot
+    return (error_bars + points).properties(**chart_config)
+
+
+def _get_base_chart_config(
+    width: int,
+    height: int,
+    title: str,
+):
+    """Helper function to provide consistent chart configuration"""
+    return {
+        "width": width,
+        "height": height,
+        "title": title,
+        "config": {
+            "axis": {"grid": True, "gridColor": "#ededed"},
+            "view": {"strokeWidth": 0},
+            "title": {"fontSize": 16, "anchor": "middle"},
+        },
+    }
