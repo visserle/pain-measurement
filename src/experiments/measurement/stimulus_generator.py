@@ -425,6 +425,7 @@ class StimulusGenerator:
             "decreasing_intervals": self.decreasing_intervals_idx,
             "major_decreasing_intervals": self.major_decreasing_intervals_idx,
             "increasing_intervals": self.increasing_intervals_idx,
+            "strictly_increasing_intervals": self.strictly_increasing_intervals_idx,
             "plateau_intervals": self.plateau_intervals_idx,
             "prolonged_minima_intervals": self.prolonged_minima_intervals_idx,
         }
@@ -508,6 +509,32 @@ class StimulusGenerator:
                     if start <= plateau_start < end:
                         end = max(end, plateau_end)
 
+                intervals.append((int(start), int(end)))
+
+        return intervals
+
+    @property
+    def strictly_increasing_intervals_idx(self) -> list[tuple[int, int]]:
+        """
+        Get the start and end indices of strictly increasing half cycles for labeling.
+
+        A strictly increasing interval is defined as an increasing interval that doesn't
+        contain any plateaus. The method filters out increasing intervals that overlap
+        with plateau intervals.
+        """
+        intervals = []
+        increasing_intervals = self.increasing_intervals_idx
+        plateau_intervals = self.plateau_intervals_idx
+
+        for start, end in increasing_intervals:
+            has_plateau = False
+            for plateau_start, plateau_end in plateau_intervals:
+                # Check if plateau overlaps with the increasing interval
+                if not (end <= plateau_start or start >= plateau_end):
+                    has_plateau = True
+                    break
+
+            if not has_plateau:
                 intervals.append((int(start), int(end)))
 
         return intervals
