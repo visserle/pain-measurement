@@ -10,7 +10,7 @@ import polars as pl
 from polars import col
 from scipy import signal
 
-from src.features.filtering import filter_butterworth
+from src.features.filtering import butterworth_filter
 from src.features.resampling import downsample
 from src.features.transforming import map_trials
 
@@ -36,7 +36,7 @@ def filter_eeg(
 ) -> pl.DataFrame:
     return df.with_columns(
         col(channel_columns).map_batches(
-            lambda x: filter_butterworth(
+            lambda x: butterworth_filter(
                 x.to_numpy(),
                 sample_rate,
                 lowcut=1,
