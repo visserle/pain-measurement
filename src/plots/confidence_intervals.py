@@ -4,9 +4,9 @@ from icecream import ic
 from polars import col
 
 from src.data.database_manager import DatabaseManager
-from src.features.resampling import add_timestamp_μs_column
 from src.features.scaling import scale_min_max, scale_robust_standard, scale_standard
 from src.features.transforming import merge_dfs
+from src.features.utils import add_timestamp_μs_column
 
 BIN_SIZE = 1  # seconds
 CONFIDENCE_LEVEL = 1.96  # 95% confidence interval

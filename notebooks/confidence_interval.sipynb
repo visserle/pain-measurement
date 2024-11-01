@@ -155,7 +155,7 @@
                 "\n",
                 "from src.data.database_manager import DatabaseManager\n",
                 "from src.data.quality_checks import check_sample_rate\n",
-                "from src.features.resampling import add_timestamp_μs_column\n",
+                "from src.features.utils import add_timestamp_μs_column\n",
                 "from src.features.scaling import scale_min_max\n",
                 "from src.features.transforming import map_trials, merge_dfs\n",
                 "from src.log_config import configure_logging\n",
