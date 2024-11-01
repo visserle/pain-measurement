@@ -1,6 +1,5 @@
 """
-Dataframe functions for each step in the pipeline.
-Results will be inserted into the database.
+Dataframe functions that result in database tables.
 """
 
 import logging
@@ -228,4 +227,5 @@ def merge_feature_data_dfs(
     df = merge_dfs(dfs)
     df = interpolate_and_fill_nulls(df)
     # TODO: add final downsample
+    df = add_labels(df)  # maybe here, not tested yet TODO
     return df
