@@ -15,7 +15,7 @@ import scipy.signal as signal
 from polars import col
 
 from src.features.filtering import butterworth_filter
-from src.features.resampling import downsample
+from src.features.resampling import decimate
 from src.features.transforming import interpolate_and_fill_nulls, map_trials
 
 SAMPLE_RATE = 60
