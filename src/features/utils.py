@@ -1,4 +1,5 @@
 import polars as pl
+from polars import col
 
 
 def to_describe(
@@ -29,3 +30,21 @@ def to_describe(
         pl.col(col).quantile(0.75).alias(f"{prefix}75%"),
         pl.col(col).max().alias(f"{prefix}max"),
     ]
+
+
+def add_time_column(
+    df: pl.DataFrame,
+    time_column: str = "timestamp",
+    time_unit: str = "ms",
+    new_column_name: str = "time",
+) -> pl.DataFrame:
+    """
+    Create a new column that contains the time from Timestamp in ms.
+
+    Note: This datatype is not fully supported in Polars and DuckDB yet.
+    Use with caution. https://github.com/pola-rs/polars/issues/13560
+    """
+    df = df.with_columns(
+        col(time_column).cast(pl.Duration(time_unit=time_unit)).alias(new_column_name)
+    )
+    return df
