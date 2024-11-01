@@ -144,7 +144,7 @@ class StimulusGenerator:
 
     def _get_desired_length_random_half_cycles(
         self,
-        modify_by,
+        modify_by: int,
     ) -> int:
         """
         Get the desired length for the random half cycles.
@@ -387,8 +387,8 @@ class StimulusGenerator:
 
     def _extend_stimulus_at_indices(
         self,
-        indices,
-        duration,
+        indices: np.ndarray,
+        duration: int,
     ) -> np.ndarray:
         """Extend the stimulus at specific indices by repeating their values."""
         y_new = np.array([], dtype=self.y.dtype)
@@ -430,7 +430,7 @@ class StimulusGenerator:
             "prolonged_minima_intervals": self.prolonged_minima_intervals_idx,
         }
 
-        def convert_interval(interval):
+        def convert_interval(interval: tuple[int, int]) -> tuple[int, int]:
             return tuple(int(t * 1000 / self.sample_rate) for t in interval)
 
         # Convert indexes to milliseconds
