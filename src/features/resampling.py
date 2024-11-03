@@ -46,3 +46,33 @@ def decimate(
             return column.gather_every(factor)
 
     return df.select(pl.all().map_batches(decimate_column))
+
+
+@map_trials
+def interpolate_and_fill_nulls(
+    df: pl.DataFrame,
+    columns: list[str] | None = None,
+    time_column: str = "timestamp",
+) -> pl.DataFrame:
+    """
+    Linearly interpolate and fill null values of float columns in a DataFrame.
+    The interpolation is done based on the time column.
+
+    Args:
+        df (pl.DataFrame): The DataFrame to interpolate
+        columns (list[str], optional): The columns to interpolate.
+            If None, all float columns are interpolated. Defaults to None.
+        time_column (str, optional): The time column. Defaults to "timestamp".
+    """
+    # Note that maybe using NaN as null value is better as NaN is a float in Polars
+    # and we wouldn't need a selector
+    # However, this would need a rewrite and testing of some parts of the pipeline
+    selected_columns = columns or df.select(pl.selectors.by_dtype(pl.Float64)).columns
+    return df.with_columns(
+        [col(column).interpolate_by(col("timestamp")) for column in selected_columns]
+    ).with_columns(
+        [
+            col(column).fill_null(strategy="forward").fill_null(strategy="backward")
+            for column in selected_columns
+        ]
+    )

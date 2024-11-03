@@ -15,8 +15,9 @@ from src.features.face import feature_face, preprocess_face
 from src.features.labels import add_labels
 from src.features.ppg import feature_ppg, preprocess_ppg
 from src.features.pupil import feature_pupil, preprocess_pupil
+from src.features.resampling import interpolate_and_fill_nulls
 from src.features.stimulus import feature_stimulus, preprocess_stimulus
-from src.features.transforming import interpolate_and_fill_nulls, merge_dfs
+from src.features.transforming import merge_dfs
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 

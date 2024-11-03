@@ -1,5 +1,3 @@
-# TODO: compare interpolate and interpolate_by (see below)
-
 import logging
 from functools import reduce, wraps
 
@@ -92,60 +90,3 @@ def merge_dfs(
         dfs,
     )
     return df
-
-
-@map_trials
-def interpolate_and_fill_nulls(
-    df: pl.DataFrame,
-    columns: list[str] | None = None,
-    time_column: str = "timestamp",
-) -> pl.DataFrame:
-    """
-    Linearly interpolate and fill null values of float columns in a DataFrame.
-    The interpolation is done based on the time column.
-
-    Args:
-        df (pl.DataFrame): The DataFrame to interpolate
-        columns (list[str], optional): The columns to interpolate.
-            If None, all float columns are interpolated. Defaults to None.
-        time_column (str, optional): The time column. Defaults to "timestamp".
-    """
-    # Note that maybe using NaN as null value is better as NaN is a float in Polars
-    # (plus using fill_nan instead of fill_null)
-    # However, this would need a rewrite and testing of the whole pipeline
-    selected_columns = columns or df.select(pl.selectors.by_dtype(pl.Float64)).columns
-    return (
-        df.with_columns(
-            [
-                col(column).interpolate_by(col("timestamp"))
-                for column in selected_columns
-            ]
-        )
-        .fill_null(strategy="forward")
-        .fill_null(strategy="backward")
-    )
-
-
-"""
-NOTE: NEW: scikit-learn’s transformers now support polars output with the set_output API.
-
-import polars as pl
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.compose import ColumnTransformer
-
-df = pl.DataFrame(
-    {"height": [120, 140, 150, 110, 100], "pet": ["dog", "cat", "dog", "cat", "cat"]}
-)
-preprocessor = ColumnTransformer(
-    [
-        ("numerical", StandardScaler(), ["height"]),
-        ("categorical", OneHotEncoder(sparse_output=False), ["pet"]),
-    ],
-    verbose_feature_names_out=False,
-)
-preprocessor.set_output(transform="polars")
-
-df_out = preprocessor.fit_transform(df)
-df_out
-"""
