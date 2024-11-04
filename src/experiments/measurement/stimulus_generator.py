@@ -1,10 +1,3 @@
-# NOTE: There is one small detail I missed that would have made the analysis
-# slightly easier: The resulting curve should have been normalized to [-1, 1] for
-# smooth maximum values as determined by the calibration. However, the resulting
-# difference is negligible (for a max value of 47.75 °C, the mean of the resulting max
-# values over all seeds is 47.74 °C). There is no difference in the mean of the min
-# values.
-
 import numpy as np
 import scipy
 
@@ -56,6 +49,13 @@ class StimulusGenerator:
 
     Note that the term `period` refers to only 1 pi in this class.
     """
+
+    # NOTE: There is one small detail I missed that would have made the analysis
+    # slightly easier: The resulting curve should have been normalized to [-1, 1] for
+    # smooth maximum values as determined by the calibration. However, the resulting
+    # difference is negligible (for a max value of 47.75 °C, the mean of the resulting max
+    # values over all seeds is 47.74 °C). There is no difference in the mean of the min
+    # values.
 
     def __init__(
         self,
@@ -567,7 +567,7 @@ class StimulusGenerator:
     @property
     def prolonged_minima_intervals_idx(self) -> list[tuple[int, int]]:
         """Get the start and end indices of the prolonged minima for labeling."""
-        # No need to account for other extensions as they are added last
+        # No need to account for other extensions as prolonged minima are added last
         intervals = []
         for extension in self._extensions:
             if extension[1] == self.prolonged_minima_duration * self.sample_rate:
