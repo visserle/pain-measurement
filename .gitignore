@@ -1,4 +1,4 @@
-# Only share when anonymized:
+# Only share once anonymized:
 src/data/invalid_trials.*
 
 # Log and data files
