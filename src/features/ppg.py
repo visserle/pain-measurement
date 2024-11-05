@@ -71,11 +71,11 @@ def remove_heartrate_nulls(
         .when(pl.col("ppg_heartrate") == -1)
         .then(None)
         .otherwise(pl.col("ppg_heartrate"))
-        .alias("ppg_heartrate")
+        .alias("heartrate")
     )
     # note that the interpolate function already has the map_trials decorator
     # so we don't need to add it at the top of this function
-    return interpolate_and_fill_nulls(df, ["ppg_heartrate"])
+    return interpolate_and_fill_nulls(df, ["heartrate"])
 
 
 @map_trials
@@ -85,7 +85,7 @@ def low_pass_filter_ppg(
     lowcut: float = 0,
     highcut: float = 0.8,
     order: int = 2,
-    pupil_columns: list[str] = ["ppg_heartrate"],
+    pupil_columns: list[str] = ["heartrate"],
 ) -> pl.DataFrame:
     return df.with_columns(
         pl.col(
