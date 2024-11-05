@@ -4,6 +4,8 @@ import polars as pl
 
 from src.features.scaling import scale_percent_to_decimal
 
+SAMPLE_RATE = 10  # rounded up from 9.76 (0.76% coefficient of variation between trials)
+
 
 def preprocess_face(df: pl.DataFrame) -> pl.DataFrame:
     df = scale_face(df)
