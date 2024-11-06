@@ -187,17 +187,18 @@ def create_preprocess_data_df(
     name: str,
     df: pl.DataFrame,
 ) -> pl.DataFrame:
-    if "Stimulus" in name:
+    name = name.lower()
+    if "stimulus" in name:
         return preprocess_stimulus(df)
-    elif "EDA" in name:
+    elif "eda" in name:
         return preprocess_eda(df)
-    elif "EEG" in name:
+    elif "eeg" in name:
         return preprocess_eeg(df)
-    elif "PPG" in name:
+    elif "ppg" in name:
         return preprocess_ppg(df)
-    elif "Pupil" in name:
+    elif "pupil" in name:
         return preprocess_pupil(df)
-    elif "Face" in name:
+    elif "face" in name:
         return preprocess_face(df)
 
 
@@ -205,17 +206,18 @@ def create_feature_data_df(
     name: str,
     df: pl.DataFrame,
 ) -> dict[str, pl.DataFrame]:
-    if "Stimulus" in name:
+    name = name.lower()
+    if "stimulus" in name:
         return feature_stimulus(df)
-    elif "EDA" in name:
+    elif "eda" in name:
         return feature_eda(df)
-    elif "EEG" in name:
+    elif "eeg" in name:
         return feature_eeg(df)
-    elif "PPG" in name:
+    elif "ppg" in name:
         return feature_ppg(df)
-    elif "Pupil" in name:
+    elif "pupil" in name:
         return feature_pupil(df)
-    elif "Face" in name:
+    elif "face" in name:
         return feature_face(df)
 
 
