@@ -115,12 +115,12 @@ class DatabaseManager:
         df = self.execute(f"SELECT * FROM {table_name}").pl()
         if remove_invalid_trials:
             invalid_trials = DataConfig.load_invalid_trials()
-            # Add trial_id to invalid_trials for easier comparison
-            invalid_trials = invalid_trials.with_columns(
-                trial_id=col("trial_number") + col("participant_id") * 12 - 12
-            )
+            # Note that not every participant has 12 trials, a naive trial_id filter
+            # would remove the wrong trials
             df = df.filter(
-                ~col("trial_id").is_in(invalid_trials.get_column("trial_id"))
+                ~pl.struct(["participant_id", "trial_number"]).is_in(
+                    invalid_trials.select(["participant_id", "trial_number"]).unique()
+                )
             )
 
         return df
