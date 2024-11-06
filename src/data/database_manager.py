@@ -1,8 +1,4 @@
 # TODO:
-# - check if modality already exists in the database before preprocessing it
-# - add labels function for feature data
-# - remove duplcate timestamps from shimmer sensor data (maybe this also exists in eeg data)
-# - remove uninformative columns from the database
 # - add database for quality control (e.g. if the number of rows in the raw data is the same as in the preprocess data)
 # - performance https://docs.pola.rs/user-guide/expressions/user-defined-functions/ (maybe)
 # - add participant data to the database
@@ -17,6 +13,7 @@ import logging
 import duckdb
 import polars as pl
 from icecream import ic
+from polars import col
 
 from src.data.data_config import DataConfig
 from src.data.data_processing import (
@@ -28,7 +25,6 @@ from src.data.data_processing import (
 )
 from src.data.database_schema import DatabaseSchema
 from src.data.imotions_data import load_imotions_data_df
-from src.features.labels import add_labels
 
 MODALITIES = DataConfig.MODALITIES
 NUM_PARTICIPANTS = DataConfig.NUM_PARTICIPANTS
@@ -116,12 +112,27 @@ class DatabaseManager:
         remove_invalid_trials: bool = True,
     ) -> pl.DataFrame:
         """Return the data from a table as a Polars DataFrame."""
+        df = self.execute(f"SELECT * FROM {table_name}").pl()
         if remove_invalid_trials:
-            pass  # TODO
-        return self.execute(f"SELECT * FROM {table_name}").pl()
+            invalid_trials = DataConfig.load_invalid_trials()
+            # Add trial_id to invalid_trials for easier comparison
+            invalid_trials = invalid_trials.with_columns(
+                trial_id=col("trial_number") + col("participant_id") * 12 - 12
+            )
+            df = df.filter(
+                ~col("trial_id").is_in(invalid_trials.get_column("trial_id"))
+            )
 
-    def get_final_feature_data(self) -> pl.DataFrame:
-        dfs = [self.get_table("Feature_" + modality) for modality in MODALITIES]
+        return df
+
+    def get_final_feature_data(
+        self,
+        remove_invalid_trials: bool,
+    ) -> pl.DataFrame:
+        dfs = [
+            self.get_table("Feature_" + modality, remove_invalid_trials)
+            for modality in MODALITIES
+        ]
         return merge_feature_data_dfs(dfs)
 
     def table_exists(
@@ -224,7 +235,7 @@ class DatabaseManager:
 
 
 def main():
-    # MODALITIES = ["EEG"]
+    MODALITIES = ["PPG"]
     with DatabaseManager() as db:
         # Raw data
         for participant_id in range(1, NUM_PARTICIPANTS + 1):
@@ -244,28 +255,28 @@ def main():
             logger.debug(f"Raw data for participant {participant_id} inserted.")
         logger.info("Raw data inserted.")
 
-        # # Preprocessed data
-        # # no check for existing data as it will be overwritten
-        # for modality in MODALITIES:
-        #     table_name = "Preprocess_" + modality
-        #     df = db.get_table("Raw_" + modality)
-        #     df = create_preprocess_data_df(table_name, df)
-        #     db.insert_preprocess_data(table_name, df)
-        # logger.info("Data preprocessed.")
+        # Preprocessed data
+        # no check for existing data as it will be overwritten
+        for modality in MODALITIES:
+            table_name = "Preprocess_" + modality
+            df = db.get_table("Raw_" + modality, remove_invalid_trials=False)
+            df = create_preprocess_data_df(table_name, df)
+            db.insert_preprocess_data(table_name, df)
+        logger.info("Data preprocessed.")
 
-        # # Feature-engineered data
-        # for modality in MODALITIES:
-        #     table_name = f"Feature_{modality}"
-        #     df = db.get_table(f"Preprocess_{modality}")
-        #     df = create_feature_data_df(table_name, df)
-        #     db.insert_feature_data(table_name, df)
-        # logger.info("Data feature-engineered.")
+        # Feature-engineered data
+        for modality in MODALITIES:
+            table_name = f"Feature_{modality}"
+            df = db.get_table(f"Preprocess_{modality}", remove_invalid_trials=False)
+            df = create_feature_data_df(table_name, df)
+            db.insert_feature_data(table_name, df)
+        logger.info("Data feature-engineered.")
 
         # Add labels
         # TODO
         # add final merge of all feature data and label at the *very* end
         # using a separate function for this
-        # something like this:
+        # something like this for collecting all feature data:
         # query = """
         # FROM sqlite_schema
         # select tbl_name
@@ -274,8 +285,9 @@ def main():
         #     tables = db.execute(query).pl()
         # t = tables.get_column("tbl_name").to_list()
         # list(filter(lambda x: x.startswith("Feature"), t))
+        # -> the df function for label adding should be in data_processing.py
 
-        logger.info("Database processing complete.")
+        logger.info("Data pipeline completed.")
 
 
 if __name__ == "__main__":
