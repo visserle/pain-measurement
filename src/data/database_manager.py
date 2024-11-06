@@ -52,7 +52,7 @@ class DatabaseManager:
     with db:
         df = db.execute("SELECT * FROM Trials").pl()  # .pl() for Polars DataFrame
         # or alternatively
-        df = db.get_table("Trials", remove_invalid_trials=False)
+        df = db.get_table("Trials", exclude_invalid_trials=False)
     df.head()
     ```
     """
@@ -109,12 +109,12 @@ class DatabaseManager:
     def get_table(
         self,
         table_name: str,
-        remove_invalid_trials: bool = True,
+        exclude_invalid_trials: bool = True,
     ) -> pl.DataFrame:
         """Return the data from a table as a Polars DataFrame."""
         # TODO: make it more efficient by filtering out invalid trials in the query
         df = self.execute(f"SELECT * FROM {table_name}").pl()
-        if remove_invalid_trials:
+        if exclude_invalid_trials:
             invalid_trials = DataConfig.load_invalid_trials()
             # Note that not every participant has 12 trials, a naive trial_id filter
             # would remove the wrong trials
@@ -128,10 +128,10 @@ class DatabaseManager:
 
     def get_final_feature_data(
         self,
-        remove_invalid_trials: bool,
+        exclude_invalid_trials: bool,
     ) -> pl.DataFrame:
         dfs = [
-            self.get_table("Feature_" + modality, remove_invalid_trials)
+            self.get_table("Feature_" + modality, exclude_invalid_trials)
             for modality in MODALITIES
         ]
         return merge_feature_data_dfs(dfs)
@@ -260,7 +260,7 @@ def main():
         # no check for existing data as it will be overwritten
         for modality in MODALITIES:
             table_name = "Preprocess_" + modality
-            df = db.get_table("Raw_" + modality, remove_invalid_trials=False)
+            df = db.get_table("Raw_" + modality, exclude_invalid_trials=False)
             df = create_preprocess_data_df(table_name, df)
             db.insert_preprocess_data(table_name, df)
         logger.info("Data preprocessed.")
@@ -268,7 +268,7 @@ def main():
         # Feature-engineered data
         for modality in MODALITIES:
             table_name = f"Feature_{modality}"
-            df = db.get_table(f"Preprocess_{modality}", remove_invalid_trials=False)
+            df = db.get_table(f"Preprocess_{modality}", exclude_invalid_trials=False)
             df = create_feature_data_df(table_name, df)
             db.insert_feature_data(table_name, df)
         logger.info("Data feature-engineered.")
