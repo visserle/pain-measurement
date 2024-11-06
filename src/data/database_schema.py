@@ -57,8 +57,9 @@ class DatabaseSchema:
     ) -> None:
         # check for existing table using custom function to avoid df creation
         if not DatabaseSchema.table_exists(conn, "Seeds"):
-            # NOTE: we directly load the seed data into the table here
-            # this is an exception to the usual pattern to make life easier
+            # NOTE: we directly load the seed data into the table here this is an
+            # exception to the usual pattern to make life easier and the code more
+            # efficient
             seeds_data = create_seeds_df()  # noqa : used in the string below
             conn.execute("CREATE TABLE Seeds AS SELECT * FROM seeds_data")
 

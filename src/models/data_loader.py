@@ -30,7 +30,7 @@ def transform_df_to_arrays(
         - groups: numpy array of groups (if group_column provided)
 
     Note:
-        Can be easily plotted using ipywidgets with the following code:
+        X can be easily plotted using ipywidgets with the following code:
         ```python
         import ipywidgets
 

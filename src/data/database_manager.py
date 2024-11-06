@@ -112,6 +112,7 @@ class DatabaseManager:
         remove_invalid_trials: bool = True,
     ) -> pl.DataFrame:
         """Return the data from a table as a Polars DataFrame."""
+        # TODO: make it more efficient by filtering out invalid trials in the query
         df = self.execute(f"SELECT * FROM {table_name}").pl()
         if remove_invalid_trials:
             invalid_trials = DataConfig.load_invalid_trials()

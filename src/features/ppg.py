@@ -1,8 +1,4 @@
-# TODO
-# maybe we first should do:
-# - smooth the signal
-# - resample with equidistant timestamps
-# NOTE: this approach is non-causal, i.e. it uses future data to smooth the signal. TODO
+# NOTE: neurokit approach is non-causal, i.e. it uses future data to calculate the signal. TODO
 # Note that the device intern signal processing seems to be causal (ppg_heartrate from
 # the raw table)
 

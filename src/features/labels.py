@@ -43,6 +43,7 @@ def process_labels(df: pl.DataFrame) -> pl.DataFrame:
             lambda group: label_intervals(group, labels)
         )
     ).sort("trial_id", "timestamp")
+    # Give each interval a unique, consecutive number for each label
     df = number_intervals(df, labels)
     return df
 

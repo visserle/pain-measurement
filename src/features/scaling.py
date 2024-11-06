@@ -1,4 +1,6 @@
-# TODO: more explicit would be to use with column names instead of exclude additional columns
+# NOTE: explicit is better than implicit -> the scaling functions could potentially
+# improved by using column names directly instead of the exclude additional columns
+# keyword argument
 
 
 import polars as pl
@@ -12,6 +14,7 @@ EXCLUDE_COLUMNS = [
     "stimulus_seed",
     "skin_area",
     "timestamp",
+    "normalized_timestamp",
     "samplenumber",
 ]
 
