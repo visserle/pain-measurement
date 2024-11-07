@@ -13,6 +13,7 @@ Furthermore, there are additional tables for the experiment metadata, calibratio
 - `database_schema.py` defines the schema for the database.
 - `database_manager.py` is for insertig data into the database and extracting data from the database.
 - `data_processing.py` coordinates the data processing by creating dataframes that are ready for insertion into the database as tables. For time series data tables (Stimulus, EEG, EDA, PPG, pupillometry, facial expressions) it uses the functions from the feature module (feature modules are decoupled from the database and can be used independently).
+- `data_config.py` contains very basic configuration parameters for the data pipeline and paths to the different data sources.
 
 ## Further Details
 
