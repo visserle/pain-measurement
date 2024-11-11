@@ -31,34 +31,3 @@ def to_describe(
         pl.col(col).max().alias(f"{prefix}max"),
     ]
 
-
-def add_time_column(
-    df: pl.DataFrame,
-    time_column: str = "timestamp",
-    time_unit: str = "ms",
-    new_column_name: str = "time",
-) -> pl.DataFrame:
-    """
-    Create a new column that contains the time from Timestamp in ms.
-
-    Note: This datatype is not fully supported in Polars and DuckDB yet.
-    Use with caution. https://github.com/pola-rs/polars/issues/13560
-    """
-    df = df.with_columns(
-        col(time_column).cast(pl.Duration(time_unit=time_unit)).alias(new_column_name)
-    )
-    return df
-
-
-def add_timestamp_µs_column(
-    df: pl.DataFrame,
-    time_column: str = "timestamp",
-) -> pl.DataFrame:
-    """
-    Create a new column that contains the timestamp in microseconds (µs).
-
-    Casts the datatype to Int64 which allow group_by_dynamic operations.
-    """
-    return df.with_columns(
-        (col(time_column) * 1000).cast(pl.Int64).alias(time_column + "_µs")
-    )
