@@ -1,0 +1,1 @@
+Floats are exclusively used for time series data.
