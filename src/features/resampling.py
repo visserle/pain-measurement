@@ -68,8 +68,9 @@ def interpolate_and_fill_nulls(
     # and we wouldn't need a selector
     # However, this would need a rewrite and testing of some parts of the pipeline
     selected_columns = columns or df.select(pl.selectors.by_dtype(pl.Float64)).columns
+
     return df.with_columns(
-        [col(column).interpolate_by(col("timestamp")) for column in selected_columns]
+        [col(column).interpolate_by(col(time_column)) for column in selected_columns]
     ).with_columns(
         [
             col(column).fill_null(strategy="forward").fill_null(strategy="backward")
