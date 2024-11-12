@@ -83,6 +83,10 @@ def aggregate_correlations_fisher_z(
     polars.DataFrame
         DataFrame with mean correlations and optionally confidence intervals
     """
+    # Remove nan correlations (can happen if one variable is constant)
+    # This way we don't lose a whole group if one correlation is nan
+    df = df.filter(col(correlation_column) != float("nan"))
+
     result = (
         df.with_columns(
             [
