@@ -4,9 +4,9 @@ from icecream import ic
 from polars import col
 
 from src.data.database_manager import DatabaseManager
+from src.features.resampling import add_timestamp_μs_column
 from src.features.scaling import scale_min_max, scale_robust_standard, scale_standard
 from src.features.transforming import merge_dfs
-from src.features.utils import add_timestamp_μs_column
 
 BIN_SIZE = 1  # seconds
 CONFIDENCE_LEVEL = 1.96  # 95% confidence interval
@@ -24,6 +24,7 @@ def plot_confidence_intervals(
     modality: str,
     signals: list[str] = None,
     pipeline_step: str = "feature",
+    exclude_invalid_trials: bool = True,
 ) -> pl.DataFrame:
     """
     Plot confidence intervals for the given modality for all participants over one
@@ -38,7 +39,9 @@ def plot_confidence_intervals(
     # implement)
     signals = signals or MODALITY_MAP[modality]
     # As we plot for each stimulus seed, we need additional metadata
-    df = load_modality_with_trial_metadata(modality, pipeline_step)
+    df = load_modality_with_trial_metadata(
+        modality, pipeline_step, exclude_invalid_trials
+    )
 
     # Scale data for better visualization (mapped over trial_id)
     df = scale_min_max(
@@ -84,11 +87,14 @@ def plot_confidence_intervals(
 def load_modality_with_trial_metadata(
     modality: str,
     pipeline_step: str,
+    exclude_invalid_trials: bool = True,
 ) -> pl.DataFrame:
     with DatabaseManager() as db:
         # TODO: exclude invalid participants
-        df = db.get_table(pipeline_step + "_" + modality)
-        trials = db.get_table("Trials")  # get trials for stimulus seeds
+        df = db.get_table(pipeline_step + "_" + modality, exclude_invalid_trials)
+        trials = db.get_table(
+            "Trials", exclude_invalid_trials
+        )  # get trials for stimulus seeds
     return merge_dfs(
         [df, trials],
         on=["participant_id", "trial_id", "trial_number"],
