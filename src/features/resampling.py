@@ -79,6 +79,45 @@ def interpolate_and_fill_nulls(
     )
 
 
+@map_trials
+def resample_to_equidistant_time_steps(
+    df: pl.DataFrame,
+    time_column: str = "timestamp",
+    group_by: str = "trial_id",
+):
+    """
+    Resample the DataFrame to equidistant time steps with a resolution of 1 ms.
+    Note that this rounds every timestamp to the nearest millisecond.
+    For a lower resolution, use the gather_every function to get back to the
+    original sampling rate.
+
+    For sanity checks, one could use the following code snippet:
+    ```
+    (
+        df.with_columns(col("timestamp_").diff().over("trial_id").alias("diff"))
+        .get_column("diff")
+        .mean(),
+        df.with_columns(col("timestamp").diff().over("trial_id").alias("diff"))
+        .get_column("diff")
+        .std(),
+    )
+    ```
+    """
+    df = df.with_columns(col("timestamp").round(0).alias("timestamp").cast(pl.Int64))
+    df = df.upsample(
+        time_column="timestamp",
+        every="1i",  # otherwise we would lose data
+        maintain_order=True,
+        group_by="trial_id",
+    ).with_columns(
+        # do not lose crucial information
+        pl.col(pl.selectors.INTEGER_DTYPES).forward_fill()
+    )
+
+    df = interpolate_and_fill_nulls(df, time_column="timestamp")
+    return df
+
+
 def add_time_column(
     df: pl.DataFrame,
     time_column: str = "timestamp",
