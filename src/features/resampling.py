@@ -80,16 +80,17 @@ def interpolate_and_fill_nulls(
 
 
 @map_trials
-def resample_to_equidistant_time_steps(
+def resample_to_equidistant_ms(
     df: pl.DataFrame,
     time_column: str = "timestamp",
     group_by: str = "trial_id",
+    gather_every: int | None = None,
 ):
     """
     Resample the DataFrame to equidistant time steps with a resolution of 1 ms.
     Note that this rounds every timestamp to the nearest millisecond.
     For a lower resolution, use the gather_every function to get back to the
-    original sampling rate.
+    original sampling rate. Use decimate to downsample the data.
 
     For sanity checks, one could use the following code snippet:
     ```
@@ -115,6 +116,8 @@ def resample_to_equidistant_time_steps(
     )
 
     df = interpolate_and_fill_nulls(df, time_column="timestamp")
+    if gather_every:
+        df = df.gather_every(gather_every)
     return df
 
 

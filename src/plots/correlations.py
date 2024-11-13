@@ -19,9 +19,13 @@ Note that the correlation of time series violates the assumption of independence
 and can lead to spurious results. Use with caution.
 """
 
+import logging
+
 import altair as alt
 import polars as pl
 from polars import col
+
+logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
 def calculate_correlations_by_trial(
@@ -85,6 +89,9 @@ def aggregate_correlations_fisher_z(
     """
     # Remove nan correlations (can happen if one variable is constant)
     # This way we don't lose a whole group if one correlation is nan
+    if df.filter(col(correlation_column) == float("nan")).height() > 0:
+        logger.debug("Removing NaN correlations")
+
     df = df.filter(col(correlation_column) != float("nan"))
 
     result = (
