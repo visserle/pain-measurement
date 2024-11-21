@@ -89,7 +89,7 @@ def aggregate_correlations_fisher_z(
     """
     # Remove nan correlations (can happen if one variable is constant)
     # This way we don't lose a whole group if one correlation is nan
-    if df.filter(col(correlation_column) == float("nan")).height() > 0:
+    if df.filter(col(correlation_column) == float("nan")).height > 0:
         logger.debug("Removing NaN correlations")
 
     df = df.filter(col(correlation_column) != float("nan"))
