@@ -16,6 +16,19 @@ class DataConfig:
     IMOTIONS_DATA_PATH = Path("data/imotions")
     IMOTIONS_DATA_CONFIG_FILE = Path("src/data/imotions_data_config.yaml")
 
+    QUESTIONNAIRES = [
+        # same as in questionnaires/app.py
+        "general",
+        "bdi-ii",
+        "phq-15",
+        "panas",
+        "pcs",
+        "pvaq",
+        "stai-t-10",
+        "maas",
+    ]
+    QUESTIONNAIRES_DATA_PATH = Path("data/experiments/questionnaires")
+
     STIMULUS_CONFIG_PATH = Path("src/experiments/measurement/measurement_config.toml")
 
     @classmethod

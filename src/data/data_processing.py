@@ -26,8 +26,15 @@ def create_participants_df():
     pass
 
 
-def create_questionnaire_df():
-    pass
+def create_questionnaire_df(questionnaire: str):
+    questionnaire_df = pl.read_csv(
+        DataConfig.QUESTIONNAIRES_DATA_PATH / (questionnaire + "_results.csv")
+    )
+    # rename the id column to participant_id for consistency
+    questionnaire_df = questionnaire_df.rename({"id": "participant_id"})
+    # add a column for the questionnaire name
+    questionnaire_df.insert_column(0, pl.lit(questionnaire).alias("questionnaire"))
+    return questionnaire_df
 
 
 def create_seeds_df():

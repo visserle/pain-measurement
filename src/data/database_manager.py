@@ -9,6 +9,7 @@
 # - label at the very end when merging all feature data
 
 import logging
+from copy import copy
 
 import duckdb
 import polars as pl
@@ -19,6 +20,7 @@ from src.data.data_config import DataConfig
 from src.data.data_processing import (
     create_feature_data_df,
     create_preprocess_data_df,
+    create_questionnaire_df,
     create_raw_data_df,
     create_trials_df,
     merge_feature_data_dfs,
@@ -26,9 +28,10 @@ from src.data.data_processing import (
 from src.data.database_schema import DatabaseSchema
 from src.data.imotions_data import load_imotions_data_df
 
-MODALITIES = DataConfig.MODALITIES
-NUM_PARTICIPANTS = DataConfig.NUM_PARTICIPANTS
 DB_FILE = DataConfig.DB_FILE
+NUM_PARTICIPANTS = DataConfig.NUM_PARTICIPANTS
+QUESTIONNAIRES = DataConfig.QUESTIONNAIRES
+MODALITIES = DataConfig.MODALITIES
 
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
@@ -167,13 +170,29 @@ class DatabaseManager:
         ).fetchone()
         return bool(result)
 
+    def ctas(
+        self,
+        table_name: str,
+        df: pl.DataFrame,
+    ) -> None:
+        """Create a table as select.
+
+        Most convenient way to create a table from a df, but does neither support
+        constraints nor altering the table afterwards.
+        """
+        # DuckDB does not support hyphens in table names
+        table_name = table_name.replace("-", "_")
+        self.execute(
+            f"CREATE OR REPLACE TABLE {table_name} AS FROM df"
+        )  # note no f-string for df here
+
     def insert_trials(
         self,
         trials_df: pl.DataFrame,
     ) -> None:
         columns = ", ".join(trials_df.columns)
         try:
-            self.conn.execute(f"INSERT INTO Trials ({columns}) SELECT * FROM trials_df")
+            self.execute(f"INSERT INTO Trials ({columns}) SELECT * FROM trials_df")
         except duckdb.ConstraintException as e:
             logger.warning(f"Trial data already exists in the database: {e}")
 
@@ -188,7 +207,7 @@ class DatabaseManager:
             table_name,
             raw_data_df.schema,
         )
-        self.conn.execute(f"""
+        self.execute(f"""
             INSERT INTO {table_name}
             SELECT t.trial_id, r.*
             FROM raw_data_df AS r
@@ -211,7 +230,7 @@ class DatabaseManager:
             table_name,
             preprocess_data_df.schema,
         )
-        self.conn.execute(f"""
+        self.execute(f"""
             INSERT INTO {table_name}
             SELECT *
             FROM preprocess_data_df
@@ -236,8 +255,14 @@ class DatabaseManager:
 
 
 def main():
-    MODALITIES = ["PPG"]
+    # MODALITIES = ["Face"]
     with DatabaseManager() as db:
+        # Questionnaire data
+        for questionnaire in QUESTIONNAIRES:
+            df = create_questionnaire_df(questionnaire)
+            db.ctas("Questionnaire_" + questionnaire.upper(), df)
+        logger.info("Questionnaire data inserted.")
+
         # Raw data
         for participant_id in range(1, NUM_PARTICIPANTS + 1):
             if db.participant_exists(participant_id):
