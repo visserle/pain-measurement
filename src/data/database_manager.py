@@ -2,14 +2,12 @@
 # - add database for quality control (e.g. if the number of rows in the raw data is the same as in the preprocess data)
 # - performance https://docs.pola.rs/user-guide/expressions/user-defined-functions/ (maybe)
 # - add participant data to the database
-# - add questionnaires to the database
 # - add calibration data to the database
 # - add measurement data to the database
 # - add excluded data information to the database and check in the preprocessing process if the data is excluded
 # - label at the very end when merging all feature data
 
 import logging
-from copy import copy
 
 import duckdb
 import polars as pl
@@ -119,14 +117,29 @@ class DatabaseManager:
         df = self.execute(f"SELECT * FROM {table_name}").pl()
         if exclude_invalid_trials:
             invalid_trials = DataConfig.load_invalid_trials()
-            # Note that not every participant has 12 trials, a naive trial_id filter
-            # would remove the wrong trials
-            df = df.filter(
-                ~pl.struct(["participant_id", "trial_number"]).is_in(
-                    invalid_trials.select(["participant_id", "trial_number"]).unique()
+            if ["participant_id", "trial_number"] in df.columns:
+                # Note that not every participant has 12 trials, a naive trial_id filter
+                # would remove the wrong trials
+                df = df.filter(
+                    ~pl.struct(["participant_id", "trial_number"]).is_in(
+                        invalid_trials.select(
+                            ["participant_id", "trial_number"]
+                        ).unique()
+                    )
                 )
-            )
-
+            else:  # not all tables have trial information, e.g. questionnaires
+                df = df.filter(
+                    ~col("participant_id").is_in(
+                        invalid_trials["participant_id"]
+                        .value_counts()
+                        .filter(col("count") == 12)["participant_id"]  # TODO
+                        .unique()
+                    )
+                )
+                logging.debug(
+                    "TODO: find criteria for filtering invalid participants in the exclude_invalid_trials kw."
+                    # maybe we also should rename it to remove_invalid_data
+                )
         return df
 
     def get_final_feature_data(
@@ -179,6 +192,8 @@ class DatabaseManager:
 
         Most convenient way to create a table from a df, but does neither support
         constraints nor altering the table afterwards.
+        (That is why we need to create the table schema manually and insert the data
+        afterwards for more complex tables, see DatabaseSchema.)
         """
         # DuckDB does not support hyphens in table names
         table_name = table_name.replace("-", "_")

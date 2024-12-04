@@ -43,4 +43,4 @@ class DataConfig:
 
     @classmethod
     def load_invalid_trials(cls):
-        return pl.read_csv(cls.INVALID_TRIALS_FILE, skip_rows=4)
+        return pl.read_csv(cls.INVALID_TRIALS_FILE, skip_rows=6)
