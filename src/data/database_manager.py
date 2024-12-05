@@ -3,6 +3,7 @@
 # - performance https://docs.pola.rs/user-guide/expressions/user-defined-functions/ (maybe)
 # - add participant data to the database
 # - label at the very end when merging all feature data
+# - add anonymization to the database in the future
 
 import logging
 
@@ -16,6 +17,7 @@ from src.data.data_processing import (
     create_calibration_results_df,
     create_feature_data_df,
     create_measurement_results_df,
+    create_participants_df,
     create_preprocess_data_df,
     create_questionnaire_df,
     create_raw_data_df,
@@ -271,7 +273,11 @@ class DatabaseManager:
 def main():
     # MODALITIES = ["Face"]
     with DatabaseManager() as db:
-        # Experiment results (calibration and performance data)
+        # Participant list
+        df = create_participants_df()
+        db.ctas("Participants", df)
+
+        # Experiment results (calibration and performance metrics)
         df = create_calibration_results_df()
         db.ctas("Calibration_Results", df)
         df = create_measurement_results_df()

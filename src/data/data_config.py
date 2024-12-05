@@ -6,15 +6,16 @@ import yaml
 
 
 class DataConfig:
+    DB_FILE = Path("data/pain-measurement.duckdb")
+
     MODALITIES = ["Stimulus", "EDA", "EEG", "PPG", "Pupil", "Face"]
     NUM_PARTICIPANTS = 28
 
-    DB_FILE = Path("data/experiment.duckdb")
     PARTICIPANT_DATA_FILE = Path("runs/experiments/participants.csv")
     INVALID_TRIALS_FILE = Path("src/data/invalid_trials.csv")
 
-    IMOTIONS_DATA_PATH = Path("data/imotions")
-    IMOTIONS_DATA_CONFIG_FILE = Path("src/data/imotions_data_config.yaml")
+    CALIBRATION_RESULTS_FILE = Path("data/experiments/calibration_results.csv")
+    MAESUREMENT_RESULTS_FILE = Path("data/experiments/measurement_results.csv")
 
     QUESTIONNAIRES = [
         # same as in questionnaires/app.py
@@ -29,9 +30,8 @@ class DataConfig:
     ]
     QUESTIONNAIRES_DATA_PATH = Path("data/experiments/questionnaires")
 
-    CALIBRATION_DATA_PATH = Path("data/experiments/calibration_results.csv")
-    MAESUREMENT_DATA_PATH = Path("data/experiments/measurement_results.csv")
-
+    IMOTIONS_DATA_PATH = Path("data/imotions")
+    IMOTIONS_DATA_CONFIG_FILE = Path("src/data/imotions_data_config.yaml")
     STIMULUS_CONFIG_PATH = Path("src/experiments/measurement/measurement_config.toml")
 
     # Class methods to load config files

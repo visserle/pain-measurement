@@ -1,5 +1,6 @@
 """
-Dataframe functions that result in database tables.
+Create dataframes that will be inserted as tables into the database (see main function
+of database_manager.py).
 """
 
 import logging
@@ -23,17 +24,21 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 def create_participants_df():
-    pass
+    return (
+        pl.read_csv(DataConfig.PARTICIPANT_DATA_FILE)
+        .rename({"id": "participant_id"})
+        .drop("timestamp")
+    )  # drop timestamp column for privacy reasons
 
 
 def create_calibration_results_df():
-    return pl.read_csv(DataConfig.CALIBRATION_DATA_PATH).rename(
+    return pl.read_csv(DataConfig.CALIBRATION_RESULTS_FILE).rename(
         {"id": "participant_id"}
     )
 
 
 def create_measurement_results_df():
-    return pl.read_csv(DataConfig.MAESUREMENT_DATA_PATH).rename(
+    return pl.read_csv(DataConfig.MAESUREMENT_RESULTS_FILE).rename(
         {"id": "participant_id"}
     )
 
@@ -249,5 +254,7 @@ def merge_feature_data_dfs(
     df = merge_dfs(dfs)
     df = interpolate_and_fill_nulls(df)
     # TODO: add final downsample
+    # or interpolate to equidistant timestamps, resample_to_equidistant_ms and then
+    # downsample
     df = add_labels(df)  # maybe here, not tested yet TODO
     return df
