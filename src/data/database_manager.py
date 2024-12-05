@@ -2,9 +2,6 @@
 # - add database for quality control (e.g. if the number of rows in the raw data is the same as in the preprocess data)
 # - performance https://docs.pola.rs/user-guide/expressions/user-defined-functions/ (maybe)
 # - add participant data to the database
-# - add calibration data to the database
-# - add measurement data to the database
-# - add excluded data information to the database and check in the preprocessing process if the data is excluded
 # - label at the very end when merging all feature data
 
 import logging
@@ -16,7 +13,9 @@ from polars import col
 
 from src.data.data_config import DataConfig
 from src.data.data_processing import (
+    create_calibration_results_df,
     create_feature_data_df,
+    create_measurement_results_df,
     create_preprocess_data_df,
     create_questionnaire_df,
     create_raw_data_df,
@@ -199,7 +198,7 @@ class DatabaseManager:
         table_name = table_name.replace("-", "_")
         self.execute(
             f"CREATE OR REPLACE TABLE {table_name} AS FROM df"
-        )  # note no f-string for df here
+        )  # df is taken from context by DuckDB
 
     def insert_trials(
         self,
@@ -272,6 +271,12 @@ class DatabaseManager:
 def main():
     # MODALITIES = ["Face"]
     with DatabaseManager() as db:
+        # Experiment results (calibration and performance data)
+        df = create_calibration_results_df()
+        db.ctas("Calibration_Results", df)
+        df = create_measurement_results_df()
+        db.ctas("Measurement_Results", df)
+
         # Questionnaire data
         for questionnaire in QUESTIONNAIRES:
             df = create_questionnaire_df(questionnaire)

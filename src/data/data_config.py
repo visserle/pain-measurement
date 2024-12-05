@@ -29,8 +29,12 @@ class DataConfig:
     ]
     QUESTIONNAIRES_DATA_PATH = Path("data/experiments/questionnaires")
 
+    CALIBRATION_DATA_PATH = Path("data/experiments/calibration_results.csv")
+    MAESUREMENT_DATA_PATH = Path("data/experiments/measurement_results.csv")
+
     STIMULUS_CONFIG_PATH = Path("src/experiments/measurement/measurement_config.toml")
 
+    # Class methods to load config files
     @classmethod
     def load_imotions_config(cls):
         with open(cls.IMOTIONS_DATA_CONFIG_FILE, "r") as file:

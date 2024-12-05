@@ -26,6 +26,18 @@ def create_participants_df():
     pass
 
 
+def create_calibration_results_df():
+    return pl.read_csv(DataConfig.CALIBRATION_DATA_PATH).rename(
+        {"id": "participant_id"}
+    )
+
+
+def create_measurement_results_df():
+    return pl.read_csv(DataConfig.MAESUREMENT_DATA_PATH).rename(
+        {"id": "participant_id"}
+    )
+
+
 def create_questionnaire_df(questionnaire: str):
     questionnaire_df = pl.read_csv(
         DataConfig.QUESTIONNAIRES_DATA_PATH / (questionnaire + "_results.csv")
