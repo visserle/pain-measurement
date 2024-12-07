@@ -426,6 +426,7 @@ class StimulusGenerator:
             "major_decreasing_intervals": self.major_decreasing_intervals_idx,
             "increasing_intervals": self.increasing_intervals_idx,
             "strictly_increasing_intervals": self.strictly_increasing_intervals_idx,
+            "strictly_increasing_intervals_without_plateaus": self.strictly_increasing_intervals_without_plateaus_idx,  # noqa E501
             "plateau_intervals": self.plateau_intervals_idx,
             "prolonged_minima_intervals": self.prolonged_minima_intervals_idx,
         }
@@ -514,7 +515,24 @@ class StimulusGenerator:
         return intervals
 
     @property
-    def strictly_increasing_intervals_idx(self) -> list[tuple[int, int]]:
+    def strictly_increasing_intervals_idx(
+        self,
+    ) -> list[tuple[int, int]]:
+        """
+        Get the start and end indices of strictly increasing half cycles for labeling.
+        """
+        intervals = (
+            self.strictly_increasing_intervals_without_plateaus_idx
+            + self.strictly_increasing_intervals_starting_after_plateaus
+        )  # noqa E501
+
+        intervals.sort(key=lambda x: x[0])
+        return intervals
+
+    @property
+    def strictly_increasing_intervals_without_plateaus_idx(
+        self,
+    ) -> list[tuple[int, int]]:
         """
         Get the start and end indices of strictly increasing half cycles for labeling.
 
@@ -535,6 +553,33 @@ class StimulusGenerator:
 
             if not has_plateau:
                 intervals.append((int(start), int(end)))
+
+        return intervals
+
+    @property
+    def strictly_increasing_intervals_starting_after_plateaus(
+        self,
+    ) -> list[tuple[int, int]]:
+        """
+        Get the start and end indices of strictly increasing half cycles for labeling.
+
+        This method is similar to strictly_increasing_intervals_without_plateaus_idx,
+        but it only includes strictly increasing intervals that occur after plateaus.
+        """
+        intervals = []
+        increasing_intervals = self.increasing_intervals_idx
+        plateau_intervals = self.plateau_intervals_idx
+
+        for start, end in increasing_intervals:
+            for plateau_start, plateau_end in plateau_intervals:
+                has_plateau = False
+
+                # Check if plateau overlaps with the increasing interval
+                if not (end <= plateau_start or start >= plateau_end):
+                    has_plateau = True
+
+                    if has_plateau:
+                        intervals.append((int(plateau_end), int(end)))
 
         return intervals
 
