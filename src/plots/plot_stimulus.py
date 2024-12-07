@@ -1,3 +1,5 @@
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 import numpy as np
 from bokeh.models import BoxAnnotation, ColumnDataSource, FixedTicker, HoverTool
 from bokeh.plotting import figure, show
@@ -60,3 +62,61 @@ def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
 
     # Show the plot
     show(p)
+
+
+def plot_stimulus_labels(
+    stimulus: StimulusGenerator,
+):
+    """
+    Plot labeled intervals using matplotlib patches.
+    """
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(10, 3))
+
+    # Define colors for each type of interval
+    colors = dict(
+        zip(
+            stimulus.labels.keys(),
+            [
+                "lightgreen",
+                "green",
+                "red",
+                "yellow",
+                "blue",
+                "purple",
+                "orange",
+                "pink",  # extra colors for more interval types
+                "brown",
+                "gray",
+            ],
+        )
+    )
+
+    # Plot patches for each interval type
+    num_types = len(stimulus.labels)
+    for i, (interval_type, intervals) in enumerate(stimulus.labels.items()):
+        for start, end in intervals:
+            ax.add_patch(
+                patches.Rectangle(
+                    (start, i),
+                    end - start,
+                    0.8,
+                    facecolor=colors[interval_type],
+                    edgecolor="none",
+                    alpha=0.7,
+                )
+            )
+
+    # Set axis limits and labels
+    ax.set_xlim(0, stimulus.duration * 1000)
+    ax.set_ylim(-0.5, num_types - 0.5)
+    ax.set_xlabel("Time (ms)")
+    ax.set_yticks(range(num_types))
+    ax.set_yticklabels(stimulus.labels.keys())
+
+    # Set title
+    plt.title("Interval Analysis")
+
+    # Show plot
+    plt.tight_layout()
+    plt.show()
