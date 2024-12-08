@@ -1,7 +1,7 @@
-# TODO:
-# - add database for quality control (e.g. if the number of rows in the raw data is the same as in the preprocess data)
-# - performance https://docs.pola.rs/user-guide/expressions/user-defined-functions/ (maybe)
-# - add participant data to the database
+# TODO: add database for quality control (e.g. if the number of rows in the raw data is the same as in the preprocess data)
+# TODO: performance https://docs.pola.rs/user-guide/expressions/user-defined-functions/ (maybe)
+# TODO: labeled data frame should be part of the database: label based on temperature and rating (not so sure abt the latter)
+# - the labeled data should be equidistantly sampled with a sample rate of idk
 # - label at the very end when merging all feature data
 # - add anonymization to the database in the future
 
@@ -54,7 +54,7 @@ class DatabaseManager:
     with db:
         df = db.execute("SELECT * FROM Trials").pl()  # .pl() for Polars DataFrame
         # or alternatively
-        df = db.get_table("Trials", exclude_invalid_trials=False)
+        df = db.get_table("Trials", exclude_invalid_data=False)
     df.head()
     ```
     """
@@ -111,12 +111,12 @@ class DatabaseManager:
     def get_table(
         self,
         table_name: str,
-        exclude_invalid_trials: bool = True,
+        exclude_invalid_data: bool = True,
     ) -> pl.DataFrame:
         """Return the data from a table as a Polars DataFrame."""
         # TODO: make it more efficient by filtering out invalid trials in the query
         df = self.execute(f"SELECT * FROM {table_name}").pl()
-        if exclude_invalid_trials:
+        if exclude_invalid_data:
             invalid_trials = DataConfig.load_invalid_trials()
             if ["participant_id", "trial_number"] in df.columns:
                 # Note that not every participant has 12 trials, a naive trial_id filter
@@ -138,17 +138,17 @@ class DatabaseManager:
                     )
                 )
                 logging.debug(
-                    "TODO: find criteria for filtering invalid participants in the exclude_invalid_trials kw."
+                    "TODO: find criteria for filtering invalid participants in the exclude_invalid_data kw."
                     # maybe we also should rename it to remove_invalid_data
                 )
         return df
 
     def get_final_feature_data(
         self,
-        exclude_invalid_trials: bool,
+        exclude_invalid_data: bool,
     ) -> pl.DataFrame:
         dfs = [
-            self.get_table("Feature_" + modality, exclude_invalid_trials)
+            self.get_table("Feature_" + modality, exclude_invalid_data)
             for modality in MODALITIES
         ]
         return merge_feature_data_dfs(dfs)
@@ -291,6 +291,9 @@ def main():
 
         # Raw data
         for participant_id in range(1, NUM_PARTICIPANTS + 1):
+            if participant_id in DataConfig.MISSING_PARTICIPANTS:
+                logger.debug(f"No data for participant {participant_id}.")
+                continue
             if db.participant_exists(participant_id):
                 logger.debug(
                     f"Raw data for participant {participant_id} already exists."
@@ -311,7 +314,7 @@ def main():
         # no check for existing data as it will be overwritten
         for modality in MODALITIES:
             table_name = "Preprocess_" + modality
-            df = db.get_table("Raw_" + modality, exclude_invalid_trials=False)
+            df = db.get_table("Raw_" + modality, exclude_invalid_data=False)
             df = create_preprocess_data_df(table_name, df)
             db.insert_preprocess_data(table_name, df)
         logger.info("Data preprocessed.")
@@ -319,7 +322,7 @@ def main():
         # Feature-engineered data
         for modality in MODALITIES:
             table_name = f"Feature_{modality}"
-            df = db.get_table(f"Preprocess_{modality}", exclude_invalid_trials=False)
+            df = db.get_table(f"Preprocess_{modality}", exclude_invalid_data=False)
             df = create_feature_data_df(table_name, df)
             db.insert_feature_data(table_name, df)
         logger.info("Data feature-engineered.")

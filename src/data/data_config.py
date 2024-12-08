@@ -9,7 +9,8 @@ class DataConfig:
     DB_FILE = Path("data/pain-measurement.duckdb")
 
     MODALITIES = ["Stimulus", "EDA", "EEG", "PPG", "Pupil", "Face"]
-    NUM_PARTICIPANTS = 28
+    NUM_PARTICIPANTS = 45
+    MISSING_PARTICIPANTS = [39]
 
     PARTICIPANT_DATA_FILE = Path("runs/experiments/participants.csv")
     INVALID_TRIALS_FILE = Path("src/data/invalid_trials.csv")
