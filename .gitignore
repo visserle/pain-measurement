@@ -1,5 +1,6 @@
 # Only share once anonymized:
 src/data/invalid_trials.*
+src/data/invalid_participants.csv
 
 # Log and data files
 /runs
