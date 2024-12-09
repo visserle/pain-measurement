@@ -66,7 +66,6 @@ class DatabaseManager:
     @staticmethod
     def _initialize_tables():
         with duckdb.connect(DB_FILE.as_posix()) as conn:
-            # DatabaseSchema.create_participants_table(self.conn)  # TODO
             DatabaseSchema.create_trials_table(conn)
             DatabaseSchema.create_seeds_table(conn)
 
@@ -133,7 +132,8 @@ class DatabaseManager:
                     ~col("participant_id").is_in(
                         invalid_trials["participant_id"]
                         .value_counts()
-                        .filter(col("count") == 12)["participant_id"]  # TODO
+                        # TODO: find a better way
+                        .filter(col("count") == 12)["participant_id"]
                         .unique()
                     )
                 )
@@ -258,7 +258,7 @@ class DatabaseManager:
         table_name: str,
         feature_data_df: pl.DataFrame,
     ) -> None:
-        # same as preprocess data for now TODO FIXME
+        # TODO: FIXME same as preprocess data for now
         self.insert_preprocess_data(table_name, feature_data_df)
 
     def insert_labels_data(
@@ -266,7 +266,7 @@ class DatabaseManager:
         table_name: str,
         label_data_df: pl.DataFrame,
     ) -> None:
-        # same as preprocess data for now TODO FIXME
+        # TODO: FIXME same as preprocess data for now
         self.insert_preprocess_data(table_name, label_data_df)
 
 
@@ -327,8 +327,8 @@ def main():
             db.insert_feature_data(table_name, df)
         logger.info("Data feature-engineered.")
 
-        # Add labels
-        # TODO
+        # TODO: Add labels
+        #
         # add final merge of all feature data and label at the *very* end
         # using a separate function for this
         # something like this for collecting all feature data:
