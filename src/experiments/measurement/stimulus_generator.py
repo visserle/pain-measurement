@@ -35,7 +35,7 @@ def cosine_half_cycle(
     """Generate a half cycle cosine function (1 pi) with the given parameters."""
     frequency = 1 / period
     num_steps = period * sample_rate
-    assert num_steps == int(num_steps), "Number of steps must be an integer"
+    assert num_steps == int(num_steps), "Number of steps must be a whole number."
     num_steps = int(num_steps)
     t = np.linspace(0, period, num_steps)
     y = amplitude * np.cos(np.pi * frequency * t) + y_intercept - amplitude
@@ -47,7 +47,10 @@ class StimulusGenerator:
     """
     Generates a stimulus by appending half cycle cosine functions
 
-    Note that the term `period` refers to only 1 pi in this class.
+    Note that the term `cycle` refers to only 1 π in this class, not 2 π.
+    The term 'half cycle' thus refers to π/2 radians.
+    The term `period` pertains to the time it takes to complete one 'half cycle',
+    not 2 π.
     """
 
     # NOTE: There is one small detail I missed that would have made the analysis
