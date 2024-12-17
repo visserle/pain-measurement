@@ -14,6 +14,7 @@ class DataConfig:
 
     PARTICIPANT_DATA_FILE = Path("runs/experiments/participants.csv")
     INVALID_TRIALS_FILE = Path("src/data/invalid_trials.csv")
+    INVALID_PARTICIPANTS_FILE = Path("src/data/invalid_participants.csv")
 
     CALIBRATION_RESULTS_FILE = Path("data/experiments/calibration_results.csv")
     MAESUREMENT_RESULTS_FILE = Path("data/experiments/measurement_results.csv")
@@ -49,3 +50,7 @@ class DataConfig:
     @classmethod
     def load_invalid_trials(cls):
         return pl.read_csv(cls.INVALID_TRIALS_FILE, skip_rows=6)
+
+    @classmethod
+    def load_invalid_participants(cls):
+        pass  # TODO

@@ -1,5 +1,5 @@
 """
-Load iMotions data from the file system into memory.
+Load iMotions' .csv data from the file system into memory.
 """
 
 import logging

@@ -22,6 +22,8 @@ CHANNELS = ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"]
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
+mne.set_log_level(verbose=False)
+
 
 def preprocess_eeg(df: pl.DataFrame) -> pl.DataFrame:
     df = decimate_eeg(df, factor=2)

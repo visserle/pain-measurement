@@ -18,12 +18,12 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 def decimate(
     df: pl.DataFrame,
     factor: int,
+    time_column: str = "timestamp",
 ) -> pl.DataFrame:
-    """Decimate all float columns using scipy.signal.decimate (order 8 Chebyshev type I
-    filter).
+    """Decimate float columns using scipy.signal.decimate (order 8 Chebyshev type I
+    filter) and downsample integer columns by gathering every 'factor'.
 
-    This function applies scipy.signal.decimate to all float columns in the DataFrame
-    (except the 'timestamp' column) and gathers every 'factor' rows.
+    Note that the 'timestamp' column is not decimated, but only downsampled.
     """
     if sum(s.count("time") for s in df.columns) > 1:
         logger.warning(
@@ -33,7 +33,7 @@ def decimate(
         )
 
     def decimate_column(column: pl.Series) -> pl.Series:
-        if column.dtype in [pl.Float32, pl.Float64] and column.name != "timestamp":
+        if column.dtype in [pl.Float32, pl.Float64] and column.name != time_column:
             return pl.from_numpy(
                 signal.decimate(
                     x=column.to_numpy(),
@@ -67,6 +67,7 @@ def interpolate_and_fill_nulls(
     # Note that maybe using NaN as null value is better as NaN is a float in Polars
     # and we wouldn't need a selector
     # However, this would need a rewrite and testing of some parts of the pipeline
+    # Also refactoring this function into interpolate and fill_nulls would make sense
     selected_columns = columns or df.select(pl.selectors.by_dtype(pl.Float64)).columns
 
     return df.with_columns(
@@ -89,6 +90,7 @@ def resample_to_equidistant_ms(
     """
     Resample the DataFrame to equidistant time steps with a resolution of 1 ms.
     Note that this rounds every timestamp to the nearest millisecond.
+
     For a lower resolution, use the gather_every function to get back to the
     original sampling rate. Use decimate to downsample the data.
 

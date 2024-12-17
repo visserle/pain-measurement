@@ -1,5 +1,4 @@
 # NOTE: one source states GSR data collected at 100 Hz can be safely downsampled to 10 Hz or even less.
-# TODO: bandpass filter with lowest and highest signal frequencies of EDA activity
 # and then downsample to 2*highest frequency (Nyquist frequency)
 
 
@@ -20,7 +19,7 @@ def preprocess_eda(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def feature_eda(df: pl.DataFrame) -> pl.DataFrame:
-    # df = detrend_tonic_component(df)  # TODO NOTE: a bit problematic with exponential decay of tonic component?
+    # df = detrend_tonic_component(df)  # TODO NOTE: non-causal filter, might not be suitable for real-time processing
     df = decimate(df, factor=10)
     return df
 

@@ -18,7 +18,7 @@ def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
     source = ColumnDataSource(data=dict(time=time, temperature=stimulus.y))
 
     # Create a new plot
-    p = figure(
+    plot = figure(
         title=f"Seed: {stimulus.seed}",
         x_axis_label="Time (s)",
         y_axis_label="Temperature (°C)",
@@ -28,7 +28,7 @@ def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
     )
 
     # Plot the main line
-    p.line("time", "temperature", source=source, line_color="navy", line_width=2)
+    plot.line("time", "temperature", source=source, line_color="navy", line_width=2)
 
     # Add shapes for the major decreasing intervals
     for interval in stimulus.major_decreasing_intervals_idx:
@@ -36,7 +36,7 @@ def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
             interval[0] / stimulus.sample_rate,
             interval[1] / stimulus.sample_rate,
         )
-        p.add_layout(
+        plot.add_layout(
             BoxAnnotation(
                 left=start_time,
                 right=end_time,
@@ -46,9 +46,9 @@ def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
         )
 
     # Customize the plot
-    p.xaxis.axis_label_text_font_style = "bold"
-    p.yaxis.axis_label_text_font_style = "bold"
-    p.xaxis.ticker = FixedTicker(ticks=list(range(0, int(max(time)) + 2, 10)))
+    plot.xaxis.axis_label_text_font_style = "bold"
+    plot.yaxis.axis_label_text_font_style = "bold"
+    plot.xaxis.ticker = FixedTicker(ticks=list(range(0, int(max(time)) + 2, 10)))
 
     # Add hover tool
     hover = HoverTool(
@@ -58,10 +58,11 @@ def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
         ],
         mode="vline",
     )
-    p.add_tools(hover)
+    plot.add_tools(hover)
 
     # Show the plot
-    show(p)
+    show(plot)
+    return plot
 
 
 def plot_stimulus_labels(
@@ -120,3 +121,5 @@ def plot_stimulus_labels(
     # Show plot
     plt.tight_layout()
     plt.show()
+
+    return fig
