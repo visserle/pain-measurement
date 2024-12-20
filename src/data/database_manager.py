@@ -9,7 +9,6 @@ import logging
 
 import duckdb
 import polars as pl
-from icecream import ic
 from polars import col
 
 from src.data.data_config import DataConfig
@@ -63,6 +62,13 @@ class DatabaseManager:
         self.conn = None
         self._initialize_tables()
 
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+
     @staticmethod
     def _initialize_tables():
         with duckdb.connect(DB_FILE.as_posix()) as conn:
@@ -77,13 +83,6 @@ class DatabaseManager:
         if self.conn:
             self.conn.close()
             self.conn = None
-
-    def __enter__(self):
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.disconnect()
 
     def _ensure_connection(self):
         """Helper method to check connection status."""
@@ -132,7 +131,7 @@ class DatabaseManager:
                     ~col("participant_id").is_in(
                         invalid_trials["participant_id"]
                         .value_counts()
-                        # TODO: find a better way
+                        # TODO: find a better way, this is not precise
                         .filter(col("count") == 12)["participant_id"]
                         .unique()
                     )
