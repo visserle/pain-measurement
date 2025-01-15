@@ -45,7 +45,7 @@ def _load_csv(
         file_name,
         skip_rows=start_index,
         columns=load_columns,
-        infer_schema_length=20000,  # FIXME TODO
+        infer_schema_length=20000,  # quick and dirty way to infer schema
     )
 
     if rename_columns:
