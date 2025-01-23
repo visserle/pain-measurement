@@ -23,23 +23,32 @@ from src.features.transforming import merge_dfs
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
+INVALID_PARTICIPANTS = (
+    DataConfig.load_invalid_participants_config().get_column("particpant_id").to_list()
+)
+
+
 def create_participants_df():
     return (
         pl.read_csv(DataConfig.PARTICIPANT_DATA_FILE)
         .rename({"id": "participant_id"})
-        .drop("timestamp")
-    )  # drop timestamp column for privacy reasons
+        .drop("timestamp")  # drop timestamp column for privacy reasons
+    ).filter(~col("participant_id").is_in(INVALID_PARTICIPANTS))
 
 
 def create_calibration_results_df():
-    return pl.read_csv(DataConfig.CALIBRATION_RESULTS_FILE).rename(
-        {"id": "participant_id"}
+    return (
+        pl.read_csv(DataConfig.CALIBRATION_RESULTS_FILE)
+        .rename({"id": "participant_id"})
+        .filter(~col("participant_id").is_in(INVALID_PARTICIPANTS))
     )
 
 
 def create_measurement_results_df():
-    return pl.read_csv(DataConfig.MAESUREMENT_RESULTS_FILE).rename(
-        {"id": "participant_id"}
+    return (
+        pl.read_csv(DataConfig.MAESUREMENT_RESULTS_FILE)
+        .rename({"id": "participant_id"})
+        .filter(~col("participant_id").is_in(INVALID_PARTICIPANTS))
     )
 
 
@@ -51,7 +60,7 @@ def create_questionnaire_df(questionnaire: str):
     questionnaire_df = questionnaire_df.rename({"id": "participant_id"})
     # add a column for the questionnaire name
     questionnaire_df.insert_column(0, pl.lit(questionnaire).alias("questionnaire"))
-    return questionnaire_df
+    return questionnaire_df.filter(~col("participant_id").is_in(INVALID_PARTICIPANTS))
 
 
 def create_seeds_df():
