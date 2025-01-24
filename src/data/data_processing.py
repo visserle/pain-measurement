@@ -1,5 +1,3 @@
-# TODO: Add the PANAS exclusion to the data pipeline.
-
 """
 Create dataframes that will be inserted as tables into the database (see main function
 of database_manager.py).
@@ -62,6 +60,28 @@ def create_questionnaire_df(questionnaire: str):
     questionnaire_df = questionnaire_df.rename({"id": "participant_id"})
     # add a column for the questionnaire name
     questionnaire_df.insert_column(0, pl.lit(questionnaire).alias("questionnaire"))
+
+    # remove particpants from PANAS that did not complete all trials because of thermode
+    # issues
+    if questionnaire == "PANAS":
+        participants_with_thermode_issues = (
+            (
+                DataConfig.load_invalid_trials_config()
+                .with_columns(
+                    (col("modality").str.count_matches("thermode"))
+                    .alias("issue_thermode")
+                    .cast(pl.Boolean)
+                )
+                .filter(col("issue_thermode"))
+            )
+            .get_column("participant_id")
+            .unique()
+            .to_list()
+        )
+        questionnaire_df = questionnaire_df.filter(
+            ~col("participant_id").is_in(participants_with_thermode_issues)
+        )
+
     return questionnaire_df.filter(~col("participant_id").is_in(INVALID_PARTICIPANTS))
 
 
