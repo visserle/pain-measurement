@@ -9,12 +9,11 @@ class DataConfig:
     DB_FILE = Path("data/pain-measurement.duckdb")
 
     MODALITIES = ["Stimulus", "EDA", "EEG", "PPG", "Pupil", "Face"]
-    NUM_PARTICIPANTS = 45
-    MISSING_PARTICIPANTS = [39]
 
+    NUM_PARTICIPANTS = 50
     PARTICIPANT_DATA_FILE = Path("runs/experiments/participants.csv")
-    INVALID_TRIALS_FILE = Path("src/data/invalid_trials.csv")
     INVALID_PARTICIPANTS_FILE = Path("src/data/invalid_participants.csv")
+    INVALID_TRIALS_FILE = Path("src/data/invalid_trials.csv")
 
     CALIBRATION_RESULTS_FILE = Path("data/experiments/calibration_results.csv")
     MAESUREMENT_RESULTS_FILE = Path("data/experiments/measurement_results.csv")
@@ -48,9 +47,9 @@ class DataConfig:
             return tomllib.load(f)["stimulus"]
 
     @classmethod
-    def load_invalid_trials(cls):
-        return pl.read_csv(cls.INVALID_TRIALS_FILE, skip_rows=6)
+    def load_invalid_participants_config(cls):
+        return pl.read_csv(cls.INVALID_PARTICIPANTS_FILE)
 
     @classmethod
-    def load_invalid_participants(cls):
-        pass  # TODO
+    def load_invalid_trials_config(cls):
+        return pl.read_csv(cls.INVALID_TRIALS_FILE)

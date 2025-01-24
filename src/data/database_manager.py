@@ -53,7 +53,7 @@ class DatabaseManager:
     with db:
         df = db.execute("SELECT * FROM Trials").pl()  # .pl() for Polars DataFrame
         # or alternatively
-        df = db.get_table("Trials", exclude_invalid_data=False)
+        df = db.get_table("Trials", exclude_trials_with_measurement_problems=False)
     df.head()
     ```
     """
@@ -109,16 +109,18 @@ class DatabaseManager:
     def get_table(
         self,
         table_name: str,
-        exclude_invalid_data: bool = True,
+        exclude_trials_with_measurement_problems: bool = True,
     ) -> pl.DataFrame:
         """Return the data from a table as a Polars DataFrame."""
-        # TODO: make it more efficient by filtering out invalid trials in the query
+        # NOTE: could be more efficient by filtering out invalid trials in the query
         df = self.execute(f"SELECT * FROM {table_name}").pl()
-        if exclude_invalid_data:
-            invalid_trials = DataConfig.load_invalid_trials()
+
+        invalid_trials = DataConfig.load_invalid_trials_config()
+
+        if exclude_trials_with_measurement_problems:
             if ["participant_id", "trial_number"] in df.columns:
-                # Note that not every participant has 12 trials, a naive trial_id filter
-                # would remove the wrong trials
+                # Note that not every participant has 12 trials, so a filter using the
+                # trial_id would remove the wrong trials
                 df = df.filter(
                     ~pl.struct(["participant_id", "trial_number"]).is_in(
                         invalid_trials.select(
@@ -137,20 +139,20 @@ class DatabaseManager:
                     )
                 )
                 logging.debug(
-                    "TODO: find criteria for filtering invalid participants in the exclude_invalid_data kw."
+                    "TODO: find criteria for filtering invalid participants in the exclude_trials_with_measurement_problems kw."
                     # maybe we also should rename it to remove_invalid_data
                 )
         return df
 
-    def get_final_feature_data(
-        self,
-        exclude_invalid_data: bool,
-    ) -> pl.DataFrame:
-        dfs = [
-            self.get_table("Feature_" + modality, exclude_invalid_data)
-            for modality in MODALITIES
-        ]
-        return merge_feature_data_dfs(dfs)
+    # def get_final_feature_data(
+    #     self,
+    #     exclude_trials_with_measurement_problems: bool,
+    # ) -> pl.DataFrame:
+    #     dfs = [
+    #         self.get_table("Feature_" + modality, exclude_trials_with_measurement_problems)
+    #         for modality in MODALITIES
+    #     ]
+    #     return merge_feature_data_dfs(dfs)
 
     def table_exists(
         self,
@@ -290,14 +292,19 @@ def main():
 
         # Raw data
         for participant_id in range(1, NUM_PARTICIPANTS + 1):
-            if participant_id in DataConfig.MISSING_PARTICIPANTS:
-                logger.debug(f"No data for participant {participant_id}.")
+            if participant_id in (
+                DataConfig.load_invalid_participants_config()
+                .get_column("participant_id")
+                .to_list()
+            ):
+                logger.debug(f"Participant {participant_id} is invalid.")
                 continue
             if db.participant_exists(participant_id):
                 logger.debug(
                     f"Raw data for participant {participant_id} already exists."
                 )
                 continue
+
             df = load_imotions_data_df(participant_id, "Trials")
             trials_df = create_trials_df(participant_id, df)
             db.insert_trials(trials_df)
@@ -313,7 +320,10 @@ def main():
         # no check for existing data as it will be overwritten
         for modality in MODALITIES:
             table_name = "Preprocess_" + modality
-            df = db.get_table("Raw_" + modality, exclude_invalid_data=False)
+            df = db.get_table(
+                "Raw_" + modality,
+                exclude_trials_with_measurement_problems=False,
+            )
             df = create_preprocess_data_df(table_name, df)
             db.insert_preprocess_data(table_name, df)
         logger.info("Data preprocessed.")
@@ -321,7 +331,10 @@ def main():
         # Feature-engineered data
         for modality in MODALITIES:
             table_name = f"Feature_{modality}"
-            df = db.get_table(f"Preprocess_{modality}", exclude_invalid_data=False)
+            df = db.get_table(
+                f"Preprocess_{modality}",
+                exclude_trials_with_measurement_problems=False,
+            )
             df = create_feature_data_df(table_name, df)
             db.insert_feature_data(table_name, df)
         logger.info("Data feature-engineered.")

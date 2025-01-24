@@ -1,3 +1,5 @@
+# TODO: Add the PANAS exclusion to the data pipeline.
+
 """
 Create dataframes that will be inserted as tables into the database (see main function
 of database_manager.py).
@@ -24,7 +26,7 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 INVALID_PARTICIPANTS = (
-    DataConfig.load_invalid_participants_config().get_column("particpant_id").to_list()
+    DataConfig.load_invalid_participants_config().get_column("participant_id").to_list()
 )
 
 
@@ -80,6 +82,31 @@ def create_seeds_df():
             "seed": pl.UInt16,
             "major_decreasing_intervals": pl.List(pl.List(pl.UInt32)),
         },
+    )
+
+
+def _remove_trials_with_thermode_or_rating_issues(
+    df: pl.DataFrame,
+):
+    # remove trials with thermode or rating issues
+    trials_with_thermode_or_rating_issues = (
+        DataConfig.load_invalid_trials_config()
+        .with_columns(
+            (
+                (col("modality").str.count_matches("thermode"))
+                + (col("modality").str.count_matches("rating"))
+            )
+            .alias("issue_thermode_or_rating")
+            .cast(pl.Boolean)
+        )
+        .filter(col("issue_thermode_or_rating"))
+    )
+    return df.filter(
+        ~pl.struct(["participant_id", "trial_number"]).is_in(
+            trials_with_thermode_or_rating_issues.select(
+                ["participant_id", "trial_number"]
+            ).unique()
+        )
     )
 
 
@@ -156,6 +183,10 @@ def create_trials_df(
         col(b := "participant_id"),
         pl.all().exclude(a, b),
     )
+
+    # Remove invalid trials
+    trials_df = _remove_trials_with_thermode_or_rating_issues(trials_df)
+
     logger.debug("Created Trials DataFrame for participant %s.", participant_id)
     return trials_df
 
@@ -213,6 +244,10 @@ def create_raw_data_df(
         col(b := "participant_id"),
         pl.all().exclude(a, b),
     )
+
+    # Remove invalid trials
+    df = _remove_trials_with_thermode_or_rating_issues(df)
+
     return df
 
 
