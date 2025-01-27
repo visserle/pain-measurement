@@ -19,7 +19,6 @@ def preprocess_eda(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def feature_eda(df: pl.DataFrame) -> pl.DataFrame:
-    # df = detrend_tonic_component(df)  # TODO NOTE: non-causal filter, might not be suitable for real-time processing
     df = decimate(df, factor=10)
     return df
 
@@ -62,6 +61,11 @@ def nk_process_eda(
 def detrend_tonic_component(
     df: pl.DataFrame,
 ) -> pl.DataFrame:
+    """
+    Detrend the tonic component of the EDA signal.
+    This is a non-causal filter. Do not use it for real-time processing.
+    """
+
     return df.with_columns(
         col("eda_tonic")
         .map_batches(
