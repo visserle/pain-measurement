@@ -62,7 +62,7 @@ def create_questionnaire_df(questionnaire: str):
     questionnaire_df.insert_column(0, pl.lit(questionnaire).alias("questionnaire"))
 
     # remove particpants from PANAS that did not complete all trials because of thermode
-    # issues
+    # issues (important for pre post comparison)
     if questionnaire == "PANAS":
         participants_with_thermode_issues = (
             (
@@ -112,12 +112,14 @@ def _remove_trials_with_thermode_or_rating_issues(
     trials_with_thermode_or_rating_issues = (
         DataConfig.load_invalid_trials_config()
         .with_columns(
+            col("participant_id").cast(pl.UInt8),
+            col("trial_number").cast(pl.UInt8),
             (
                 (col("modality").str.count_matches("thermode"))
                 + (col("modality").str.count_matches("rating"))
             )
             .alias("issue_thermode_or_rating")
-            .cast(pl.Boolean)
+            .cast(pl.Boolean),
         )
         .filter(col("issue_thermode_or_rating"))
     )
@@ -125,7 +127,9 @@ def _remove_trials_with_thermode_or_rating_issues(
         ~pl.struct(["participant_id", "trial_number"]).is_in(
             trials_with_thermode_or_rating_issues.select(
                 ["participant_id", "trial_number"]
-            ).unique()
+            )
+            .unique()
+            .to_struct()
         )
     )
 
