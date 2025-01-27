@@ -1,3 +1,4 @@
+# TODO: find low pass filter for heart rate data from ppg, else remove this function
 # NOTE: neurokit approach is non-causal, i.e. it uses future data to calculate the signal. TODO
 # Note that the device intern signal processing seems to be causal (ppg_heartrate from
 # the raw table)
@@ -10,7 +11,9 @@ from src.features.resampling import decimate, interpolate_and_fill_nulls
 from src.features.transforming import map_trials
 
 SAMPLE_RATE = 100
-MAX_HEARTRATE = 140  # TODO: check if this is a good value
+MAX_HEARTRATE = (
+    120  # 20 bpm above the maximum normal heartrate to account for pain and stress
+)
 
 
 def preprocess_ppg(df: pl.DataFrame) -> pl.DataFrame:
@@ -21,7 +24,7 @@ def preprocess_ppg(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def feature_ppg(df: pl.DataFrame) -> pl.DataFrame:
-    df = decimate(df, factor=10)  # TODO test if this is a good idea
+    df = decimate(df, factor=10)
     return df
 
 
@@ -63,7 +66,7 @@ def remove_heartrate_nulls(
 ) -> pl.DataFrame:
     df = df.with_columns(
         pl.when(pl.col("ppg_heartrate") > MAX_HEARTRATE)
-        .then(MAX_HEARTRATE)
+        .then(None)
         .when(pl.col("ppg_heartrate") == -1)
         .then(None)
         .otherwise(pl.col("ppg_heartrate"))
@@ -81,11 +84,11 @@ def low_pass_filter_ppg(
     lowcut: float = 0,
     highcut: float = 0.8,
     order: int = 2,
-    pupil_columns: list[str] = ["heartrate"],
+    heartrate_column: list[str] = ["heartrate"],
 ) -> pl.DataFrame:
     return df.with_columns(
         pl.col(
-            pupil_columns
+            heartrate_column
         ).map_batches(  # map_batches to apply the filter to each column
             lambda x: butterworth_filter(
                 x,
