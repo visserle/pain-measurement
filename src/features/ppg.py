@@ -10,7 +10,7 @@ from src.features.resampling import decimate, interpolate_and_fill_nulls
 from src.features.transforming import map_trials
 
 SAMPLE_RATE = 100
-MAX_HEARTRATE = 100  # TODO: check if this is a good value
+MAX_HEARTRATE = 140  # TODO: check if this is a good value
 
 
 def preprocess_ppg(df: pl.DataFrame) -> pl.DataFrame:
@@ -21,7 +21,7 @@ def preprocess_ppg(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def feature_ppg(df: pl.DataFrame) -> pl.DataFrame:
-    # df = decimate(df, factor=10)  # TODO test if this is a good idea
+    df = decimate(df, factor=10)  # TODO test if this is a good idea
     return df
 
 
@@ -63,7 +63,7 @@ def remove_heartrate_nulls(
 ) -> pl.DataFrame:
     df = df.with_columns(
         pl.when(pl.col("ppg_heartrate") > MAX_HEARTRATE)
-        .then(100)
+        .then(MAX_HEARTRATE)
         .when(pl.col("ppg_heartrate") == -1)
         .then(None)
         .otherwise(pl.col("ppg_heartrate"))
