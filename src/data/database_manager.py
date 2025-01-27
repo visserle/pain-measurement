@@ -1,5 +1,3 @@
-# TODO: add database for quality control (e.g. if the number of rows in the raw data is the same as in the preprocess data)
-# TODO: performance https://docs.pola.rs/user-guide/expressions/user-defined-functions/ (maybe)
 # TODO: labeled data frame should be part of the database: label based on temperature and rating (not so sure abt the latter)
 # - the labeled data should be equidistantly sampled with a sample rate of idk
 # - label at the very end when merging all feature data
@@ -138,10 +136,6 @@ class DatabaseManager:
                         .unique()
                     )
                 )
-                logging.debug(
-                    "TODO: find criteria for filtering invalid participants in the exclude_trials_with_measurement_problems kw."
-                    # maybe we also should rename it to remove_invalid_data
-                )
         return df
 
     # def get_final_feature_data(
@@ -259,20 +253,20 @@ class DatabaseManager:
         table_name: str,
         feature_data_df: pl.DataFrame,
     ) -> None:
-        # TODO: FIXME same as preprocess data for now
+        # same as preprocess data
         self.insert_preprocess_data(table_name, feature_data_df)
 
-    def insert_labels_data(
-        self,
-        table_name: str,
-        label_data_df: pl.DataFrame,
-    ) -> None:
-        # TODO: FIXME same as preprocess data for now
-        self.insert_preprocess_data(table_name, label_data_df)
+    # def insert_labels_data(
+    #     self,
+    #     table_name: str,
+    #     label_data_df: pl.DataFrame,
+    # ) -> None:
+    #     # same as preprocess data
+    #     self.insert_preprocess_data(table_name, label_data_df)
 
 
 def main():
-    # MODALITIES = ["Face"]
+    # MODALITIES = ["PPG"]
     with DatabaseManager() as db:
         # Participant list
         df = create_participants_df()
@@ -317,7 +311,7 @@ def main():
         logger.info("Raw data inserted.")
 
         # Preprocessed data
-        # no check for existing data as it will be overwritten
+        # no check for existing data as it will be overwritten every time
         for modality in MODALITIES:
             table_name = "Preprocess_" + modality
             df = db.get_table(
