@@ -1,11 +1,3 @@
-# TODO:
-# - improve docstrings
-# insightfull report: https://github.com/kinleyid/PuPL/blob/master/manual.pdf
-
-# TODO: trial 28 is invalid, half of pupil missing -> to be removed FIXME TODO
-# -> maybe trial 28 can be saved when we only only use the right eye,
-# maybe this can be implemented in the final mean calculation
-
 import logging
 import operator
 from functools import reduce
@@ -34,7 +26,8 @@ def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
     df = median_filter_pupil(df, size_in_seconds=1)
     df = average_pupils(df, result_column="pupil_mean")
     df = low_pass_filter_pupil_tonic(
-        df.with_columns(pupil_mean_tonic=col("pupil_mean")), highcut=0.2
+        df.with_columns(pupil_mean_tonic=col("pupil_mean")),
+        highcut=0.2,
     )
     df = decimate(df, factor=6)
     return df
@@ -42,22 +35,21 @@ def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
 
 def add_blink_threshold(
     df: pl.DataFrame,
-    min_threshold: float = 1.5,
-    max_threshold: float = 9.0,
+    min_threshold: float = 2.0,
+    max_threshold: float = 8.0,
     pupil_columns: list[str] = ["pupil_r_raw", "pupil_l_raw"],
 ) -> pl.DataFrame:
     """
-    1.5 and > 9.0 according to Kret et al., 2014
-    # https://github.com/ElioS-S/pupil-size/blob/944523bff0ca583039039a3008ac1171ab46400a/code/helperFunctions/rawDataFilter.m#L66
-
-    physiological lower and upper limits of 2 and 8 mm,  Mathôt & Vilotijević (2023)" TODO FIXME
+    Apply a threshold to the pupil size to remove values below and above the
+    physiological limits (lower and upper limits of 2 and 8 mm (Mathôt, 2018; Pan et
+    al., 2022)).
     """
     return df.with_columns(
         [
             pl.when(pl.col(pupil) < min_threshold)
             .then(None)
             .when(pl.col(pupil) > max_threshold)
-            .then(9.0)
+            .then(max_threshold)
             .otherwise(pl.col(pupil))
             # with this first function we remove the "_raw" suffix, all other functions
             # apply to the result of the previous function (on "pupil_r" or "pupil_l")
