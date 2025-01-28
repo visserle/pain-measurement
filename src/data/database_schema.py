@@ -90,7 +90,7 @@ class DatabaseSchema:
         conn.execute(f"""
             CREATE OR REPLACE TABLE {name} (
                 {map_polars_schema_to_duckdb(schema)},
-                UNIQUE (trial_id, rownumber)
+                UNIQUE (trial_id, timestamp)  -- we remove rownumber for feature data
             );
         """)
         logger.debug(f"Created table '{name}'.")

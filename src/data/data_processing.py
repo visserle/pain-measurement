@@ -299,6 +299,7 @@ def create_feature_data_df(
     df: pl.DataFrame,
 ) -> dict[str, pl.DataFrame]:
     name = name.lower()
+    df = df.drop(["rownumber", "samplenumber"], strict=False)
     if "stimulus" in name:
         return feature_stimulus(df)
     elif "eda" in name:

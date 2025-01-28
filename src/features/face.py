@@ -7,7 +7,6 @@ FEATURE_COLUMNS = [
     "trial_id",
     "trial_number",
     "timestamp",
-    "rownumber",
     # facial expression features:
     "brow_furrow",
     "cheek_raise",

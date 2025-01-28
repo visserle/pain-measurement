@@ -253,8 +253,17 @@ class DatabaseManager:
         table_name: str,
         feature_data_df: pl.DataFrame,
     ) -> None:
-        # same as preprocess data
-        self.insert_preprocess_data(table_name, feature_data_df)
+        DatabaseSchema.create_feature_data_table(
+            self.conn,
+            table_name,
+            feature_data_df.schema,
+        )
+        self.execute(f"""
+            INSERT INTO {table_name}
+            SELECT *
+            FROM feature_data_df
+            ORDER BY trial_id, timestamp;
+        """)
 
     # def insert_labels_data(
     #     self,
@@ -289,7 +298,7 @@ def main():
         for participant_id in range(1, NUM_PARTICIPANTS + 1):
             if participant_id in (
                 db.execute("SELECT participant_id FROM Invalid_Participants")
-                .pl()  # return df
+                .pl()  # returns a df
                 .to_series()
                 .to_list()
             ):
