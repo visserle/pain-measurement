@@ -527,7 +527,7 @@ class StimulusGenerator:
         intervals = (
             self.strictly_increasing_intervals_without_plateaus_idx
             + self.strictly_increasing_intervals_starting_after_plateaus
-        )  # noqa E501
+        )
 
         intervals.sort(key=lambda x: x[0])
         return intervals

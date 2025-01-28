@@ -266,7 +266,7 @@ class DatabaseManager:
 
 
 def main():
-    # MODALITIES = ["PPG"]
+    MODALITIES = ["Pupil"]
     with DatabaseManager() as db:
         # Participant list
         df = create_participants_df()

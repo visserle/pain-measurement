@@ -54,12 +54,13 @@ def prepare_multiline_hvplot(
         "trial_number",
         "participant_id",
         "stimulus_seed",
-        "trial_specific_interval_id",  # TODO: remove
         "continuous_interval_id",
+        # Intervals from the labeling section of the stimulus generator:
         "decreasing_intervals",
         "major_decreasing_intervals",
         "increasing_intervals",
-        "strictly_increasing",
+        "strictly_increasing_intervals",
+        "strictly_increasing_intervals_without_plateaus",
         "plateau_intervals",
         "prolonged_minima_intervals",
     ]
