@@ -234,7 +234,6 @@ def average_pupils(
 def low_pass_filter_pupil_tonic(
     df: pl.DataFrame,
     sample_rate: float = SAMPLE_RATE,
-    lowcut: float | None = None,
     highcut: float | None = None,
     order: int = 2,
     pupil_column: list[str] = ["pupil_mean_tonic"],
@@ -245,7 +244,6 @@ def low_pass_filter_pupil_tonic(
             lambda x: butterworth_filter(
                 x,
                 SAMPLE_RATE,
-                lowcut=lowcut,
                 highcut=highcut,
                 order=order,
             )
