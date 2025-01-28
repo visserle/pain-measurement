@@ -15,7 +15,8 @@ import scipy.signal as signal
 from polars import col
 
 from src.features.filtering import butterworth_filter
-from src.features.resampling import decimate, interpolate_and_fill_nulls, map_trials
+from src.features.resampling import decimate, interpolate_and_fill_nulls
+from src.features.transforming import map_trials
 
 SAMPLE_RATE = 60
 
@@ -31,11 +32,11 @@ def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
 
 def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
     df = median_filter_pupil(df, size_in_seconds=1)
-    df = low_pass_filter_pupil(
-        df, highcut=0.2
-    )  # TODO: there are studies, cite them in the function
     df = average_pupils(df, result_column="pupil_mean")
-    # df = downsample(df, sample_rate=SAMPLE_RATE)  # TODO
+    df = low_pass_filter_pupil_tonic(
+        df.with_columns(pupil_mean_tonic=col("pupil_mean")), highcut=0.2
+    )
+    df = decimate(df, factor=6)
     return df
 
 
@@ -95,7 +96,7 @@ def extend_periods_around_blinks(
             ]
         )
 
-        # Create mask using reduce pattern and operator.or_
+        # Create mask for the filter
         combined_filter = reduce(
             operator.or_,
             [
@@ -227,19 +228,28 @@ def median_filter_pupil(
     )
 
 
-@map_trials
-def low_pass_filter_pupil(
+def average_pupils(
     df: pl.DataFrame,
-    sample_rate: float = SAMPLE_RATE,
-    lowcut: float = 0,
-    highcut: float = 0.2,
-    order: int = 2,
     pupil_columns: list[str] = ["pupil_r", "pupil_l"],
+    result_column: str = "pupil_mean",
 ) -> pl.DataFrame:
     return df.with_columns(
-        pl.col(
-            pupil_columns
-        ).map_batches(  # map_batches to apply the filter to each column
+        ((pl.col(pupil_columns[0]) + pl.col(pupil_columns[1])) / 2).alias(result_column)
+    )
+
+
+@map_trials
+def low_pass_filter_pupil_tonic(
+    df: pl.DataFrame,
+    sample_rate: float = SAMPLE_RATE,
+    lowcut: float | None = None,
+    highcut: float | None = None,
+    order: int = 2,
+    pupil_column: list[str] = ["pupil_mean_tonic"],
+) -> pl.DataFrame:
+    """Low-pass filter to return the tonic component of the pupillometry."""
+    return df.with_columns(
+        pl.col(pupil_column).map_batches(
             lambda x: butterworth_filter(
                 x,
                 SAMPLE_RATE,
@@ -248,14 +258,4 @@ def low_pass_filter_pupil(
                 order=order,
             )
         )
-    )
-
-
-def average_pupils(
-    df: pl.DataFrame,
-    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
-    result_column: str = "pupil_mean",
-) -> pl.DataFrame:
-    return df.with_columns(
-        ((pl.col(pupil_columns[0]) + pl.col(pupil_columns[1])) / 2).alias(result_column)
     )
