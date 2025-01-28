@@ -1,7 +1,3 @@
-# NOTE: one source states GSR data collected at 100 Hz can be safely downsampled to 10 Hz or even less.
-# and then downsample to 2*highest frequency (Nyquist frequency)
-
-
 import neurokit2 as nk
 import polars as pl
 from polars import col

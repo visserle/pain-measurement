@@ -2,15 +2,15 @@
 (See below for a neurokit2 approach for processing the PPG signal.)"""
 
 import polars as pl
+from polars import col
 
 from src.features.filtering import butterworth_filter
 from src.features.resampling import decimate, interpolate_and_fill_nulls
 from src.features.transforming import map_trials
 
 SAMPLE_RATE = 100
-MAX_HEARTRATE = (
-    120  # 20 bpm above the maximum normal heartrate to account for pain and stress
-)
+MAX_HEARTRATE = 120
+# 20 bpm above the maximum normal heartrate to account for pain and stress
 
 
 def preprocess_ppg(df: pl.DataFrame) -> pl.DataFrame:
@@ -28,11 +28,11 @@ def remove_heartrate_nulls(
     df: pl.DataFrame,
 ) -> pl.DataFrame:
     df = df.with_columns(
-        pl.when(pl.col("ppg_heartrate_shimmer") > MAX_HEARTRATE)
+        pl.when(col("ppg_heartrate_shimmer") > MAX_HEARTRATE)
         .then(None)
-        .when(pl.col("ppg_heartrate_shimmer") == -1)
+        .when(col("ppg_heartrate_shimmer") == -1)
         .then(None)
-        .otherwise(pl.col("ppg_heartrate_shimmer"))
+        .otherwise(col("ppg_heartrate_shimmer"))
         .alias("heartrate")
     )
     # note that the interpolate function already has the map_trials decorator
@@ -55,9 +55,8 @@ def low_pass_filter_ppg(
     from the previous step plus the original stepwise data is not too far off.)
     """
     return df.with_columns(
-        pl.col(
-            heartrate_column
-        ).map_batches(  # map_batches to apply the filter to each column
+        col(heartrate_column).map_batches(
+            # map_batches to apply the filter to each column
             lambda x: butterworth_filter(
                 x,
                 SAMPLE_RATE,
@@ -69,11 +68,11 @@ def low_pass_filter_ppg(
     )
 
 
-##############
 # If you want to use the neurokit2 library to process the PPG signal, you can use the
 # following function:
 
 # import neurokit2 as nk
+
 
 # @map_trials
 # def nk_process_ppg(
@@ -95,7 +94,7 @@ def low_pass_filter_ppg(
 
 #     return (
 #         df.with_columns(
-#             pl.col("ppg_raw")
+#             col("ppg_raw")
 #             .map_batches(
 #                 lambda x: pl.from_pandas(
 #                     nk.ppg_process(  # returns a tuple, we only need the pd.DataFrame
