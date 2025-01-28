@@ -113,7 +113,7 @@ class DatabaseManager:
         # NOTE: could be more efficient by filtering out invalid trials in the query
         df = self.execute(f"SELECT * FROM {table_name}").pl()
 
-        invalid_trials = DataConfig.load_invalid_trials_config()
+        invalid_trials = self.execute("SELECT * FROM Invalid_Trials").pl()
 
         if exclude_trials_with_measurement_problems:
             if ["participant_id", "trial_number"] in df.columns:
@@ -266,11 +266,12 @@ class DatabaseManager:
 
 
 def main():
-    MODALITIES = ["Pupil"]
     with DatabaseManager() as db:
-        # Participant list
+        # Participant data
         df = create_participants_df()
         db.ctas("Participants", df)
+        db.ctas("Invalid_Participants", DataConfig.load_invalid_participants_config())
+        db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
 
         # Experiment results (calibration and performance metrics)
         df = create_calibration_results_df()
@@ -287,8 +288,9 @@ def main():
         # Raw data
         for participant_id in range(1, NUM_PARTICIPANTS + 1):
             if participant_id in (
-                DataConfig.load_invalid_participants_config()
-                .get_column("participant_id")
+                db.execute("SELECT participant_id FROM Invalid_Participants")
+                .pl()  # return df
+                .to_series()
                 .to_list()
             ):
                 logger.debug(f"Participant {participant_id} is invalid.")
