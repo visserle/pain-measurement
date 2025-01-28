@@ -3,6 +3,12 @@ import polars as pl
 from src.features.scaling import scale_percent_to_decimal
 
 FEATURE_COLUMNS = [
+    "participant_id",
+    "trial_id",
+    "trial_number",
+    "timestamp",
+    "rownumber",
+    # facial expression features:
     "brow_furrow",
     "cheek_raise",
     "mouth_open",
