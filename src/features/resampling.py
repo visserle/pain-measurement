@@ -2,6 +2,8 @@
 # TODO: use butterworth filter for low-pass filtering in the decimate function to avoid
 # ripple in the passband
 
+# Time-columns are mere floats as pl.Duration is not fully supported in Polars and
+# DuckDB yet
 
 import logging
 
@@ -168,24 +170,6 @@ def resample_at_10_hz_equidistant(
     return df
 
 
-def add_time_column(
-    df: pl.DataFrame,
-    time_column: str = "timestamp",
-    time_unit: str = "ms",
-    new_column_name: str = "time",
-) -> pl.DataFrame:
-    """
-    Create a new column that contains the time from Timestamp in ms.
-
-    Note: This datatype is not fully supported in Polars and DuckDB yet.
-    Use with caution. https://github.com/pola-rs/polars/issues/13560
-    """
-    df = df.with_columns(
-        col(time_column).cast(pl.Duration(time_unit=time_unit)).alias(new_column_name)
-    )
-    return df
-
-
 def add_timestamp_µs_column(
     df: pl.DataFrame,
     time_column: str = "timestamp",
@@ -193,7 +177,8 @@ def add_timestamp_µs_column(
     """
     Create a new column that contains the timestamp in microseconds (µs).
 
-    Casts the datatype to Int64 which allow group_by_dynamic operations.
+    Casts the datatype to Int64 which allow group_by_dynamic operations which are
+    not possible with Float64 (as of late 2024).
     """
     return df.with_columns(
         (col(time_column) * 1000).cast(pl.Int64).alias(time_column + "_µs")
