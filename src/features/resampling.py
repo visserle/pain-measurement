@@ -6,6 +6,7 @@
 import logging
 
 import polars as pl
+import polars.selectors as cs
 import scipy.signal as signal
 from polars import col
 
@@ -67,7 +68,6 @@ def interpolate_and_fill_nulls(
     # Note that maybe using NaN as null value is better as NaN is a float in Polars
     # and we wouldn't need a selector
     # However, this would need a rewrite and testing of some parts of the pipeline
-    # Also refactoring this function into interpolate and fill_nulls would make sense
     selected_columns = columns or df.select(pl.selectors.by_dtype(pl.Float64)).columns
 
     return df.with_columns(
@@ -80,6 +80,7 @@ def interpolate_and_fill_nulls(
     )
 
 
+# TODO: remove this function resample_to_equidistant_ms and only keep resample_at_10_hz_equidistant?
 @map_trials
 def resample_to_equidistant_ms(
     df: pl.DataFrame,
@@ -91,7 +92,7 @@ def resample_to_equidistant_ms(
     Resample the DataFrame to equidistant time steps with a resolution of 1 ms.
     Note that this rounds every timestamp to the nearest millisecond.
 
-    For a lower resolution, use the gather_every function to get back to the
+    For a lower resolution, use the gather_every keyword to get back to the
     original sampling rate. Use decimate to downsample the data.
 
     For sanity checks, one could use the following code snippet:
@@ -109,7 +110,7 @@ def resample_to_equidistant_ms(
     df = df.with_columns(col("timestamp").round(0).alias("timestamp").cast(pl.Int64))
     df = df.upsample(
         time_column="timestamp",
-        every="1i",  # otherwise we would lose data
+        every="1i",  # otherwise we would lose data (also very inefficient)
         maintain_order=True,
         group_by="trial_id",
     ).with_columns(
@@ -120,6 +121,50 @@ def resample_to_equidistant_ms(
     df = interpolate_and_fill_nulls(df, time_column="timestamp")
     if gather_every:
         df = df.gather_every(gather_every)
+    return df
+
+
+def resample_at_10_hz_equidistant(
+    df: pl.DataFrame,
+) -> pl.DataFrame:
+    """Resample the DataFrame to equidistant time steps of 100 ms.
+    Note: Only works with normalized timestamps (starting from 0 in each trial).
+    """
+    # Create a list to store all processed trials
+    processed_trials = []
+
+    for trial in df.group_by(col("trial_id"), maintain_order=True):
+        trial = trial[1].with_columns(resampling=False)  # add resampling column
+        resampling_df = (
+            # Create empty rows for the resampling
+            trial.with_columns(
+                cs.by_dtype(pl.Float64).map_elements(
+                    lambda x: None, return_dtype=pl.Float64
+                )
+            )
+            .head(1801)
+            # Add equally spaced timestamps
+            .with_columns(
+                normalized_timestamp=pl.arange(0, 180_010, 1_00).cast(pl.Float64)
+            )
+            # Add markers for the resampling
+        ).with_columns(resampling=True)
+        assert resampling_df.height == 1801
+        # Add resampled timestamps back to data, interpolate and remove original
+        # timestamps
+        resampling_df = pl.concat([trial, resampling_df]).sort("normalized_timestamp")
+        resampling_df = (
+            interpolate_and_fill_nulls(
+                resampling_df, time_column="normalized_timestamp"
+            )
+            .filter(col("resampling"))
+            .drop("resampling")
+        )
+        # Append the processed trial to our list
+        processed_trials.append(resampling_df)
+
+    # Combine all processed trials back into a single dataframe
+    df = pl.concat(processed_trials, how="vertical")
     return df
 
 
@@ -152,4 +197,18 @@ def add_timestamp_µs_column(
     """
     return df.with_columns(
         (col(time_column) * 1000).cast(pl.Int64).alias(time_column + "_µs")
+    )
+
+
+def add_normalized_timestamp(
+    df: pl.DataFrame,
+    time_column: str = "timestamp",
+    trial_column: str = "trial_id",
+):
+    return df.with_columns(
+        [
+            (col(time_column) - col(time_column).min().over(trial_column)).alias(
+                "normalized_timestamp"
+            )
+        ]
     )
