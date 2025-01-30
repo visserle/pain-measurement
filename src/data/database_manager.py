@@ -19,7 +19,7 @@ from src.data.data_processing import (
     create_questionnaire_df,
     create_raw_data_df,
     create_trials_df,
-    merge_feature_data_dfs,
+    # merge_feature_data_dfs,
 )
 from src.data.database_schema import DatabaseSchema
 from src.data.imotions_data import load_imotions_data_df
@@ -110,8 +110,10 @@ class DatabaseManager:
         exclude_trials_with_measurement_problems: bool = True,
     ) -> pl.DataFrame:
         """Return the data from a table as a Polars DataFrame."""
-        # NOTE: could be more efficient by filtering out invalid trials in the query
-        df = self.execute(f"SELECT * FROM {table_name}").pl()
+
+        df = self.execute(
+            f"SELECT * FROM {table_name}"
+        ).pl()  # could be more efficient by filtering out invalid trials in the query
 
         invalid_trials = self.execute("SELECT * FROM Invalid_Trials").pl()
 
@@ -127,26 +129,9 @@ class DatabaseManager:
                     )
                 )
             else:  # not all tables have trial information, e.g. questionnaires
-                df = df.filter(
-                    ~col("participant_id").is_in(
-                        invalid_trials["participant_id"]
-                        .value_counts()
-                        # TODO: find a better way, this is not precise
-                        .filter(col("count") == 12)["participant_id"]
-                        .unique()
-                    )
-                )
+                # no filtering necessary, invalid participants are already excluded
+                pass
         return df
-
-    # def get_final_feature_data(
-    #     self,
-    #     exclude_trials_with_measurement_problems: bool,
-    # ) -> pl.DataFrame:
-    #     dfs = [
-    #         self.get_table("Feature_" + modality, exclude_trials_with_measurement_problems)
-    #         for modality in MODALITIES
-    #     ]
-    #     return merge_feature_data_dfs(dfs)
 
     def table_exists(
         self,
