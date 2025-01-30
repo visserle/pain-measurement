@@ -2,12 +2,14 @@ import polars as pl
 
 from src.features.scaling import scale_percent_to_decimal
 
-FEATURE_COLUMNS = [
+INFO_COLUMNS = [
     "participant_id",
     "trial_id",
     "trial_number",
     "timestamp",
-    # facial expression features:
+]
+
+FEATURE_COLUMNS = [
     "brow_furrow",
     "cheek_raise",
     "mouth_open",
@@ -22,8 +24,8 @@ def preprocess_face(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def feature_face(df: pl.DataFrame) -> pl.DataFrame:
-    df = df.select(FEATURE_COLUMNS)
-    # no need to decimate as the sample rate is already at 10 Hz
+    df = df.select(INFO_COLUMNS + FEATURE_COLUMNS)
+    # no need to decimate as the sample rate is already at 10 Hz (roughly)
     return df
 
 
