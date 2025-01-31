@@ -41,7 +41,7 @@ def decimate(
                 signal.decimate(
                     x=column.to_numpy(),
                     q=factor,
-                    ftype="iir",
+                    ftype="fir",
                     zero_phase=True,
                 )
             ).to_series()
