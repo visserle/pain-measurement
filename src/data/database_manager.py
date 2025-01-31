@@ -26,8 +26,8 @@ from src.data.imotions_data import load_imotions_data_df
 
 DB_FILE = DataConfig.DB_FILE
 NUM_PARTICIPANTS = DataConfig.NUM_PARTICIPANTS
-QUESTIONNAIRES = DataConfig.QUESTIONNAIRES
 MODALITIES = DataConfig.MODALITIES
+QUESTIONNAIRES = DataConfig.QUESTIONNAIRES
 
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
@@ -118,14 +118,14 @@ class DatabaseManager:
         invalid_trials = self.execute("SELECT * FROM Invalid_Trials").pl()
 
         if exclude_trials_with_measurement_problems:
-            if ["participant_id", "trial_number"] in df.columns:
+            if "participant_id" and "trial_number" in df.columns:
                 # Note that not every participant has 12 trials, so a filter using the
                 # trial_id would remove the wrong trials
                 df = df.filter(
                     ~pl.struct(["participant_id", "trial_number"]).is_in(
-                        invalid_trials.select(
-                            ["participant_id", "trial_number"]
-                        ).unique()
+                        invalid_trials.select(["participant_id", "trial_number"])
+                        .unique()
+                        .to_struct()
                     )
                 )
             else:  # not all tables have trial information, e.g. questionnaires

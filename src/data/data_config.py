@@ -19,7 +19,7 @@ class DataConfig:
     MAESUREMENT_RESULTS_FILE = Path("data/experiments/measurement_results.csv")
 
     QUESTIONNAIRES = [
-        # same as in questionnaires/app.py
+        # same as in src/experiments/questionnaires/app.py
         "general",
         "bdi-ii",
         "phq-15",
@@ -35,7 +35,6 @@ class DataConfig:
     IMOTIONS_DATA_CONFIG_FILE = Path("src/data/imotions_data_config.yaml")
     STIMULUS_CONFIG_PATH = Path("src/experiments/measurement/measurement_config.toml")
 
-    # Class methods to load config files
     @classmethod
     def load_imotions_config(cls):
         with open(cls.IMOTIONS_DATA_CONFIG_FILE, "r") as file:
@@ -48,8 +47,14 @@ class DataConfig:
 
     @classmethod
     def load_invalid_participants_config(cls):
-        return pl.read_csv(cls.INVALID_PARTICIPANTS_FILE)
+        return pl.read_csv(
+            cls.INVALID_PARTICIPANTS_FILE,
+            schema_overrides=dict(participant_id=pl.UInt8),
+        )
 
     @classmethod
     def load_invalid_trials_config(cls):
-        return pl.read_csv(cls.INVALID_TRIALS_FILE)
+        return pl.read_csv(
+            cls.INVALID_TRIALS_FILE,
+            schema_overrides=dict(participant_id=pl.UInt8, trial_number=pl.UInt8),
+        )
