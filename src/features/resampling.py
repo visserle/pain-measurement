@@ -8,9 +8,9 @@
 import logging
 
 import polars as pl
-import polars.selectors as cs
 import scipy.signal as signal
 from polars import col
+from polars.datatypes.group import FLOAT_DTYPES, INTEGER_DTYPES
 
 from src.features.transforming import map_trials
 
@@ -36,7 +36,7 @@ def decimate(
         )
 
     def decimate_column(column: pl.Series) -> pl.Series:
-        if column.dtype in [pl.Float32, pl.Float64] and column.name != time_column:
+        if column.dtype in FLOAT_DTYPES and column.name != time_column:
             return pl.from_numpy(
                 signal.decimate(
                     x=column.to_numpy(),
@@ -70,7 +70,7 @@ def interpolate_and_fill_nulls(
     # Note that maybe using NaN as null value is better as NaN is a float in Polars
     # and we wouldn't need a selector
     # However, this would need a rewrite and testing of some parts of the pipeline
-    selected_columns = columns or df.select(pl.selectors.by_dtype(pl.Float64)).columns
+    selected_columns = columns or df.select(col(FLOAT_DTYPES)).columns
 
     return df.with_columns(
         [col(column).interpolate_by(col(time_column)) for column in selected_columns]
@@ -116,8 +116,7 @@ def resample_to_equidistant_ms(
         maintain_order=True,
         group_by="trial_id",
     ).with_columns(
-        # do not lose crucial information
-        pl.col(pl.selectors.INTEGER_DTYPES).forward_fill()
+        col(INTEGER_DTYPES).forward_fill()  # do not lose crucial information
     )
 
     df = interpolate_and_fill_nulls(df, time_column="timestamp")
@@ -140,11 +139,9 @@ def resample_at_10_hz_equidistant(
         resampling_df = (
             # Create empty rows for the resampling
             trial.with_columns(
-                cs.by_dtype(pl.Float64).map_elements(
-                    lambda x: None, return_dtype=pl.Float64
-                )
+                col(FLOAT_DTYPES).map_elements(lambda x: None, return_dtype=pl.Float64)
             )
-            .head(1801)
+            .head(1801)  # we measure from second 0 to 180
             # Add equally spaced timestamps
             .with_columns(
                 normalized_timestamp=pl.arange(0, 180_010, 1_00).cast(pl.Float64)
