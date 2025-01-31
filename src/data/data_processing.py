@@ -179,15 +179,15 @@ def create_trials_df(
     trials_df = trials_df.with_columns(
         pl.lit(participant_id).alias("participant_id").cast(pl.UInt8)
     )
-    # add column for skin area
+    # add column for skin patch
     """
-    Skin areas were distributed as follows:
+    Skin patches were distributed as follows:
     |---|---|
     | 1 | 4 |
     | 5 | 2 |
     | 3 | 6 |
     |---|---|
-    Each skin area was stimulated twice (with 1 trial of 3 min each).
+    Each skin patch was stimulated twice (with 1 trial of 3 min each).
     For particpants with an even id the stimulation order is:
     6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> end.
     For participants with an odd id the stimulation order is:
@@ -197,7 +197,7 @@ def create_trials_df(
         pl.when(col("participant_id") % 2 == 1)
         .then(((col("trial_number") - 1) % 6) + 1)
         .otherwise(6 - ((col("trial_number") - 1) % 6))
-        .alias("skin_area")
+        .alias("skin_patch")
         .cast(pl.UInt8)
     )
 
@@ -314,16 +314,19 @@ def create_feature_data_df(
         return feature_face(df)
 
 
-def merge_feature_data_dfs(
-    dfs: list[pl.DataFrame],
-) -> pl.DataFrame:
-    """
-    Merge multiple feature DataFrames into a single DataFrame.
-    """
-    df = merge_dfs(dfs)
-    df = interpolate_and_fill_nulls(df)
-    # TODO: add final downsample
-    # or interpolate to equidistant timestamps, resample_to_equidistant_ms and then
-    # downsample
-    df = add_labels(df)  # maybe here, not tested yet TODO
-    return df
+# def merge_feature_data_dfs(
+#     dfs: list[pl.DataFrame],
+# ) -> pl.DataFrame:
+#     """
+#     Merge multiple feature DataFrames into a single DataFrame.
+#     """
+#     df = merge_dfs(dfs)
+#     df = interpolate_and_fill_nulls(df)
+#     # TODO: add final downsample
+#     # or interpolate to equidistant timestamps, resample_to_equidistant_ms and then
+#     # downsample
+#     df = add_labels(df)  # maybe here, not tested yet TODO
+#     return df
+
+
+create_merged_label_data_df = add_labels

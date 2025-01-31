@@ -43,7 +43,7 @@ class DatabaseSchema:
                 trial_number UTINYINT,
                 participant_id UTINYINT,
                 stimulus_seed USMALLINT,
-                skin_area UTINYINT,
+                skin_patch UTINYINT,
                 timestamp_start DOUBLE,
                 timestamp_end DOUBLE,
                 duration DOUBLE,
@@ -90,7 +90,7 @@ class DatabaseSchema:
         conn.execute(f"""
             CREATE OR REPLACE TABLE {name} (
                 {map_polars_schema_to_duckdb(schema)},
-                UNIQUE (trial_id, timestamp)  -- we remove rownumber for feature data
+                UNIQUE (trial_id, timestamp)  -- we removed rownumber before
             );
         """)
         logger.debug(f"Created table '{name}'.")

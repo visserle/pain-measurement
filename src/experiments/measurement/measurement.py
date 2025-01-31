@@ -188,10 +188,10 @@ if readjustment:
         f"range = {participant_info['temperature_range']} °C."
     )
 
-# determine order of skin areas based on participant ID
+# determine order of skin patches based on participant ID
 id_is_odd = int(participant_info["id"]) % 2
-skin_areas = range(1, 7) if id_is_odd else range(6, 0, -1)
-logging.info(f"Start with skin area {skin_areas[0]}.")
+skin_patches = range(1, 7) if id_is_odd else range(6, 0, -1)
+logging.info(f"Start with skin patch {skin_patches[0]}.")
 # update config with calibration data
 config["stimulus"] |= participant_info
 # shuffle seeds for randomization
@@ -359,7 +359,7 @@ def main():
         if trial == total_trials - 1:
             break
         logging.info(
-            f"Next, use skin area {skin_areas[(trial + 1) % len(skin_areas)]}."
+            f"Next, use skin patch {skin_patches[(trial + 1) % len(skin_patches)]}."
         )
         script["next_trial"].present()
         audio["next_trial"].play(maxtime=args.muted)
