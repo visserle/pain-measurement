@@ -16,7 +16,11 @@ from src.features.face import feature_face, preprocess_face
 from src.features.labels import add_labels
 from src.features.ppg import feature_ppg, preprocess_ppg
 from src.features.pupil import feature_pupil, preprocess_pupil
-from src.features.resampling import interpolate_and_fill_nulls
+from src.features.resampling import (
+    add_normalized_timestamp,
+    interpolate_and_fill_nulls,
+    resample_at_10_hz_equidistant,
+)
 from src.features.stimulus import feature_stimulus, preprocess_stimulus
 from src.features.transforming import merge_dfs
 
@@ -314,19 +318,16 @@ def create_feature_data_df(
         return feature_face(df)
 
 
-# def merge_feature_data_dfs(
-#     dfs: list[pl.DataFrame],
-# ) -> pl.DataFrame:
-#     """
-#     Merge multiple feature DataFrames into a single DataFrame.
-#     """
-#     df = merge_dfs(dfs)
-#     df = interpolate_and_fill_nulls(df)
-#     # TODO: add final downsample
-#     # or interpolate to equidistant timestamps, resample_to_equidistant_ms and then
-#     # downsample
-#     df = add_labels(df)  # maybe here, not tested yet TODO
-#     return df
-
-
-create_merged_label_data_df = add_labels
+def create_merged_and_labeled_data_df(
+    data_dfs: list[pl.DataFrame],
+    trials_df: pl.DataFrame,
+) -> pl.DataFrame:
+    """
+    Merge multiple feature DataFrames into a single DataFrame.
+    """
+    df = merge_dfs(data_dfs)
+    df = interpolate_and_fill_nulls(df)
+    df = add_normalized_timestamp(df)
+    df = resample_at_10_hz_equidistant(df)
+    df = add_labels(df, trials_df)
+    return df

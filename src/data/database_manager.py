@@ -14,12 +14,12 @@ from src.data.data_processing import (
     create_calibration_results_df,
     create_feature_data_df,
     create_measurement_results_df,
+    create_merged_and_labeled_data_df,
     create_participants_df,
     create_preprocess_data_df,
     create_questionnaire_df,
     create_raw_data_df,
     create_trials_df,
-    # merge_feature_data_dfs,
 )
 from src.data.database_schema import DatabaseSchema
 from src.data.imotions_data import load_imotions_data_df
@@ -250,17 +250,10 @@ class DatabaseManager:
             ORDER BY trial_id, timestamp;
         """)
 
-    # def insert_labels_data(
-    #     self,
-    #     table_name: str,
-    #     label_data_df: pl.DataFrame,
-    # ) -> None:
-    #     # same as preprocess data
-    #     self.insert_preprocess_data(table_name, label_data_df)
-
 
 def main():
     with DatabaseManager() as db:
+        MODALITIES = ["PPG", "Stimulus"]
         # Participant data
         df = create_participants_df()
         db.ctas("Participants", df)
@@ -329,20 +322,23 @@ def main():
             db.insert_feature_data(table_name, df)
         logger.info("Data feature-engineered.")
 
-        # TODO: Add labels
-        #
-        # add final merge of all feature data and label at the *very* end
-        # using a separate function for this
-        # something like this for collecting all feature data:
-        # query = """
-        # FROM sqlite_schema
-        # select tbl_name
-        # """
-        # with db:
-        #     tables = db.execute(query).pl()
-        # t = tables.get_column("tbl_name").to_list()
-        # list(filter(lambda x: x.startswith("Feature"), t))
-        # -> the df function for label adding should be in data_processing.py
+        # Merge feature data and add labels
+        data_dfs = []
+        for modality in MODALITIES:
+            if modality == "EEG":
+                continue  # TODO FIXME: EEG data is not yet available
+            data_dfs.append(
+                db.get_table(
+                    f"Feature_{modality}",
+                    exclude_trials_with_measurement_problems=False,
+                )
+            )
+        trials_df = db.get_table(
+            "Trials", exclude_trials_with_measurement_problems=False
+        )
+        df = create_merged_and_labeled_data_df(data_dfs, trials_df)
+        db.ctas("Merged_and_Labeled_Data", df)
+        logging.info("Feature data merged and labeled.")
 
         logger.info("Data pipeline completed.")
 
