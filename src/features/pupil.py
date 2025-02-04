@@ -46,11 +46,11 @@ def add_blink_threshold(
     """
     return df.with_columns(
         [
-            pl.when(pl.col(pupil) < min_threshold)
+            pl.when(col(pupil) < min_threshold)
             .then(None)
-            .when(pl.col(pupil) > max_threshold)
+            .when(col(pupil) > max_threshold)
             .then(max_threshold)
-            .otherwise(pl.col(pupil))
+            .otherwise(col(pupil))
             # with this first function we remove the "_raw" suffix, all other functions
             # apply to the result of the previous function (on "pupil_r" or "pupil_l")
             .alias(pupil.removesuffix("_raw"))
@@ -77,11 +77,11 @@ def extend_periods_around_blinks(
         # Expand the blink segments
         blinks_extended = blinks.with_columns(
             [
-                pl.col("start_timestamp")
+                col("start_timestamp")
                 .sub(period)
                 .clip(lower_bound=min_timestamp)
                 .alias("expanded_start"),
-                pl.col("end_timestamp")
+                col("end_timestamp")
                 .add(period)
                 .clip(upper_bound=max_timestamp)
                 .alias("expanded_end"),
@@ -92,7 +92,7 @@ def extend_periods_around_blinks(
         combined_filter = reduce(
             operator.or_,
             [
-                pl.col("timestamp").is_between(start, end)
+                col("timestamp").is_between(start, end)
                 for start, end in zip(
                     blinks_extended["expanded_start"], blinks_extended["expanded_end"]
                 )
@@ -102,7 +102,7 @@ def extend_periods_around_blinks(
 
         # Apply the filter
         data_extended = data_extended.with_columns(
-            pl.when(combined_filter).then(None).otherwise(pl.col(pupil)).alias(pupil)
+            pl.when(combined_filter).then(None).otherwise(col(pupil)).alias(pupil)
         )
 
     return data_extended
@@ -211,7 +211,7 @@ def median_filter_pupil(
     pupil_columns: list[str] = ["pupil_r", "pupil_l"],
 ) -> pl.DataFrame:
     return df.with_columns(
-        pl.col(pupil_columns).map_batches(
+        col(pupil_columns).map_batches(
             lambda x: signal.medfilt(
                 x,
                 kernel_size=size_in_seconds * SAMPLE_RATE + 1,  # must be odd
@@ -226,7 +226,7 @@ def average_pupils(
     result_column: str = "pupil_mean",
 ) -> pl.DataFrame:
     return df.with_columns(
-        ((pl.col(pupil_columns[0]) + pl.col(pupil_columns[1])) / 2).alias(result_column)
+        ((col(pupil_columns[0]) + col(pupil_columns[1])) / 2).alias(result_column)
     )
 
 
@@ -240,7 +240,7 @@ def low_pass_filter_pupil_tonic(
 ) -> pl.DataFrame:
     """Low-pass filter to return the tonic component of the pupillometry."""
     return df.with_columns(
-        pl.col(pupil_column).map_batches(
+        col(pupil_column).map_batches(
             lambda x: butterworth_filter(
                 x,
                 SAMPLE_RATE,

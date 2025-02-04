@@ -28,13 +28,14 @@ def remove_heartrate_nulls(
     df: pl.DataFrame,
 ) -> pl.DataFrame:
     df = df.with_columns(
+        col("ppg_heartrate_shimmer").cast(pl.Float64),
         pl.when(col("ppg_heartrate_shimmer") > MAX_HEARTRATE)
         .then(None)
         .when(col("ppg_heartrate_shimmer") == -1)
         .then(None)
         .otherwise(col("ppg_heartrate_shimmer"))
-        .alias("heartrate")
-    )
+        .alias("heartrate"),
+    ).drop("ppg_heartrate_shimmer")
     # note that the interpolate function already has the map_trials decorator
     # so we don't need to add it at the top of this function
     return interpolate_and_fill_nulls(df, ["heartrate"])

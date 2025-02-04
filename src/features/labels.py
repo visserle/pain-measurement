@@ -1,8 +1,3 @@
-# For labeling, a new table is created in the database.
-
-# functions for labels based on derivatives and absolute values of the time series
-# plus for temperature and rating
-
 import operator
 from functools import reduce
 
@@ -16,7 +11,7 @@ from src.features.transforming import merge_dfs
 def add_labels(
     data_df: pl.DataFrame,
     trials_df: pl.DataFrame,
-    based_on: str = "stimulus",  # TODO: add rating, etc.
+    based_on: str = "stimulus",  # TODO: add rating option, etc.
 ) -> pl.DataFrame:
     """Add labels to the data DataFrame."""
     # Merge data and trials DataFrames
