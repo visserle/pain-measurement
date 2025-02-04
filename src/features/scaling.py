@@ -4,6 +4,8 @@
 
 
 import polars as pl
+from polars import col
+from polars.datatypes.group import FLOAT_DTYPES
 
 from src.features.transforming import map_trials
 
@@ -12,7 +14,7 @@ EXCLUDE_COLUMNS = [
     "trial_number",
     "participant_id",
     "stimulus_seed",
-    "skin_area",
+    "skin_patch",
     "timestamp",
     "normalized_timestamp",
     "samplenumber",
@@ -25,13 +27,13 @@ def scale_min_max(
     exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
     """
-    Scales Float64 columns to the range [0, 1] for each trial.
+    Scales Float columns to the range [0, 1] for each trial.
 
     Note: Should be used with caution in ML pipelines to avoid **data leakage**.
     """
     exclude_columns = EXCLUDE_COLUMNS + (exclude_additional_columns or [])
     return df.with_columns(
-        _scale_min_max_col(pl.col(pl.Float64).exclude(exclude_columns))
+        _scale_min_max_col(col(FLOAT_DTYPES).exclude(exclude_columns))
     )
 
 
@@ -41,13 +43,13 @@ def scale_standard(
     exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
     """
-    Scale Float64 columns to have mean 0 and standard deviation 1 for each trial.
+    Scale Float columns to have mean 0 and standard deviation 1 for each trial.
 
     Note: Should be used with caution in ML pipelines to avoid **data leakage**.
     """
     exclude_columns = EXCLUDE_COLUMNS + (exclude_additional_columns or [])
     return df.with_columns(
-        _scale_standard_col(pl.col(pl.Float64).exclude(exclude_columns))
+        _scale_standard_col(col(FLOAT_DTYPES).exclude(exclude_columns))
     )
 
 
@@ -57,13 +59,13 @@ def scale_robust_standard(
     exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
     """
-    Scale Float64 columns to have median 0 and median absolute deviation 1 for each trial.
+    Scale Float columns to have median 0 and median absolute deviation 1 for each trial.
 
     Note: Should be used with caution in ML pipelines to avoid **data leakage**.
     """
     exclude_columns = EXCLUDE_COLUMNS + (exclude_additional_columns or [])
     return df.with_columns(
-        _scale_robust_standard_col(pl.col(pl.Float64).exclude(exclude_columns))
+        _scale_robust_standard_col(col(FLOAT_DTYPES).exclude(exclude_columns))
     )
 
 
@@ -73,14 +75,14 @@ def scale_percent_to_decimal(
     exclude_additional_columns: list[str] | None = None,
 ) -> pl.DataFrame:
     """
-    Scales Float64 columns that are in percentage format to decimal format.
+    Scales Float columns that are in percentage format to decimal format.
 
     In addition to the default columns to exclude, you can pass a list of additional
     columns to exclude from scaling.
     """
     exclude_columns = EXCLUDE_COLUMNS + (exclude_additional_columns or [])
     return df.with_columns(
-        _scale_percent_to_decimal_col(pl.col(pl.Float64).exclude(exclude_columns))
+        _scale_percent_to_decimal_col(col(FLOAT_DTYPES).exclude(exclude_columns))
     )
 
 
