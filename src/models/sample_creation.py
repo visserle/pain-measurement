@@ -17,7 +17,20 @@ def create_samples(
 
     Note: Needs a column "normalized_timestamp" in the DataFrame.
     """
+    samples = _cap_samples(df, intervals, length_ms)
+    samples = _generate_sample_ids(samples)
 
+    return samples
+
+
+def _cap_samples(
+    df: pl.DataFrame,
+    intervals: dict[str, str],
+    length_ms: int,
+):
+    """
+    Cap samples to the first 5 seconds of each interval.
+    """
     # Add time counter for each relevant interval
     condition = [
         pl.when(col(interval_col) != 0)
@@ -55,7 +68,12 @@ def create_samples(
         for name, interval_col in intervals.items()
     ]
     samples = samples.with_columns(condition)
+    return samples
 
+
+def _generate_sample_ids(
+    samples: pl.DataFrame,
+):
     # Split data into decreasing and increasing intervals to add labels and sample ids
     decreases = samples.filter(
         col("normalized_timestamp_decreases").is_not_null()
@@ -86,4 +104,4 @@ def create_samples(
 
     # Join the two tables back together
     samples = decreases.vstack(increases).sort("sample_id", "timestamp")
-    samples
+    return samples
