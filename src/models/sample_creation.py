@@ -1,11 +1,10 @@
-import numpy as np
 import polars as pl
 from polars import col
 
 
 def create_samples(
     df: pl.DataFrame,
-    intervals: dict[str, str] = {
+    from_intervals: dict[str, str] = {
         "increases": "strictly_increasing_intervals_without_plateaus",
         "decreases": "decreasing_intervals",
     },
@@ -17,13 +16,13 @@ def create_samples(
 
     Note: Needs a column "normalized_timestamp" in the DataFrame.
     """
-    samples = _cap_samples(df, intervals, length_ms)
-    samples = _generate_sample_ids(samples)
+    samples = _cap_intervals_to_sample_length(df, from_intervals, length_ms)
+    samples = _generate_sample_ids(samples, from_intervals)
 
     return samples
 
 
-def _cap_samples(
+def _cap_intervals_to_sample_length(
     df: pl.DataFrame,
     intervals: dict[str, str],
     length_ms: int,
@@ -73,27 +72,26 @@ def _cap_samples(
 
 def _generate_sample_ids(
     samples: pl.DataFrame,
+    intervals: dict[str, str],
 ):
     # Split data into decreasing and increasing intervals to add labels and sample ids
     decreases = samples.filter(
         col("normalized_timestamp_decreases").is_not_null()
     ).with_columns(
         pl.lit(1).alias("label").cast(pl.UInt8),
-        col("decreasing_intervals").alias("sample_id"),
+        col(intervals["decreases"]).alias("sample_id"),
     )
     increases = samples.filter(
         col("normalized_timestamp_increases").is_not_null()
     ).with_columns(
         pl.lit(0).alias("label").cast(pl.UInt8),
         (
-            col("strictly_increasing_intervals")
+            col(intervals["increases"])
             + (
-                decreases.select(pl.last("decreasing_intervals"))
+                decreases.select(pl.last(intervals["decreases"]))
             )  # continue from decreases
         ).alias("sample_id"),
     )
-    # Join the two tables back together
-    samples = decreases.vstack(increases).sort("sample_id", "timestamp")
 
     # Make sure we kept equidistant sampling
     assert (
