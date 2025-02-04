@@ -3,7 +3,7 @@ from polars import col
 
 
 def to_describe(
-    col: str,
+    column: str,
     prefix: str = "",
 ) -> list[pl.Expr]:
     """
@@ -18,16 +18,15 @@ def to_describe(
     )
     ````
     """
-    prefix = prefix or f"{col}_"
+    prefix = prefix or f"{column}_"
     return [
-        pl.col(col).count().alias(f"{prefix}count"),
-        pl.col(col).is_null().sum().alias(f"{prefix}null_count"),
-        pl.col(col).mean().alias(f"{prefix}mean"),
-        pl.col(col).std().alias(f"{prefix}std"),
-        pl.col(col).min().alias(f"{prefix}min"),
-        pl.col(col).quantile(0.25).alias(f"{prefix}25%"),
-        pl.col(col).quantile(0.5).alias(f"{prefix}50%"),
-        pl.col(col).quantile(0.75).alias(f"{prefix}75%"),
-        pl.col(col).max().alias(f"{prefix}max"),
+        col(column).count().alias(f"{prefix}count"),
+        col(column).is_null().sum().alias(f"{prefix}null_count"),
+        col(column).mean().alias(f"{prefix}mean"),
+        col(column).std().alias(f"{prefix}std"),
+        col(column).min().alias(f"{prefix}min"),
+        col(column).quantile(0.25).alias(f"{prefix}25%"),
+        col(column).quantile(0.5).alias(f"{prefix}50%"),
+        col(column).quantile(0.75).alias(f"{prefix}75%"),
+        col(column).max().alias(f"{prefix}max"),
     ]
-
