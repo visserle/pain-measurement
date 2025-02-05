@@ -5,19 +5,21 @@ from polars import col
 def create_samples(
     df: pl.DataFrame,
     from_intervals: dict[str, str] = {
-        "increases": "strictly_increasing_intervals_without_plateaus",
         "decreases": "decreasing_intervals",
+        "increases": "strictly_increasing_intervals_without_plateaus",
     },
     length_ms: int = 5000,
+    label_mapping: dict[str, int] | None = None,
 ):
     """
     Create samples from a DataFrame with for decreasing and increasing intervals.
-    Only the first 5 seconds of each interval are kept.
+    Only the first x milliseconds of each interval are used.
 
     Note: Needs a column "normalized_timestamp" in the DataFrame.
     """
     samples = _cap_intervals_to_sample_length(df, from_intervals, length_ms)
-    samples = _generate_sample_ids(samples, from_intervals)
+    samples = _generate_sample_ids(samples, from_intervals, label_mapping)
+    # samples = _remove_not_matching_samples(samples)
 
     # Make sure we kept equidistant sampling with a sampling rate of 10 Hz
     assert (
@@ -35,7 +37,7 @@ def _cap_intervals_to_sample_length(
     length_ms: int,
 ):
     """
-    Cap samples to the first 5 seconds of each interval.
+    Cap samples to the first x milliseconds of each interval.
     """
     # Add time counter for each relevant interval
     condition = [
@@ -124,3 +126,47 @@ def _generate_sample_ids(
     # Combine all interval DataFrames and sort
     samples = pl.concat(sample_dfs).sort("sample_id", "timestamp")
     return samples
+
+
+def _remove_not_matching_samples(
+    samples: pl.DataFrame,
+):
+    """
+    Remove samples that do not match the criteria.
+    """
+    pass
+
+
+def make_sample_set_balanced(
+    samples: pl.DataFrame,
+):
+    """
+    Make a sample set balanced by reducing the number of samples in larger groups.
+    """
+    sample_length = samples.filter(
+        col("sample_id") == samples.get_column("sample_id").first()
+    ).height
+
+    # Calculate samples per label and find minimum
+    label_counts = samples.get_column("label").value_counts()
+    samples_per_label = label_counts.with_columns(col("count") // sample_length)
+    min_label_count = samples_per_label.get_column("count").min()
+
+    # Calculate how many samples to remove from each group
+    samples_to_remove = samples_per_label.with_columns(col("count") - min_label_count)
+
+    # Balance the dataset by reducing larger groups to match smallest group
+    balanced_groups = []
+    for remove_count, (label, group) in zip(
+        samples_to_remove.get_column("count"), samples.group_by("label")
+    ):
+        if remove_count == 0:
+            # Keep group as is if it's already at the minimum size
+            balanced_groups.append(group)
+        else:
+            # Reduce group size to match the smallest group
+            reduced_group = group.limit(-remove_count * sample_length)
+            balanced_groups.append(reduced_group)
+
+    # Combine all balanced groups and sort by sample_id
+    return pl.concat(balanced_groups).sort("sample_id")
