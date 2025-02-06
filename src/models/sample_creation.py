@@ -116,7 +116,6 @@ def _generate_sample_ids(
                 (col(interval_col) + cumulative_count).alias("sample_id"),
             ]
         )
-
         # Update cumulative count for next interval type
         if not interval_df.is_empty():
             cumulative_count = interval_df.select(pl.max("sample_id")).item()
@@ -148,8 +147,10 @@ def make_sample_set_balanced(
     ).height
 
     # Calculate samples per label and find minimum
-    label_counts = samples.get_column("label").value_counts()
-    samples_per_label = label_counts.with_columns(col("count") // sample_length)
+    label_counts = samples.get_column("label").value_counts().sort("label")
+    samples_per_label = label_counts.with_columns(col("count") // sample_length).sort(
+        "label"
+    )
     min_label_count = samples_per_label.get_column("count").min()
 
     # Calculate how many samples to remove from each group
