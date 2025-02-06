@@ -1,3 +1,6 @@
+# TODO: improve make_sample_set_balanced, there are more sophisticated ways to balance
+# the dataset
+
 import polars as pl
 from polars import col
 
@@ -17,6 +20,12 @@ def create_samples(
 
     Note: Needs a column "normalized_timestamp" in the DataFrame.
     """
+    if "normalized_timestamp" not in df.columns:
+        raise ValueError(
+            "DataFrame must contain a column 'normalized_timestamp "
+            "(e.g. src.features.resampling.add_normalized_timestamp)'"
+        )
+
     samples = _cap_intervals_to_sample_length(df, from_intervals, length_ms)
     samples = _generate_sample_ids(samples, from_intervals, label_mapping)
     # samples = _remove_not_matching_samples(samples)

@@ -24,12 +24,12 @@ from src.features.resampling import (
 from src.features.stimulus import feature_stimulus, preprocess_stimulus
 from src.features.transforming import merge_dfs
 
-logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
-
-
 INVALID_PARTICIPANTS = (
     DataConfig.load_invalid_participants_config().get_column("participant_id").to_list()
 )
+
+
+logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 def create_participants_df():
