@@ -1,5 +1,7 @@
 # TODO: improve make_sample_set_balanced, there are more sophisticated ways to balance
 # the dataset
+import operator
+from functools import reduce
 
 import polars as pl
 from polars import col
@@ -66,6 +68,8 @@ def _cap_intervals_to_sample_length(
     # Need two separate filters because else we would keep timestamps that are not
     # in the first x milliseconds but are in the first x milliseconds of the other
     # interval
+
+    # This filter prepares the data for the next filter
     condition = [
         pl.when(col(f"normalized_timestamp_{name}") <= length_ms)
         .then(col(f"normalized_timestamp_{name}"))
@@ -73,10 +77,15 @@ def _cap_intervals_to_sample_length(
         .alias(f"normalized_timestamp_{name}")
         for name in intervals.keys()
     ]
-    samples = samples.with_columns(condition).filter(
-        (col("normalized_timestamp_increases") <= length_ms)
-        | (col("normalized_timestamp_decreases") <= length_ms)
+    samples = samples.with_columns(condition)
+
+    # Filter out all data points that are not in the first x milliseconds
+    condition = reduce(
+        operator.or_,
+        [col(f"normalized_timestamp_{name}") <= length_ms for name in intervals.keys()],
     )
+    samples = samples.filter(condition)
+
     # We also need to filter out all wrong interval values similar to the step above
     condition = [
         pl.when(col(f"normalized_timestamp_{name}").is_null())
@@ -140,8 +149,9 @@ def _remove_not_matching_samples(
     samples: pl.DataFrame,
 ):
     """
-    Remove samples that do not match the criteria.
+    Remove samples that do not match the criteria. E.g. samples that are too short.
     """
+    # TODO: Implement removal of samples that do not match the criteria
     pass
 
 
