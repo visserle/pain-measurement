@@ -253,7 +253,7 @@ class DatabaseManager:
 
 def main():
     with DatabaseManager() as db:
-        MODALITIES = ["PPG", "Stimulus"]
+        # MODALITIES = ["PPG", "Stimulus"]
         # Participant data
         df = create_participants_df()
         db.ctas("Participants", df)
@@ -338,7 +338,7 @@ def main():
         )
         df = create_merged_and_labeled_data_df(data_dfs, trials_df)
         db.ctas("Merged_and_Labeled_Data", df)
-        logging.info("Feature data merged and labeled.")
+        logger.info("Data merged and labeled.")
 
         logger.info("Data pipeline completed.")
 

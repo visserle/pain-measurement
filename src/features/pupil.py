@@ -238,7 +238,7 @@ def low_pass_filter_pupil_tonic(
     order: int = 2,
     pupil_column: list[str] = ["pupil_mean_tonic"],
 ) -> pl.DataFrame:
-    """Low-pass filter to return the tonic component of the pupillometry."""
+    """Low-pass filter to return some sort of tonic component of the pupillometry."""
     return df.with_columns(
         col(pupil_column).map_batches(
             lambda x: butterworth_filter(

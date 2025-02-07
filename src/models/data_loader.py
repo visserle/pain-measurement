@@ -2,9 +2,6 @@ import numpy as np
 import polars as pl
 from polars import col
 
-from src.data.database_manager import DatabaseManager
-from src.features.transforming import merge_dfs
-
 
 def transform_df_to_arrays(
     df: pl.DataFrame,
@@ -30,7 +27,7 @@ def transform_df_to_arrays(
         - groups: numpy array of groups (if group_column provided)
 
     Note:
-        X can be easily plotted using ipywidgets with the following code:
+        X can be easily plotted using ipywidgets:
         ```python
         import ipywidgets
 

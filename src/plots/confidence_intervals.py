@@ -75,7 +75,7 @@ def aggregate_over_stimulus_seeds(
     #     [(col("zeroed_timestamp") // 1000).cast(pl.Int32).alias("time_bin")]
     #     )
     #     .group_by(["stimulus_seed", "time_bin"])
-    # ````‚
+    # ````
 
     # Zero-based timestamp in milliseconds
     df = _zero_based_timestamps(df)

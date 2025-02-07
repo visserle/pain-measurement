@@ -166,28 +166,6 @@ class Thermoino:
         port: str | None = None,
         dummy: bool = False,
     ):
-        """
-        Constructs a Thermoino object. Do not specify the port if you want to connect
-        automatically.
-
-        Parameters
-        ----------
-        port : `str`
-            The serial port to which the Thermoino device is connected.
-        mms_baseline : `int`, optional
-            Baseline temperature in °C. It has to be the same as in the MMS program.
-        mms_rate_of_rise : `int`
-            Rate of rise of temperature in °C/s. It has to be the same as in the MMS
-            program.
-            For a Pathways thermode 10 is standard. For TAS 2 it is 13.
-            For CHEPS something over 50 (ask Björn).
-            For normal temperature plateaus a higher rate of rise is recommended;
-            for complex temperature courses a lower rate of rise is recommended.
-            (speed vs. precision)
-        dummy : `bool`, optional
-            If True, the class will run in dummy mode. Default is False.
-        """
-
         self.mms_baseline = mms_baseline
         self.temp = mms_baseline  # start at the baseline temperature
         self.mms_rate_of_rise = mms_rate_of_rise

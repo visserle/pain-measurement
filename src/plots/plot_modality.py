@@ -18,19 +18,17 @@ info_columns = [
 
 def plot_modality_over_trials(
     modality: str,
-    processing_step: str = None,
-    signals: list[str] = None,
+    processing_step: str | None = None,
+    signals: list[str] | None = None,
     normalize: bool = True,
-    specific_trial: int = None,
+    specific_trial: int | None = None,
 ) -> pl.DataFrame:
     processing_step = processing_step or "feature"
 
     with DatabaseManager() as db:
         df = db.get_table(processing_step + "_" + modality)
-    df = df.drop(
-        info_columns,
-        strict=False,
-    )
+    df = df.drop(info_columns, strict=False)
+    
     if specific_trial:
         df = df.filter(col("trial_id") == specific_trial)
 
