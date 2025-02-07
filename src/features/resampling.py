@@ -67,9 +67,6 @@ def interpolate_and_fill_nulls(
             If None, all float columns are interpolated. Defaults to None.
         time_column (str, optional): The time column. Defaults to "timestamp".
     """
-    # Note that maybe using NaN as null value is better as NaN is a float in Polars
-    # and we wouldn't need a selector
-    # However, this would need a rewrite and testing of some parts of the pipeline
     selected_columns = columns or df.select(col(FLOAT_DTYPES)).columns
 
     return df.with_columns(
@@ -144,7 +141,7 @@ def resample_at_10_hz_equidistant(
             .head(1801)  # we measure from second 0 to 180
             # Add equally spaced timestamps
             .with_columns(
-                normalized_timestamp=pl.arange(0, 180_010, 1_00).cast(pl.Float64)
+                normalized_timestamp=pl.arange(0, 180_010, 100).cast(pl.Float64)
             )
             # Add markers for the resampling
         ).with_columns(resampling=True)
