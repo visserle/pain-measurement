@@ -1,10 +1,14 @@
+import logging
+
 import numpy as np
 import polars as pl
+import torch
 from polars import col
+from torch.utils.data import DataLoader, TensorDataset
 
 
-def transform_df_to_arrays(
-    df: pl.DataFrame,
+def transform_sample_df_to_arrays(
+    sample_df: pl.DataFrame,
     feature_columns: list[str],
     label_column: str | None = "label",
     group_column: str | None = "participant_id",
@@ -14,7 +18,7 @@ def transform_df_to_arrays(
     Convert polars DataFrame to numpy arrays formatted for time series modeling.
 
     Args:
-        df: Input DataFrame
+        sample_df: Input DataFrame
         feature_columns: List of column names to use as features
         label_column: Column name for labels (optional)
         group_column: Column name for groups (optional)
@@ -40,7 +44,7 @@ def transform_df_to_arrays(
         ```
     """
     # Group by sample_id and aggregate features
-    X = df.group_by(group_by_col, maintain_order=True).agg(
+    X = sample_df.group_by(group_by_col, maintain_order=True).agg(
         [col(column) for column in feature_columns]
     )
 
@@ -58,7 +62,7 @@ def transform_df_to_arrays(
     y = None
     if label_column:
         y = (
-            df.group_by(group_by_col)
+            sample_df.group_by(group_by_col)
             .agg(col(label_column).first())
             .get_column(label_column)
             .to_numpy()
@@ -68,10 +72,43 @@ def transform_df_to_arrays(
     groups = None
     if group_column:
         groups = (
-            df.group_by(group_by_col)
+            sample_df.group_by(group_by_col)
             .agg(col(group_column).first())
             .get_column(group_column)
             .to_numpy()
         )
 
     return X, y, groups
+
+
+def create_dataloaders(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    batch_size: int,
+    is_test: bool = True,
+) -> tuple[DataLoader, DataLoader]:
+    # Sanity check
+    assert len(X_train.shape) == len(X_test.shape) == 3, (
+        "X_train and X_test must have 3 dimensions: (samples, timesteps, features)"
+    )
+
+    train_data = TensorDataset(
+        torch.FloatTensor(X_train),
+        torch.FloatTensor(y_train).view(-1, 1),
+    )
+    test_data = TensorDataset(
+        torch.FloatTensor(X_test),
+        torch.FloatTensor(y_test).view(-1, 1),
+    )
+    train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=False)
+
+    dataset = "Test" if is_test else "Validation"
+    logging.debug(
+        f"Train Data: {len(train_data)} samples, "
+        f"{dataset} Data: {len(test_data)} samples"
+    )
+
+    return train_loader, test_loader

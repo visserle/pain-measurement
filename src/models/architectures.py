@@ -32,3 +32,20 @@ class MultiLayerPerceptron(nn.Module):
         out = self.relu(out)
         out = self.layer3(out)
         return out  # BCEWithLogitsLoss will apply sigmoid
+
+
+class LongShortTermMemory(nn.Module):
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        num_layers: int,
+    ):
+        super().__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_size, 1)
+
+    def forward(self, x):
+        out, (hn, cn) = self.lstm(x)
+        out = self.fc(out[:, -1, :])
+        return out
