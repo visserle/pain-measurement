@@ -1,7 +1,6 @@
 # TODO;
 # read https://neuraldatascience.io/7-eeg/erp_filtering.html for filter_eeg function
 # Frequency-based analysis of EEG data
-# find out why after lowcut=0.5 the data is centered around 0
 # maybe improve code quality: https://stackoverflow.com/questions/75057003/how-to-apply-scipy-filter-in-polars-dataframe
 
 
