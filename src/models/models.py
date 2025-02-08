@@ -1,4 +1,12 @@
-"""Nested cross-validation for model comparison for time series classification with 3D input"""
+"""Nested cross-validation for model comparison for time series classification with 3D input
+
+In research areas such as classification and regression, there are well-established stan-
+dard practices for evaluation. Data partitioning is performed by using a standard k-fold
+Cross-Validation (CV) to tune the model hyperparameters based on the error on a vali-
+dation set, the model with the best hyperparameter combination is tested on the testing
+set, standard error measures such as squared errors, absolute errors or precision, recall,
+or area under the curve are computed and finally the best models are selected."""
+
 
 # TODO:
 # - improve model configuration
@@ -21,67 +29,28 @@ import torch.optim as optim
 from sklearn.model_selection import KFold, train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 
+from src.data.database_manager import DatabaseManager
 from src.log_config import configure_logging
-from src.models.utils import StandardScaler3D
+from src.models.architectures import LongShortTermMemory, MultiLayerPerceptron
+from src.models.data_loader import create_dataloaders, transform_sample_df_to_arrays
+from src.models.sample_creation import create_samples, make_sample_set_balanced
+from src.models.scalers import StandardScaler3D
+from src.models.utils import get_device
 
-LEVEL = logging.DEBUG
-configure_logging(stream_level=LEVEL)
-
-device = (
-    torch.device("cuda")
-    if torch.cuda.is_available()
-    else torch.device("mps")
-    if torch.backends.mps.is_available()
-    else torch.device("cpu")
-)
-logging.debug(f"Using device: {device}")
-
-# Define Constants
-BATCH_SIZE = 32  # not used, optimized
 EPOCHS = 10
 K_FOLDS = 3
 N_TRIALS = 10
 
+configure_logging(stream_level=logging.DEBUG)
 
-def time_stamp():
-    return datetime.now().strftime("%Y%m%d-%H%M%S")
-
-
-class MLP(nn.Module):
-    """MLP class for time series classification with 3D input"""
-
-    def __init__(self, input_size, hidden_size):
-        super(MLP, self).__init__()
-        self.layer1 = nn.Linear(input_size, hidden_size)
-        self.layer2 = nn.Linear(hidden_size, 1)
-        self.relu = nn.ReLU()
-
-    def forward(self, x):
-        x = x.permute(0, 2, 1)  # Permute to Fortran order
-        x = x.flatten(start_dim=1)  # Flatten to 2D
-        out = self.layer1(x)
-        out = self.relu(out)
-        out = self.layer2(out)
-        return out  # BCEWithLogitsLoss will apply sigmoid
-
-
-class LSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers):
-        super(LSTM, self).__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, 1)
-
-    def forward(self, x):
-        out, (hn, cn) = self.lstm(x)
-        out = self.fc(out[:, -1, :])
-        return out
+device = get_device()
 
 
 # Define a dictionary of models with their respective hyperparameters and native data format
 models_dict = {
     "MLP": {
-        "class": MLP,
-        "format": "2D",
+        "class": MultiLayerPerceptron,
+        "format": "3D",
         "hyperparameters": {
             "hidden_size": {"type": "int", "low": 128, "high": 4096},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-1, "log": True},
@@ -89,7 +58,7 @@ models_dict = {
         },
     },
     "LSTM": {
-        "class": LSTM,
+        "class": LongShortTermMemory,
         "format": "3D",
         "hyperparameters": {
             "hidden_size": {"type": "int", "low": 128, "high": 1024},
@@ -103,8 +72,8 @@ models_dict = {
 
 
 def initialize_model(
-    model_name,
-    input_size,
+    model_name: str,
+    input_size: int,
     **hyperparams,
 ):
     model_class = models_dict[model_name]["class"]
@@ -118,8 +87,8 @@ def initialize_model(
 
 
 def get_input_size(
-    model_name,
-    X,
+    model_name: str,
+    X: np.ndarray,
 ):
     data_format = models_dict[model_name]["format"]
     match data_format:
@@ -137,56 +106,29 @@ def load_dataset():
     return X, y
 
 
-def create_dataloaders(
-    X_train,
-    y_train,
-    X_test,
-    y_test,
-    batch_size,
-    is_validation=False,
-):
-    if not len(X_train.shape) == len(X_test.shape) == 3:
-        raise ValueError(
-            "X_train and X_test must have 3 dimensions: (samples, timesteps, features)"
-        )
-
-    scaler = StandardScaler3D()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-
-    train_data = TensorDataset(
-        torch.FloatTensor(X_train),
-        torch.FloatTensor(y_train).view(-1, 1),
-    )
-    test_data = TensorDataset(
-        torch.FloatTensor(X_test),
-        torch.FloatTensor(y_test).view(-1, 1),
-    )
-
-    train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True)
-
-    test_loader = DataLoader(dataset=test_data, batch_size=batch_size)
-
-    data_set = "Validation" if is_validation else "Test"
-    logging.debug(
-        f"Train Data: {len(train_data)} samples, {data_set} Data: {len(test_data)} samples"
-    )
-
-    return train_loader, test_loader
-
-
 def train_model(
-    model,
-    train_loader,
-    val_loader,
-    criterion,
-    optimizer,
-    num_epochs,
-    is_test=False,
-):
-    for epoch in range(num_epochs):
+    model: nn.Module,
+    train_loader: DataLoader,
+    test_loader: DataLoader,
+    criterion: nn.modules.loss._Loss,
+    optimizer: optim.Optimizer,
+    epochs: int,
+    is_test: bool = True,
+) -> dict[str, list[float]]:
+    dataset = "test" if is_test else "validation"
+    history = {
+        "train_accuracy": [],
+        "train_loss": [],
+        f"{dataset}_accuracy": [],
+        f"{dataset}_loss": [],
+    }
+
+    for epoch in range(epochs):
         model.train()
         running_loss = 0.0
+        # for acc metric only
+        correct = 0
+        total = 0
         for X_batch, y_batch in train_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             optimizer.zero_grad()
@@ -196,32 +138,48 @@ def train_model(
             optimizer.step()
             running_loss += loss.item() * X_batch.size(0)
 
-        epoch_loss = running_loss / len(train_loader.dataset)
-        val_loss, val_accuracy = evaluate_model(model, val_loader, criterion)
+            # Calculate training accuracy
+            y_pred_classes = (torch.sigmoid(outputs) >= 0.5).float()
+            total += y_batch.size(0)
+            correct += (y_pred_classes == y_batch).sum().item()
 
-        phase = "Final Training" if is_test else "Training"
-        data_set = "Test" if is_test else "Validation"
+        epoch_loss = running_loss / len(train_loader.dataset)
+        epoch_acc = correct / total if total > 0 else 0
+        test_loss, test_accuracy = evaluate_model(model, test_loader, criterion)
+
+        # Store the metrics in the history dictionary
+        history["train_loss"].append(epoch_loss)
+        history["train_accuracy"].append(epoch_acc)
+        history[f"{dataset}_loss"].append(test_loss)
+        history[f"{dataset}_accuracy"].append(test_accuracy)
+
+        # Log progress
+        max_digits = len(str(epochs))
         logging.debug(
-            f"{phase} | Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss:.4f}, {data_set} Loss: {val_loss:.4f}, {data_set} Accuracy: {val_accuracy:.4f}"
+            f"E[{+epoch + 1:>{max_digits}d}/{epochs}] "
+            f"| train {epoch_loss:.4f} ({epoch_acc:.1%}) "
+            f"· {dataset} {test_loss:.4f} ({test_accuracy:.1%})"
         )
+
+    return history
 
 
 def evaluate_model(
-    model,
-    val_loader,
-    criterion,
-):
+    model: nn.Module,
+    test_loader: DataLoader,
+    criterion: nn.modules.loss._Loss,
+) -> tuple[float, float]:
     model.eval()
     total_loss = 0.0
     correct = 0
     total = 0
     with torch.inference_mode():
-        for X_batch, y_batch in val_loader:
+        for X_batch, y_batch in test_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             y_pred_logits = model(X_batch)
             loss = criterion(y_pred_logits, y_batch)
             total_loss += loss.item() * X_batch.size(0)
-            # Metric heer is acc
+            # Metric here is acc
             y_pred_classes = (torch.sigmoid(y_pred_logits) >= 0.5).float()
             total += y_batch.size(0)
             correct += (y_pred_classes == y_batch).sum().item()
@@ -232,11 +190,11 @@ def evaluate_model(
 
 
 def cross_validate(
-    X,
-    y,
-    model_name,
-    input_size,
-    k_folds,
+    X: np.ndarray,
+    y: np.ndarray,
+    model_name: str,
+    input_size: int,
+    k_folds: int,
     **hyperparams,
 ):
     kfold = KFold(n_splits=k_folds, shuffle=True)
@@ -245,6 +203,8 @@ def cross_validate(
     for fold, (train_index, val_index) in enumerate(kfold.split(X, y)):
         X_train, X_val = X[train_index], X[val_index]
         y_train, y_val = y[train_index], y[val_index]
+
+        # TODO: add scaler
 
         train_loader, val_loader = create_dataloaders(
             X_train,
@@ -315,6 +275,13 @@ def create_objective_function(
 
 
 def main():
+    db = DatabaseManager()
+    with db:
+        df = db.get_table(
+            "Merged_and_Labeled_Data",
+            exclude_trials_with_measurement_problems=True,
+        )
+
     X, y = load_dataset()
     # Split the data into training+validation set and test set
     X_train_val, X_test, y_train_val, y_test = train_test_split(
@@ -336,7 +303,7 @@ def main():
         study = optuna.create_study(
             direction="minimize",
             storage="sqlite:///db.sqlite3",
-            study_name=f"{model_name}_{time_stamp()}",
+            study_name=f"{model_name}_{datetime.now().strftime('%Y%m%d-%H%M%S')()}",
         )
         study.optimize(objective_function, n_trials=N_TRIALS)
 
@@ -354,6 +321,8 @@ def main():
     )
 
     # Retrain the model with the best parameters on the entire training+validation set
+    # TODO: add scaler beforehand
+
     train_loader, test_loader = create_dataloaders(
         X_train_val, y_train_val, X_test, y_test, batch_size=best_params["batch_size"]
     )
