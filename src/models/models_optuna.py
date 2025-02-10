@@ -34,21 +34,19 @@ from src.log_config import configure_logging
 from src.models.architectures import LongShortTermMemory, MultiLayerPerceptron
 from src.models.data_loader import create_dataloaders, transform_sample_df_to_arrays
 from src.models.sample_creation import create_samples, make_sample_set_balanced
-from src.models.scalers import StandardScaler3D
+from src.models.scalers import StandardScaler3D, scale_dataset
 from src.models.utils import get_device
 
-EPOCHS = 10
+EPOCHS = 80
 K_FOLDS = 2
-N_TRIALS = 3
-
-# see # https://github.com/google-research/tuning_playbook#choosing-the-batch-size
-BATCH_SIZE = 64
+N_TRIALS = 10
+BATCH_SIZE = 128
 MODELS = {
     "MLP": {
         "class": MultiLayerPerceptron,
         "format": "2D",
         "hyperparameters": {
-            "hidden_size": {"type": "int", "low": 128, "high": 4096},
+            "hidden_size": {"type": "int", "low": 128, "high": 8192},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-1, "log": True},
         },
     },
@@ -58,7 +56,7 @@ MODELS = {
         "format": "3D",
         "hyperparameters": {
             "hidden_size": {"type": "int", "low": 128, "high": 1024},
-            "num_layers": {"type": "int", "low": 1, "high": 2},
+            "num_layers": {"type": "int", "low": 1, "high": 5},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-1, "log": True},
         },
     },
@@ -84,9 +82,11 @@ def initialize_model(
 
 def get_input_size(
     model_name: str,
-    X: np.ndarray,
+    X: np.ndarray | DataLoader,
 ):
     data_format = MODELS[model_name]["format"]
+    if isinstance(X, DataLoader):
+        X = next(iter(X))[0].numpy()
     match data_format:
         case "2D":
             return X.shape[2] * X.shape[1]
@@ -104,6 +104,7 @@ def train_model(
     optimizer: optim.Optimizer,
     epochs: int,
     is_test: bool = True,
+    trial: optuna.Trial = None,
 ) -> dict[str, list[float]]:
     dataset = "test" if is_test else "validation"
     history = {
@@ -151,6 +152,15 @@ def train_model(
             f"· {dataset} {test_loss:.4f} ({test_accuracy:.1%})"
         )
 
+        # Report intermediate value to Optuna for pruning
+        if trial is not None and not is_test:
+            val_accuracy = test_accuracy
+            trial.report(val_accuracy, epoch)
+
+            # Handle pruning based on the intermediate value
+            if trial.should_prune():
+                raise optuna.exceptions.TrialPruned()
+
     return history
 
 
@@ -179,46 +189,9 @@ def evaluate_model(
     return average_loss, accuracy
 
 
-def cross_validate(
-    X: np.ndarray,
-    y: np.ndarray,
-    model_name: str,
-    k_folds: int,
-    **hyperparams,
-):
-    kfold = KFold(n_splits=k_folds, shuffle=True)  # TODO: change to GroupKFold
-    accuracies = []
-
-    for fold, (train_index, val_index) in enumerate(kfold.split(X, y)):
-        X_train, X_val = X[train_index], X[val_index]
-        y_train, y_val = y[train_index], y[val_index]
-
-        # TODO: add scaler
-
-        train_loader, val_loader = create_dataloaders(
-            X_train,
-            y_train,
-            X_val,
-            y_val,
-            batch_size=BATCH_SIZE,
-            is_test=False,
-        )
-        model, criterion, optimizer = initialize_model(
-            model_name, get_input_size(model_name, X_train), **hyperparams
-        )
-        train_model(model, train_loader, val_loader, criterion, optimizer, EPOCHS)
-        average_loss, accuracy = evaluate_model(model, val_loader, criterion)
-        accuracies.append(accuracy)
-
-        logging.info(
-            f"Fold {fold} | Accuracy: {accuracy:.2f} | Validation Loss: {average_loss:.2f},"
-        )
-    return accuracies
-
-
 def create_objective_function(
-    X,
-    y,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
     model_name,
     model_info,
 ):
@@ -253,9 +226,24 @@ def create_objective_function(
                 case _:
                     raise ValueError(f"Unknown parameter type: {param_type}")
 
-        # Perform cross-validation and return the mean validation loss of the inner loop as objective
-        val_losses = cross_validate(X, y, model_name, K_FOLDS, **hyperparams)
-        return np.mean(val_losses)
+        # Train the model with the suggested hyperparameters
+        model, criterion, optimizer = initialize_model(
+            model_name, get_input_size(model_name, val_loader), **hyperparams
+        )
+        train_model(
+            model,
+            train_loader,
+            val_loader,
+            criterion,
+            optimizer,
+            EPOCHS,
+            is_test=False,
+            trial=trial,
+        )
+        average_loss, accuracy = evaluate_model(model, val_loader, criterion)
+
+        logging.info(f"Accuracy: {accuracy:.2f} | Validation Loss: {average_loss:.2f}")
+        return accuracy
 
     return objective
 
@@ -301,8 +289,8 @@ def main():
         feature_columns=[
             # "temperature",  # only for visualization
             # "rating"
-            # "eda_raw",
-            # "eda_tonic",
+            "eda_raw",
+            "eda_tonic",
             "pupil_mean",
         ],
     )
@@ -314,6 +302,28 @@ def main():
     X_train_val, y_train_val = X[idx_train_val], y[idx_train_val]
     X_test, y_test = X[idx_test], y[idx_test]
 
+    # Split the training+validation set into training and validation sets
+    splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+    idx_train, idx_val = next(
+        splitter.split(X_train_val, y_train_val, groups=groups[idx_train_val])
+    )
+    X_train, y_train = X_train_val[idx_train], y_train_val[idx_train]
+    X_val, y_val = X_train_val[idx_val], y_train_val[idx_val]
+
+    # Scale the data
+    # TODO: fix scaler
+    X_train, X_val = scale_dataset(X_train, X_val)
+
+    # Create dataloaders for training and validation sets
+    train_loader, val_loader = create_dataloaders(
+        X_train,
+        y_train,
+        X_val,
+        y_val,
+        batch_size=BATCH_SIZE,
+        is_test=False,
+    )
+
     best_value = float("inf")
     best_params = None
     best_model_name = None
@@ -322,7 +332,7 @@ def main():
         logging.info(f"Training {model_name}...")
 
         objective_function = create_objective_function(
-            X_train_val, y_train_val, model_name, model_info
+            train_loader, val_loader, model_name, model_info
         )
         study = optuna.create_study(
             direction="maximize",
@@ -345,9 +355,10 @@ def main():
     )
 
     # Retrain the model with the best parameters on the entire training+validation set
-    # TODO: add scaler beforehand
+    # TODO: fix scaler
+    X_train_val, X_test = scale_dataset(X_train_val, X_test)
 
-    train_loader, test_loader = create_dataloaders(
+    train_val_loader, test_loader = create_dataloaders(
         X_train_val,
         y_train_val,
         X_test,
@@ -361,7 +372,7 @@ def main():
     )
     train_model(
         model,
-        train_loader,
+        train_val_loader,
         test_loader,
         criterion,
         optimizer,
