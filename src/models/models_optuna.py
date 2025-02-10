@@ -187,7 +187,7 @@ def cross_validate(
     **hyperparams,
 ):
     kfold = KFold(n_splits=k_folds, shuffle=True)  # TODO: change to GroupKFold
-    val_losses = []
+    accuracies = []
 
     for fold, (train_index, val_index) in enumerate(kfold.split(X, y)):
         X_train, X_val = X[train_index], X[val_index]
@@ -208,12 +208,12 @@ def cross_validate(
         )
         train_model(model, train_loader, val_loader, criterion, optimizer, EPOCHS)
         average_loss, accuracy = evaluate_model(model, val_loader, criterion)
-        val_losses.append(average_loss)
+        accuracies.append(accuracy)
 
         logging.info(
             f"Fold {fold} | Accuracy: {accuracy:.2f} | Validation Loss: {average_loss:.2f},"
         )
-    return val_losses
+    return accuracies
 
 
 def create_objective_function(
@@ -310,7 +310,6 @@ def main():
     # Split the data into training+validation set and test set
     # while respecting group structure in the data
     splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-    # might not be exactly 50% due to group structure
     idx_train_val, idx_test = next(splitter.split(X, y, groups=groups))
     X_train_val, y_train_val = X[idx_train_val], y[idx_train_val]
     X_test, y_test = X[idx_test], y[idx_test]
@@ -326,7 +325,7 @@ def main():
             X_train_val, y_train_val, model_name, model_info
         )
         study = optuna.create_study(
-            direction="minimize",
+            direction="maximize",
             storage="sqlite:///db.sqlite3",
             study_name=f"{model_name}_{datetime.now().strftime('%Y%m%d-%H%M%S')}",
         )
