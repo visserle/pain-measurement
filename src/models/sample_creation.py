@@ -17,7 +17,8 @@ def create_samples(
     label_mapping: dict[str, int] | None = None,
 ):
     """
-    Create samples from a DataFrame with for decreasing and increasing intervals.
+    Create samples from a DataFrame with for different stimulus intervals (see labeling
+    section of the StimulusGenerator).
     Only the first x milliseconds of each interval are used.
 
     Note: Needs a column "normalized_timestamp" in the DataFrame.
@@ -110,11 +111,11 @@ def _generate_sample_ids(
         samples: DataFrame containing interval data
         intervals: Dictionary mapping interval names to their column names
         label_mapping: Dictionary mapping interval names to their label values.
-            If None, uses default mapping: {"increases": 0, "decreases": 1}
+            If None, uses default mapping: {"decreases": 0, "increases": 1}
     """
-    # Use default mapping if none provided
+    # Use simple default mapping if none provided
     if label_mapping is None:
-        label_mapping = {"increases": 0, "decreases": 1}
+        label_mapping = {"decreases": 0, "increases": 1}
 
     sample_dfs = []
     cumulative_count = 0

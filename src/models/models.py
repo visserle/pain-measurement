@@ -26,7 +26,7 @@ import optuna
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import GroupShuffleSplit, KFold, train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 
 from src.data.database_manager import DatabaseManager
@@ -38,8 +38,8 @@ from src.models.scalers import StandardScaler3D
 from src.models.utils import get_device
 
 EPOCHS = 10
-K_FOLDS = 3
-N_TRIALS = 10
+K_FOLDS = 2
+N_TRIALS = 3
 
 configure_logging(stream_level=logging.DEBUG)
 
@@ -50,13 +50,14 @@ device = get_device()
 models_dict = {
     "MLP": {
         "class": MultiLayerPerceptron,
-        "format": "3D",
+        "format": "2D",
         "hyperparameters": {
             "hidden_size": {"type": "int", "low": 128, "high": 4096},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-1, "log": True},
             "batch_size": {"type": "categorical", "choices": [32, 64, 128]},
         },
     },
+    # Define other models with their respective hyperparameters and input sizes
     "LSTM": {
         "class": LongShortTermMemory,
         "format": "3D",
@@ -67,7 +68,6 @@ models_dict = {
             "batch_size": {"type": "categorical", "choices": [32, 64, 128]},
         },
     },
-    # Define other models with their respective hyperparameters and input sizes
 }
 
 
@@ -78,7 +78,7 @@ def initialize_model(
 ):
     model_class = models_dict[model_name]["class"]
     # Extracting lr and batch_size from hyperparams and not passing them to the model's constructor
-    lr = hyperparams.pop("lr")  # finally a use for pop
+    lr = hyperparams.pop("lr")
     batch_size = hyperparams.pop("batch_size")
     model = model_class(input_size=input_size, **hyperparams).to(device)
     criterion = nn.BCEWithLogitsLoss()
@@ -98,12 +98,6 @@ def get_input_size(
             return X.shape[2]
         case _:
             raise ValueError(f"Unknown data format: {data_format}")
-
-
-def load_dataset():
-    X = np.load("data/x.npy")
-    y = np.load("data/y.npy")
-    return X, y
 
 
 def train_model(
@@ -193,11 +187,10 @@ def cross_validate(
     X: np.ndarray,
     y: np.ndarray,
     model_name: str,
-    input_size: int,
     k_folds: int,
     **hyperparams,
 ):
-    kfold = KFold(n_splits=k_folds, shuffle=True)
+    kfold = KFold(n_splits=k_folds, shuffle=True)  # TODO: change to GroupKFold
     val_losses = []
 
     for fold, (train_index, val_index) in enumerate(kfold.split(X, y)):
@@ -212,10 +205,10 @@ def cross_validate(
             X_val,
             y_val,
             batch_size=hyperparams["batch_size"],
-            is_validation=True,
+            is_test=False,
         )
         model, criterion, optimizer = initialize_model(
-            model_name, input_size, **hyperparams
+            model_name, get_input_size(model_name, X_train), **hyperparams
         )
         train_model(model, train_loader, val_loader, criterion, optimizer, EPOCHS)
         average_loss, accuracy = evaluate_model(model, val_loader, criterion)
@@ -231,7 +224,6 @@ def create_objective_function(
     X,
     y,
     model_name,
-    input_size,
     model_info,
 ):
     def objective(trial):
@@ -266,9 +258,7 @@ def create_objective_function(
                     raise ValueError(f"Unknown parameter type: {param_type}")
 
         # Perform cross-validation and return the mean validation loss of the inner loop as objective
-        val_losses = cross_validate(
-            X, y, model_name, input_size, K_FOLDS, **hyperparams
-        )
+        val_losses = cross_validate(X, y, model_name, K_FOLDS, **hyperparams)
         return np.mean(val_losses)
 
     return objective
@@ -282,11 +272,52 @@ def main():
             exclude_trials_with_measurement_problems=True,
         )
 
-    X, y = load_dataset()
-    # Split the data into training+validation set and test set
-    X_train_val, X_test, y_train_val, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+    intervals = {
+        # "decreases": "decreasing_intervals",
+        "decreases": "major_decreasing_intervals",
+        "increases": "strictly_increasing_intervals_without_plateaus",
+        # "plateaus": "plateau_intervals",
+    }
+    label_mapping = {
+        "decreases": 0,
+        "increases": 1,
+        # "plateaus": 1,
+    }
+    sample_duration_ms = 5000
+
+    samples = create_samples(df, intervals, sample_duration_ms, label_mapping)
+    # TODO: improve balance function, maybe use f1 or mcc as metric instead of accuracy
+    samples = make_sample_set_balanced(samples)
+    samples = samples.select(
+        "sample_id",
+        "participant_id",
+        "rating",
+        "temperature",
+        "eda_raw",
+        "eda_tonic",
+        "eda_phasic",
+        "pupil_mean",
+        "pupil_mean_tonic",
+        "label",
     )
+    X, y, groups = transform_sample_df_to_arrays(
+        samples,
+        feature_columns=[
+            # "temperature",  # only for visualization
+            # "rating"
+            # "eda_raw",
+            # "eda_tonic",
+            "pupil_mean",
+        ],
+    )
+
+    # Split the data into training+validation set and test set
+    # while respecting group structure in the data
+    splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+    # might not be exactly 50% due to group structure
+    idx_train_val, idx_test = next(splitter.split(X, y, groups=groups))
+    X_train_val, y_train_val = X[idx_train_val], y[idx_train_val]
+    X_test, y_test = X[idx_test], y[idx_test]
 
     best_value = float("inf")
     best_params = None
@@ -295,15 +326,13 @@ def main():
     for model_name, model_info in models_dict.items():
         logging.info(f"Training {model_name}...")
 
-        input_size = get_input_size(model_name, X_train_val)
-
         objective_function = create_objective_function(
-            X_train_val, y_train_val, model_name, input_size, model_info
+            X_train_val, y_train_val, model_name, model_info
         )
         study = optuna.create_study(
             direction="minimize",
             storage="sqlite:///db.sqlite3",
-            study_name=f"{model_name}_{datetime.now().strftime('%Y%m%d-%H%M%S')()}",
+            study_name=f"{model_name}_{datetime.now().strftime('%Y%m%d-%H%M%S')}",
         )
         study.optimize(objective_function, n_trials=N_TRIALS)
 
@@ -324,14 +353,25 @@ def main():
     # TODO: add scaler beforehand
 
     train_loader, test_loader = create_dataloaders(
-        X_train_val, y_train_val, X_test, y_test, batch_size=best_params["batch_size"]
+        X_train_val,
+        y_train_val,
+        X_test,
+        y_test,
+        batch_size=best_params["batch_size"],
     )
-    input_size = get_input_size(best_model_name, X_train_val)
     model, criterion, optimizer = initialize_model(
-        best_model_name, input_size, **best_params
+        best_model_name,
+        get_input_size(best_model_name, X_train_val),
+        **best_params,
     )
     train_model(
-        model, train_loader, test_loader, criterion, optimizer, EPOCHS, is_test=True
+        model,
+        train_loader,
+        test_loader,
+        criterion,
+        optimizer,
+        EPOCHS,
+        is_test=True,
     )
     average_loss, accuracy = evaluate_model(model, test_loader, criterion)
     logging.info(
