@@ -13,35 +13,44 @@ def add_labels(
     trials_df: pl.DataFrame,
     based_on: str = "stimulus",  # TODO: add rating option, etc.
 ) -> pl.DataFrame:
-    """Add labels to the data DataFrame."""
-    # Add temporary markers so that we can remove rows from trials from the data
+    """Add labels to the data DataFrame.
+
+    Note: Needs normalized timestamps for each trial."""
+    assert "normalized_timestamp" in data_df.columns, (
+        "The data DataFrame needs to have a column 'normalized_timestamp' "
+        "for each trial, see resampling.py."
+    )
+    # Add temporary markers so that we can remove rows from trials from the real data
     trials_df = trials_df.with_columns(marker=0)
     data_df = data_df.with_columns(marker=1)
 
     # Merge data and trials DataFrames
-    df = merge_dfs(
-        [data_df, trials_df], on=["trial_id", "participant_id", "trial_number"]
+    df = (
+        merge_dfs(
+            [data_df, trials_df],
+            on=["trial_id", "participant_id", "trial_number", "marker"],
+        )
+        .drop("duration", "timestamp_end", "timestamp_start")
+        # Add stimulus seed info to all columns so that we can group after it later
+        # Note that ffill is sufficient here, because entry from trials_df is always
+        # the first for the respective trial (same for skin_patch)
+        .with_columns(col(["stimulus_seed", "skin_patch"]).forward_fill())
     )
     # Process labels
     return process_labels(df).filter(marker=1).drop("marker")
 
 
 def process_labels(df: pl.DataFrame) -> pl.DataFrame:
-    """Label the stimulus functions based on temperature intervals."""
+    """Label the stimulus functions based on stimulus intervals."""
     # Get label intervals for all stimulus seeds
     labels = _get_label_intervals(df)
-    # Normalize timestamps for each trial
-    df = df.with_columns(
-        (col("timestamp") - col("timestamp").min().over("trial_id")).alias(
-            "normalized_timestamp"
-        )
-    ).drop("duration", "timestamp_end", "timestamp_start")
-    # Label the stimulus functions based on temperature intervals
+
+    # Label the stimulus functions based on stimulus intervals
     df = (
-        df.group_by("stimulus_seed").map_groups(
+        df.group_by("stimulus_seed", maintain_order=True).map_groups(
             lambda group: label_intervals(group, labels)
         )
-    ).sort("trial_id", "timestamp")
+    ).sort("trial_id", "normalized_timestamp")
     # Give each interval a unique, consecutive number for each label
     df = number_intervals(df, labels)
     return df
@@ -67,9 +76,9 @@ def _get_mask(
         operator.or_,
         [
             group["normalized_timestamp"].is_between(start, end)
-            for start, end in labels[group.get_column("stimulus_seed").unique().item()][
-                label_name
-            ]
+            for start, end in labels[
+                group.get_column("stimulus_seed").unique().drop_nulls().item()
+            ][label_name]
         ],
     )
 
