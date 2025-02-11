@@ -14,12 +14,16 @@ def add_labels(
     based_on: str = "stimulus",  # TODO: add rating option, etc.
 ) -> pl.DataFrame:
     """Add labels to the data DataFrame."""
+    # Add temporary markers so that we can remove rows from trials from the data
+    trials_df = trials_df.with_columns(marker=0)
+    data_df = data_df.with_columns(marker=1)
+
     # Merge data and trials DataFrames
     df = merge_dfs(
         [data_df, trials_df], on=["trial_id", "participant_id", "trial_number"]
     )
     # Process labels
-    return process_labels(df)
+    return process_labels(df).filter(marker=1).drop("marker")
 
 
 def process_labels(df: pl.DataFrame) -> pl.DataFrame:

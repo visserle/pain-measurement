@@ -125,7 +125,12 @@ def resample_to_equidistant_ms(
 def resample_at_10_hz_equidistant(
     df: pl.DataFrame,
 ) -> pl.DataFrame:
-    """Resample the DataFrame to equidistant time steps of 100 ms.
+    """Resample a DataFrame to equidistant time steps of 100 ms.
+    Made for feature-engineering data that was already decimated to 10 Hz.
+
+    DO NOT USE AFTER LABEL CREATION. This function as it is just badly written and does
+    shady stuff in the background (see code comments).
+
     Note: Only works with normalized timestamps (starting from 0 in each trial).
     """
     # Create a list to store all processed trials
@@ -139,6 +144,9 @@ def resample_at_10_hz_equidistant(
                 col(FLOAT_DTYPES).map_elements(lambda x: None, return_dtype=pl.Float64)
             )
             .head(1801)  # we measure from second 0 to 180
+            # not that this is a failure-prone, whacky hack that also assumes that
+            # integer columns only contain 1 value for a whole trial
+            # (which is not given for interval labels etc.)
             # Add equally spaced timestamps
             .with_columns(
                 normalized_timestamp=pl.arange(0, 180_010, 100).cast(pl.Float64)
