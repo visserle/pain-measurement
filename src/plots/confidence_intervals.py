@@ -23,14 +23,14 @@ logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
 def plot_confidence_intervals(
-    df: pl.DataFrame,
+    confidence_intervals_df: pl.DataFrame,
     signals: list[str] = None,
 ) -> pl.DataFrame:
     """
     Plot confidence intervals for the given modality for all participants for each stimulus seed.
     """
     # Create plot
-    plots = df.hvplot(
+    plots = confidence_intervals_df.hvplot(
         x="time_bin",
         y=[f"avg_{signal}" for signal in signals],
         groupby="stimulus_seed",
@@ -40,7 +40,7 @@ def plot_confidence_intervals(
         grid=True,
     )
     for signal in signals:
-        plots *= df.hvplot.area(
+        plots *= confidence_intervals_df.hvplot.area(
             x="time_bin",
             y=f"ci_lower_{signal}",
             y2=f"ci_upper_{signal}",
@@ -57,18 +57,30 @@ def create_confidence_intervals(
     df: pl.DataFrame,
     signals: list[str],
     bin_size: int = BIN_SIZE,
+    scaling: str | None = "min_max",
 ) -> pl.DataFrame:
     """
-    Data with confidence intervals for visualization.
+    Create confidence intervals for visualization.
+    Using scaling, the data can be scaled before calculating the confidence intervals.
+
     """
-    # Scale data for better visualization (mapped over trial_id)
-    df = scale_min_max(
-        df,
-        exclude_additional_columns=[
-            "rating",  # already normalized
-            "temperature",  # already normalized
-        ],
-    )
+    match scaling:
+        case "min_max":
+            df = scale_min_max(
+                df,
+                exclude_additional_columns=[
+                    "rating",  # already normalized
+                    "temperature",  # already normalized
+                ],
+            )
+        case "standard":
+            df = scale_standard(df)
+        case "robust_standard":
+            df = scale_robust_standard(df)
+        case None:
+            pass
+        case _:
+            raise ValueError(f"Unknown scaling method: {scaling}")
 
     # Create confidence intervals
     df = aggregate_over_stimulus_seeds(df, signals, bin_size=bin_size)
