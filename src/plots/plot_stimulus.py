@@ -7,7 +7,10 @@ from bokeh.plotting import figure, show
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 
 
-def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
+def plot_stimulus(
+    stimulus: StimulusGenerator,
+    highlight_decreasing: bool = True,
+):
     """
     Plot the stimulus data with shapes for the major decreasing intervals using Bokeh.
     Includes a hover tool for displaying point information.
@@ -30,20 +33,21 @@ def plot_stimulus_with_shapes(stimulus: StimulusGenerator):
     # Plot the main line
     plot.line("time", "temperature", source=source, line_color="navy", line_width=2)
 
-    # Add shapes for the major decreasing intervals
-    for interval in stimulus.major_decreasing_intervals_idx:
-        start_time, end_time = (
-            interval[0] / stimulus.sample_rate,
-            interval[1] / stimulus.sample_rate,
-        )
-        plot.add_layout(
-            BoxAnnotation(
-                left=start_time,
-                right=end_time,
-                fill_color="salmon",
-                fill_alpha=0.125,
+    if highlight_decreasing:
+        # Add shapes for the major decreasing intervals
+        for interval in stimulus.major_decreasing_intervals_idx:
+            start_time, end_time = (
+                interval[0] / stimulus.sample_rate,
+                interval[1] / stimulus.sample_rate,
             )
-        )
+            plot.add_layout(
+                BoxAnnotation(
+                    left=start_time,
+                    right=end_time,
+                    fill_color="salmon",
+                    fill_alpha=0.125,
+                )
+            )
 
     # Customize the plot
     plot.xaxis.axis_label_text_font_style = "bold"
@@ -86,7 +90,7 @@ def plot_stimulus_labels(
                 "blue",
                 "purple",
                 "orange",
-                "pink",  # extra colors for more interval types
+                "pink",
                 "brown",
                 "gray",
             ],
@@ -95,11 +99,14 @@ def plot_stimulus_labels(
 
     # Plot patches for each interval type
     num_types = len(stimulus.labels)
-    for i, (interval_type, intervals) in enumerate(stimulus.labels.items()):
+    # Reverse the order of labels for more intuitive plotting
+    labels = stimulus.labels
+    labels = {k: v for k, v in reversed(labels.items())}
+    for i, (interval_type, intervals) in enumerate(labels.items()):
         for start, end in intervals:
             ax.add_patch(
                 patches.Rectangle(
-                    (start, i),
+                    (start, i - 0.4),
                     end - start,
                     0.8,
                     facecolor=colors[interval_type],
@@ -113,7 +120,7 @@ def plot_stimulus_labels(
     ax.set_ylim(-0.5, num_types - 0.5)
     ax.set_xlabel("Time (ms)")
     ax.set_yticks(range(num_types))
-    ax.set_yticklabels(stimulus.labels.keys())
+    ax.set_yticklabels(labels.keys())
 
     # Set title
     plt.title("Interval Analysis")
