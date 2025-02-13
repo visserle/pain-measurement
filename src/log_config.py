@@ -7,13 +7,12 @@ from pathlib import Path
 
 
 def configure_logging(
-    stream_level: int = logging.INFO,
+    stream_level: int = logging.DEBUG,
     file_level: int = logging.DEBUG,
     file_path: Path | str | None = None,
     stream: bool = True,
     stream_milliseconds: bool = False,
     ignore_libs: list[str] | None = None,
-    warn_instead_of_ignore: bool = False,
 ) -> None:
     """
     Configures the root logger for console and file logging with the specified
@@ -27,13 +26,10 @@ def configure_logging(
     - stream_milliseconds: Whether to include milliseconds in the console log timestamps
     (default is False).
     - ignore_libs: A list of library names to ignore in the logs.
-    - warn_instead_of_ignore: Whether to log a warning instead of ignoring logs from
-    specified libraries (default is False).
 
     Example usage:
-    >>> import logging
-    >>> configure_logging(stream_level=logging.DEBUG)
-    >>> logging.debug("This is a beautiful debug message.")
+    >>> configure_logging()
+    >>> logging.debug("This is a debug message.")
     """
 
     handlers = []
@@ -66,21 +62,10 @@ def configure_logging(
         file_handler.setFormatter(file_formatter)
         handlers.append(file_handler)
 
-    # Create filter for ignoring logs from specified libraries
-    def create_filter(ignored_libs):
-        def ignore_logs(record):
-            return not any(record.name.startswith(lib) for lib in ignored_libs)
-
-        return ignore_logs
-
+    # Set the logging level for ignored libraries to WARNING
     if ignore_libs:
-        if warn_instead_of_ignore:
-            for lib in ignore_libs:
-                logging.getLogger(lib).setLevel(logging.WARNING)
-        else:
-            ignore_filter = create_filter(ignore_libs)
-            for handler in handlers:
-                handler.addFilter(ignore_filter)
+        for lib in ignore_libs:
+            logging.getLogger(lib).setLevel(logging.WARNING)
 
     # Clear any previously added handlers from the root logger
     logging.getLogger().handlers = []
@@ -166,21 +151,11 @@ def main():
     logging.critical("This is a critical message.")
 
     # Ignore warnings from the 'ignored' library in this example
-    configure_logging(
-        ignore_libs=["ignored"],
-    )
+    configure_logging(ignore_libs=["ignored"], stream_milliseconds=True)
     logger = logging.getLogger("ignored")
-    logger.warning("This warning from 'ignored' library will be ignored.")
-    logging.warning("This warning from root logger will be shown.")
-
-    # Ignore everything but warnings/errors from the 'partially_ignored' library
-    configure_logging(
-        ignore_libs=["partially_ignored"],
-        warn_instead_of_ignore=True,
-    )
-    another_logger = logging.getLogger("partially_ignored")
-    another_logger.info("This info message from 'partially_ignored' will be ignored.")
-    another_logger.error("This error message from 'partially_ignored' will be shown.")
+    logging.info("This info from root logger will be shown.")
+    logger.info("This info from 'ignored' library will be ignored.")
+    logger.warning("This warning from 'ignored' library will be shown.")
 
 
 if __name__ == "__main__":

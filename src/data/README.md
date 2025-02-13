@@ -1,10 +1,11 @@
 # Data Pipeline
 
-The data pipeline consists of three steps (`Raw` → `Preprocess` → `Feature`) over all modalities (EEG, EDA, PPG, pupillometry, facial expressions, and rating / temperatures), with each step corresponding to a table in the duckDB database.
+The data pipeline consists of three steps (`Raw` → `Preprocess` → `Feature`) over all modalities (EEG, EDA, PPG, pupillometry, facial expressions, and rating / temperatures), with each step corresponding to a table in the duckDB database. In a final step, the feature data is merged into a single table and labeled according to the stimulus function.
 
 - `Raw`: Raw data from iMotions .csv output (without inter-trial data).
 - `Preprocess`: Preprocessed data with cleaned and transformed columns.
-- `Feature`: Extracted features from the preprocessed data for analysis and modeling.
+- `Feature`: Extracted features from the preprocessed data.
+- `Merged_and_Labeled_Data`: Merged feature data with stimulus labels, resampled to 10 Hz at equidistant time points.
 
 Furthermore, there are additional tables for the experiment metadata, calibration results, and questionnaire responses.
 

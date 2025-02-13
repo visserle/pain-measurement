@@ -1,3 +1,11 @@
+"""
+Stimulus Generator
+
+Note that the term `cycle` refers to only 1 π in this module, not 2 π.
+The term 'half cycle' thus refers to π/2 radians.
+The term `period` pertains to the time it takes to complete one 'half cycle', not 2 π.
+"""
+
 import numpy as np
 import scipy
 
@@ -54,7 +62,7 @@ class StimulusGenerator:
     """
 
     # NOTE: One cosmetic detail would have made the max temperatures more aesthetically
-    # appealing: The resulting curve should have been normalized to [-1, 1] for
+    # pleasing: The resulting curve should have been normalized to [-1, 1] for
     # smooth maximum values as determined by the calibration. However, the resulting
     # difference is negligible (for a max value of 47.75 °C, the mean of the resulting max
     # values over all seeds is 47.74 °C). There is no difference in the mean of the min
