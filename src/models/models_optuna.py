@@ -1,13 +1,3 @@
-"""Nested cross-validation for model comparison for time series classification with 3D input
-
-In research areas such as classification and regression, there are well-established stan-
-dard practices for evaluation. Data partitioning is performed by using a standard k-fold
-Cross-Validation (CV) to tune the model hyperparameters based on the error on a vali-
-dation set, the model with the best hyperparameter combination is tested on the testing
-set, standard error measures such as squared errors, absolute errors or precision, recall,
-or area under the curve are computed and finally the best models are selected."""
-
-
 # TODO:
 # - improve model configuration
 # - seperate hyperparameters from training parameters
@@ -37,8 +27,8 @@ from src.models.sample_creation import create_samples, make_sample_set_balanced
 from src.models.scalers import StandardScaler3D, scale_dataset
 from src.models.utils import get_device
 
+RANDOM_SEED = 42
 EPOCHS = 80
-K_FOLDS = 2
 N_TRIALS = 10
 BATCH_SIZE = 128
 MODELS = {
@@ -51,15 +41,15 @@ MODELS = {
         },
     },
     # Define other models with their respective hyperparameters and input sizes
-    "LSTM": {
-        "class": LongShortTermMemory,
-        "format": "3D",
-        "hyperparameters": {
-            "hidden_size": {"type": "int", "low": 128, "high": 1024},
-            "num_layers": {"type": "int", "low": 1, "high": 5},
-            "lr": {"type": "float", "low": 1e-5, "high": 1e-1, "log": True},
-        },
-    },
+    # "LSTM": {
+    #     "class": LongShortTermMemory,
+    #     "format": "3D",
+    #     "hyperparameters": {
+    #         "hidden_size": {"type": "int", "low": 128, "high": 1024},
+    #         "num_layers": {"type": "int", "low": 1, "high": 5},
+    #         "lr": {"type": "float", "low": 1e-5, "high": 1e-1, "log": True},
+    #     },
+    # },
 }
 
 configure_logging(stream_level=logging.DEBUG)
@@ -197,9 +187,9 @@ def create_objective_function(
 ):
     def objective(trial):
         """
-        The 'objective' function can access 'X', 'y', and 'input_size'
-        even after 'create_objective_function' has finished execution.
-        as they are captured by the closure.
+        The 'objective' function can access 'X', 'y', and 'input_size' even after
+        'create_objective_function' has finished execution as they are captured by the
+        closure.
         """
         # Dynamically suggest hyperparameters based on model_info
         hyperparams = {}
@@ -245,7 +235,7 @@ def create_objective_function(
         logging.info(f"Accuracy: {accuracy:.2f} | Validation Loss: {average_loss:.2f}")
         return accuracy
 
-    return objective
+    return objective  # returns a function
 
 
 def main():
@@ -289,21 +279,21 @@ def main():
         feature_columns=[
             # "temperature",  # only for visualization
             # "rating"
-            "eda_raw",
+            # "eda_raw",
             "eda_tonic",
-            "pupil_mean",
+            # "pupil_mean",
         ],
     )
 
     # Split the data into training+validation set and test set
     # while respecting group structure in the data
-    splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+    splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=RANDOM_SEED)
     idx_train_val, idx_test = next(splitter.split(X, y, groups=groups))
     X_train_val, y_train_val = X[idx_train_val], y[idx_train_val]
     X_test, y_test = X[idx_test], y[idx_test]
 
     # Split the training+validation set into training and validation sets
-    splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+    splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=RANDOM_SEED)
     idx_train, idx_val = next(
         splitter.split(X_train_val, y_train_val, groups=groups[idx_train_val])
     )

@@ -8,6 +8,14 @@ from sklearn.preprocessing import (
 )
 
 
+def scale_dataset(X_train, X_test):
+    # TODO: we have group-wise differences with the scaling, is this a problem?
+    scaler = StandardScaler3D()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+    return X_train, X_test
+
+
 def reshape_features_to_2D(X):
     """
     This function is a wrapper around np.reshape. It is intended to be used as a

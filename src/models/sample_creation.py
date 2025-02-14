@@ -9,7 +9,7 @@ from polars import col
 
 def create_samples(
     df: pl.DataFrame,
-    from_intervals: dict[str, str] = {
+    intervals: dict[str, str] = {
         "decreases": "decreasing_intervals",
         "increases": "strictly_increasing_intervals_without_plateaus",
     },
@@ -29,8 +29,13 @@ def create_samples(
             "(e.g. src.features.resampling.add_normalized_timestamp)'"
         )
 
-    samples = _cap_intervals_to_sample_length(df, from_intervals, length_ms)
-    samples = _generate_sample_ids(samples, from_intervals, label_mapping)
+    if len(intervals) < 2:
+        raise ValueError(
+            "At least two interval types are required for sample creation."
+        )
+
+    samples = _cap_intervals_to_sample_length(df, intervals, length_ms)
+    samples = _generate_sample_ids(samples, intervals, label_mapping)
     # samples = _remove_not_matching_samples(samples)
 
     # Make sure we kept equidistant sampling with a sampling rate of 10 Hz
