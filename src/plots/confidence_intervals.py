@@ -7,15 +7,15 @@ Uses 95% confidence interval (1.96) for the mean of a normal distribution.
 
 import logging
 
-import hvplot.polars
+import hvplot.polars  # noqa
 import polars as pl
-from icecream import ic
+import scipy.stats as stats
 from polars import col
 
 from src.features.resampling import add_normalized_timestamp, add_timestamp_μs_column
 from src.features.scaling import scale_min_max, scale_robust_standard, scale_standard
 
-BIN_SIZE = 1  # seconds
+BIN_SIZE = 0.1  # in seconds
 CONFIDENCE_LEVEL = 1.96  # 95% confidence interval
 
 
@@ -58,6 +58,7 @@ def create_confidence_intervals(
     signals: list[str],
     bin_size: int = BIN_SIZE,
     scaling: str | None = "min_max",
+    confidence_level: float = CONFIDENCE_LEVEL,
 ) -> pl.DataFrame:
     """
     Create confidence intervals for visualization.
@@ -84,7 +85,12 @@ def create_confidence_intervals(
 
     # Create confidence intervals
     df = aggregate_over_stimulus_seeds(df, signals, bin_size=bin_size)
-    return calculate_confidence_intervals(df, signals)
+    return calculate_confidence_intervals(
+        df,
+        signals,
+        min_sample_size=30,
+        confidence_level=confidence_level,
+    )
 
 
 def aggregate_over_stimulus_seeds(
@@ -140,6 +146,7 @@ def calculate_confidence_intervals(
     df: pl.DataFrame,
     signals: str,
     min_sample_size: int = 30,
+    confidence_level: float = CONFIDENCE_LEVEL,
 ) -> pl.DataFrame:
     small_samples = df.filter(col("sample_size") < min_sample_size)
     if small_samples.height > 0:
@@ -147,19 +154,28 @@ def calculate_confidence_intervals(
             f"Warning: {small_samples.height} bins have sample size < {min_sample_size}"
         )
 
+    z_score = _calculate_z_score(confidence_level)
+
     return df.with_columns(
         [
             (
                 col(f"avg_{signal}")
-                - CONFIDENCE_LEVEL * (col(f"std_{signal}") / col("sample_size").sqrt())
+                - z_score * (col(f"std_{signal}") / col("sample_size").sqrt())
             ).alias(f"ci_lower_{signal}")
             for signal in signals
         ]
         + [
             (
                 col(f"avg_{signal}")
-                + CONFIDENCE_LEVEL * (col(f"std_{signal}") / col("sample_size").sqrt())
+                + z_score * (col(f"std_{signal}") / col("sample_size").sqrt())
             ).alias(f"ci_upper_{signal}")
             for signal in signals
         ]
     ).sort("stimulus_seed", "time_bin")
+
+
+def _calculate_z_score(confidence_level: float) -> float:
+    """
+    Calculate z-score for the given confidence level (e.g., 0.95 -> 1.96).
+    """
+    return stats.norm.ppf((1 + confidence_level) / 2).round(2)
