@@ -255,9 +255,9 @@ def main():
     # MODALITIES = ["PPG", "Stimulus"]
     with DatabaseManager() as db:
         # Participant data, experiment and questionnaire results
-        db.ctas("Participants", create_participants_df())
         db.ctas("Invalid_Participants", DataConfig.load_invalid_participants_config())
         db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
+        db.ctas("Participants", create_participants_df())
         db.ctas("Calibration_Results", create_calibration_results_df())
         db.ctas("Measurement_Results", create_measurement_results_df())
         for questionnaire in QUESTIONNAIRES:
