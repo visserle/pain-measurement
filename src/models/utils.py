@@ -1,5 +1,8 @@
 import logging
+import os
+import random
 
+import numpy as np
 import torch
 
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
@@ -15,3 +18,10 @@ def get_device() -> torch.device:
         device = torch.device("cpu")
     logger.info(f"Using device: {device}")
     return device
+
+
+def set_seed(seed: int):
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
