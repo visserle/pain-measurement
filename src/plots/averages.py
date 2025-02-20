@@ -1,8 +1,9 @@
 """
-Plot confidence intervals for the given modality for all participants for each stimulus seed.
-
-Uses 95% confidence interval (1.96) for the mean of a normal distribution.
-(95% chance your population mean will fall between lower and upper limit)
+Global average over stimulus seeds for each trial.
+The data can be scaled before aggregation.
+Time binning is applied to the data.
+Confidence intervals are calculated for visualization.
+Cross-correlation is calculated for the given modality.
 """
 
 import logging
@@ -20,6 +21,7 @@ from src.features.scaling import scale_min_max, scale_robust_standard, scale_sta
 
 BIN_SIZE = 0.1  # in seconds
 CONFIDENCE_LEVEL = 1.96  # 95% confidence interval
+# (95% chance your population mean will fall between lower and upper limit)
 
 
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
@@ -148,7 +150,7 @@ def plot_averages_with_ci(
     # Create plot
     plots = averages_with_ci_df.hvplot(
         x="time_bin",
-        y=[f"avg_{signal}" for signal in signals],
+        y=[f"avg_{sig}" for sig in signals],
         groupby="stimulus_seed",
         kind="line",
         xlabel="Time (s)",
@@ -156,17 +158,17 @@ def plot_averages_with_ci(
         grid=True,
         muted_alpha=muted_alpha,
     )
-    for signal in signals:
+    for sig in signals:
         plots *= averages_with_ci_df.hvplot.area(
             x="time_bin",
-            y=f"ci_lower_{signal}",
-            y2=f"ci_upper_{signal}",
+            y=f"ci_lower_{sig}",
+            y2=f"ci_upper_{sig}",
             groupby="stimulus_seed",
             alpha=0.15,
             line_width=0,
             grid=True,
             muted_alpha=muted_alpha,
-            label=f"avg_{signal}",
+            label=f"avg_{sig}",
         )
 
     return plots
@@ -179,6 +181,9 @@ def calculate_max_crosscorr_lag_over_averages(
     fs: int = 10,
     plot: bool = False,
 ):
+    # Note that normalizing cross correlations for intpretation is done by dividing by
+    # the maximum value of the cross-correlation so that the maximum value is 1.
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.correlate.html
     lag_arr = []
     stimulus_seed = []
     for stimulus in (
