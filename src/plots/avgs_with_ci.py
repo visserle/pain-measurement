@@ -22,15 +22,16 @@ CONFIDENCE_LEVEL = 1.96  # 95% confidence interval
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
-def plot_confidence_intervals(
-    confidence_intervals_df: pl.DataFrame,
+def plot_avgs_with_ci(
+    avgs_with_ci_df: pl.DataFrame,
     signals: list[str] = None,
+    muted_alpha: float = 0.0,
 ) -> pl.DataFrame:
     """
     Plot confidence intervals for the given modality for all participants for each stimulus seed.
     """
     # Create plot
-    plots = confidence_intervals_df.hvplot(
+    plots = avgs_with_ci_df.hvplot(
         x="time_bin",
         y=[f"avg_{signal}" for signal in signals],
         groupby="stimulus_seed",
@@ -38,22 +39,25 @@ def plot_confidence_intervals(
         xlabel="Time (s)",
         ylabel="Normalized value",
         grid=True,
+        muted_alpha=muted_alpha,
     )
     for signal in signals:
-        plots *= confidence_intervals_df.hvplot.area(
+        plots *= avgs_with_ci_df.hvplot.area(
             x="time_bin",
             y=f"ci_lower_{signal}",
             y2=f"ci_upper_{signal}",
             groupby="stimulus_seed",
-            alpha=0.2,
+            alpha=0.15,
             line_width=0,
             grid=True,
+            muted_alpha=muted_alpha,
+            label=f"avg_{signal}",
         )
 
     return plots
 
 
-def create_confidence_intervals(
+def create_avgs_with_ci(
     df: pl.DataFrame,
     signals: list[str],
     bin_size: int = BIN_SIZE,
@@ -83,8 +87,9 @@ def create_confidence_intervals(
         case _:
             raise ValueError(f"Unknown scaling method: {scaling}")
 
-    # Create confidence intervals
+    # Aggregate over stimulus seeds
     df = aggregate_over_stimulus_seeds(df, signals, bin_size=bin_size)
+    # Create confidence intervals
     return calculate_confidence_intervals(
         df,
         signals,
