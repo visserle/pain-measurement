@@ -28,6 +28,20 @@ from polars import col
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
+COLORS = {
+    "temperature_rating_corr": "red",
+    "temperature_pupil_corr": "#ff7f0e",
+    "temperature_eda_tonic_corr": "#2ca02c",
+    "temperature_eda_phasic_corr": "#d62728",
+    "temperature_heartrate_corr": "#9467bd",
+    "temperature_brow_furrow_corr": "red",
+    "temperature_cheek_raise_corr": "#2ca02c",
+    "temperature_mouth_open_corr": "#d62728",
+    "temperature_upper_lip_raise_corr": "#9467bd",
+    "temperature_nose_wrinkle_corr": "#ff7f0e",
+}
+
+
 def calculate_correlations_by_trial(
     df: pl.DataFrame,
     col1: str,
@@ -50,20 +64,91 @@ def calculate_correlations_by_trial(
         `aggregate_correlations_fisher_z` function.
     """
     # Create correlation column name
-    corr_col = f"{col1}_{col2}_corr"
+    corr_column = _create_corr_column_name(col1, col2)
 
     # Calculate correlation between columns for each trial_id
-    corr_by_trial = df.group_by("trial_id", maintain_order=True).agg(
-        pl.corr(col1, col2).alias(corr_col),
-        pl.first("participant_id"),
+    corr_by_trial = (
+        df.group_by("trial_id", maintain_order=True)
+        .agg(
+            pl.first(["trial_number", "participant_id", "stimulus_seed"]),
+            pl.corr(col1, col2).alias(corr_column),
+        )
+        .sort(["trial_id"])
     )
 
     return corr_by_trial
 
 
+def _create_corr_column_name(col1: str, col2: str):
+    if col1 is None or col2 is None:
+        raise ValueError("Please provide column names to correlate")
+    return f"{col1}_{col2}_corr"
+
+
+def plot_correlations_by_trial(
+    corr_by_trial: pl.DataFrame,
+    col1: str = None,
+    col2: str = None,
+    trial_column: str = "trial_id",
+    participant_column: str = "participant_id",
+    title: str = None,
+    width: int = 800,
+    height: int = 400,
+    y_domain: tuple = (-1, 1),
+):
+    """
+    Create an Altair chart showing correlations by trial, grouped by participant
+    """
+    # Create correlation column name
+    corr_column = _create_corr_column_name(col1, col2)
+
+    # Set default title if none provided
+    if title is None:
+        title = f"{corr_column.replace('_', ' ').title()} by Trial and Participant"
+
+    # Create base chart with shared encoding
+    base = (
+        alt.Chart(corr_by_trial)
+        .encode(
+            x=alt.X(f"{trial_column}:Q", axis=alt.Axis(title="Trial ID")),
+            y=alt.Y(
+                f"{corr_column}:Q",
+                axis=alt.Axis(title="Correlation"),
+                scale=alt.Scale(domain=y_domain),
+            ),
+            color=alt.Color(
+                f"{participant_column}:N", legend=alt.Legend(title="Participant ID")
+            ),
+        )
+        .properties(
+            width=width,
+            height=height,
+            title=title,
+        )
+    )
+
+    lines = base.mark_line(opacity=0.5)
+    points = base.mark_circle(size=60).encode(
+        tooltip=[
+            f"{participant_column}:N",
+            f"{trial_column}:Q",
+            alt.Tooltip(f"{corr_column}:Q", format=".3f"),
+        ]
+    )
+
+    return (
+        alt.layer(lines, points)
+        .configure_axis(grid=True, gridColor="#ededed")
+        .configure_view(strokeWidth=0)
+        .configure_title(fontSize=16, anchor="middle")
+        .interactive()
+    )
+
+
 def aggregate_correlations_fisher_z(
     df: pl.DataFrame,
-    correlation_column: str,
+    col1: str,
+    col2: str,
     group_by_column: str,
     include_ci=False,
 ):
@@ -75,7 +160,7 @@ def aggregate_correlations_fisher_z(
     -----------
     df : polars.DataFrame
         Input dataframe containing correlations
-    correlation_column : str
+    corr_column : str
         Name of column containing correlation values
     group_by_column : str
         Name of column to group by
@@ -87,17 +172,20 @@ def aggregate_correlations_fisher_z(
     polars.DataFrame
         DataFrame with mean correlations and optionally confidence intervals
     """
-    # Remove nan correlations (can happen if one variable is constant)
+    # Create correlation column name
+    corr_column = _create_corr_column_name(col1, col2)
+
+    # Remove nan correlations (can happen if e.g. one variable is constant)
     # This way we don't lose a whole group if one correlation is nan
-    if df.filter(col(correlation_column) == float("nan")).height > 0:
+    if df.filter(col(corr_column) == float("nan")).height > 0:
         logger.debug("Removing NaN correlations")
 
-    df = df.filter(col(correlation_column) != float("nan"))
+    df = df.filter(col(corr_column) != float("nan"))
 
     result = (
         df.with_columns(
             [
-                pl.col(correlation_column)
+                pl.col(corr_column)
                 .clip(-0.9999, 0.9999)  # Clip values to avoid arctanh infinity
                 .arctanh()
                 .alias("z_transform")
@@ -113,11 +201,7 @@ def aggregate_correlations_fisher_z(
             ]
         )
         .with_columns(
-            [
-                pl.col("mean_z")
-                .tanh()
-                .alias(f"{group_by_column}_{correlation_column}_mean")
-            ]
+            [pl.col("mean_z").tanh().alias(f"{group_by_column}_{corr_column}_mean")]
         )
     )
 
@@ -132,11 +216,11 @@ def aggregate_correlations_fisher_z(
             .with_columns(
                 [
                     pl.col("temp_lower_z")
-                    .tanh()
-                    .alias(f"{group_by_column}_{correlation_column}_ci_lower"),
+                    .tanh()  # transform back to correlation space
+                    .alias(f"{group_by_column}_{corr_column}_ci_lower"),
                     pl.col("temp_upper_z")
                     .tanh()
-                    .alias(f"{group_by_column}_{correlation_column}_ci_upper"),
+                    .alias(f"{group_by_column}_{corr_column}_ci_upper"),
                 ]
             )
             .drop("temp_lower_z", "temp_upper_z")
@@ -145,133 +229,82 @@ def aggregate_correlations_fisher_z(
     return result.sort(group_by_column).drop("mean_z", "se_z")
 
 
-def plot_correlations_by_trial(
-    df: pl.DataFrame,
-    correlation_column: str,
-    trial_column: str = "trial_id",
-    participant_column: str = "participant_id",
-    title: str = None,
-    width: int = 800,
-    height: int = 400,
-    point_size: int = 60,
-    y_domain: tuple = (-1, 1),
-):
-    """
-    Create an Altair chart showing correlations by trial, grouped by participant
-
-    Parameters:
-    -----------
-    df : polars.DataFrame
-        DataFrame containing trial-level correlation data
-    correlation_column : str
-        Name of correlation column
-    trial_column : str
-        Name of trial ID column
-    participant_column : str
-        Name of participant ID column
-    title : str, optional
-        Chart title. If None, auto-generated from correlation column name
-    width : int
-        Chart width in pixels
-    height : int
-        Chart height in pixels
-    point_size : int
-        Size of scatter points
-    y_domain : tuple
-        (min, max) values for y-axis domain
-
-    Returns:
-    --------
-    altair.Chart
-        Scatter plot with connected lines showing trial correlations by participant
-    """
-
-    if title is None:
-        title = (
-            f"{correlation_column.replace('_', ' ').title()} by Trial and Participant"
-        )
-
-    base = alt.Chart(df).encode(
-        x=alt.X(f"{trial_column}:Q", axis=alt.Axis(title="Trial ID")),
-        y=alt.Y(
-            f"{correlation_column}:Q",
-            axis=alt.Axis(title="Correlation"),
-            scale=alt.Scale(domain=y_domain),
-        ),
-        color=alt.Color(
-            f"{participant_column}:N", legend=alt.Legend(title="Participant ID")
-        ),
-    )
-
-    lines = base.mark_line(opacity=0.5)
-
-    points = base.mark_circle(size=point_size).encode(
-        tooltip=[
-            f"{participant_column}:N",
-            f"{trial_column}:Q",
-            alt.Tooltip(f"{correlation_column}:Q", format=".3f"),
-        ]
-    )
-
-    chart_config = _get_base_chart_config(width, height, title)
-
-    return (lines + points).properties(**chart_config).interactive()
+COLORS = {
+    "temperature_rating_corr": "red",
+    "temperature_pupil_corr": "#ff7f0e",
+    "temperature_eda_tonic_corr": "#2ca02c",
+    "temperature_eda_phasic_corr": "#d62728",
+    "temperature_heartrate_corr": "#9467bd",
+    "temperature_brow_furrow_corr": "red",
+    "temperature_cheek_raise_corr": "#2ca02c",
+    "temperature_mouth_open_corr": "#d62728",
+    "temperature_upper_lip_raise_corr": "#9467bd",
+    "temperature_nose_wrinkle_corr": "#ff7f0e",
+}
 
 
 def plot_correlations_by_participant(
-    df: pl.DataFrame,
-    correlation_column: str,
+    corr_by_participant: pl.DataFrame,
+    col1: str,
+    col2: str,
     participant_column: str = "participant_id",
     title: str = None,
     width: int = 800,
     height: int = 400,
     y_domain: tuple = (-1, 1),
+    with_config: bool = True,  # for layered charts there must be no config
 ):
-    """
-    Create an Altair chart showing correlations by participant with error bars
+    # Create correlation column name
+    corr_column = _create_corr_column_name(col1, col2)
 
-    Parameters:
-    -----------
-    df : polars.DataFrame
-        DataFrame containing correlation data with mean and CI columns
-    correlation_column : str
-        Base name of correlation columns (without _mean/_ci suffixes)
-    participant_column : str
-        Name of participant ID column
-    title : str, optional
-        Chart title. If None, auto-generated from correlation column name
-    width : int
-        Chart width in pixels
-    height : int
-        Chart height in pixels
-    y_domain : tuple
-        (min, max) values for y-axis domain
-
-    Returns:
-    --------
-    altair.Chart
-        Combined error bar and point chart
-    """
-
-    if title is None:
-        title = f"Mean {correlation_column.replace('_', ' ').title()} by Participant with 95% CI"
-
-    # Create column names
-    mean_col = f"{participant_column}_{correlation_column}_mean"
-    ci_lower = f"{participant_column}_{correlation_column}_ci_lower"
-    ci_upper = f"{participant_column}_{correlation_column}_ci_upper"
-
-    base = alt.Chart(df).encode(
-        x=alt.X(f"{participant_column}:O", axis=alt.Axis(title="Participant ID")),
-        y=alt.Y(
-            f"{ci_lower}:Q",
-            scale=alt.Scale(domain=y_domain),
-            axis=alt.Axis(title="Correlation"),
-        ),
+    # Add correlation type to column name for legend
+    corr_by_participant = corr_by_participant.with_columns(
+        pl.lit(corr_column).alias("correlation_type")
     )
 
-    error_bars = base.mark_rule().encode(y2=f"{ci_upper}:Q")
-    points = base.mark_circle(size=100, color="#1f77b4").encode(
+    # Set default title if none provided
+    if title is None:
+        title = (
+            f"Mean {corr_column.replace('_', ' ').title()} by Participant with 95% CI"
+        )
+
+    # Get column names
+    mean_col = f"{participant_column}_{corr_column}_mean"
+    ci_lower = f"{participant_column}_{corr_column}_ci_lower"
+    ci_upper = f"{participant_column}_{corr_column}_ci_upper"
+
+    # Create a color scale based on the COLORS dictionary
+    color_scale = alt.Scale(domain=list(COLORS.keys()), range=list(COLORS.values()))
+
+    base = (
+        alt.Chart(
+            corr_by_participant,
+            width=width,
+            height=height,
+        )
+        .encode(
+            x=alt.X(f"{participant_column}:O", axis=alt.Axis(title="Participant ID")),
+            y=alt.Y(
+                f"{ci_lower}:Q",
+                scale=alt.Scale(domain=y_domain),
+                axis=alt.Axis(title="Correlation"),
+            ),
+            color=alt.Color(
+                "correlation_type:N",
+                scale=color_scale,
+                legend=alt.Legend(title="Correlation Type"),
+            ),
+        )
+        .properties(title=title, width=width, height=height)
+    )
+
+    error_bars = base.mark_rule(
+        color=COLORS.get(corr_column, "#1f77b4"),
+    ).encode(y2=f"{ci_upper}:Q")
+    points = base.mark_circle(
+        size=100,
+        color=COLORS.get(corr_column, "#1f77b4"),
+    ).encode(
         y=f"{mean_col}:Q",
         tooltip=[
             alt.Tooltip(f"{participant_column}:N", title="Participant"),
@@ -280,24 +313,88 @@ def plot_correlations_by_participant(
             alt.Tooltip(f"{ci_upper}:Q", title="CI Upper", format=".3f"),
         ],
     )
-    chart_config = _get_base_chart_config(width, height, title)
 
-    return (error_bars + points).properties(**chart_config)
+    layered_chart = alt.layer(error_bars, points)
+
+    if with_config:
+        return (
+            layered_chart.configure_axis(grid=True, gridColor="#ededed")
+            .configure_view(strokeWidth=0)
+            .configure_title(fontSize=16, anchor="middle")
+        )
+
+    return layered_chart
 
 
-def _get_base_chart_config(
-    width: int,
-    height: int,
-    title: str,
+def plot_correlations_by_participant(
+    corr_by_participant: pl.DataFrame,
+    col1: str,
+    col2: str,
+    participant_column: str = "participant_id",
+    title: str = None,
+    width: int = 800,
+    height: int = 400,
+    y_domain: tuple = (-1, 1),
+    with_config: bool = True,  # for layered charts there must be no config
 ):
-    """Helper function to provide consistent chart configuration"""
-    return {
-        "width": width,
-        "height": height,
-        "title": title,
-        "config": {
-            "axis": {"grid": True, "gridColor": "#ededed"},
-            "view": {"strokeWidth": 0},
-            "title": {"fontSize": 16, "anchor": "middle"},
-        },
-    }
+    # Create correlation column name
+    corr_column = _create_corr_column_name(col1, col2)
+
+    # Add correlation type to column name for legend
+    corr_by_participant = corr_by_participant.with_columns(
+        pl.lit(corr_column).alias("correlation_type")
+    )
+
+    # Set default title if none provided
+    if title is None:
+        title = (
+            f"Mean {corr_column.replace('_', ' ').title()} by Participant with 95% CI"
+        )
+
+    # Get column names
+    mean_col = f"{participant_column}_{corr_column}_mean"
+    ci_lower = f"{participant_column}_{corr_column}_ci_lower"
+    ci_upper = f"{participant_column}_{corr_column}_ci_upper"
+
+    # Create base chart
+    base = (
+        alt.Chart(
+            corr_by_participant,
+            width=width,
+            height=height,
+        )
+        .encode(
+            x=alt.X(f"{participant_column}:O", axis=alt.Axis(title="Participant ID")),
+            y=alt.Y(
+                f"{ci_lower}:Q",
+                scale=alt.Scale(domain=y_domain),
+                axis=alt.Axis(title="Correlation"),
+            ),
+            color=alt.Color(
+                "correlation_type:N",
+                scale=alt.Scale(
+                    domain=list(COLORS.keys()), range=list(COLORS.values())
+                ),
+                legend=alt.Legend(title="Correlation Type"),
+            ),
+        )
+        .properties(title=title, width=width, height=height)
+    )
+
+    error_bars = base.mark_rule(
+        # color=COLORS.get(corr_column, "#1f77b4"),
+    ).encode(y2=f"{ci_upper}:Q")
+    points = base.mark_circle(
+        size=100,
+        # color=COLORS.get(corr_column, "#1f77b4"),
+    ).encode(
+        y=f"{mean_col}:Q",
+        tooltip=[
+            alt.Tooltip(f"{participant_column}:N", title="Participant"),
+            alt.Tooltip(f"{mean_col}:Q", title="Mean Correlation", format=".3f"),
+            alt.Tooltip(f"{ci_lower}:Q", title="CI Lower", format=".3f"),
+            alt.Tooltip(f"{ci_upper}:Q", title="CI Upper", format=".3f"),
+        ],
+    )
+
+    return alt.layer(error_bars, points)
