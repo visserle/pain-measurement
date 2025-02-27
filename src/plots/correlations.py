@@ -8,11 +8,11 @@ col1, col2 = "pupil", "temperature"
 
 corr_by_trial = calculate_correlations_by_trial(df, col1, col2)
 corr_by_participant = aggregate_correlations_fisher_z(
-    corr_by_trial, f"{col1}_{col2}_corr", "participant_id", include_ci=True
+    corr_by_trial, col1, col2, "participant_id", include_ci=True
 )
-plot_correlations_by_trial(corr_by_trial, f"{col1}_{col2}_corr")
+plot_correlations_by_trial(corr_by_trial, col1, col2)
 # or
-plot_correlations_by_participant(corr_by_participant, f"{col1}_{col2}_corr")
+plot_correlations_by_participant(corr_by_participant, col1, col2)
 ```
 
 Note that the correlation of time series violates the assumption of independence
@@ -82,7 +82,7 @@ def calculate_correlations_by_trial(
 def _create_corr_column_name(col1: str, col2: str):
     if col1 is None or col2 is None:
         raise ValueError("Please provide column names to correlate")
-    return f"{col1}_{col2}_corr"
+    return col1, col2
 
 
 def plot_correlations_by_trial(
