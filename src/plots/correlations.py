@@ -229,21 +229,7 @@ def aggregate_correlations_fisher_z(
     return result.sort(group_by_column).drop("mean_z", "se_z")
 
 
-COLORS = {
-    "temperature_rating_corr": "red",
-    "temperature_pupil_corr": "#ff7f0e",
-    "temperature_eda_tonic_corr": "#2ca02c",
-    "temperature_eda_phasic_corr": "#d62728",
-    "temperature_heartrate_corr": "#9467bd",
-    "temperature_brow_furrow_corr": "red",
-    "temperature_cheek_raise_corr": "#2ca02c",
-    "temperature_mouth_open_corr": "#d62728",
-    "temperature_upper_lip_raise_corr": "#9467bd",
-    "temperature_nose_wrinkle_corr": "#ff7f0e",
-}
-
-
-def plot_correlations_by_participant(
+def plot_mean_correlations_by_participant(
     corr_by_participant: pl.DataFrame,
     col1: str,
     col2: str,
@@ -253,90 +239,19 @@ def plot_correlations_by_participant(
     height: int = 400,
     y_domain: tuple = (-1, 1),
     with_config: bool = True,  # for layered charts there must be no config
+    color_map: dict = COLORS,
 ):
-    # Create correlation column name
-    corr_column = _create_corr_column_name(col1, col2)
+    """
+    Create an Altair chart showing correlations by participant, grouped by trial
 
-    # Add correlation type to column name for legend
-    corr_by_participant = corr_by_participant.with_columns(
-        pl.lit(corr_column).alias("correlation_type")
-    )
+    For layered charts, you have to:
+    1. Set with_config=False (configure the chart outside of this function)
+    2. Specify the color_map for the different correlation types.
+    3. Add plots using the + operator.
 
-    # Set default title if none provided
-    if title is None:
-        title = (
-            f"Mean {corr_column.replace('_', ' ').title()} by Participant with 95% CI"
-        )
-
-    # Get column names
-    mean_col = f"{participant_column}_{corr_column}_mean"
-    ci_lower = f"{participant_column}_{corr_column}_ci_lower"
-    ci_upper = f"{participant_column}_{corr_column}_ci_upper"
-
-    # Create a color scale based on the COLORS dictionary
-    color_scale = alt.Scale(domain=list(COLORS.keys()), range=list(COLORS.values()))
-
-    base = (
-        alt.Chart(
-            corr_by_participant,
-            width=width,
-            height=height,
-        )
-        .encode(
-            x=alt.X(f"{participant_column}:O", axis=alt.Axis(title="Participant ID")),
-            y=alt.Y(
-                f"{ci_lower}:Q",
-                scale=alt.Scale(domain=y_domain),
-                axis=alt.Axis(title="Correlation"),
-            ),
-            color=alt.Color(
-                "correlation_type:N",
-                scale=color_scale,
-                legend=alt.Legend(title="Correlation Type"),
-            ),
-        )
-        .properties(title=title, width=width, height=height)
-    )
-
-    error_bars = base.mark_rule(
-        color=COLORS.get(corr_column, "#1f77b4"),
-    ).encode(y2=f"{ci_upper}:Q")
-    points = base.mark_circle(
-        size=100,
-        color=COLORS.get(corr_column, "#1f77b4"),
-    ).encode(
-        y=f"{mean_col}:Q",
-        tooltip=[
-            alt.Tooltip(f"{participant_column}:N", title="Participant"),
-            alt.Tooltip(f"{mean_col}:Q", title="Mean Correlation", format=".3f"),
-            alt.Tooltip(f"{ci_lower}:Q", title="CI Lower", format=".3f"),
-            alt.Tooltip(f"{ci_upper}:Q", title="CI Upper", format=".3f"),
-        ],
-    )
-
-    layered_chart = alt.layer(error_bars, points)
-
-    if with_config:
-        return (
-            layered_chart.configure_axis(grid=True, gridColor="#ededed")
-            .configure_view(strokeWidth=0)
-            .configure_title(fontSize=16, anchor="middle")
-        )
-
-    return layered_chart
-
-
-def plot_correlations_by_participant(
-    corr_by_participant: pl.DataFrame,
-    col1: str,
-    col2: str,
-    participant_column: str = "participant_id",
-    title: str = None,
-    width: int = 800,
-    height: int = 400,
-    y_domain: tuple = (-1, 1),
-    with_config: bool = True,  # for layered charts there must be no config
-):
+    (Another more elegant layering approach using color="independent" results in
+    multiple subheadings in the legend, which is not desired.)
+    """
     # Create correlation column name
     corr_column = _create_corr_column_name(col1, col2)
 
@@ -375,18 +290,18 @@ def plot_correlations_by_participant(
                 scale=alt.Scale(
                     domain=list(COLORS.keys()), range=list(COLORS.values())
                 ),
-                legend=alt.Legend(title="Correlation Type"),
+                legend=alt.Legend(
+                    title="Correlation Type",
+                    labelExpr="replace(replace(datum.label, '_corr', ''), '_', ' ')",
+                ),
             ),
         )
         .properties(title=title, width=width, height=height)
     )
 
-    error_bars = base.mark_rule(
-        # color=COLORS.get(corr_column, "#1f77b4"),
-    ).encode(y2=f"{ci_upper}:Q")
+    error_bars = base.mark_rule().encode(y2=f"{ci_upper}:Q")
     points = base.mark_circle(
         size=100,
-        # color=COLORS.get(corr_column, "#1f77b4"),
     ).encode(
         y=f"{mean_col}:Q",
         tooltip=[
@@ -397,4 +312,90 @@ def plot_correlations_by_participant(
         ],
     )
 
+    if with_config:
+        return (
+            alt.layer(error_bars, points)
+            .configure_axis(grid=True, gridColor="#ededed")
+            .configure_view(strokeWidth=0)
+            .configure_title(fontSize=16, anchor="middle")
+        )
+
     return alt.layer(error_bars, points)
+
+
+def plot_max_correlations_by_participant(
+    corr_by_trial: pl.DataFrame,
+    col1: str,
+    col2: str,
+    participant_column: str = "participant_id",
+    title: str = None,
+    width: int = 800,
+    height: int = 400,
+    y_domain: tuple = (-0.5, 1),
+    with_config: bool = True,
+    color_map: dict = COLORS,
+):
+    # Create correlation column name
+    corr_column = _create_corr_column_name(col1, col2)
+
+    # Set default title if none provided
+    if title is None:
+        title = f"Maximum {corr_column.replace('_', ' ').title()} by Participant"
+
+    # Calculate the maximum correlation for each participant
+    max_corr_df = corr_by_trial.group_by(participant_column, maintain_order=True).agg(
+        pl.col(corr_column).max().alias(f"{corr_column}_max")
+    )
+
+    # Create a copy of the dataframe with a new column for the correlation type
+    max_corr_df = max_corr_df.with_columns(
+        pl.lit(corr_column).alias("correlation_type")
+    )
+
+    # The maximum correlation column name
+    max_corr_col = f"{corr_column}_max"
+
+    # Create base chart
+    base = (
+        alt.Chart(
+            max_corr_df,
+            width=width,
+            height=height,
+        )
+        .encode(
+            x=alt.X(f"{participant_column}:O", axis=alt.Axis(title="Participant ID")),
+            y=alt.Y(
+                f"{max_corr_col}:Q",
+                scale=alt.Scale(domain=y_domain),
+                axis=alt.Axis(title="Maximum Correlation"),
+            ),
+            # Use the correlation_type for color encoding to create the legend
+            color=alt.Color(
+                "correlation_type:N",
+                scale=alt.Scale(
+                    domain=list(color_map.keys()), range=list(color_map.values())
+                ),
+                legend=alt.Legend(
+                    title="Correlation Type",
+                    labelExpr="replace(replace(datum.label, '_corr', ''), '_', ' ')",
+                ),
+            ),
+        )
+        .properties(title=title, width=width, height=height)
+    )
+
+    circles = base.mark_circle(size=100).encode(
+        tooltip=[
+            alt.Tooltip(f"{participant_column}:N", title="Participant"),
+            alt.Tooltip(f"{max_corr_col}:Q", title="Max Correlation", format=".3f"),
+        ],
+    )
+
+    if with_config:
+        return (
+            circles.configure_axis(grid=True, gridColor="#ededed")
+            .configure_view(strokeWidth=0)
+            .configure_title(fontSize=16, anchor="middle")
+        )
+
+    return circles.properties(title=title)
