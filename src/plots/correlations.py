@@ -82,7 +82,7 @@ def calculate_correlations_by_trial(
 def _create_corr_column_name(col1: str, col2: str):
     if col1 is None or col2 is None:
         raise ValueError("Please provide column names to correlate")
-    return col1, col2
+    return f"{col1}_{col2}_corr"
 
 
 def plot_correlations_by_trial(
