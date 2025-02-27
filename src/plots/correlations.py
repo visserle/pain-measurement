@@ -34,6 +34,7 @@ COLORS = {
     "temperature_eda_tonic_corr": "#2ca02c",
     "temperature_eda_phasic_corr": "#d62728",
     "temperature_heartrate_corr": "#9467bd",
+    "temperature_random_walk_corr": "gray",
     "temperature_brow_furrow_corr": "red",
     "temperature_cheek_raise_corr": "#2ca02c",
     "temperature_mouth_open_corr": "#d62728",
@@ -239,7 +240,7 @@ def plot_mean_correlations_by_participant(
     height: int = 400,
     y_domain: tuple = (-1, 1),
     with_config: bool = True,  # for layered charts there must be no config
-    color_map: dict = COLORS,
+    color_map: dict = None,
 ):
     """
     Create an Altair chart showing correlations by participant, grouped by trial
@@ -254,6 +255,15 @@ def plot_mean_correlations_by_participant(
     """
     # Create correlation column name
     corr_column = _create_corr_column_name(col1, col2)
+
+    # Set default color map if none provided
+    if color_map is None:
+        color_map = {corr_column: "blue"}  # default color
+    if corr_column not in color_map:
+        raise ValueError(
+            f"Color map does not contain key for correlation type: {corr_column}. "
+            "Please add the color to the color_map dictionary."
+        )
 
     # Add correlation type to column name for legend
     corr_by_participant = corr_by_participant.with_columns(
@@ -288,7 +298,7 @@ def plot_mean_correlations_by_participant(
             color=alt.Color(
                 "correlation_type:N",
                 scale=alt.Scale(
-                    domain=list(COLORS.keys()), range=list(COLORS.values())
+                    domain=list(color_map.keys()), range=list(color_map.values())
                 ),
                 legend=alt.Legend(
                     title="Correlation Type",
@@ -337,6 +347,20 @@ def plot_max_correlations_by_participant(
 ):
     # Create correlation column name
     corr_column = _create_corr_column_name(col1, col2)
+    if corr_column not in color_map:
+        raise ValueError(
+            f"Color map does not contain key for correlation type: {corr_column}"
+            "Please add the color to the color map."
+        )
+
+    # Set default color map if none provided
+    if color_map is None:
+        color_map = {corr_column: "blue"}  # default color
+    if corr_column not in color_map:
+        raise ValueError(
+            f"Color map does not contain key for correlation type: {corr_column}. "
+            "Please add the color to the color_map dictionary."
+        )
 
     # Set default title if none provided
     if title is None:
