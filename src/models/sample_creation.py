@@ -1,10 +1,18 @@
 # TODO: improve make_sample_set_balanced, there are more sophisticated ways to balance
 # the dataset
+
+# e.g. resample from sklearn utils
+# Note: If you do upsample your dataset before you split into train and test, there is
+# a high possibility that your model is exposed to data leakage.
+# (https://towardsdatascience.com/heres-what-i-ve-learnt-about-sklearn-resample-ab735ae1abc4/)
+import logging
 import operator
 from functools import reduce
 
 import polars as pl
 from polars import col
+
+logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
 def create_samples(
@@ -39,11 +47,12 @@ def create_samples(
     # samples = _remove_not_matching_samples(samples)
 
     # Make sure we kept equidistant sampling with a sampling rate of 10 Hz
-    assert (
-        not samples.filter(col("normalized_timestamp") % 10 != 0)
+    if (
+        samples.filter(col("normalized_timestamp") % 10 != 0)
         .get_column("normalized_timestamp")
         .len()
-    )
+    ):
+        logger.warning("Sampling rate is not equidistant with 10 Hz.")
 
     return samples
 
@@ -165,7 +174,9 @@ def make_sample_set_balanced(
     samples: pl.DataFrame,
 ):
     """
-    Make a sample set balanced by reducing the number of samples in larger groups.
+    Make a sample set balanced by downsampling the majority class in the dataset to the
+    size of the minority class to prevent the model from inclining towards the majority
+    class.
     """
     sample_length = samples.filter(
         col("sample_id") == samples.get_column("sample_id").first()
