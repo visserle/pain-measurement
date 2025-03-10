@@ -6,6 +6,8 @@ import torch
 from polars import col
 from torch.utils.data import DataLoader, TensorDataset
 
+logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
+
 
 def transform_sample_df_to_arrays(
     sample_df: pl.DataFrame,
@@ -108,9 +110,9 @@ def create_dataloaders(
     test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=False)
 
     dataset = "Test" if is_test else "Validation"
-    logging.debug(
-        f"Train Data: {len(train_data)} samples, "
-        f"{dataset} Data: {len(test_data)} samples"
+    logger.debug(
+        f"Dataset summary: Train: {len(train_data)} samples, {dataset}: {len(test_data)} samples | "
+        f"Input shape: {X_train.shape}, Label shape: {y_train.shape}"
     )
 
     return train_loader, test_loader

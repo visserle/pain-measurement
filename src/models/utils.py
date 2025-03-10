@@ -116,6 +116,7 @@ def load_model(model_path):
     model, _, _, _ = initialize_model(
         model_name,
         input_shape,
+        get_device(),
         **hyperparams,
     )
 
