@@ -7,25 +7,25 @@
 
 import logging
 from datetime import datetime
-from icecream import ic
+
 import numpy as np
 import optuna
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from icecream import ic
 from sklearn.model_selection import GroupShuffleSplit
 from torch.utils.data import DataLoader
 
 from src.data.database_manager import DatabaseManager
 from src.log_config import configure_logging
-from src.models.architectures.MultiLayerPerceptron import MultiLayerPerceptron
 from src.models.architectures.LongShortTermMemory import LongShortTermMemory
+from src.models.architectures.MultiLayerPerceptron import MultiLayerPerceptron
 from src.models.architectures.PatchTST import PatchTST
 from src.models.data_loader import create_dataloaders, transform_sample_df_to_arrays
 from src.models.sample_creation import create_samples, make_sample_set_balanced
 from src.models.scalers import scale_dataset
 from src.models.utils import get_device, set_seed
-
 
 RANDOM_SEED = 42
 N_EPOCHS = 100
@@ -478,6 +478,17 @@ def main():
     logging.info(
         f"Final Model | Test Loss: {average_loss:.2f} | Test Accuracy: {accuracy:.2f}"
     )
+
+    # Save model
+    save_dict = {
+        "model_state_dict": model.state_dict(),
+        "hyperparameters": best_params,
+        "model_name": best_model_name,
+        "test_accuracy": accuracy,
+    }
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    torch.save(save_dict, f"models/{best_model_name}_{timestamp}.pt")
+    logging.info(f"Model saved as {best_model_name}_{timestamp}.pt")
 
 
 if __name__ == "__main__":
