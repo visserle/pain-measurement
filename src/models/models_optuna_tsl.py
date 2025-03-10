@@ -33,9 +33,9 @@ from src.models.utils import (
 )
 
 RANDOM_SEED = 42
-N_EPOCHS = 100
-N_TRIALS = 3
 BATCH_SIZE = 64
+N_EPOCHS = 100
+N_TRIALS = 3  # number of trials for hyperparameter optimization
 
 configure_logging(stream_level=logging.DEBUG)
 device = get_device()
@@ -244,7 +244,6 @@ def main():
     sample_duration_ms = 5000
 
     samples = create_samples(df, intervals, sample_duration_ms, label_mapping)
-    # TODO: improve balance function, maybe use f1 or mcc as metric instead of accuracy
     samples = make_sample_set_balanced(samples)
     samples = samples.select(
         "sample_id",
@@ -258,17 +257,16 @@ def main():
         "pupil_mean_tonic",
         "label",
     )
-    X, y, groups = transform_sample_df_to_arrays(
-        samples,
-        feature_columns=[
-            # "temperature",  # only for visualization
-            # "rating"
-            # "eda_raw",
-            "eda_tonic",
-            "eda_phasic",
-            "pupil_mean",
-        ],
-    )
+    feature_list = [
+        # "temperature",  # only for visualization
+        # "rating"
+        # "eda_raw",
+        "eda_tonic",
+        "eda_phasic",
+        "pupil_mean",
+    ]
+
+    X, y, groups = transform_sample_df_to_arrays(samples, feature_columns=feature_list)
 
     print(X.shape, y.shape, groups.shape)
 
@@ -368,7 +366,7 @@ def main():
     )
 
     # Save model
-    save_model(model, accuracy, best_params, best_model_name, X_train_val)
+    save_model(model, accuracy, best_params, best_model_name, X_train_val, feature_list)
 
 
 if __name__ == "__main__":
