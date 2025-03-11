@@ -1,10 +1,3 @@
-# TODO: improve make_sample_set_balanced, there are more sophisticated ways to balance
-# the dataset
-
-# e.g. resample from sklearn utils
-# Note: If you do upsample your dataset before you split into train and test, there is
-# a high possibility that your model is exposed to data leakage.
-# (https://towardsdatascience.com/heres-what-i-ve-learnt-about-sklearn-resample-ab735ae1abc4/)
 import logging
 import operator
 from functools import reduce
@@ -12,26 +5,31 @@ from functools import reduce
 import polars as pl
 from polars import col
 
-from src.models.models_optuna_tsl import RANDOM_SEED
-
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
 def create_samples(
     df: pl.DataFrame,
-    intervals: dict[str, str] = {
-        "decreases": "decreasing_intervals",
-        "increases": "strictly_increasing_intervals_without_plateaus",
-    },
+    intervals: dict[str, str],
+    label_mapping: dict[str, int],
     length_ms: int = 5000,
-    label_mapping: dict[str, int] | None = None,
+    offsets_ms: dict[str, int] | None = None,
 ):
     """
     Create samples from a DataFrame with for different stimulus intervals (see labeling
     section of the StimulusGenerator).
-    Only the first x milliseconds of each interval are used.
+    Only the first x milliseconds of each interval are used, with optional offsets.
 
     Note: Needs a column "normalized_timestamp" in the DataFrame.
+
+    Args:
+        df: DataFrame with stimulus data
+        intervals: Dictionary mapping interval names to column names
+        length_ms: Length of each sample in milliseconds
+        label_mapping: Optional mapping of interval names to labels
+        offsets: Dictionary mapping interval names to offset values in milliseconds.
+                If None, no offset is applied. If an interval name is not in the dictionary,
+                no offset is applied for that interval.
     """
     if "normalized_timestamp" not in df.columns:
         raise ValueError(
@@ -44,7 +42,16 @@ def create_samples(
             "At least two interval types are required for sample creation."
         )
 
-    samples = _cap_intervals_to_sample_length(df, intervals, length_ms)
+    # Initialize offsets with default values (0) if not provided
+    if offsets_ms is None:
+        offsets_ms = {name: 0 for name in intervals.keys()}
+    else:
+        # Ensure all intervals have an offset value (default 0)
+        for name in intervals.keys():
+            if name not in offsets_ms:
+                offsets_ms[name] = 0
+
+    samples = _cap_intervals_to_sample_length(df, intervals, length_ms, offsets_ms)
     samples = _generate_sample_ids(samples, intervals, label_mapping)
     # samples = _remove_not_matching_samples(samples)
 
@@ -63,9 +70,16 @@ def _cap_intervals_to_sample_length(
     df: pl.DataFrame,
     intervals: dict[str, str],
     length_ms: int,
+    offsets_ms: dict[str, int],
 ):
     """
-    Cap samples to the first x milliseconds of each interval.
+    Cap samples to the first x milliseconds of each interval, with optional offsets.
+
+    Args:
+        df: DataFrame with stimulus data
+        intervals: Dictionary mapping interval names to column names
+        length_ms: Length of each sample in milliseconds
+        offsets_ms: Dictionary mapping interval names to offset values in milliseconds
     """
     # Add time counter for each relevant interval
     condition = [
@@ -81,14 +95,12 @@ def _cap_intervals_to_sample_length(
     ]
     samples = df.with_columns(condition)
 
-    # Only use the first x milliseconds of each interval
-    # Need two separate filters because else we would keep timestamps that are not
-    # in the first x milliseconds but are in the first x milliseconds of the other
-    # interval
-
-    # This filter prepares the data for the next filter
+    # Apply offsets and only use the length_ms duration of each interval
     condition = [
-        pl.when(col(f"normalized_timestamp_{name}") <= length_ms)
+        pl.when(
+            (col(f"normalized_timestamp_{name}") >= offsets_ms[name])
+            & (col(f"normalized_timestamp_{name}") < offsets_ms[name] + length_ms)
+        )
         .then(col(f"normalized_timestamp_{name}"))
         .otherwise(None)
         .alias(f"normalized_timestamp_{name}")
@@ -96,10 +108,14 @@ def _cap_intervals_to_sample_length(
     ]
     samples = samples.with_columns(condition)
 
-    # Filter out all data points that are not in the first x milliseconds
+    # Filter out all data points that are not in the desired range
     condition = reduce(
         operator.or_,
-        [col(f"normalized_timestamp_{name}") <= length_ms for name in intervals.keys()],
+        [
+            (col(f"normalized_timestamp_{name}") >= offsets_ms[name])
+            & (col(f"normalized_timestamp_{name}") < offsets_ms[name] + length_ms)
+            for name in intervals.keys()
+        ],
     )
     samples = samples.filter(condition)
 
@@ -118,7 +134,7 @@ def _cap_intervals_to_sample_length(
 def _generate_sample_ids(
     samples: pl.DataFrame,
     intervals: dict[str, str],
-    label_mapping: dict[str, int] | None = None,
+    label_mapping: dict[str, int],
 ):
     """
     Generate consecutive sample IDs across any number of interval types.
@@ -127,12 +143,7 @@ def _generate_sample_ids(
         samples: DataFrame containing interval data
         intervals: Dictionary mapping interval names to their column names
         label_mapping: Dictionary mapping interval names to their label values.
-            If None, uses default mapping: {"decreases": 0, "increases": 1}
     """
-    # Use simple default mapping if none provided
-    if label_mapping is None:
-        label_mapping = {"decreases": 0, "increases": 1}
-
     sample_dfs = []
     cumulative_count = 0
 
@@ -174,7 +185,7 @@ def _remove_not_matching_samples(
 
 def make_sample_set_balanced(
     samples: pl.DataFrame,
-    random_seed: int = RANDOM_SEED,
+    random_seed: int,
 ):
     """
     Make a sample set balanced by downsampling the majority class in the dataset to the

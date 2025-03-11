@@ -247,9 +247,15 @@ def main():
         "increases": 1,
         # "plateaus": 1,
     }
+    offsets_ms = {
+        "decreases": 2000,
+        "increases": 0,
+    }
     sample_duration_ms = 5000
 
-    samples = create_samples(df, intervals, sample_duration_ms, label_mapping)
+    samples = create_samples(
+        df, intervals, label_mapping, sample_duration_ms, offsets_ms
+    )
     samples = make_sample_set_balanced(samples)
     samples = samples.select(
         "sample_id",
