@@ -35,7 +35,7 @@ from src.models.utils import (
 RANDOM_SEED = 42
 BATCH_SIZE = 64
 N_EPOCHS = 100
-N_TRIALS = 3  # number of trials for hyperparameter optimization
+N_TRIALS = 1  # number of trials for hyperparameter optimization
 
 configure_logging(stream_level=logging.DEBUG)
 device = get_device()
@@ -170,6 +170,7 @@ def create_objective_function(
         """
         # Dynamically suggest hyperparameters based on model_info
         hyperparams = {}
+        exp_params = {}
         for param_name, param_config in model_info["hyperparameters"].items():
             param_type = param_config["type"]
             match param_type:
@@ -179,12 +180,16 @@ def create_objective_function(
                         param_config["low"],
                         param_config["high"],
                     )
-                case "power2":
-                    hyperparams[param_name] = 2 ** trial.suggest_int(
+                case "exp":
+                    # we need to store exp values separately as optuna does not support
+                    # suggesting power of 2 directly
+                    exp_value = trial.suggest_int(
                         param_name,
                         param_config["low"],
                         param_config["high"],
                     )
+                    hyperparams[param_name] = 2**exp_value
+                    exp_params[param_name] = exp_value
                 case "float":
                     hyperparams[param_name] = trial.suggest_float(
                         param_name,
@@ -249,14 +254,14 @@ def main():
     }
     offsets_ms = {
         "decreases": 2000,
-        "increases": 0,
+        # "increases": 0,
     }
     sample_duration_ms = 5000
 
     samples = create_samples(
         df, intervals, label_mapping, sample_duration_ms, offsets_ms
     )
-    samples = make_sample_set_balanced(samples)
+    samples = make_sample_set_balanced(samples, RANDOM_SEED)
     samples = samples.select(
         "sample_id",
         "participant_id",
@@ -332,13 +337,21 @@ def main():
         )
         study.optimize(objective_function, n_trials=N_TRIALS)
 
+        best_params = study.best_params.copy()
+
+        # For any exponential parameters, use the actual power of 2 value
+        for param_name in model_info["hyperparameters"]:
+            if model_info["hyperparameters"][param_name]["type"] == "exp":
+                exp_value = best_params[param_name]  # This is the exponent
+                best_params[param_name] = 2**exp_value  # Calculate the actual value
+
         if study.best_value > best_value:
             best_value = study.best_value
-            best_params = study.best_params
+            best_params = best_params
             best_model_name = model_name
 
         logging.info(
-            f"Best value for {model_name}: {study.best_value} (params: {study.best_params})"
+            f"Best value for {model_name}: {best_value} (params: {best_params})"
         )
 
     logging.info(
