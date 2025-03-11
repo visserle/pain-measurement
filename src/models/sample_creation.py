@@ -12,6 +12,8 @@ from functools import reduce
 import polars as pl
 from polars import col
 
+from src.models.models_optuna_tsl import RANDOM_SEED
+
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
@@ -172,11 +174,12 @@ def _remove_not_matching_samples(
 
 def make_sample_set_balanced(
     samples: pl.DataFrame,
+    random_seed: int = RANDOM_SEED,
 ):
     """
     Make a sample set balanced by downsampling the majority class in the dataset to the
     size of the minority class to prevent the model from inclining towards the majority
-    class.
+    class. Shuffles data before downsampling to ensure random selection.
     """
     sample_length = samples.filter(
         col("sample_id") == samples.get_column("sample_id").first()
@@ -201,8 +204,9 @@ def make_sample_set_balanced(
             # Keep group as is if it's already at the minimum size
             balanced_groups.append(group)
         else:
-            # Reduce group size to match the smallest group
-            reduced_group = group.limit(-remove_count * sample_length)
+            # Shuffle the group and then reduce size to match the smallest group
+            shuffled_group = group.sample(fraction=1.0, seed=random_seed)
+            reduced_group = shuffled_group.limit(min_label_count * sample_length)
             balanced_groups.append(reduced_group)
 
     # Combine all balanced groups and sort by sample_id

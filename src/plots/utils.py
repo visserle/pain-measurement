@@ -53,6 +53,7 @@ def prepare_multiline_hvplot(
         "trial_id",
         "trial_number",
         "sample_id",
+        "label",
         "participant_id",
         "stimulus_seed",
         "continuous_interval_id",
