@@ -179,6 +179,12 @@ def create_objective_function(
                         param_config["low"],
                         param_config["high"],
                     )
+                case "power2":
+                    hyperparams[param_name] = 2 ** trial.suggest_int(
+                        param_name,
+                        param_config["low"],
+                        param_config["high"],
+                    )
                 case "float":
                     hyperparams[param_name] = trial.suggest_float(
                         param_name,
