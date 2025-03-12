@@ -174,6 +174,65 @@ def resample_at_10_hz_equidistant(
     return df
 
 
+def resample_at_250_hz_equidistant(
+    df: pl.DataFrame,
+) -> pl.DataFrame:
+    """Resample a DataFrame to equidistant time steps of 4 ms.
+    Made for feature-engineering data that was already decimated to 250 Hz.
+    DO NOT USE AFTER LABEL CREATION. This function is badly written and does
+    shady stuff in the background (see code comments).
+    Note: Only works with normalized timestamps (starting from 0 in each trial).
+    """
+    # Create a list to store all processed trials
+    processed_trials = []
+    for trial in df.group_by(col("trial_id"), maintain_order=True):
+        trial = trial[1].with_columns(resampling=False)  # add resampling column
+        # duplicate last row to avoid interpolation errors
+        # this is important for the head function below, and does not change the data
+        for _ in range(10):
+            trial = pl.concat([trial, trial.tail(1)]).sort("timestamp")
+        resampling_df = (
+            # Create empty rows for the resampling
+            trial.with_columns(
+                col(FLOAT_DTYPES).map_elements(lambda x: None, return_dtype=pl.Float64)
+            )
+            .head(
+                45001
+            )  # we measure from second 0 to 180 (250 Hz * 180 seconds = 45000 + 1)
+            # We use head to keep all integer values from the original trial
+            # in the new DataFrame
+            # not that this is a failure-prone, whacky hack that also assumes that
+            # integer columns only contain 1 value for a whole trial
+            # (which is not given for interval add_labels)
+            # Add equally spaced timestamps
+            .with_columns(
+                normalized_timestamp=pl.arange(0, 180_004, 4).cast(pl.Float64)
+                # 0 to 180 seconds in 4ms steps (250 Hz)
+            )
+            # Add markers for the resampling
+        ).with_columns(resampling=True)
+
+        assert resampling_df.height == 45001
+
+        # Add resampled timestamps back to data, interpolate and remove original
+        # timestamps
+        resampling_df = pl.concat([trial, resampling_df]).sort("normalized_timestamp")
+        resampling_df = (
+            interpolate_and_fill_nulls(
+                resampling_df, time_column="normalized_timestamp"
+            )
+            .filter(col("resampling"))
+            .drop("resampling")
+        )
+
+        # Append the processed trial to our list
+        processed_trials.append(resampling_df)
+
+    # Combine all processed trials back into a single dataframe
+    df = pl.concat(processed_trials, how="vertical")
+    return df
+
+
 def add_timestamp_µs_column(
     df: pl.DataFrame,
     time_column: str = "timestamp",

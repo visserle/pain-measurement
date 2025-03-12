@@ -1,10 +1,3 @@
-# TODO:
-# - improve model configuration
-# - seperate hyperparameters from training parameters
-# - also use different config format
-# - add more models
-# - parallelize optuna trials?
-
 import logging
 from datetime import datetime
 
@@ -35,9 +28,12 @@ from src.models.utils import (
 RANDOM_SEED = 42
 BATCH_SIZE = 64
 N_EPOCHS = 100
-N_TRIALS = 1  # number of trials for hyperparameter optimization
+N_TRIALS = 3
 
-configure_logging(stream_level=logging.DEBUG)
+configure_logging(
+    stream_level=logging.DEBUG,
+    file_path=f"logs/{__file__}_{datetime.now().strftime('%Y%m%d-%H%M%S')}.log",
+)
 device = get_device()
 set_seed(RANDOM_SEED)
 
@@ -285,22 +281,30 @@ def main():
 
     X, y, groups = transform_sample_df_to_arrays(samples, feature_columns=feature_list)
 
-    print(X.shape, y.shape, groups.shape)
-
     # Split the data into training+validation set and test set
     # while respecting group structure in the data
-    splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=RANDOM_SEED)
+    splitter = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=RANDOM_SEED)
     idx_train_val, idx_test = next(splitter.split(X, y, groups=groups))
     X_train_val, y_train_val = X[idx_train_val], y[idx_train_val]
     X_test, y_test = X[idx_test], y[idx_test]
 
     # Split the training+validation set into training and validation sets
-    splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=RANDOM_SEED)
+    splitter = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=RANDOM_SEED)
     idx_train, idx_val = next(
         splitter.split(X_train_val, y_train_val, groups=groups[idx_train_val])
     )
     X_train, y_train = X_train_val[idx_train], y_train_val[idx_train]
     X_val, y_val = X_train_val[idx_val], y_train_val[idx_val]
+
+    # Count and print the number of unique groups in each set
+    for name, group_indices in [
+        ("training", groups[idx_train_val][idx_train]),
+        ("validation", groups[idx_train_val][idx_val]),
+        ("test", groups[idx_test]),
+    ]:
+        logging.info(
+            f"Number of unique particpants in {name} set: {len(np.unique(group_indices))}"
+        )
 
     # Scale the data
     # TODO: fix scaler? not sure if correct
@@ -339,11 +343,11 @@ def main():
 
         best_params = study.best_params.copy()
 
-        # For any exponential parameters, use the actual power of 2 value
+        # Transform exponential parameters (see create_objective_function)
         for param_name in model_info["hyperparameters"]:
             if model_info["hyperparameters"][param_name]["type"] == "exp":
-                exp_value = best_params[param_name]  # This is the exponent
-                best_params[param_name] = 2**exp_value  # Calculate the actual value
+                exp_value = best_params[param_name]
+                best_params[param_name] = 2**exp_value
 
         if study.best_value > best_value:
             best_value = study.best_value
