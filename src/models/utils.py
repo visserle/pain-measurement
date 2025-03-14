@@ -2,6 +2,7 @@ import logging
 import os
 import random
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -13,7 +14,9 @@ from src.models.models_config import MODELS
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
-def get_device() -> torch.device:
+def get_device(
+    log_device: bool = True,
+) -> torch.device:
     """Return the device to be used by the model."""
     if torch.cuda.is_available():
         device = torch.device("cuda")
@@ -21,7 +24,8 @@ def get_device() -> torch.device:
         device = torch.device("mps")
     else:
         device = torch.device("cpu")
-    logger.info(f"Using device: {device}")
+    if log_device:
+        logger.info(f"Using device: {device}")
     return device
 
 
@@ -64,7 +68,12 @@ def initialize_model(
 ]:
     # Extracting lr from hyperparams and not passing it to the model's constructor
     lr = hyperparams.pop("lr")
-    model_class = MODELS[model_name]["class"]
+    try:
+        model_class = MODELS[model_name]["class"]
+    except KeyError:
+        raise ValueError(
+            f"Unknown model: {model_name}. Make sure it is defined in models_config.py"
+        )
     model = model_class(
         input_len=input_shape[0],
         input_dim=input_shape[1],
@@ -88,6 +97,7 @@ def save_model(
     best_params: dict,
     best_model_name: str,
     X_train_val: np.ndarray | DataLoader,
+    feature_list: list,
 ):
     save_dict = {
         "model_state_dict": model.state_dict(),
@@ -95,28 +105,32 @@ def save_model(
         "model_name": best_model_name,
         "test_accuracy": accuracy,
         "input_shape": get_input_shape(best_model_name, X_train_val),
+        "feature_list": feature_list,
     }
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     torch.save(save_dict, f"models/{best_model_name}_{timestamp}.pt")
     logger.info(f"Model saved as {best_model_name}_{timestamp}.pt")
 
 
-def load_model(model_path):
+def load_model(
+    model_path: str | Path,
+) -> nn.Module:
+    device = get_device()
     # Load the saved dictionary
-    save_dict = torch.load(model_path)
-
+    save_dict = torch.load(model_path, map_location=device)
     # Extract components
     model_name = save_dict["model_name"]
     hyperparams = save_dict["hyperparameters"]
     state_dict = save_dict["model_state_dict"]
     test_accuracy = save_dict["test_accuracy"]
     input_shape = save_dict["input_shape"]
+    feature_list = save_dict["feature_list"]
 
     # Initialize the model with the same architecture and hyperparameters
     model, _, _, _ = initialize_model(
         model_name,
         input_shape,
-        get_device(),
+        device,
         **hyperparams,
     )
 
@@ -126,9 +140,8 @@ def load_model(model_path):
     # Set model to evaluation mode
     model.eval()
 
-    logger.info(
-        f"Loaded {model_name} model (input_shape={input_shape}) with test accuracy {test_accuracy:.2f}%"
-    )
+    logger.info(f"Loaded {model_name} model with test accuracy {test_accuracy:.2f}%")
+    logger.info(f"Input shape: {input_shape} | Features: {feature_list}")
 
     return model
 
