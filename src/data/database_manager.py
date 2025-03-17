@@ -131,9 +131,9 @@ class DatabaseManager:
                         .to_struct()
                     )
                 )
-            elif table_name.lower() == "participants":
-                # remove participants from the participants table that have only invalid
-                # trials (note that this is different from the invalid participants table)
+            elif "participants" or "questionnaire" or "result" in table_name.lower():
+                # remove participants that only have invalid trials
+                # (note that this is different from the invalid participants table)
                 only_invalid_trials = (
                     invalid_trials.group_by("participant_id")
                     .agg(pl.len().alias("count"))
