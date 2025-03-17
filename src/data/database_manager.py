@@ -116,6 +116,9 @@ class DatabaseManager:
         ).pl()  # could be more efficient by filtering out invalid trials in the query
 
         invalid_trials = self.execute("SELECT * FROM Invalid_Trials").pl()
+        # do not filter invalid trials for invalid_trials table (see below)
+        if table_name == "invalid_trials":
+            return df
 
         if exclude_trials_with_measurement_problems:
             if "participant_id" and "trial_number" in df.columns:
@@ -128,6 +131,16 @@ class DatabaseManager:
                         .to_struct()
                     )
                 )
+            elif table_name.lower() == "participants":
+                # remove participants from the participants table that have only invalid
+                # trials (note that this is different from the invalid participants table)
+                only_invalid_trials = (
+                    invalid_trials.group_by("participant_id")
+                    .agg(pl.len().alias("count"))
+                    .filter(pl.col("count") == 12)
+                    .get_column("participant_id")
+                )
+                df = df.filter(~col("participant_id").is_in(only_invalid_trials))
             else:  # not all tables have trial information, e.g. questionnaires
                 # no filtering necessary, invalid participants are already excluded
                 pass
