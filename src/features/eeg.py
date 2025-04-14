@@ -1,22 +1,11 @@
-# TODO;
-# read https://neuraldatascience.io/7-eeg/erp_filtering.html for filter_eeg function
-# Frequency-based analysis of EEG data
-# maybe improve code quality: https://stackoverflow.com/questions/75057003/how-to-apply-scipy-filter-in-polars-dataframe
-
-
 import logging
 
 import mne
-import numpy as np
 import polars as pl
-from polars import col
-from scipy import signal
 
-from src.features.filtering import butterworth_filter
-from src.features.resampling import decimate
 from src.features.transforming import map_trials
 
-SAMPLE_RATE = 500
+SAMPLE_RATE = 500  # original sample rate; we will decimate to 250 Hz
 CHANNELS = ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"]
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
@@ -33,24 +22,6 @@ def preprocess_eeg(df: pl.DataFrame) -> pl.DataFrame:
 
 def feature_eeg(df: pl.DataFrame) -> pl.DataFrame:
     return df
-
-
-# @map_trials
-# def filter_eeg(
-#     df: pl.DataFrame,
-#     sample_rate: int = SAMPLE_RATE,
-#     channel_columns: list[str] = CHANNELS,
-# ) -> pl.DataFrame:
-#     return df.with_columns(
-#         col(channel_columns).map_batches(
-#             lambda x: butterworth_filter(
-#                 x.to_numpy(),
-#                 sample_rate,
-#                 lowcut=1,
-#                 highcut=35,
-#             )
-#         )  # .name.suffix("_filtered") TODO naming convention
-#     )
 
 
 @map_trials
