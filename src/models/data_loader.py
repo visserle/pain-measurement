@@ -67,7 +67,7 @@ def transform_sample_df_to_arrays(
             sample_df.group_by(group_by_col)
             .agg(col(label_column).first())
             .get_column(label_column)
-            .to_dummies()  # convert to one-hot encoding
+            .to_dummies()  # polars way of one-hot encoding
             .to_numpy()
         )
 
@@ -105,7 +105,6 @@ def create_dataloaders(
         torch.FloatTensor(X_test),
         torch.FloatTensor(y_test),
     )
-    # TODO: find out if dataloader shuffle is deterministic
     train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=False)
 

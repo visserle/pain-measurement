@@ -29,6 +29,9 @@ def check_sample_rate(
     df: pl.DataFrame,
     unique_timestamp: bool = False,
 ) -> None:
+    r"""coefficient of variation between trials
+    # $ CV=\frac{\sigma}{\mu} $
+    """
     # IMPROVE: just do diff mean on timestamp
     if unique_timestamp:
         # actually slightly faster than maintain_order=True (but not lazy)

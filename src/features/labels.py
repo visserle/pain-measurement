@@ -11,9 +11,10 @@ from src.features.transforming import merge_dfs
 def add_labels(
     data_df: pl.DataFrame,
     trials_df: pl.DataFrame,
-    based_on: str = "stimulus",  # TODO: add rating option, etc.
 ) -> pl.DataFrame:
-    """Add labels to the data DataFrame.
+    """Add labels to the data DataFrame. Note that labels are based on the temperarture
+    intervals of the stimulus generator and are added as binary columns to the
+    data DataFrame.
 
     Note: Needs normalized timestamps for each trial."""
     assert "normalized_timestamp" in data_df.columns, (

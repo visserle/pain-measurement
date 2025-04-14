@@ -28,7 +28,6 @@ INVALID_PARTICIPANTS = (
     DataConfig.load_invalid_participants_config().get_column("participant_id").to_list()
 )
 
-
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
@@ -85,7 +84,6 @@ def create_questionnaire_df(questionnaire: str):
         questionnaire_df = questionnaire_df.filter(
             ~col("participant_id").is_in(participants_with_thermode_issues)
         )
-
     return questionnaire_df.filter(~col("participant_id").is_in(INVALID_PARTICIPANTS))
 
 

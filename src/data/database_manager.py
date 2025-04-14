@@ -1,7 +1,4 @@
-# TODO: labeled data frame should be part of the database: label based on temperature and rating (not so sure abt the latter)
-# - the labeled data should be equidistantly sampled with a sample rate of idk
-# - label at the very end when merging all feature data
-# - add anonymization to the database in the future
+# TODO: add anonymization to the database in the future
 
 import logging
 
@@ -332,7 +329,7 @@ def main():
         data_dfs = []
         for modality in MODALITIES:
             if modality == "EEG":
-                continue  # TODO FIXME: EEG data is not yet available
+                continue  # TODO EEG processing is separate
             data_dfs.append(
                 db.get_table(
                     f"Feature_{modality}",

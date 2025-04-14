@@ -9,7 +9,6 @@ from sklearn.preprocessing import (
 
 
 def scale_dataset(X_train, X_test):
-    # TODO: we have group-wise differences with the scaling, is this a problem?
     scaler = StandardScaler3D()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)

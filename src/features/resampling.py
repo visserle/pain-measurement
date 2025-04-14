@@ -1,9 +1,8 @@
-# TODO: add interpolation with zero-stuffing for up-sampling, polars does this by default using upsample
-# TODO: use butterworth filter for low-pass filtering in the decimate function to avoid
-# ripple in the passband
+# Note that time-columns are mere floats as pl.Duration is not fully supported in Polars
+# and DuckDB yet
 
-# Time-columns are mere floats as pl.Duration is not fully supported in Polars and
-# DuckDB yet
+# For comprehensiveness, we could add an upsampling function that uses interpolation with
+# zero-stuffing via polars upsample function (not needed for now)
 
 import logging
 
@@ -79,7 +78,6 @@ def interpolate_and_fill_nulls(
     )
 
 
-# TODO: remove this function resample_to_equidistant_ms and only keep resample_at_10_hz_equidistant?
 @map_trials
 def resample_to_equidistant_ms(
     df: pl.DataFrame,
@@ -87,6 +85,8 @@ def resample_to_equidistant_ms(
     group_by: str = "trial_id",
     gather_every: int | None = None,
 ):
+    # Note: not used for feature engineering (not performant),
+    # but for visualization in notebooks
     """
     Resample the DataFrame to equidistant time steps with a resolution of 1 ms.
     Note that this rounds every timestamp to the nearest millisecond.

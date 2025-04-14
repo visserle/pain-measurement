@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 import optuna
+import polars as pl
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -29,12 +29,9 @@ from src.models.utils import (
 RANDOM_SEED = 42
 BATCH_SIZE = 64
 N_EPOCHS = 100
-N_TRIALS = 20
+N_TRIALS = 30
 
-configure_logging(
-    stream_level=logging.DEBUG,
-    file_path=Path(f"logs/{datetime.now().strftime('%Y%m%d-%H%M%S')}.log"),
-)
+configure_logging(stream_level=logging.DEBUG)
 device = get_device()
 set_seed(RANDOM_SEED)
 
@@ -231,12 +228,15 @@ def create_objective_function(
 
 
 def main():
+    from src.features.labels import add_labels
+    from src.features.resampling import add_normalized_timestamp
+
     db = DatabaseManager()
     with db:
-        df = db.get_table(
-            "Merged_and_Labeled_Data",
-            exclude_trials_with_measurement_problems=True,
-        )
+        eeg = db.get_table("Preprocess_EEG")
+        trials = db.get_table("Trials")
+    eeg = add_normalized_timestamp(eeg)
+    df = add_labels(eeg, trials)
 
     intervals = {
         # "decreases": "decreasing_intervals",
@@ -258,26 +258,61 @@ def main():
     samples = create_samples(
         df, intervals, label_mapping, sample_duration_ms, offsets_ms
     )
+
+    # fix EEG samples
+    new = []
+    for sample in samples.group_by("sample_id", maintain_order=True):
+        sample = sample[1]
+        sample = sample.head(1250)
+        while sample.height < 1250:
+            sample = pl.concat([sample, sample.tail(1)])
+        new.append(sample)
+
+    samples = pl.concat(new)
+
     samples = make_sample_set_balanced(samples, RANDOM_SEED)
-    feature_list = [
-        # "temperature",  # only for visualization
-        # "rating"
+    samples = samples.select(
+        "sample_id",
+        "participant_id",
+        # "rating",
+        # "temperature",
+        # "eda_raw",
         # "eda_tonic",
         # "eda_phasic",
         # "pupil_mean",
         # "pupil_mean_tonic",
-        # "heartrate",
-        "brow_furrow",
-        "cheek_raise",
-        "mouth_open",
-        "upper_lip_raise",
-        "nose_wrinkle",
+        "label",
+        "f3",
+        "f4",
+        "c3",
+        "c4",
+        "cz",
+        "p3",
+        "p4",
+        "oz",
+    )
+    feature_list = [
+        # "temperature",  # only for visualization
+        # "rating"
+        # "eda_raw",
+        # "eda_tonic",
+        # "eda_phasic",
+        # "pupil_mean",
+        "f3",
+        "f4",
+        "c3",
+        "c4",
+        "cz",
+        "p3",
+        "p4",
+        "oz",
     ]
+
     X, y, groups = transform_sample_df_to_arrays(samples, feature_columns=feature_list)
 
     # Split the data into training+validation set and test set
     # while respecting group structure in the data
-    splitter = GroupShuffleSplit(n_splits=1, test_size=0.20, random_state=RANDOM_SEED)
+    splitter = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=RANDOM_SEED)
     idx_train_val, idx_test = next(splitter.split(X, y, groups=groups))
     X_train_val, y_train_val = X[idx_train_val], y[idx_train_val]
     X_test, y_test = X[idx_test], y[idx_test]
