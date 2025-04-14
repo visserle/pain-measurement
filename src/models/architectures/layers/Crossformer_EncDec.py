@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 from einops import rearrange
-from layers.SelfAttention_Family import TwoStageAttentionLayer
+
+from src.models.architectures.layers.SelfAttention_Family import TwoStageAttentionLayer
 
 
 class SegMerging(nn.Module):
@@ -33,7 +34,6 @@ class SegMerging(nn.Module):
 class scale_block(nn.Module):
     def __init__(
         self,
-        configs,
         win_size,
         d_model,
         n_heads,
@@ -54,9 +54,7 @@ class scale_block(nn.Module):
 
         for i in range(depth):
             self.encode_layers.append(
-                TwoStageAttentionLayer(
-                    configs, seg_num, factor, d_model, n_heads, d_ff, dropout
-                )
+                TwoStageAttentionLayer(seg_num, factor, d_model, n_heads, d_ff, dropout)
             )
 
     def forward(self, x, attn_mask=None, tau=None, delta=None):
