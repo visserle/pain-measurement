@@ -8,8 +8,6 @@ from src.models.architectures.layers.SelfAttention_Family import (
     DSAttention,
 )
 from src.models.architectures.layers.Transformer_EncDec import (
-    Decoder,
-    DecoderLayer,
     Encoder,
     EncoderLayer,
 )
@@ -22,7 +20,13 @@ class Projector(nn.Module):
     """
 
     def __init__(
-        self, enc_in, seq_len, hidden_dims, hidden_layers, output_dim, kernel_size=3
+        self,
+        enc_in,
+        seq_len,
+        hidden_dims,
+        hidden_layers,
+        output_dim,
+        kernel_size=3,
     ):
         super(Projector, self).__init__()
 
@@ -76,6 +80,8 @@ class NonstationarityTransformer(nn.Module):
         num_class: int = 2,
         hidden_dims: list = [256, 256],
         hidden_layers: int = 2,
+        embed: str = "fixed",
+        freq: str = "h",
     ):
         super().__init__()
         self.seq_len = input_len
@@ -91,6 +97,8 @@ class NonstationarityTransformer(nn.Module):
         self.num_class = num_class
         self.p_hidden_dims = hidden_dims
         self.p_hidden_layers = hidden_layers
+        self.embed = embed
+        self.freq = freq
 
         # Embedding
         self.enc_embedding = DataEmbedding(
@@ -124,59 +132,12 @@ class NonstationarityTransformer(nn.Module):
             ],
             norm_layer=torch.nn.LayerNorm(self.d_model),
         )
-        # Decoder
-        if (
-            self.task_name == "long_term_forecast"
-            or self.task_name == "short_term_forecast"
-        ):
-            self.dec_embedding = DataEmbedding(
-                self.dec_in,
-                self.d_model,
-                self.embed,
-                self.freq,
-                self.dropout,
-            )
-            self.decoder = Decoder(
-                [
-                    DecoderLayer(
-                        AttentionLayer(
-                            DSAttention(
-                                True,
-                                self.factor,
-                                attention_dropout=self.dropout,
-                                output_attention=False,
-                            ),
-                            self.d_model,
-                            self.n_heads,
-                        ),
-                        AttentionLayer(
-                            DSAttention(
-                                False,
-                                self.factor,
-                                attention_dropout=self.dropout,
-                                output_attention=False,
-                            ),
-                            self.d_model,
-                            self.n_heads,
-                        ),
-                        self.d_model,
-                        self.d_ff,
-                        dropout=self.dropout,
-                        activation=self.activation,
-                    )
-                    for l in range(self.d_layers)
-                ],
-                norm_layer=torch.nn.LayerNorm(self.d_model),
-                projection=nn.Linear(self.d_model, self.c_out, bias=True),
-            )
-        if self.task_name == "imputation":
-            self.projection = nn.Linear(self.d_model, self.c_out, bias=True)
-        if self.task_name == "anomaly_detection":
-            self.projection = nn.Linear(self.d_model, self.c_out, bias=True)
-        if self.task_name == "classification":
-            self.act = F.gelu
-            self.dropout = nn.Dropout(self.dropout)
-            self.projection = nn.Linear(self.d_model * self.seq_len, self.num_class)
+
+        # No decoder needed for classification tasks, only needed for prediction tasks
+
+        self.act = F.gelu
+        self.dropout = nn.Dropout(self.dropout)
+        self.projection = nn.Linear(self.d_model * self.seq_len, self.num_class)
 
         self.tau_learner = Projector(
             enc_in=self.enc_in,
