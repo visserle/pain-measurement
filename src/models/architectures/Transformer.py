@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.model.architectures.layers.Embed import DataEmbedding
-from src.model.architectures.layers.SelfAttention_Family import (
+from src.models.architectures.layers.Embed import DataEmbedding
+from src.models.architectures.layers.SelfAttention_Family import (
     AttentionLayer,
     FullAttention,
 )
-from src.model.architectures.layers.Transformer_EncDec import (
+from src.models.architectures.layers.Transformer_EncDec import (
     Encoder,
     EncoderLayer,
 )
@@ -20,16 +20,44 @@ class Transformer(nn.Module):
     Paper link: https://proceedings.neurips.cc/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf
     """
 
-    def __init__(self, configs):
+    def __init__(
+        self,
+        input_len: int,
+        input_dim: int,
+        d_model: int = 128,
+        e_layers: int = 3,
+        d_ff: int = 256,
+        n_heads: int = 8,
+        factor: int = 1,
+        dropout: float = 0.1,
+        activation: nn.Module = nn.GELU(),
+        num_class: int = 2,
+        embed: str = "fixed",
+        freq: str = "h",
+    ):
         super().__init__()
+        self.seq_len = input_len
+        self.enc_in = input_dim
+        self.d_model = d_model
+        self.e_layers = e_layers
+        self.d_ff = d_ff
+        self.n_heads = n_heads
+        self.factor = factor
+        self.dropout = dropout
+        self.activation = activation
+        self.num_class = num_class
+        self.embed = embed
+        self.freq = freq
+
         # Embedding
         self.enc_embedding = DataEmbedding(
-            configs.enc_in,
-            configs.d_model,
-            configs.embed,
-            configs.freq,
-            configs.dropout,
+            self.enc_in,
+            self.d_model,
+            self.embed,
+            self.freq,
+            self.dropout,
         )
+
         # Encoder
         self.encoder = Encoder(
             [
@@ -37,30 +65,28 @@ class Transformer(nn.Module):
                     AttentionLayer(
                         FullAttention(
                             False,
-                            configs.factor,
-                            attention_dropout=configs.dropout,
+                            self.factor,
+                            attention_dropout=self.dropout,
                             output_attention=False,
                         ),
-                        configs.d_model,
-                        configs.n_heads,
+                        self.d_model,
+                        self.n_heads,
                     ),
-                    configs.d_model,
-                    configs.d_ff,
-                    dropout=configs.dropout,
-                    activation=configs.activation,
+                    self.d_model,
+                    self.d_ff,
+                    dropout=self.dropout,
+                    activation=self.activation,
                 )
-                for l in range(configs.e_layers)
+                for l in range(self.e_layers)
             ],
-            norm_layer=torch.nn.LayerNorm(configs.d_model),
+            norm_layer=torch.nn.LayerNorm(self.d_model),
         )
 
         # No decoder needed for classification tasks, only needed for prediction tasks
 
         self.act = F.gelu
-        self.dropout = nn.Dropout(configs.dropout)
-        self.projection = nn.Linear(
-            configs.d_model * configs.seq_len, configs.num_class
-        )
+        self.dropout = nn.Dropout(self.dropout)
+        self.projection = nn.Linear(self.d_model * self.seq_len, self.num_class)
 
     def forward(self, x_enc):
         # Embedding
