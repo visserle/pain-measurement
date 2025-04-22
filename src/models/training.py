@@ -262,16 +262,16 @@ def main():
     feature_list = [
         # "temperature",  # only for visualization
         # "rating"
-        # "eda_tonic",
-        # "eda_phasic",
-        # "pupil_mean",
-        # "pupil_mean_tonic",
-        # "heartrate",
-        "brow_furrow",
-        "cheek_raise",
-        "mouth_open",
-        "upper_lip_raise",
-        "nose_wrinkle",
+        "eda_tonic",
+        "eda_phasic",
+        "pupil_mean",
+        "pupil_mean_tonic",
+        "heartrate",
+        # "brow_furrow",
+        # "cheek_raise",
+        # "mouth_open",
+        # "upper_lip_raise",
+        # "nose_wrinkle",
     ]
     X, y, groups = transform_sample_df_to_arrays(samples, feature_columns=feature_list)
 
@@ -357,7 +357,6 @@ def main():
     )
 
     # Retrain the model with the best parameters on the entire training+validation set
-    # TODO: fix scaler
     X_train_val, X_test = scale_dataset(X_train_val, X_test)
 
     train_val_loader, test_loader = create_dataloaders(
