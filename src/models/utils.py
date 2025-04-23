@@ -98,6 +98,7 @@ def save_model(
     best_model_name: str,
     X_train_val: np.ndarray | DataLoader,
     feature_list: list,
+    model_path: str = "models/",
 ):
     save_dict = {
         "model_state_dict": model.state_dict(),
@@ -108,7 +109,7 @@ def save_model(
         "feature_list": feature_list,
     }
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    torch.save(save_dict, f"models/{best_model_name}_{timestamp}.pt")
+    torch.save(save_dict, f"{model_path}{best_model_name}_{timestamp}.pt")
     logger.info(f"Model saved as {best_model_name}_{timestamp}.pt")
 
 
