@@ -75,6 +75,8 @@ def _cap_intervals_to_sample_length(
     """
     Cap samples to the first x milliseconds of each interval, with optional offsets.
 
+    Uses a half-open interval [offset, offset + length) for each interval.
+
     Args:
         df: DataFrame with stimulus data
         intervals: Dictionary mapping interval names to column names
