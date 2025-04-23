@@ -121,14 +121,11 @@ def main():
         device=device,
     )
 
-    # Extract best model information from results
-    best_model_name = results["overall_best"]["model_name"]
-    best_model_params = results["overall_best"]["params"]
-
-    # Train the final model on combined training+validation data
+    # Train final model on combined training+validation data
+    best_model_info = results["overall_best"]
     train_evaluate_and_save_best_model(
-        model_name=best_model_name,
-        params=best_model_params,
+        model_name=best_model_info["model_name"],
+        params=best_model_info["params"],
         X_train_val=X_train_val,
         train_val_loader=train_val_loader,
         test_loader=test_loader,

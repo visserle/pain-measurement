@@ -11,8 +11,11 @@ from src.models.training_loop import train_model
 from src.models.utils import get_input_shape, initialize_model, save_model
 
 
-def save_experiment_results(
-    results, experiment_dir, feature_str, best_model_name, best_value, best_params
+def save_results(
+    results,
+    experiment_dir,
+    feature_str,
+    include_test_results=False,
 ):
     """Save experiment results to JSON and generate a summary text file."""
     # Save results to JSON file
@@ -20,7 +23,7 @@ def save_experiment_results(
     with open(results_file, "w") as f:
         json.dump(results, f, indent=2)
 
-    # Also save a simple text summary for quick reference
+    # Create summary file
     summary_file = experiment_dir / f"summary_{feature_str}.txt"
     with open(summary_file, "w") as f:
         f.write(f"Experiment ID: {results['experiment_id']}\n")
@@ -42,33 +45,15 @@ def save_experiment_results(
             f.write("-" * 60 + "\n")
 
         f.write("\nOVERALL BEST MODEL:\n")
-        f.write(f"Model: {best_model_name}\n")
-        f.write(f"Validation Accuracy: {best_value:.4f}\n")
-        f.write(f"Parameters: {best_params}\n")
+        best_model = results["overall_best"]
+        f.write(f"Model: {best_model['model_name']}\n")
+        f.write(f"Validation Accuracy: {best_model['validation_accuracy']:.4f}\n")
+        f.write(f"Parameters: {best_model['params']}\n")
 
-    return results_file, summary_file
-
-
-def update_experiment_results(
-    results, experiment_dir, feature_str, test_accuracy, test_loss, history
-):
-    """Update experiment results with test set performance."""
-    # Update results with test performance
-    results["overall_best"]["test_accuracy"] = test_accuracy
-    results["overall_best"]["test_loss"] = test_loss
-    results["overall_best"]["history"] = history
-
-    # Save updated results to JSON
-    results_file = experiment_dir / f"results_{feature_str}.json"
-    with open(results_file, "w") as f:
-        json.dump(results, f, indent=2)
-
-    # Update summary
-    summary_file = experiment_dir / f"summary_{feature_str}.txt"
-    with open(summary_file, "a") as f:
-        f.write("\nTEST PERFORMANCE:\n")
-        f.write(f"Test Accuracy: {test_accuracy:.4f}\n")
-        f.write(f"Test Loss: {test_loss:.4f}\n")
+        if include_test_results:
+            f.write("\nTEST PERFORMANCE:\n")
+            f.write(f"Test Accuracy: {best_model['test_accuracy']:.4f}\n")
+            f.write(f"Test Loss: {best_model['test_loss']:.4f}\n")
 
     return results_file, summary_file
 
@@ -88,17 +73,14 @@ def run_model_selection(
     """
     Run model selection and hyperparameter tuning for the specified models.
     """
-    # Create output directory if it doesn't exist
+    # Create experiment directory
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
-
-    # Define unique experiment ID for this run
     experiment_id = datetime.now().strftime("%Y%m%d-%H%M%S")
-    experiment_name = f"experiment_{experiment_id}"
-    experiment_dir = output_dir / experiment_name
+    experiment_dir = output_dir / f"experiment_{experiment_id}"
     experiment_dir.mkdir(exist_ok=True)
 
-    # Set up results tracking
+    # Setup results tracking
     feature_str = "_".join(feature_list)
     results = {
         "experiment_id": experiment_id,
@@ -109,12 +91,12 @@ def run_model_selection(
 
     logging.info(f"Starting experiment with features: {feature_str}")
 
-    # Overall best model tracking
+    # Track best model overall
     best_value = float("-inf")
     best_params = None
     best_model_name = None
 
-    # Iterate through the specified models
+    # Evaluate each model
     for model_name in model_names:
         if model_name not in models_config:
             logging.warning(f"Model {model_name} not found in config, skipping")
@@ -123,36 +105,31 @@ def run_model_selection(
         model_info = models_config[model_name]
         logging.info(f"Training {model_name} with features: {feature_str}")
 
-        # Create a unique study name for this model and feature combination
+        # Create and run optimization study
         study_name = f"{model_name}_{feature_str}_{experiment_id}"
-
         objective_function = create_objective_function(
             train_loader, val_loader, model_name, model_info, device, n_epochs
         )
+
         study = optuna.create_study(
-            direction="maximize",  # maximize accuracy
+            direction="maximize",
             storage="sqlite:///db.sqlite3",
             study_name=study_name,
-            pruner=optuna.pruners.MedianPruner(
-                n_startup_trials=5,
-                n_warmup_steps=10,
-            ),
+            pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10),
         )
         study.optimize(objective_function, n_trials=n_trials)
 
-        # Get the best parameters from the study
+        # Get the best parameters
         best_model_params = study.best_params.copy()
 
-        # Transform exponential parameters for actual use (but keep original in tracking)
+        # Transform exponential parameters for actual use
         for param_name in model_info["hyperparameters"]:
             if model_info["hyperparameters"][param_name]["type"] == "exp":
                 exp_value = best_model_params[param_name]
                 best_model_params[param_name] = 2**exp_value
 
-        # Track the best model for each architecture
-        model_best_value = study.best_value
-
         # Save results for this model
+        model_best_value = study.best_value
         results["models"][model_name] = {
             "validation_accuracy": model_best_value,
             "best_model_params": best_model_params,
@@ -163,27 +140,23 @@ def run_model_selection(
             f"Best value for {model_name}: {model_best_value:.4f} (params: {best_model_params})"
         )
 
-        # Update overall best model if this one is better
+        # Update overall best model
         if model_best_value > best_value:
             best_value = model_best_value
             best_params = best_model_params
             best_model_name = model_name
 
-    logging.info(
-        f"Overall Best Model: {best_model_name} with value: {best_value:.4f} (params: {best_params})"
-    )
-
-    # Update results with overall best model
+    # Record overall best model
     results["overall_best"] = {
         "model_name": best_model_name,
         "validation_accuracy": best_value,
         "params": best_params,
     }
 
-    # Save results and generate summary
-    save_experiment_results(
-        results, experiment_dir, feature_str, best_model_name, best_value, best_params
-    )
+    logging.info(f"Overall Best Model: {best_model_name} with value: {best_value:.4f}")
+
+    # Save results
+    save_results(results, experiment_dir, feature_str)
 
     return results, experiment_dir
 
@@ -202,25 +175,10 @@ def train_evaluate_and_save_best_model(
 ):
     """
     Train the final model on combined training+validation data and evaluate on test set.
-
-    Args:
-        model_name: Name of the best model
-        params: Best hyperparameters for the model
-        X_train_val: Combined training and validation features
-        train_val_loader: DataLoader for combined training and validation data
-        test_loader: DataLoader for test data
-        feature_list: List of features used
-        n_epochs: Number of training epochs
-        device: Device to train on (cuda/cpu)
-        results: Dictionary with experiment results
-        experiment_dir: Directory to save results
-
-    Returns:
-        dict: Updated results including test accuracy, loss and training history
     """
     logging.info(f"Training final {model_name} model on combined train+val data...")
 
-    # Initialize model with best parameters
+    # Initialize and train model
     model, criterion, optimizer, scheduler = initialize_model(
         model_name,
         get_input_shape(model_name, X_train_val),
@@ -228,7 +186,6 @@ def train_evaluate_and_save_best_model(
         **params,
     )
 
-    # Train the model on combined train+val data
     history = train_model(
         model,
         train_val_loader,
@@ -247,7 +204,7 @@ def train_evaluate_and_save_best_model(
         f"Final Model | Test Loss: {test_loss:.4f} | Test Accuracy: {test_accuracy:.4f}"
     )
 
-    # Save the trained model
+    # Save model
     save_model(
         model=model,
         accuracy=test_accuracy,
@@ -257,10 +214,13 @@ def train_evaluate_and_save_best_model(
         feature_list=feature_list,
     )
 
-    # Update and save the results with test performance
-    feature_str = "_".join(feature_list)
-    update_experiment_results(
-        results, experiment_dir, feature_str, test_accuracy, test_loss, history
+    # Update results with test performance
+    results["overall_best"].update(
+        {"test_accuracy": test_accuracy, "test_loss": test_loss, "history": history}
     )
+
+    # Save updated results
+    feature_str = "_".join(feature_list)
+    save_results(results, experiment_dir, feature_str, include_test_results=True)
 
     return results
