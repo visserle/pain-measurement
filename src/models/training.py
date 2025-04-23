@@ -1,3 +1,5 @@
+import argparse
+import json
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -28,8 +30,8 @@ from src.models.utils import (
 
 RANDOM_SEED = 42
 BATCH_SIZE = 64
-N_EPOCHS = 100
-N_TRIALS = 20
+N_EPOCHS = 10
+N_TRIALS = 2
 
 configure_logging(
     stream_level=logging.DEBUG,
@@ -230,7 +232,75 @@ def create_objective_function(
     return objective  # returns a function
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Train models with different feature combinations"
+    )
+
+    # Default feature list
+    default_features = [
+        "eda_tonic",
+        "eda_phasic",
+        "pupil_mean",
+        "pupil_mean_tonic",
+        "heartrate",
+    ]
+
+    parser.add_argument(
+        "--features",
+        nargs="+",
+        default=default_features,
+        help="List of features to include in the model. Default: all available features",
+    )
+
+    parser.add_argument(
+        "--models",
+        nargs="+",
+        default=list(MODELS.keys()),
+        help="List of model architectures to train. Default: all available models",
+    )
+
+    parser.add_argument(
+        "--trials",
+        type=int,
+        default=N_TRIALS,
+        help=f"Number of optimization trials to run. Default: {N_TRIALS}",
+    )
+
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="results",
+        help="Output directory for results. Default: 'results'",
+    )
+
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
+
+    # Create output directory if it doesn't exist
+    output_dir = Path(args.output)
+    output_dir.mkdir(exist_ok=True)
+
+    # Define unique experiment ID for this run
+    experiment_id = datetime.now().strftime("%Y%m%d-%H%M%S")
+    experiment_name = f"experiment_{experiment_id}"
+    experiment_dir = output_dir / experiment_name
+    experiment_dir.mkdir(exist_ok=True)
+
+    # Set up results tracking
+    results = {
+        "experiment_id": experiment_id,
+        "features": args.features,
+        "models": {},
+        "feature_string": "_".join(args.features),
+    }
+
+    feature_str = "_".join(args.features)
+    logging.info(f"Starting experiment with features: {feature_str}")
+
     db = DatabaseManager()
     with db:
         df = db.get_table(
@@ -259,20 +329,9 @@ def main():
         df, intervals, label_mapping, sample_duration_ms, offsets_ms
     )
     samples = make_sample_set_balanced(samples, RANDOM_SEED)
-    feature_list = [
-        # "temperature",  # only for visualization
-        # "rating"
-        "eda_tonic",
-        "eda_phasic",
-        "pupil_mean",
-        "pupil_mean_tonic",
-        "heartrate",
-        # "brow_furrow",
-        # "cheek_raise",
-        # "mouth_open",
-        # "upper_lip_raise",
-        # "nose_wrinkle",
-    ]
+
+    # Use the features specified in the command-line arguments
+    feature_list = args.features
     X, y, groups = transform_sample_df_to_arrays(samples, feature_columns=feature_list)
 
     # Split the data into training+validation set and test set
@@ -297,11 +356,10 @@ def main():
         ("test", groups[idx_test]),
     ]:
         logging.info(
-            f"Number of unique particpants in {name} set: {len(np.unique(group_indices))}"
+            f"Number of unique participants in {name} set: {len(np.unique(group_indices))}"
         )
 
     # Scale the data
-    # TODO: fix scaler? not sure if correct
     X_train, X_val = scale_dataset(X_train, X_val)
 
     # Create dataloaders for training and validation sets
@@ -314,12 +372,22 @@ def main():
         is_test=False,
     )
 
+    # Overall best model tracking
     best_value = float("-inf")
     best_params = None
     best_model_name = None
 
-    for model_name, model_info in MODELS.items():
-        logging.info(f"Training {model_name}...")
+    # Iterate through the specified models
+    for model_name in args.models:
+        if model_name not in MODELS:
+            logging.warning(f"Model {model_name} not found in config, skipping")
+            continue
+
+        model_info = MODELS[model_name]
+        logging.info(f"Training {model_name} with features: {feature_str}")
+
+        # Create a unique study name for this model and feature combination
+        study_name = f"{model_name}_{feature_str}_{experiment_id}"
 
         objective_function = create_objective_function(
             train_loader, val_loader, model_name, model_info
@@ -327,36 +395,86 @@ def main():
         study = optuna.create_study(
             direction="maximize",  # maximize accuracy
             storage="sqlite:///db.sqlite3",
-            study_name=f"{model_name}_{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+            study_name=study_name,
             pruner=optuna.pruners.MedianPruner(
                 n_startup_trials=5,
                 n_warmup_steps=10,
             ),
         )
-        study.optimize(objective_function, n_trials=N_TRIALS)
+        study.optimize(objective_function, n_trials=args.trials)
 
-        best_params = study.best_params.copy()
+        # Get the best parameters, transforming exponential parameters if needed
+        best_model_params = study.best_params.copy()
 
-        # Transform exponential parameters (see create_objective_function)
+        # Transform exponential parameters for actual use (but keep original in tracking)
         for param_name in model_info["hyperparameters"]:
             if model_info["hyperparameters"][param_name]["type"] == "exp":
-                exp_value = best_params[param_name]
-                best_params[param_name] = 2**exp_value
+                exp_value = best_model_params[param_name]
+                best_model_params[param_name] = 2**exp_value
 
-        if study.best_value > best_value:
-            best_value = study.best_value
-            best_params = best_params
-            best_model_name = model_name
+        # Track the best model for each architecture
+        model_best_value = study.best_value
+
+        # Save results for this model
+        results["models"][model_name] = {
+            "validation_accuracy": model_best_value,
+            "best_model_params": best_model_params,
+            "study_name": study_name,
+        }
 
         logging.info(
-            f"Best value for {model_name}: {best_value} (params: {best_params})"
+            f"Best value for {model_name}: {model_best_value:.4f} (params: {best_model_params})"
         )
 
+        # Update overall best model if this one is better
+        if model_best_value > best_value:
+            best_value = model_best_value
+            best_params = best_model_params
+            best_model_name = model_name
+
     logging.info(
-        f"Overall Best Model: {best_model_name} with value: {best_value} (params: {best_params})"
+        f"Overall Best Model: {best_model_name} with value: {best_value:.4f} (params: {best_params})"
     )
 
-    # Retrain the model with the best parameters on the entire training+validation set
+    # Update results with overall best model
+    results["overall_best"] = {
+        "model_name": best_model_name,
+        "validation_accuracy": best_value,
+        "params": best_params,
+    }
+
+    # Save results to JSON file
+    results_file = experiment_dir / f"results_{feature_str}.json"
+    with open(results_file, "w") as f:
+        json.dump(results, f, indent=2)
+
+    # Also save a simple text summary for quick reference
+    summary_file = experiment_dir / f"summary_{feature_str}.txt"
+    with open(summary_file, "w") as f:
+        f.write(f"Experiment ID: {experiment_id}\n")
+        f.write(f"Features: {', '.join(args.features)}\n\n")
+        f.write("MODEL PERFORMANCE SUMMARY:\n")
+        f.write("=" * 60 + "\n")
+
+        # Sort models by validation accuracy (descending)
+        sorted_models = sorted(
+            results["models"].items(),
+            key=lambda x: x[1]["validation_accuracy"],
+            reverse=True,
+        )
+
+        for model_name, model_data in sorted_models:
+            f.write(f"Model: {model_name}\n")
+            f.write(f"Validation Accuracy: {model_data['validation_accuracy']:.4f}\n")
+            f.write(f"Best Parameters: {model_data['best_model_params']}\n")
+            f.write("-" * 60 + "\n")
+
+        f.write("\nOVERALL BEST MODEL:\n")
+        f.write(f"Model: {best_model_name}\n")
+        f.write(f"Validation Accuracy: {best_value:.4f}\n")
+        f.write(f"Parameters: {best_params}\n")
+
+    # Retrain the best model with the best parameters on the entire training+validation set
     X_train_val, X_test = scale_dataset(X_train_val, X_test)
 
     train_val_loader, test_loader = create_dataloaders(
@@ -372,7 +490,7 @@ def main():
         device,
         **best_params,
     )
-    train_model(
+    history = train_model(
         model,
         train_val_loader,
         test_loader,
@@ -382,13 +500,35 @@ def main():
         N_EPOCHS,
         is_test=True,
     )
-    average_loss, accuracy = evaluate_model(model, test_loader, criterion)
+    test_loss, test_accuracy = evaluate_model(model, test_loader, criterion)
     logging.info(
-        f"Final Model | Test Loss: {average_loss:.2f} | Test Accuracy: {accuracy:.2f}"
+        f"Final Model | Test Loss: {test_loss:.4f} | Test Accuracy: {test_accuracy:.4f}"
     )
 
+    # Update results with test performance
+    results["overall_best"]["test_accuracy"] = test_accuracy
+    results["overall_best"]["test_loss"] = test_loss
+    results["overall_best"]["history"] = history
+
+    # Save updated results
+    with open(results_file, "w") as f:
+        json.dump(results, f, indent=2)
+
+    # Update summary
+    with open(summary_file, "a") as f:
+        f.write("\nTEST PERFORMANCE:\n")
+        f.write(f"Test Accuracy: {test_accuracy:.4f}\n")
+        f.write(f"Test Loss: {test_loss:.4f}\n")
+
     # Save model
-    save_model(model, accuracy, best_params, best_model_name, X_train_val, feature_list)
+    save_model(
+        model,
+        test_accuracy,
+        best_params,
+        best_model_name,
+        X_train_val,
+        feature_list,
+    )
 
 
 if __name__ == "__main__":
