@@ -9,6 +9,7 @@ from src.log_config import configure_logging
 from src.models.data_loader import create_dataloaders
 from src.models.data_preparation import prepare_data
 from src.models.model_selection import (
+    ExperimentTracker,
     run_model_selection,
     train_evaluate_and_save_best_model,
 )
@@ -17,8 +18,11 @@ from src.models.utils import get_device, set_seed
 
 RANDOM_SEED = 42
 BATCH_SIZE = 64
-N_EPOCHS = 10
+N_EPOCHS = 5
 N_TRIALS = 2
+
+RESULT_DIR = Path("results")
+RESULT_DIR.mkdir(exist_ok=True)
 
 configure_logging(
     stream_level=logging.DEBUG,
@@ -72,18 +76,14 @@ def parse_args():
         help=f"Number of optimization trials to run. Default: {N_TRIALS}",
     )
 
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="results",
-        help="Output directory for results. Default: 'results'",
-    )
-
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
+
+    # Create experiment tracker
+    experiment_tracker = ExperimentTracker(features=args.features, base_dir=RESULT_DIR)
 
     # Load data from database
     db = DatabaseManager()
@@ -108,7 +108,7 @@ def main():
     )
 
     # Run model selection and hyperparameter tuning
-    results, experiment_dir = run_model_selection(
+    experiment_tracker = run_model_selection(
         train_loader=train_loader,
         val_loader=val_loader,
         X_train_val=X_train_val,
@@ -117,23 +117,18 @@ def main():
         models_config=MODELS,
         n_trials=args.trials,
         n_epochs=N_EPOCHS,
-        output_dir=args.output,
         device=device,
+        experiment_tracker=experiment_tracker,
     )
 
     # Train final model on combined training+validation data
-    best_model_info = results["overall_best"]
-    train_evaluate_and_save_best_model(
-        model_name=best_model_info["model_name"],
-        params=best_model_info["params"],
-        X_train_val=X_train_val,
+    experiment_tracker = train_evaluate_and_save_best_model(
         train_val_loader=train_val_loader,
         test_loader=test_loader,
-        feature_list=args.features,
+        X_train_val=X_train_val,
         n_epochs=N_EPOCHS,
         device=device,
-        results=results,
-        experiment_dir=experiment_dir,
+        experiment_tracker=experiment_tracker,
     )
 
 
