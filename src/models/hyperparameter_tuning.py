@@ -8,6 +8,8 @@ from src.models.evaluation import evaluate_model
 from src.models.training_loop import train_model
 from src.models.utils import get_input_shape, initialize_model
 
+logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
+
 
 def create_objective_function(
     train_loader: DataLoader,
@@ -47,7 +49,7 @@ def create_objective_function(
         )
         average_loss, accuracy = evaluate_model(model, val_loader, criterion, device)
 
-        logging.info(
+        logger.info(
             f"Validation Loss: {average_loss:.2f} | Validation Accuracy: {accuracy:.2f}"
         )
         return accuracy

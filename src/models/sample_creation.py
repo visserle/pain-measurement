@@ -180,9 +180,12 @@ def _remove_not_matching_samples(
 ):
     """
     Remove samples that do not match the criteria. E.g. samples that are too short.
+
+    This is important only if the our sample length is greater than 5000 ms as not all
+    intervals are longer than 5000 ms. In this case, we need to remove samples that are
+    shorter than 5000 ms.
     """
-    # TODO: Implement removal of samples that do not match the criteria
-    pass
+    pass  # not implemented yet as we work with 5000 ms samples only
 
 
 def make_sample_set_balanced(

@@ -9,6 +9,8 @@ from torch.utils.data import DataLoader
 from src.models.evaluation import evaluate_model
 from src.models.utils import EarlyStopping
 
+logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
+
 
 def train_model(
     model: nn.Module,
@@ -61,7 +63,7 @@ def train_model(
 
         # Log progress
         max_digits = len(str(n_epochs))
-        logging.debug(
+        logger.debug(
             f"E[{+epoch + 1:>{max_digits}d}/{n_epochs}] "
             f"| train {epoch_loss:.4f} ({epoch_acc:.1%}) "
             f"· {dataset} {test_loss:.4f} ({test_accuracy:.1%})"
@@ -70,14 +72,14 @@ def train_model(
         # Early stopping
         if epoch > 20:
             if early_stopping(test_accuracy).early_stop:
-                logging.debug(f"Early stopping at epoch {epoch + 1}")
+                logger.debug(f"Early stopping at epoch {epoch + 1}")
                 break
 
         # Adjust learning rate
         learning_rate = optimizer.param_groups[0]["lr"]
         scheduler.step(test_accuracy)
         if learning_rate != scheduler.get_last_lr()[0]:
-            logging.debug(f"Learning rate adjusted to: {scheduler.get_last_lr()[0]}")
+            logger.debug(f"Learning rate adjusted to: {scheduler.get_last_lr()[0]}")
 
         # Save history
         history["train_loss"].append(epoch_loss)

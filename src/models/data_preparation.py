@@ -7,6 +7,8 @@ from src.models.data_loader import transform_sample_df_to_arrays
 from src.models.sample_creation import create_samples, make_sample_set_balanced
 from src.models.scalers import scale_dataset
 
+logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
+
 
 def prepare_data(
     df,
@@ -56,7 +58,7 @@ def prepare_data(
         ("validation", groups[idx_train_val][idx_val]),
         ("test", groups[idx_test]),
     ]:
-        logging.info(
+        logger.info(
             f"Number of unique participants in {name} set: {len(np.unique(group_indices))}"
         )
 
