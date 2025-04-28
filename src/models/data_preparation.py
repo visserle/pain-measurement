@@ -73,7 +73,11 @@ def prepare_data(
     return X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test
 
 
-def prepare_eeg_data(eeg, trials):
+def prepare_eeg_data(
+    eeg,
+    trials,
+    feature_list,
+):
     eeg = add_normalized_timestamp(eeg)
     df = add_labels(eeg, trials)
 
@@ -121,4 +125,34 @@ def prepare_eeg_data(eeg, trials):
         "oz",
     )
 
-    return samples
+    X, y, groups = transform_sample_df_to_arrays(samples, feature_columns=feature_list)
+
+    # Split data into training, validation, and test sets
+    splitter = GroupShuffleSplit(n_splits=1, test_size=0.20, random_state=RANDOM_SEED)
+    idx_train_val, idx_test = next(splitter.split(X, y, groups=groups))
+    X_train_val, y_train_val = X[idx_train_val], y[idx_train_val]
+    X_test, y_test = X[idx_test], y[idx_test]
+
+    # Split training+validation set further
+    splitter = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=RANDOM_SEED)
+    idx_train, idx_val = next(
+        splitter.split(X_train_val, y_train_val, groups=groups[idx_train_val])
+    )
+    X_train, y_train = X_train_val[idx_train], y_train_val[idx_train]
+    X_val, y_val = X_train_val[idx_val], y_train_val[idx_val]
+
+    # Log information about the groups in each set
+    for name, group_indices in [
+        ("training", groups[idx_train_val][idx_train]),
+        ("validation", groups[idx_train_val][idx_val]),
+        ("test", groups[idx_test]),
+    ]:
+        logging.info(
+            f"Number of unique participants in {name} set: {len(np.unique(group_indices))}"
+        )
+
+    # Scale the data
+    X_train, X_val = scale_dataset(X_train, X_val)
+    X_train_val, X_test = scale_dataset(X_train_val, X_test)
+
+    return X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test

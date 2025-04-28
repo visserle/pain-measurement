@@ -3,12 +3,9 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-import numpy as np
-from sklearn.model_selection import GroupShuffleSplit
-
 from src.data.database_manager import DatabaseManager
 from src.log_config import configure_logging
-from src.models.data_loader import create_dataloaders, transform_sample_df_to_arrays
+from src.models.data_loader import create_dataloaders
 from src.models.data_preparation import prepare_eeg_data
 from src.models.model_selection import (
     ExperimentTracker,
@@ -16,7 +13,6 @@ from src.models.model_selection import (
     train_evaluate_and_save_best_model,
 )
 from src.models.models_config import MODELS
-from src.models.scalers import scale_dataset
 from src.models.utils import (
     get_device,
     set_seed,
@@ -89,36 +85,9 @@ def main():
         trials = db.get_table("Trials")
 
     # Prepare EEG data
-    samples = prepare_eeg_data(eeg, trials)
-    X, y, groups = transform_sample_df_to_arrays(samples, feature_columns=args.features)
-
-    # Split data into training, validation, and test sets
-    splitter = GroupShuffleSplit(n_splits=1, test_size=0.20, random_state=RANDOM_SEED)
-    idx_train_val, idx_test = next(splitter.split(X, y, groups=groups))
-    X_train_val, y_train_val = X[idx_train_val], y[idx_train_val]
-    X_test, y_test = X[idx_test], y[idx_test]
-
-    # Split training+validation set further
-    splitter = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=RANDOM_SEED)
-    idx_train, idx_val = next(
-        splitter.split(X_train_val, y_train_val, groups=groups[idx_train_val])
+    X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
+        prepare_eeg_data(eeg, trials, args.features)
     )
-    X_train, y_train = X_train_val[idx_train], y_train_val[idx_train]
-    X_val, y_val = X_train_val[idx_val], y_train_val[idx_val]
-
-    # Log information about the groups in each set
-    for name, group_indices in [
-        ("training", groups[idx_train_val][idx_train]),
-        ("validation", groups[idx_train_val][idx_val]),
-        ("test", groups[idx_test]),
-    ]:
-        logging.info(
-            f"Number of unique participants in {name} set: {len(np.unique(group_indices))}"
-        )
-
-    # Scale the data
-    X_train, X_val = scale_dataset(X_train, X_val)
-    X_train_val, X_test = scale_dataset(X_train_val, X_test)
 
     # Create dataloaders
     train_loader, val_loader = create_dataloaders(
