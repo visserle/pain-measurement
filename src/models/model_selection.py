@@ -60,7 +60,7 @@ def run_model_selection(
 
         # Create and run optimization study
         study_name = f"{model_name}_{experiment_tracker.feature_string}"
-        study_name += "_" + datetime.now().strftime("%Y%m%d-%H%M%S")
+        study_name += "_" + experiment_tracker.timestamp
         objective_function = create_objective_function(
             train_loader, val_loader, model_name, model_info, device, n_epochs
         )
@@ -144,8 +144,7 @@ def train_evaluate_and_save_best_model(
     )
 
     # Generate a model path directly instead of using get_model_path
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    model_filename = f"{model_name}_{timestamp}.pt"
+    model_filename = f"{model_name}_{experiment_tracker.timestamp}.pt"
     model_path = experiment_tracker.models_dir / model_filename
 
     # Save best model
@@ -188,6 +187,7 @@ class ExperimentTracker:
         """
         self.features = features
         self.feature_string = "_".join(sorted(features))  # Sort for consistency
+        self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
         # Initialize result storage
         self.base_dir = Path(base_dir or "results")
@@ -197,18 +197,15 @@ class ExperimentTracker:
         self.experiment_dir = self.base_dir / f"experiment_{self.feature_string}"
         self.experiment_dir.mkdir(exist_ok=True)
 
-        # Create subdirectories for models and logs
-        self.models_dir = self.experiment_dir / "models"
+        # Create subdirectories for model
+        self.models_dir = self.experiment_dir / "model"
         self.models_dir.mkdir(exist_ok=True)
-
-        self.logs_dir = self.experiment_dir / "logs"
-        self.logs_dir.mkdir(exist_ok=True)
 
         # Initialize results dictionary
         self.results = {
             "features": self.features,
             "feature_string": self.feature_string,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": self.timestamp,
             "models": {},
         }
 
