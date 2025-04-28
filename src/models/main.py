@@ -62,10 +62,15 @@ def parse_args():
         help="List of features to include in the model. Default: all available features",
     )
 
+    available_models = list(MODELS.keys())
     parser.add_argument(
         "--models",
         nargs="+",
-        default=list(MODELS.keys()),
+        default=available_models,
+        choices=available_models,
+        type=lambda x: next(
+            m for m in available_models if m.lower() == x.lower()
+        ),  # case-insensitive matching
         help="List of model architectures to train. Default: all available models",
     )
 

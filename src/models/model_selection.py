@@ -60,6 +60,7 @@ def run_model_selection(
 
         # Create and run optimization study
         study_name = f"{model_name}_{experiment_tracker.feature_string}"
+        study_name += "_" + datetime.now().strftime("%Y%m%d-%H%M%S")
         objective_function = create_objective_function(
             train_loader, val_loader, model_name, model_info, device, n_epochs
         )
@@ -147,8 +148,7 @@ def train_evaluate_and_save_best_model(
     model_filename = f"{model_name}_{timestamp}.pt"
     model_path = experiment_tracker.models_dir / model_filename
 
-    # Save model
-    model_path = experiment_tracker.get_model_path(model_name)
+    # Save best model
     save_model(
         model=model,
         accuracy=test_accuracy,
