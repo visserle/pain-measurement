@@ -81,9 +81,13 @@ def parse_args():
 
 def main():
     args = parse_args()
+    args.features = sorted(args.features)
 
     # Create experiment tracker
-    experiment_tracker = ExperimentTracker(features=args.features, base_dir=RESULT_DIR)
+    experiment_tracker = ExperimentTracker(
+        features=args.features,
+        base_dir=RESULT_DIR,
+    )
 
     # Load data from database
     db = DatabaseManager()
@@ -130,6 +134,8 @@ def main():
         device=device,
         experiment_tracker=experiment_tracker,
     )
+
+    logging.info(f"Experiment with features {args.features} completed successfully")
 
 
 if __name__ == "__main__":

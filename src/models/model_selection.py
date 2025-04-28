@@ -59,7 +59,7 @@ def run_model_selection(
         )
 
         # Create and run optimization study
-        study_name = f"{model_name}_{experiment_tracker.feature_string}_{experiment_tracker.experiment_id}"
+        study_name = f"{model_name}_{experiment_tracker.feature_string}"
         objective_function = create_objective_function(
             train_loader, val_loader, model_name, model_info, device, n_epochs
         )
@@ -109,17 +109,6 @@ def train_evaluate_and_save_best_model(
 ):
     """
     Train the final model on combined training+validation data and evaluate on test set.
-
-    Args:
-        train_val_loader: DataLoader for combined training and validation data
-        test_loader: DataLoader for test data
-        X_train_val: Combined training and validation features
-        n_epochs: Number of training epochs
-        device: Device to train on
-        experiment_tracker: ExperimentTracker with best model information
-
-    Returns:
-        ExperimentTracker with updated test results
     """
     best_model_info = experiment_tracker.get_best_model_info()
     model_name = best_model_info["model_name"]
@@ -152,6 +141,11 @@ def train_evaluate_and_save_best_model(
     logger.info(
         f"Final Model | Test Loss: {test_loss:.4f} | Test Accuracy: {test_accuracy:.4f}"
     )
+
+    # Generate a model path directly instead of using get_model_path
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    model_filename = f"{model_name}_{timestamp}.pt"
+    model_path = experiment_tracker.models_dir / model_filename
 
     # Save model
     model_path = experiment_tracker.get_model_path(model_name)
@@ -192,30 +186,33 @@ class ExperimentTracker:
             features: List of features used in the experiment
             base_dir: Base directory for storing results (default: 'results')
         """
-        self.timestamp = datetime.now()
-        self.experiment_id = self.timestamp.strftime("%Y%m%d-%H%M%S")
         self.features = features
-        self.feature_string = "_".join(features)
+        self.feature_string = "_".join(sorted(features))  # Sort for consistency
 
         # Initialize result storage
         self.base_dir = Path(base_dir or "results")
         self.base_dir.mkdir(exist_ok=True)
 
-        self.experiment_dir = self.base_dir / f"experiment_{self.experiment_id}"
+        # Create a directory for this feature combination
+        self.experiment_dir = self.base_dir / f"experiment_{self.feature_string}"
         self.experiment_dir.mkdir(exist_ok=True)
+
+        # Create subdirectories for models and logs
+        self.models_dir = self.experiment_dir / "models"
+        self.models_dir.mkdir(exist_ok=True)
+
+        self.logs_dir = self.experiment_dir / "logs"
+        self.logs_dir.mkdir(exist_ok=True)
 
         # Initialize results dictionary
         self.results = {
-            "experiment_id": self.experiment_id,
             "features": self.features,
             "feature_string": self.feature_string,
-            "timestamp": self.timestamp.isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "models": {},
         }
 
-        logger.info(
-            f"Created experiment {self.experiment_id} with features: {self.feature_string}"
-        )
+        logger.info(f"Created experiment with features: {self.feature_string}")
 
     def add_model_result(
         self, model_name, validation_accuracy, best_params, study_name=None
@@ -317,8 +314,8 @@ class ExperimentTracker:
             Tuple of (results_file_path, summary_file_path)
         """
         # Create paths for result files
-        results_file = self.experiment_dir / f"results_{self.feature_string}.json"
-        summary_file = self.experiment_dir / f"summary_{self.feature_string}.txt"
+        results_file = self.experiment_dir / "results.json"
+        summary_file = self.experiment_dir / "summary.txt"
 
         # Save results to JSON file
         with open(results_file, "w") as f:
@@ -326,7 +323,6 @@ class ExperimentTracker:
 
         # Create summary file
         with open(summary_file, "w") as f:
-            f.write(f"Experiment ID: {self.experiment_id}\n")
             f.write(f"Features: {', '.join(self.features)}\n\n")
             f.write("MODEL PERFORMANCE SUMMARY:\n")
             f.write("=" * 60 + "\n")
@@ -365,15 +361,3 @@ class ExperimentTracker:
         logger.info(f"Summary saved to {summary_file}")
 
         return results_file, summary_file
-
-    def get_model_path(self, model_name):
-        """
-        Get the file path for saving a model.
-
-        Args:
-            model_name: Name of the model
-
-        Returns:
-            Path object for the model file
-        """
-        return self.experiment_dir / f"model_{model_name}_{self.feature_string}.pt"

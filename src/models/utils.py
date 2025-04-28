@@ -98,8 +98,12 @@ def save_model(
     best_model_name: str,
     X_train_val: np.ndarray | DataLoader,
     feature_list: list,
-    model_path: str = "models/",
-):
+    model_path: str | Path,
+) -> None:
+    # Create directory if it doesn't exist
+    model_path = Path(model_path)
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+
     save_dict = {
         "model_state_dict": model.state_dict(),
         "hyperparameters": best_params,
@@ -108,9 +112,10 @@ def save_model(
         "input_shape": get_input_shape(best_model_name, X_train_val),
         "feature_list": feature_list,
     }
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    torch.save(save_dict, f"{model_path}{best_model_name}_{timestamp}.pt")
-    logger.info(f"Model saved as {best_model_name}_{timestamp}.pt")
+
+    # Use the path directly without modification
+    torch.save(save_dict, model_path)
+    logger.info(f"Final model saved as {model_path} with accuracy {accuracy:.2f}%")
 
 
 def load_model(
