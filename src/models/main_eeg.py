@@ -4,27 +4,21 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
-import polars as pl
 from sklearn.model_selection import GroupShuffleSplit
 
 from src.data.database_manager import DatabaseManager
-from src.features.labels import add_labels
-from src.features.resampling import add_normalized_timestamp
 from src.log_config import configure_logging
 from src.models.data_loader import create_dataloaders, transform_sample_df_to_arrays
+from src.models.data_preparation import prepare_eeg_data
 from src.models.model_selection import (
     ExperimentTracker,
     run_model_selection,
     train_evaluate_and_save_best_model,
 )
 from src.models.models_config import MODELS
-from src.models.sample_creation import create_samples, make_sample_set_balanced
 from src.models.scalers import scale_dataset
 from src.models.utils import (
     get_device,
-    get_input_shape,
-    initialize_model,
-    save_model,
     set_seed,
 )
 
@@ -79,61 +73,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def prepare_eeg_data():
-    db = DatabaseManager()
-    with db:
-        eeg = db.get_table("Preprocess_EEG")
-        trials = db.get_table("Trials")
-    eeg = add_normalized_timestamp(eeg)
-    df = add_labels(eeg, trials)
-
-    intervals = {
-        "decreases": "major_decreasing_intervals",
-        "increases": "strictly_increasing_intervals_without_plateaus",
-    }
-    label_mapping = {
-        "decreases": 0,
-        "increases": 1,
-    }
-    offsets_ms = {
-        "decreases": 2000,
-    }
-    sample_duration_ms = 5000
-
-    samples = create_samples(
-        df, intervals, label_mapping, sample_duration_ms, offsets_ms
-    )
-
-    # Fix EEG samples to ensure consistent length
-    new = []
-    for sample in samples.group_by("sample_id", maintain_order=True):
-        sample = sample[1]
-        sample = sample.head(1250)
-        while sample.height < 1250:
-            sample = pl.concat([sample, sample.tail(1)])
-        new.append(sample)
-
-    samples = pl.concat(new)
-    samples = make_sample_set_balanced(samples, RANDOM_SEED)
-
-    # Select relevant columns for EEG analysis
-    samples = samples.select(
-        "sample_id",
-        "participant_id",
-        "label",
-        "f3",
-        "f4",
-        "c3",
-        "c4",
-        "cz",
-        "p3",
-        "p4",
-        "oz",
-    )
-
-    return samples
-
-
 def main():
     args = parse_args()
 
@@ -143,8 +82,14 @@ def main():
         base_dir=RESULT_DIR,
     )
 
+    # Load data from database
+    db = DatabaseManager()
+    with db:
+        eeg = db.get_table("Preprocess_EEG")
+        trials = db.get_table("Trials")
+
     # Prepare EEG data
-    samples = prepare_eeg_data()
+    samples = prepare_eeg_data(eeg, trials)
     X, y, groups = transform_sample_df_to_arrays(samples, feature_columns=args.features)
 
     # Split data into training, validation, and test sets
@@ -184,7 +129,7 @@ def main():
         X_train_val, y_train_val, X_test, y_test, batch_size=BATCH_SIZE
     )
     # Run model selection and hyperparameter tuning
-    results = run_model_selection(
+    experiment_tracker = run_model_selection(
         train_loader=train_loader,
         val_loader=val_loader,
         X_train_val=X_train_val,
@@ -198,7 +143,6 @@ def main():
     )
 
     # Train final model on combined training+validation data
-    experiment_tracker = results["overall_best"]
     train_evaluate_and_save_best_model(
         train_val_loader=train_val_loader,
         test_loader=test_loader,
@@ -207,6 +151,8 @@ def main():
         device=device,
         experiment_tracker=experiment_tracker,
     )
+
+    logging.info(f"Experiment with features {args.features} completed successfully")
 
 
 if __name__ == "__main__":

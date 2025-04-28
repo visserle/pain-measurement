@@ -1,9 +1,13 @@
 import logging
 
 import numpy as np
+import polars as pl
 from sklearn.model_selection import GroupShuffleSplit
 
+from src.features.labels import add_labels
+from src.features.resampling import add_normalized_timestamp
 from src.models.data_loader import transform_sample_df_to_arrays
+from src.models.main_eeg import RANDOM_SEED
 from src.models.sample_creation import create_samples, make_sample_set_balanced
 from src.models.scalers import scale_dataset
 
@@ -67,3 +71,54 @@ def prepare_data(
     X_train_val, X_test = scale_dataset(X_train_val, X_test)
 
     return X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test
+
+
+def prepare_eeg_data(eeg, trials):
+    eeg = add_normalized_timestamp(eeg)
+    df = add_labels(eeg, trials)
+
+    intervals = {
+        "decreases": "major_decreasing_intervals",
+        "increases": "strictly_increasing_intervals_without_plateaus",
+    }
+    label_mapping = {
+        "decreases": 0,
+        "increases": 1,
+    }
+    offsets_ms = {
+        "decreases": 2000,
+    }
+    sample_duration_ms = 5000
+
+    samples = create_samples(
+        df, intervals, label_mapping, sample_duration_ms, offsets_ms
+    )
+
+    # Fix EEG samples to ensure consistent length
+    new = []
+    for sample in samples.group_by("sample_id", maintain_order=True):
+        sample = sample[1]
+        sample = sample.head(1250)
+        while sample.height < 1250:
+            sample = pl.concat([sample, sample.tail(1)])
+        new.append(sample)
+
+    samples = pl.concat(new)
+    samples = make_sample_set_balanced(samples, RANDOM_SEED)
+
+    # Select relevant columns for EEG analysis
+    samples = samples.select(
+        "sample_id",
+        "participant_id",
+        "label",
+        "f3",
+        "f4",
+        "c3",
+        "c4",
+        "cz",
+        "p3",
+        "p4",
+        "oz",
+    )
+
+    return samples
