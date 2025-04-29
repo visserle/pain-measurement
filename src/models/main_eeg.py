@@ -86,7 +86,7 @@ def main():
 
     # Prepare EEG data
     X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
-        prepare_eeg_data(eeg, trials, args.features)
+        prepare_eeg_data(eeg, trials, args.features, RANDOM_SEED)
     )
 
     # Create dataloaders
