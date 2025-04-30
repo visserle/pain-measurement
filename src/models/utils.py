@@ -119,7 +119,7 @@ def save_model(
 
 def load_model(
     model_path: str | Path,
-) -> nn.Module:
+) -> tuple[nn.Module, list]:
     device = get_device()
     # Load the saved dictionary
     save_dict = torch.load(model_path, map_location=device)
@@ -148,29 +148,4 @@ def load_model(
     logger.info(f"Loaded {model_name} model with test accuracy {test_accuracy:.2f}%")
     logger.info(f"Input shape: {input_shape} | Features: {feature_list}")
 
-    return model
-
-
-class EarlyStopping:
-    """Early stopping based on score improvement (maximization)."""
-
-    def __init__(
-        self,
-        patience: int = 20,
-        delta: float = 0.0,
-    ) -> None:
-        self.patience = patience
-        self.delta = delta
-        self.counter = 0
-        self.best_accuracy = float("-inf")
-        self.early_stop = False
-
-    def __call__(self, accuracy: float):
-        if accuracy > self.best_accuracy - self.delta:
-            self.best_accuracy = accuracy
-            self.counter = 0
-        else:
-            self.counter += 1
-            if self.counter >= self.patience:
-                self.early_stop = True
-        return self
+    return model, feature_list

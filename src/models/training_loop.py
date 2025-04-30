@@ -7,7 +7,6 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from src.models.evaluation import evaluate_model
-from src.models.utils import EarlyStopping
 
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
@@ -98,3 +97,28 @@ def train_model(
                 raise optuna.exceptions.TrialPruned()
 
     return history
+
+
+class EarlyStopping:
+    """Early stopping based on score improvement (maximization)."""
+
+    def __init__(
+        self,
+        patience: int = 20,
+        delta: float = 0.0,
+    ) -> None:
+        self.patience = patience
+        self.delta = delta
+        self.counter = 0
+        self.best_accuracy = float("-inf")
+        self.early_stop = False
+
+    def __call__(self, accuracy: float):
+        if accuracy > self.best_accuracy - self.delta:
+            self.best_accuracy = accuracy
+            self.counter = 0
+        else:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.early_stop = True
+        return self
