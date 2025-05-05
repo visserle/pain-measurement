@@ -18,6 +18,7 @@ def prepare_data(
     feature_list,
     sample_duration_ms,
     random_seed,
+    return_only_groups_for_test=False,
 ):
     """Prepare data for model training, including creating and splitting samples."""
     intervals = {
@@ -44,6 +45,8 @@ def prepare_data(
     # Split into train+val and test sets
     splitter = GroupShuffleSplit(n_splits=1, test_size=0.20, random_state=random_seed)
     idx_train_val, idx_test = next(splitter.split(X, y, groups=groups))
+    if return_only_groups_for_test:
+        return np.unique(groups[idx_test])
     X_train_val, y_train_val = X[idx_train_val], y[idx_train_val]
     X_test, y_test = X[idx_test], y[idx_test]
 
