@@ -119,8 +119,11 @@ def save_model(
 
 def load_model(
     model_path: str | Path,
+    device: torch.device | str | None = None,
 ) -> tuple[nn.Module, list]:
-    device = get_device()
+    if device is None:
+        device = get_device()
+
     # Load the saved dictionary
     save_dict = torch.load(model_path, map_location=device)
     # Extract components
@@ -145,7 +148,9 @@ def load_model(
     # Set model to evaluation mode
     model.eval()
 
-    logger.info(f"Loaded {model_name} model with test accuracy {test_accuracy:.2f}%")
+    logger.info(
+        f"Loaded {model_name} model with test accuracy {test_accuracy:.2f}% to {device}."
+    )
     logger.info(f"Input shape: {input_shape} | Features: {feature_list}")
 
     return model, feature_list

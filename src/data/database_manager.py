@@ -113,7 +113,7 @@ class DatabaseManager:
         ).pl()  # could be more efficient by filtering out invalid trials in the query
 
         invalid_trials = self.execute("SELECT * FROM Invalid_Trials").pl()
-        # do not filter invalid trials for invalid_trials table (see below)
+        # do not filter invalid trials from invalid_trials table, would be empty
         if table_name == "invalid_trials":
             return df
 
