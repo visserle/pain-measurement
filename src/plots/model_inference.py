@@ -250,7 +250,6 @@ def create_aggregate_visualization(
         ax.set_yticklabels(sorted_participant_ids[::-1])
         # we have to reverse the order of the y-ticks else they are upside down
     else:
-        print(sorted_participant_ids)
         # Use pseudonymized participant IDs
         sorted_participant_ids = np.array(
             sorted_participant_ids, dtype=int
