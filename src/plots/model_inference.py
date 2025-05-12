@@ -1,14 +1,12 @@
 import logging
-from pathlib import Path
 
-import holoviews as hv
-import hvplot.polars  # noqa
 import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 import torch
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.interpolate import interp1d
+from scipy.stats import rankdata
 
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 
@@ -94,7 +92,9 @@ def analyze_test_dataset_for_one_stimulus(
                 )
             continue
 
-        #
+        # Create a proper key for the participant (use the actual ID, not the index)
+        participant_key = str(participant_id)
+
         participant_predictions = []
         participant_confidences = []
 
@@ -128,44 +128,49 @@ def analyze_test_dataset_for_one_stimulus(
         participant_confidences.append(trial_confidences)
 
         if participant_predictions:
-            all_predictions[participant_id] = participant_predictions
-            all_confidences[participant_id] = participant_confidences
-            participant_trials[participant_id] = len(participant_predictions)
+            all_predictions[participant_key] = participant_predictions
+            all_confidences[participant_key] = participant_confidences
+            participant_trials[participant_key] = len(participant_predictions)
 
     return all_predictions, all_confidences, participant_trials
 
 
 def create_aggregate_visualization(
-    aligned_predictions, aligned_confidences, stimulus_seed
+    all_predictions,
+    all_confidences,
+    stimulus_seed,
+    pseudonymize=True,
 ):
     """
-    Create a heatmap visualization of model predictions across all trials.
+    Create a heatmap visualization of model predictions across all participants.
     Args:
-        aligned_predictions: Dictionary of aligned predictions for each participant
-        aligned_confidences: Dictionary of aligned confidences for each participant
+        all_predictions: Dictionary of all predictions for each participant
+        all_confidences: Dictionary of all confidences for each participant
         stimulus_seed: Seed used for the stimulus generation
     """
-    # Create figure
-    fig, ax = plt.subplots(figsize=(15, 6))
+    # Prepare data structures to track participant IDs with their confidence data
+    confidence_data = []  # List of (participant_id, confidence_array) tuples
 
-    # Combine all trials into a single matrix with signed confidences
-    all_confidences_matrix = []
-
-    for participant_id in aligned_confidences:
-        for i, trial_confidences in enumerate(aligned_confidences[participant_id]):
-            trial_predictions = aligned_predictions[participant_id][i]
+    for participant_id, trial_confidences_list in all_confidences.items():
+        for i, trial_confidences in enumerate(trial_confidences_list):
+            trial_predictions = all_predictions[participant_id][i]
 
             # Transform classifier confidences to centered, scaled values [-1, 1]
             signed_confidences = [
                 -(conf - 0.5) * 2 if pred == 0 else (conf - 0.5) * 2
                 for conf, pred in zip(trial_confidences, trial_predictions)
             ]
-            all_confidences_matrix.append(signed_confidences)
+            confidence_data.append((participant_id, signed_confidences))
 
-    # Convert to numpy array and sort by average confidence
-    confidence_array = np.array(all_confidences_matrix)
+    # Convert confidence values to array and calculate average confidence for sorting
+    confidence_arrays = [data[1] for data in confidence_data]
+    confidence_array = np.array(confidence_arrays)
     avg_confidence = np.mean(np.abs(confidence_array), axis=1)
-    sorted_confidence_array = confidence_array[np.argsort(-avg_confidence)]
+
+    # Sort by average confidence
+    sort_indices = np.argsort(-avg_confidence)
+    sorted_confidence_array = confidence_array[sort_indices]
+    sorted_participant_ids = [confidence_data[i][0] for i in sort_indices]
 
     # Create custom colormap: blue for negative, white for 0, orange for positive
     colors = [(0, 0, 1), (1, 1, 1), (1, 0.42, 0.21)]  # Blue, White, Orange
@@ -192,6 +197,9 @@ def create_aggregate_visualization(
         - 1
     )
 
+    # Create figure
+    fig, ax = plt.subplots(figsize=(15, 6))
+
     # Plot heatmap
     im = ax.imshow(
         sorted_confidence_array,
@@ -213,13 +221,13 @@ def create_aggregate_visualization(
     ax.plot(
         time_points,
         stimulus_line * (scaled_stimulus_y / 3) + scaled_stimulus_y,
-        "k-",
-        linewidth=2,
+        linewidth=3,
+        color="#404040",
         label="Stimulus",
     )
 
     # Add labels and statistics
-    num_participants = len(aligned_confidences)
+    num_participants = len(all_confidences)
     total_trials = len(sorted_confidence_array)
     ax.set_title(
         f"Stimulus {stimulus_seed}: {num_participants} participants, {total_trials} trials",
@@ -227,6 +235,30 @@ def create_aggregate_visualization(
     )
     ax.set_xlabel("Time (seconds)")
     ax.set_ylabel("Participants (sorted by confidence)")
+
+    # Add participant IDs as y-ticks
+    y_positions = np.linspace(
+        0,
+        len(sorted_confidence_array) - 1,
+        min(10, len(sorted_confidence_array)),
+    )
+    y_positions = np.round(y_positions).astype(int)
+
+    if not pseudonymize:
+        # Use actual participant IDs
+        ax.set_yticks(np.arange(len(sorted_confidence_array)))
+        ax.set_yticklabels(sorted_participant_ids[::-1])
+        # we have to reverse the order of the y-ticks else they are upside down
+    else:
+        print(sorted_participant_ids)
+        # Use pseudonymized participant IDs
+        sorted_participant_ids = np.array(
+            sorted_participant_ids, dtype=int
+        )  # ids are strings
+        pseudonymized_ids = rankdata(sorted_participant_ids, method="dense")
+        ax.set_yticks(y_positions)
+        ax.set_yticklabels(pseudonymized_ids[::-1])
+        # we have to reverse the order of the y-ticks else they are upside down
 
     plt.tight_layout()
     return fig
