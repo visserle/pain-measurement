@@ -1,4 +1,3 @@
-import hvplot.polars  # noqa  # noqa
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -26,12 +25,14 @@ def get_confusion_matrix(
     [0,0] = TN, [0,1] = FP
     [1,0] = FN, [1,1] = TP
     """
+    device = next(model.parameters()).device.type
     model.eval()
     all_preds = []
     all_labels = []
 
     with torch.no_grad():
         for X_batch, y_batch in test_loader:
+            X_batch = X_batch.to(device)
             logits = model(X_batch)
 
             # Convert logits to probabilities using softmax
@@ -80,12 +81,14 @@ def plot_roc_curve(
     """
     Plot ROC curve and calculate AUC score for binary classification.
     """
+    device = next(model.parameters()).device.type
     model.eval()
     all_labels = []
     all_scores = []
 
     with torch.no_grad():
         for X_batch, y_batch in test_loader:
+            X_batch = X_batch.to(device)
             logits = model(X_batch)
 
             # Convert logits to probabilities using softmax
@@ -142,12 +145,14 @@ def plot_pr_curve(
     """
     Plot Precision-Recall curve and calculate Average Precision score for binary classification.
     """
+    device = next(model.parameters()).device.type
     model.eval()
     all_labels = []
     all_scores = []
 
     with torch.no_grad():
         for X_batch, y_batch in test_loader:
+            X_batch = X_batch.to(device)
             logits = model(X_batch)
 
             # Convert logits to probabilities using softmax
