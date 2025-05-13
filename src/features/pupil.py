@@ -6,7 +6,6 @@ import polars as pl
 import scipy.signal as signal
 from polars import col
 
-from src.features.filtering import butterworth_filter
 from src.features.resampling import decimate, interpolate_and_fill_nulls
 from src.features.transforming import map_trials
 
@@ -25,10 +24,6 @@ def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
 def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
     df = median_filter_pupil(df, size_in_seconds=1)
     df = average_pupils(df, result_column="pupil_mean")
-    df = low_pass_filter_pupil_tonic(
-        df.with_columns(pupil_mean_tonic=col("pupil_mean")),
-        highcut=0.2,
-    )
     df = decimate(df, factor=6)
     return df
 
@@ -227,28 +222,4 @@ def average_pupils(
 ) -> pl.DataFrame:
     return df.with_columns(
         ((col(pupil_columns[0]) + col(pupil_columns[1])) / 2).alias(result_column)
-    )
-
-
-@map_trials
-def low_pass_filter_pupil_tonic(
-    df: pl.DataFrame,
-    sample_rate: float = SAMPLE_RATE,
-    highcut: float | None = None,
-    order: int = 2,
-    pupil_column: list[str] = ["pupil_mean_tonic"],
-) -> pl.DataFrame:
-    """Low-pass filter to return some sort of tonic component of the pupillometry.
-    Note that this tonic component showed a bit higher correlations with the temperature
-    than the unfiltered signal.
-    """
-    return df.with_columns(
-        col(pupil_column).map_batches(
-            lambda x: butterworth_filter(
-                x,
-                SAMPLE_RATE,
-                highcut=highcut,
-                order=order,
-            )
-        )
     )
