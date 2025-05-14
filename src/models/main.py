@@ -4,6 +4,8 @@ from datetime import datetime
 from pathlib import Path
 
 from src.data.database_manager import DatabaseManager
+from src.features.labels import add_labels
+from src.features.resampling import add_normalized_timestamp
 from src.log_config import configure_logging
 from src.models.data_loader import create_dataloaders
 from src.models.data_preparation import prepare_data
@@ -17,42 +19,40 @@ from src.models.utils import get_device, set_seed
 
 RANDOM_SEED = 42
 BATCH_SIZE = 64
-N_EPOCHS = 5
-N_TRIALS = 2
+N_EPOCHS = 100
+N_TRIALS = 20
 
 RESULT_DIR = Path("results")
 RESULT_DIR.mkdir(exist_ok=True)
 
 configure_logging(
     stream_level=logging.DEBUG,
-    file_path=Path(f"logs/{datetime.now().strftime('%Y%m%d-%H%M%S')}.log"),
+    file_path=Path(f"runs/models/logs/{datetime.now().strftime('%Y%m%d-%H%M%S')}.log"),
 )
 device = get_device()
 set_seed(RANDOM_SEED)
+
+
+# Default feature list
+# for sanity checks only, we can also train on temperature and rating features
+default_features = [
+    "eda_tonic",
+    "eda_phasic",
+    "pupil_mean",
+    "heartrate",
+    "brow_furrow",
+    "cheek_raise",
+    "mouth_open",
+    "upper_lip_raise",
+    "nose_wrinkle",
+]
+eeg_features = ["f3", "f4", "c3", "c4", "cz", "p3", "p4", "oz"]
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Train models with different feature combinations"
     )
-
-    # Default feature list
-    default_features = [
-        "eda_tonic",
-        "eda_phasic",
-        "pupil_mean",
-        "pupil_mean_tonic",
-        "heartrate",
-        # "brow_furrow",
-        # "cheek_raise",
-        # "mouth_open",
-        # "upper_lip_raise",
-        # "nose_wrinkle",
-        #
-        # for sanity checks only:
-        # "temperature",
-        # "rating",
-    ]
 
     parser.add_argument(
         "--features",
@@ -86,6 +86,8 @@ def parse_args():
 def main():
     args = parse_args()
     args.features = sorted(args.features)
+    if args.features == ["eeg"]:
+        args.features = eeg_features
 
     # Create experiment tracker
     experiment_tracker = ExperimentTracker(
@@ -100,6 +102,13 @@ def main():
             "Merged_and_Labeled_Data",
             exclude_trials_with_measurement_problems=True,
         )
+    # Note that EEG data cannot be merged with other features
+    if any(channel in eeg_features for channel in args.features):
+        with db:
+            eeg = db.get_table("Preprocess_EEG")
+            trials = db.get_table("Trials")
+        eeg = add_normalized_timestamp(eeg)
+        df = add_labels(eeg, trials)
 
     # Prepare data
     X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (

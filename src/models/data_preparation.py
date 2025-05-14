@@ -18,12 +18,13 @@ def prepare_data(
     feature_list,
     sample_duration_ms,
     random_seed,
-    return_only_groups_for_test=False,
+    only_return_test_groups=False,  # for the participant_ids in the test set
 ):
     """Prepare data for model training, including creating and splitting samples."""
     intervals = {
         "decreases": "major_decreasing_intervals",
-        "increases": "strictly_increasing_intervals_without_plateaus",
+        # "increases": "strictly_increasing_intervals_without_plateaus",
+        "increases": "strictly_increasing_intervals",
     }
     label_mapping = {
         "decreases": 0,
@@ -45,8 +46,8 @@ def prepare_data(
     # Split into train+val and test sets
     splitter = GroupShuffleSplit(n_splits=1, test_size=0.20, random_state=random_seed)
     idx_train_val, idx_test = next(splitter.split(X, y, groups=groups))
-    if return_only_groups_for_test:
-        return np.unique(groups[idx_test])
+    if only_return_test_groups:
+        return groups[idx_test]
     X_train_val, y_train_val = X[idx_train_val], y[idx_train_val]
     X_test, y_test = X[idx_test], y[idx_test]
 
@@ -67,6 +68,8 @@ def prepare_data(
         logger.info(
             f"Number of unique participants in {name} set: {len(np.unique(group_indices))}"
         )
+    # Log test set participant IDs
+    logger.debug(f"Participant IDs in test set: {np.unique(groups[idx_test])}")
 
     # Scale the data
     X_train, X_val = scale_dataset(X_train, X_val)
@@ -100,17 +103,6 @@ def prepare_eeg_data(
     samples = create_samples(
         df, intervals, label_mapping, sample_duration_ms, offsets_ms
     )
-
-    # Fix EEG samples to ensure consistent length
-    new = []
-    for sample in samples.group_by("sample_id", maintain_order=True):
-        sample = sample[1]
-        sample = sample.head(1250)
-        while sample.height < 1250:
-            sample = pl.concat([sample, sample.tail(1)])
-        new.append(sample)
-
-    samples = pl.concat(new)
     samples = make_sample_set_balanced(samples, random_seed)
 
     # Select relevant columns for EEG analysis
