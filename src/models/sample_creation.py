@@ -53,15 +53,8 @@ def create_samples(
 
     samples = _cap_intervals_to_sample_length(df, intervals, length_ms, offsets_ms)
     samples = _generate_sample_ids(samples, intervals, label_mapping)
-    # samples = _remove_not_matching_samples(samples)
-
-    # Make sure we kept equidistant sampling with a sampling rate of 10 Hz
-    if (
-        samples.filter(col("normalized_timestamp") % 10 != 0)
-        .get_column("normalized_timestamp")
-        .len()
-    ):
-        logger.warning("Sampling rate is not equidistant with 10 Hz.")
+    samples = _remove_samples_that_are_too_short(samples)
+    # samples = _remove_increasing_intervals_at_stimulus_start_EXPERIMENTAL(samples)
 
     return samples
 
@@ -175,55 +168,141 @@ def _generate_sample_ids(
     return samples
 
 
-def _remove_not_matching_samples(
+def _remove_samples_that_are_too_short(
+    samples: pl.DataFrame,
+    length_ms: int = 5000,
+):
+    is_equidistant = not (
+        samples.filter(col("sample_id") == col("sample_id").first())
+        .select(col("normalized_timestamp").diff().diff().cast(pl.Boolean))
+        .select(pl.any("normalized_timestamp"))
+        .item()
+    )
+
+    # Only EEG data is not perfectly equidistant and needs special handling
+    # NOTE: This is all hardcoded
+    if not is_equidistant:
+        logger.warning("Sampling rate is not equidistant with 10 Hz.")
+        # Fix EEG samples to ensure consistent length
+        new = []
+        for sample in samples.group_by("sample_id", maintain_order=True):
+            sample = sample[1]
+            sample = sample.head(1250)
+            while sample.height < 1250:
+                sample = pl.concat([sample, sample.tail(1)])
+            new.append(sample)
+
+        return pl.concat(new)
+
+    # Calculate the minimum length of samples by subtracting the sampling distance
+    # from the length (else we would filter out all samples)
+    sampling_distance_ms = (
+        samples.filter(col("sample_id") == col("sample_id").first())
+        .select(col("normalized_timestamp").diff().last())
+        .item()
+    )
+    min_length_ms = length_ms - sampling_distance_ms
+
+    # Group by sample_id to calculate the duration of each sample
+    sample_durations = samples.group_by("sample_id").agg(
+        (pl.max("normalized_timestamp") - pl.min("normalized_timestamp")).alias(
+            "duration"
+        )
+    )
+
+    # Get sample_ids that meet the minimum length requirement
+    valid_sample_ids = sample_durations.filter(
+        pl.col("duration") >= min_length_ms
+    ).get_column("sample_id")
+
+    # Filter the original samples DataFrame to keep only valid samples
+    filtered_samples = samples.filter(pl.col("sample_id").is_in(valid_sample_ids))
+
+    removed_count = samples.get_column("sample_id").n_unique() - valid_sample_ids.len()
+    if removed_count > 0:
+        logger.debug(
+            f"Removed {removed_count} samples that were shorter than {min_length_ms} ms"
+        )
+
+    return filtered_samples
+
+
+def _remove_increasing_intervals_at_stimulus_start_EXPERIMENTAL(
     samples: pl.DataFrame,
 ):
-    """
-    Remove samples that do not match the criteria. E.g. samples that are too short.
+    keep_ids = []
+    for group in samples.filter(label=1).group_by("trial_id"):
+        group = group[1]
+        sample_ids = group.get_column("sample_id").unique().sort()
+        if len(sample_ids) > 3:
+            # only keep samples that do not start the trial (normalized timestamp != 0)
+            keep_ids_non_start = (
+                group.filter(col("normalized_timestamp") == 0)
+                .get_column("sample_id")
+                .unique()
+            )
+            group = group.filter(~col("sample_id").is_in(keep_ids_non_start))
+            sample_ids = group.get_column("sample_id").unique().sort()
 
-    This is important only if the our sample length is greater than 5000 ms as not all
-    intervals are longer than 5000 ms. In this case, we need to remove samples that are
-    shorter than 5000 ms.
-    """
-    pass  # not implemented yet as we work with 5000 ms samples only
+            sample_ids = sample_ids.sample(3, seed=42).sort()
+        keep_ids.extend(sample_ids)
+    keep_ids += samples.filter(label=0).get_column("sample_id").unique().to_list()
+    samples = samples.filter(col("sample_id").is_in(keep_ids))
+    return samples
 
 
 def make_sample_set_balanced(
     samples: pl.DataFrame,
-    random_seed: int,
+    random_seed: int = 42,
 ):
     """
     Make a sample set balanced by downsampling the majority class in the dataset to the
     size of the minority class to prevent the model from inclining towards the majority
-    class. Shuffles data before downsampling to ensure random selection.
+    class. Functions ensures random sample selection.
     """
-    sample_length = samples.filter(
-        col("sample_id") == samples.get_column("sample_id").first()
-    ).height
-
-    # Calculate samples per label and find minimum
-    label_counts = samples.get_column("label").value_counts().sort("label")
-    samples_per_label = label_counts.with_columns(col("count") // sample_length).sort(
-        "label"
+    sample_ids = (
+        samples.group_by("sample_id").agg(pl.all().first()).select("sample_id", "label")
     )
-    min_label_count = samples_per_label.get_column("count").min()
 
-    # Calculate how many samples to remove from each group
-    samples_to_remove = samples_per_label.with_columns(col("count") - min_label_count)
+    sample_ids_count = sample_ids.get_column("label").value_counts()
 
-    # Balance the dataset by reducing larger groups to match smallest group
-    balanced_groups = []
-    for remove_count, (label, group) in zip(
-        samples_to_remove.get_column("count"), samples.group_by("label")
-    ):
-        if remove_count == 0:
-            # Keep group as is if it's already at the minimum size
-            balanced_groups.append(group)
-        else:
-            # Shuffle the group and then reduce size to match the smallest group
-            shuffled_group = group.sample(fraction=1.0, seed=random_seed)
-            reduced_group = shuffled_group.limit(min_label_count * sample_length)
-            balanced_groups.append(reduced_group)
+    majority_class_label = (
+        sample_ids_count.filter(col("count") == col("count").max())
+        .get_column("label")
+        .item()
+    )
+    minority_class_label = (
+        sample_ids_count.filter(col("count") == col("count").min())
+        .get_column("label")
+        .item()
+    )
+    minority_class_sample_n = (
+        sample_ids_count.filter(col("label") == col("label").min())
+        .get_column("count")
+        .item()
+    )
 
-    # Combine all balanced groups and sort by sample_id
-    return pl.concat(balanced_groups).sort("sample_id")
+    keep_ids = (
+        (
+            # sample from majority class
+            sample_ids.filter(col("label") == majority_class_label)
+            .get_column("sample_id")
+            .sample(minority_class_sample_n, seed=random_seed)
+            # keep all samples from minority class
+            .append(
+                sample_ids.filter(col("label") == minority_class_label).get_column(
+                    "sample_id"
+                )
+            )
+        )
+        .unique()
+        .sort()
+    )
+
+    # sanity check
+    assert len(keep_ids) == minority_class_sample_n * 2, (
+        f"Sample set is not balanced. "
+        f"Expected {minority_class_sample_n * 2} samples, but got {len(keep_ids)}."
+    )
+
+    return samples.filter(col("sample_id").is_in(keep_ids))
