@@ -54,7 +54,7 @@ def create_samples(
     samples = _cap_intervals_to_sample_length(df, intervals, length_ms, offsets_ms)
     samples = _generate_sample_ids(samples, intervals, label_mapping)
     samples = _remove_samples_that_are_too_short(samples)
-    # samples = _remove_increasing_intervals_at_stimulus_start_EXPERIMENTAL(samples)
+    samples = _remove_samples_from_stimulus_start(samples)
 
     return samples
 
@@ -216,7 +216,9 @@ def _remove_samples_that_are_too_short(
     ).get_column("sample_id")
 
     # Filter the original samples DataFrame to keep only valid samples
-    filtered_samples = samples.filter(pl.col("sample_id").is_in(valid_sample_ids))
+    filtered_samples = samples.filter(
+        pl.col("sample_id").is_in(valid_sample_ids.to_list())
+    )
 
     removed_count = samples.get_column("sample_id").n_unique() - valid_sample_ids.len()
     if removed_count > 0:
@@ -227,24 +229,23 @@ def _remove_samples_that_are_too_short(
     return filtered_samples
 
 
-def _remove_increasing_intervals_at_stimulus_start_EXPERIMENTAL(
+def _remove_samples_from_stimulus_start(
     samples: pl.DataFrame,
 ):
     keep_ids = []
     for group in samples.filter(label=1).group_by("trial_id"):
         group = group[1]
         sample_ids = group.get_column("sample_id").unique().sort()
-        if len(sample_ids) > 3:
-            # only keep samples that do not start the trial (normalized timestamp != 0)
-            keep_ids_non_start = (
-                group.filter(col("normalized_timestamp") == 0)
-                .get_column("sample_id")
-                .unique()
-            )
-            group = group.filter(~col("sample_id").is_in(keep_ids_non_start))
-            sample_ids = group.get_column("sample_id").unique().sort()
+        # only keep samples that do not start the trial (normalized timestamp != 0)
+        keep_ids_non_start = (
+            group.filter(col("normalized_timestamp") == 0)
+            .get_column("sample_id")
+            .unique()
+        )
+        group = group.filter(~col("sample_id").is_in(keep_ids_non_start.implode()))
+        sample_ids = group.get_column("sample_id").unique().sort()
 
-            sample_ids = sample_ids.sample(3, seed=42).sort()
+        # sample_ids = sample_ids.sample(3, seed=42).sort()
         keep_ids.extend(sample_ids)
     keep_ids += samples.filter(label=0).get_column("sample_id").unique().to_list()
     samples = samples.filter(col("sample_id").is_in(keep_ids))
@@ -254,7 +255,7 @@ def _remove_increasing_intervals_at_stimulus_start_EXPERIMENTAL(
 def make_sample_set_balanced(
     samples: pl.DataFrame,
     random_seed: int = 42,
-):
+) -> pl.DataFrame:
     """
     Make a sample set balanced by downsampling the majority class in the dataset to the
     size of the minority class to prevent the model from inclining towards the majority
@@ -263,7 +264,6 @@ def make_sample_set_balanced(
     sample_ids = (
         samples.group_by("sample_id").agg(pl.all().first()).select("sample_id", "label")
     )
-
     sample_ids_count = sample_ids.get_column("label").value_counts()
 
     majority_class_label = (
@@ -283,26 +283,17 @@ def make_sample_set_balanced(
     )
 
     keep_ids = (
-        (
-            # sample from majority class
-            sample_ids.filter(col("label") == majority_class_label)
-            .get_column("sample_id")
-            .sample(minority_class_sample_n, seed=random_seed)
-            # keep all samples from minority class
-            .append(
-                sample_ids.filter(col("label") == minority_class_label).get_column(
-                    "sample_id"
-                )
+        # subsample from majority class
+        sample_ids.filter(col("label") == majority_class_label)
+        .get_column("sample_id")
+        .sample(minority_class_sample_n, seed=random_seed)
+        # keep all samples from minority class
+        .append(
+            sample_ids.filter(col("label") == minority_class_label).get_column(
+                "sample_id"
             )
         )
         .unique()
         .sort()
     )
-
-    # sanity check
-    assert len(keep_ids) == minority_class_sample_n * 2, (
-        f"Sample set is not balanced. "
-        f"Expected {minority_class_sample_n * 2} samples, but got {len(keep_ids)}."
-    )
-
     return samples.filter(col("sample_id").is_in(keep_ids))
