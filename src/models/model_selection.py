@@ -12,6 +12,8 @@ from src.models.utils import get_input_shape, initialize_model, save_model
 
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
+BASE_DIR = Path("runs/models")
+
 
 def run_model_selection(
     train_loader,
@@ -183,14 +185,14 @@ class ExperimentTracker:
 
         Args:
             features: List of features used in the experiment
-            base_dir: Base directory for storing results (default: 'results')
+            base_dir: Base directory for storing results
         """
         self.features = features
         self.feature_string = "_".join(sorted(features))  # Sort for consistency
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
         # Initialize result storage
-        self.base_dir = Path(base_dir or "results")
+        self.base_dir = Path(base_dir or BASE_DIR)
         self.base_dir.mkdir(exist_ok=True)
 
         # Create a directory for this feature combination

@@ -27,7 +27,9 @@ def configure_logging(
     (default is False).
     - ignore_libs: A list of library names to ignore in the logs.
 
-    Example usage:
+    Example usage in main script:
+    >>> import logging
+    >>> from log_config import configure_logging
     >>> configure_logging()
     >>> logging.debug("This is a debug message.")
     """

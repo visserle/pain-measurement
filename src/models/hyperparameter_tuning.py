@@ -19,6 +19,10 @@ def create_objective_function(
     device: torch.device,
     n_epochs: int,
 ) -> callable:
+    """
+    Create an objective function for hyperparameter tuning using Optuna.
+    """
+
     def objective(trial: optuna.Trial) -> float:
         """
         The 'objective' function can access 'X', 'y', and 'input_size' even after

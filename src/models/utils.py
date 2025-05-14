@@ -122,7 +122,8 @@ def load_model(
     device: torch.device | str | None = None,
 ) -> tuple[nn.Module, list]:
     if device is None:
-        device = get_device()
+        device = get_device(log_device=False)
+    logger.info(f"Using device: {device}")
 
     # Load the saved dictionary
     save_dict = torch.load(model_path, map_location=device)

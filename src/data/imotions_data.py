@@ -12,7 +12,6 @@ from src.data.data_config import DataConfig
 IMOTIONS_DATA_CONFIG = DataConfig.load_imotions_config()
 IMOTIONS_DATA_PATH = DataConfig.IMOTIONS_DATA_PATH
 
-
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
