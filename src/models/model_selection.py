@@ -4,36 +4,37 @@ from datetime import datetime
 from pathlib import Path
 
 import optuna
+import torch
+from torch.utils.data import DataLoader
 
 from src.models.evaluation import evaluate_model
 from src.models.hyperparameter_tuning import create_objective_function
 from src.models.training_loop import train_model
 from src.models.utils import get_input_shape, initialize_model, save_model
 
-logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
+RESULT_DIR = Path("results")
+RESULT_DIR.mkdir(exist_ok=True)
 
-BASE_DIR = Path("runs/models")
+logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
 def run_model_selection(
-    train_loader,
-    val_loader,
-    X_train_val,
-    feature_list,
-    model_names,
-    models_config,
-    n_trials,
-    n_epochs,
-    device,
-    experiment_tracker,
-):
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    feature_list: list[str],
+    model_names: list[str],
+    models_config: dict,
+    n_trials: int,
+    n_epochs: int,
+    device: str | torch.device,
+    experiment_tracker: "ExperimentTracker",
+) -> "ExperimentTracker":
     """
     Run model selection and hyperparameter tuning for the specified models.
 
     Args:
         train_loader: DataLoader for training data
         val_loader: DataLoader for validation data
-        X_train_val: Combined training and validation features
         feature_list: List of features used
         model_names: List of model names to evaluate
         models_config: Configuration for models
@@ -103,26 +104,28 @@ def run_model_selection(
 
 
 def train_evaluate_and_save_best_model(
-    train_val_loader,
-    test_loader,
-    X_train_val,
-    n_epochs,
-    device,
-    experiment_tracker,
-):
+    train_val_loader: DataLoader,
+    test_loader: DataLoader,
+    n_epochs: int,
+    device: str | torch.device,
+    experiment_tracker: "ExperimentTracker",
+) -> "ExperimentTracker":
     """
     Train the final model on combined training+validation data and evaluate on test set.
     """
-    best_model_info = experiment_tracker.get_best_model_info()
-    model_name = best_model_info["model_name"]
-    params = best_model_info["params"]
+    best_model = experiment_tracker.results["overall_best"]
+    model_name = best_model["model_name"]
+    params = best_model["params"]
 
+    logger.info(
+        f"Overall Best Model: {best_model['model_name']} with validation accuracy: {best_model['validation_accuracy']:.4f}"
+    )
     logger.info(f"Training final {model_name} model on combined train+val data...")
 
     # Initialize and train model
     model, criterion, optimizer, scheduler = initialize_model(
         model_name,
-        get_input_shape(model_name, X_train_val),
+        get_input_shape(model_name, test_loader),
         device,
         **params,
     )
@@ -155,13 +158,13 @@ def train_evaluate_and_save_best_model(
         accuracy=test_accuracy,
         best_params=params,
         best_model_name=model_name,
-        X_train_val=X_train_val,
+        data_sample=test_loader,
         feature_list=experiment_tracker.features,
         model_path=model_path,
     )
 
-    # Update results with test performance and history
-    experiment_tracker.update_best_model_test_results(
+    # Record best model test performance
+    experiment_tracker.record_best_model_test_performance(
         test_accuracy=test_accuracy,
         test_loss=test_loss,
         history=history,
@@ -179,24 +182,28 @@ class ExperimentTracker:
     Handles experiment tracking, result storage, and reporting.
     """
 
-    def __init__(self, features, base_dir=None):
+    def __init__(
+        self,
+        features: list[str],
+        result_dir: str | Path = RESULT_DIR,
+    ):
         """
         Initialize a new experiment tracker.
 
         Args:
             features: List of features used in the experiment
-            base_dir: Base directory for storing results
+            result_dir: Base directory for storing results
         """
         self.features = features
         self.feature_string = "_".join(sorted(features))  # Sort for consistency
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
         # Initialize result storage
-        self.base_dir = Path(base_dir or BASE_DIR)
-        self.base_dir.mkdir(exist_ok=True)
+        self.result_dir = Path(result_dir)
+        self.result_dir.mkdir(exist_ok=True)
 
         # Create a directory for this feature combination
-        self.experiment_dir = self.base_dir / f"experiment_{self.feature_string}"
+        self.experiment_dir = self.result_dir / f"experiment_{self.feature_string}"
         self.experiment_dir.mkdir(exist_ok=True)
 
         # Create subdirectories for model
@@ -214,8 +221,12 @@ class ExperimentTracker:
         logger.info(f"Created experiment with features: {self.feature_string}")
 
     def add_model_result(
-        self, model_name, validation_accuracy, best_params, study_name=None
-    ):
+        self,
+        model_name: str,
+        validation_accuracy: float,
+        best_params: dict,
+        study_name: str,
+    ) -> None:
         """
         Add model training result to the experiment.
 
@@ -223,7 +234,7 @@ class ExperimentTracker:
             model_name: Name of the model
             validation_accuracy: Validation accuracy achieved
             best_params: Best hyperparameters found
-            study_name: Name of the Optuna study (if applicable)
+            study_name: Name of the Optuna study
         """
         self.results["models"][model_name] = {
             "validation_accuracy": validation_accuracy,
@@ -233,12 +244,9 @@ class ExperimentTracker:
 
         # Update best model if this is the best so far
         if (
-            not hasattr(self, "best_accuracy")
-            or validation_accuracy > self.best_accuracy
+            "overall_best" not in self.results
+            or validation_accuracy > self.results["overall_best"]["validation_accuracy"]
         ):
-            self.best_accuracy = validation_accuracy
-            self.best_model_name = model_name
-            self.best_params = best_params
             self.results["overall_best"] = {
                 "model_name": model_name,
                 "validation_accuracy": validation_accuracy,
@@ -254,11 +262,15 @@ class ExperimentTracker:
             f"Added result for {model_name}: validation accuracy = {validation_accuracy:.4f}"
         )
 
-    def update_best_model_test_results(
-        self, test_accuracy, test_loss, history=None, model_path=None
-    ):
+    def record_best_model_test_performance(
+        self,
+        test_accuracy: float,
+        test_loss: float,
+        history: dict | None = None,
+        model_path: str | Path | None = None,
+    ) -> None:
         """
-        Update the best model with test results.
+        Record the test performance of the best model.
 
         Args:
             test_accuracy: Accuracy on test set
@@ -288,24 +300,7 @@ class ExperimentTracker:
             f"Best model {best_model} test results: accuracy = {test_accuracy:.4f}, loss = {test_loss:.4f}"
         )
 
-    def get_best_model_info(self):
-        """
-        Get information about the best performing model.
-
-        Returns:
-            Dictionary with best model information
-        """
-        if "overall_best" not in self.results:
-            raise ValueError("No best model has been selected yet")
-
-        best_model = self.results["overall_best"]
-        logger.info(
-            f"Overall Best Model: {best_model['model_name']} with validation accuracy: {best_model['validation_accuracy']:.4f}"
-        )
-
-        return best_model
-
-    def save_results(self):
+    def save_results(self) -> None:
         """
         Save experiment results to disk.
 
@@ -358,5 +353,3 @@ class ExperimentTracker:
 
         logger.info(f"Results saved to {results_file}")
         logger.info(f"Summary saved to {summary_file}")
-
-        return results_file, summary_file

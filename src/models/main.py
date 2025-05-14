@@ -24,9 +24,6 @@ BATCH_SIZE = 64
 N_EPOCHS = 100
 N_TRIALS = 20
 
-RESULT_DIR = Path("results")
-RESULT_DIR.mkdir(exist_ok=True)
-
 configure_logging(
     stream_level=logging.DEBUG,
     file_path=Path(f"runs/models/logs/{datetime.now().strftime('%Y%m%d-%H%M%S')}.log"),
@@ -36,7 +33,6 @@ optuna.logging.enable_propagation()
 
 device = get_device()
 set_seed(RANDOM_SEED)
-
 
 # Default feature list
 # for sanity checks only, we can also train on temperature and rating features
@@ -51,6 +47,7 @@ default_features = [
     "upper_lip_raise",
     "nose_wrinkle",
 ]
+# Note that EEG data cannot be merged with other features
 eeg_features = ["f3", "f4", "c3", "c4", "cz", "p3", "p4", "oz"]
 
 
@@ -95,25 +92,21 @@ def main():
         args.features = eeg_features
 
     # Create experiment tracker
-    experiment_tracker = ExperimentTracker(
-        features=args.features,
-        base_dir=RESULT_DIR,
-    )
+    experiment_tracker = ExperimentTracker(features=args.features)
 
     # Load data from database
     db = DatabaseManager()
     with db:
-        df = db.get_table(
-            "Merged_and_Labeled_Data",
-            exclude_trials_with_measurement_problems=True,
-        )
-    # Note that EEG data cannot be merged with other features
-    if any(channel in eeg_features for channel in args.features):
-        with db:
+        if any(channel in eeg_features for channel in args.features):
             eeg = db.get_table("Preprocess_EEG")
             trials = db.get_table("Trials")
-        eeg = add_normalized_timestamp(eeg)
-        df = add_labels(eeg, trials)
+            eeg = add_normalized_timestamp(eeg)
+            df = add_labels(eeg, trials)
+        else:
+            df = db.get_table(
+                "Merged_and_Labeled_Data",
+                exclude_trials_with_measurement_problems=True,
+            )
 
     # Prepare data
     X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
@@ -133,7 +126,6 @@ def main():
     experiment_tracker = run_model_selection(
         train_loader=train_loader,
         val_loader=val_loader,
-        X_train_val=X_train_val,
         feature_list=args.features,
         model_names=args.models,
         models_config=MODELS,
@@ -147,7 +139,6 @@ def main():
     experiment_tracker = train_evaluate_and_save_best_model(
         train_val_loader=train_val_loader,
         test_loader=test_loader,
-        X_train_val=X_train_val,
         n_epochs=N_EPOCHS,
         device=device,
         experiment_tracker=experiment_tracker,

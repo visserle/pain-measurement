@@ -12,20 +12,20 @@ logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
 def prepare_data(
-    df,
-    feature_list,
-    sample_duration_ms,
-    random_seed,
-    only_return_test_groups=False,  # for the participant_ids in the test set
-):
+    df: pl.DataFrame,
+    feature_list: list,
+    sample_duration_ms: int = 5000,
+    random_seed: int = 42,
+    only_return_test_groups: bool = False,  # for the participant_ids in the test set
+) -> tuple:
     """Prepare data for model training, including creating and splitting samples."""
     intervals = {
         "decreases": "major_decreasing_intervals",
         "increases": "strictly_increasing_intervals",
     }
     label_mapping = {
-        "decreases": 0,
-        "increases": 1,
+        "increases": 0,
+        "decreases": 1,
     }
     offsets_ms = {
         "decreases": 2000,
@@ -56,6 +56,19 @@ def prepare_data(
     X_train, y_train = X_train_val[idx_train], y_train_val[idx_train]
     X_val, y_val = X_train_val[idx_val], y_train_val[idx_val]
 
+    # Scale the data
+    X_train, X_val = scale_dataset(X_train, X_val)
+    X_train_val, X_test = scale_dataset(X_train_val, X_test)
+
+    # Log sample information
+    logger.debug(
+        f"Preparing data with sample duration {sample_duration_ms}ms and random seed {random_seed}"
+    )
+    logger.debug(
+        f"Samples are based on intervals: {intervals} and label mapping: {label_mapping}"
+    )
+    logger.debug(f"Offsets for intervals: {offsets_ms}")
+
     # Log group information
     for name, group_indices in [
         ("training", groups[idx_train_val][idx_train]),
@@ -65,11 +78,8 @@ def prepare_data(
         logger.info(
             f"Number of unique participants in {name} set: {len(np.unique(group_indices))}"
         )
+
     # Log test set participant IDs
     logger.debug(f"Participant IDs in test set: {np.unique(groups[idx_test])}")
-
-    # Scale the data
-    X_train, X_val = scale_dataset(X_train, X_val)
-    X_train_val, X_test = scale_dataset(X_train_val, X_test)
 
     return X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test

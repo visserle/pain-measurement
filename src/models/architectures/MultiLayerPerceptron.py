@@ -23,7 +23,6 @@ class MultiLayerPerceptron(nn.Module):
         if input_dim != 1:
             raise NotImplementedError("Only 1D input supported.")
 
-        # Create a list of layers
         layers = []
 
         # First layer: input_len -> hidden_size

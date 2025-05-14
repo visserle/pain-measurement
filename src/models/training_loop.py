@@ -21,7 +21,7 @@ def train_model(
     n_epochs: int,
     device: torch.device,
     is_test: bool = True,
-    trial: optuna.Trial = None,
+    trial: optuna.Trial | None = None,
 ) -> dict[str, list[float]]:
     dataset = "test" if is_test else "validation"
     history = {
@@ -106,7 +106,7 @@ class EarlyStopping:
         self,
         patience: int = 20,
         delta: float = 0.0,
-    ) -> None:
+    ):
         self.patience = patience
         self.delta = delta
         self.counter = 0

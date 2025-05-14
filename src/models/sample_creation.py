@@ -14,7 +14,7 @@ def create_samples(
     label_mapping: dict[str, int],
     length_ms: int = 5000,
     offsets_ms: dict[str, int] | None = None,
-):
+) -> pl.DataFrame:
     """
     Create samples from a DataFrame with for different stimulus intervals (see labeling
     section of the StimulusGenerator).
@@ -64,7 +64,7 @@ def _cap_intervals_to_sample_length(
     intervals: dict[str, str],
     length_ms: int,
     offsets_ms: dict[str, int],
-):
+) -> pl.DataFrame:
     """
     Cap samples to the first x milliseconds of each interval, with optional offsets.
 
@@ -130,7 +130,7 @@ def _generate_sample_ids(
     samples: pl.DataFrame,
     intervals: dict[str, str],
     label_mapping: dict[str, int],
-):
+) -> pl.DataFrame:
     """
     Generate consecutive sample IDs across any number of interval types.
 
@@ -171,7 +171,7 @@ def _generate_sample_ids(
 def _remove_samples_that_are_too_short(
     samples: pl.DataFrame,
     length_ms: int = 5000,
-):
+) -> pl.DataFrame:
     is_equidistant = not (
         samples.filter(col("sample_id") == col("sample_id").first())
         .select(col("normalized_timestamp").diff().diff().cast(pl.Boolean))
@@ -180,8 +180,11 @@ def _remove_samples_that_are_too_short(
     )
 
     # Only EEG data is not perfectly equidistant and needs special handling
-    # NOTE: This is all hardcoded
+    # NOTE: This is all hardcoded to work with 5000 ms samples.
     if not is_equidistant:
+        assert length_ms == 5000, (
+            "Only 5000 ms samples are supported for EEG data. Or fix the code."
+        )
         logger.warning("Sampling rate is not equidistant with 10 Hz.")
         # Fix EEG samples to ensure consistent length
         new = []
@@ -231,7 +234,7 @@ def _remove_samples_that_are_too_short(
 
 def _remove_samples_from_stimulus_start(
     samples: pl.DataFrame,
-):
+) -> pl.DataFrame:
     keep_ids = []
     for group in samples.filter(label=1).group_by("trial_id"):
         group = group[1]

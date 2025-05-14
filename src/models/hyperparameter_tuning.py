@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 def create_objective_function(
     train_loader: DataLoader,
     val_loader: DataLoader,
-    model_name,
-    model_info,
+    model_name: str,
+    model_info: dict,
     device: torch.device,
     n_epochs: int,
 ) -> callable:
@@ -64,7 +64,7 @@ def create_objective_function(
 def suggest_hyperparameters(
     trial: optuna.Trial,
     model_info: dict,
-):
+) -> dict:
     # Dynamically suggest hyperparameters based on model_info
     hyperparams = {}
     exp_params = {}

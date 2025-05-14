@@ -1,5 +1,5 @@
 # Note that time-columns are mere floats as pl.Duration is not fully supported in Polars
-# and DuckDB yet
+# and DuckDB yet (end of 2024).
 
 # For comprehensiveness, we could add an upsampling function that uses interpolation with
 # zero-stuffing via polars upsample function (not needed for now)

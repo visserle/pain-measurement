@@ -28,7 +28,7 @@ def get_device(
     return device
 
 
-def set_seed(seed: int):
+def set_seed(seed: int) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
@@ -39,7 +39,7 @@ def set_seed(seed: int):
 def get_input_shape(
     model_name: str,
     X: np.ndarray | DataLoader,
-) -> int:
+) -> tuple[int, int]:
     """Return input length and number of features (dimensions) for the model."""
     data_format = MODELS[model_name]["format"]
     if isinstance(X, DataLoader):
@@ -95,10 +95,16 @@ def save_model(
     accuracy: float,
     best_params: dict,
     best_model_name: str,
-    X_train_val: np.ndarray | DataLoader,
+    data_sample: np.ndarray | DataLoader,
     feature_list: list,
     model_path: str | Path,
 ) -> None:
+    """
+    Save the model to a file.
+
+    data_sample is used to determine the input shape of the model and can be a
+    DataLoader or a numpy array.
+    """
     # Create directory if it doesn't exist
     model_path = Path(model_path)
     model_path.parent.mkdir(parents=True, exist_ok=True)
@@ -108,7 +114,7 @@ def save_model(
         "hyperparameters": best_params,
         "model_name": best_model_name,
         "test_accuracy": accuracy,
-        "input_shape": get_input_shape(best_model_name, X_train_val),
+        "input_shape": get_input_shape(best_model_name, data_sample),
         "feature_list": feature_list,
     }
 

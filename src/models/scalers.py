@@ -8,65 +8,27 @@ from sklearn.preprocessing import (
 )
 
 
-def scale_dataset(X_train, X_test):
-    scaler = StandardScaler3D()
+def scale_dataset(
+    X_train: np.ndarray,
+    X_test: np.ndarray,
+    scaler: str = "standard",
+) -> tuple[np.ndarray, np.ndarray]:
+    if scaler == "standard":
+        scaler = StandardScaler3D()
+    elif scaler == "robust":
+        scaler = RobustScaler3D()
+    elif scaler == "minmax":
+        scaler = MinMaxScaler3D()
+    elif scaler == "maxabs":
+        scaler = MaxAbsScaler3D()
+    else:
+        raise ValueError(
+            f"Scaler {scaler} not recognized. "
+            f"Use 'standard', 'robust', 'minmax', or 'maxabs'."
+        )
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
     return X_train, X_test
-
-
-def reshape_features_to_2D(X):
-    """
-    This function is a wrapper around np.reshape. It is intended to be used as a
-    FunctionTransformer in sklearn/skorch pipelines.
-
-    It reshapes a 3D array to 2D by concatenating the second and third dimensions of the
-    input array. The order of the elements in the reshaped array is preserved using
-    Fortran-like index ordering.
-
-    Parameters
-    ----------
-    X : ndarray
-        The input array to be reshaped. It should be a 3D array.
-
-    Returns
-    -------
-    ndarray
-        The reshaped 2D array. The shape of the returned array is
-        (X.shape[0], X.shape[1]*X.shape[2]).
-
-    Raises
-    ------
-    ValueError
-        If the input array `X` is not a 3D array.
-
-    Examples
-    --------
-    >>> reshape_features_to_2D(np.random.rand(10, 5, 5)).shape
-    (10, 25)
-
-    In a sklearn/skorch pipeline:
-    ```python
-    from sklearn.preprocessing import FunctionTransformer
-
-    mlp_pipe = make_pipeline(
-        StandardScaler3D(), FunctionTransformer(reshape_features_to_2D), mlp
-    )
-    ```
-    """
-    if len(X.shape) != 3:
-        raise ValueError("Input array should be a 3D array.")
-    return np.reshape(
-        X,
-        (
-            X.shape[0],
-            X.shape[1] * X.shape[2],  # same as -1
-        ),
-        order="F",
-    )
-
-
-"""A module used to represent different sklearn scalers for 3D data."""
 
 
 class Scaler3D(BaseEstimator, TransformerMixin):
