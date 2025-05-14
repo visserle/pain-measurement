@@ -3,6 +3,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
+import optuna.logging
+
 from src.data.database_manager import DatabaseManager
 from src.features.labels import add_labels
 from src.features.resampling import add_normalized_timestamp
@@ -29,6 +31,9 @@ configure_logging(
     stream_level=logging.DEBUG,
     file_path=Path(f"runs/models/logs/{datetime.now().strftime('%Y%m%d-%H%M%S')}.log"),
 )
+optuna.logging.disable_default_handler()
+optuna.logging.enable_propagation()
+
 device = get_device()
 set_seed(RANDOM_SEED)
 
