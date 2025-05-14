@@ -54,7 +54,7 @@ def create_samples(
     samples = _cap_intervals_to_sample_length(df, intervals, length_ms, offsets_ms)
     samples = _generate_sample_ids(samples, intervals, label_mapping)
     samples = _remove_samples_that_are_too_short(samples)
-    samples = _remove_samples_from_stimulus_start(samples)
+    samples = _remove_samples_from_stimulus_start(samples, label_mapping)
 
     return samples
 
@@ -234,9 +234,11 @@ def _remove_samples_that_are_too_short(
 
 def _remove_samples_from_stimulus_start(
     samples: pl.DataFrame,
+    label_mapping: dict[str, int],
 ) -> pl.DataFrame:
     keep_ids = []
-    for group in samples.filter(label=1).group_by("trial_id"):
+    # Stimulus always starts with an increase
+    for group in samples.filter(label=label_mapping["increases"]).group_by("trial_id"):
         group = group[1]
         sample_ids = group.get_column("sample_id").unique().sort()
         # only keep samples that do not start the trial (normalized timestamp != 0)
@@ -248,9 +250,13 @@ def _remove_samples_from_stimulus_start(
         group = group.filter(~col("sample_id").is_in(keep_ids_non_start.implode()))
         sample_ids = group.get_column("sample_id").unique().sort()
 
-        # sample_ids = sample_ids.sample(3, seed=42).sort()
         keep_ids.extend(sample_ids)
-    keep_ids += samples.filter(label=0).get_column("sample_id").unique().to_list()
+    keep_ids += (
+        samples.filter(label=label_mapping["decreases"])
+        .get_column("sample_id")
+        .unique()
+        .to_list()
+    )
     samples = samples.filter(col("sample_id").is_in(keep_ids))
     return samples
 
@@ -280,7 +286,7 @@ def make_sample_set_balanced(
         .item()
     )
     minority_class_sample_n = (
-        sample_ids_count.filter(col("label") == col("label").min())
+        sample_ids_count.filter(col("count") == col("count").min())
         .get_column("count")
         .item()
     )
