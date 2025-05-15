@@ -8,26 +8,26 @@ from sklearn.metrics import (
     auc,
     average_precision_score,
     confusion_matrix,
+    f1_score,
     precision_recall_curve,
     roc_curve,
 )
 from torch.utils.data import DataLoader
 
 
-def get_confusion_matrix(
+def get_model_predictions(
     model: nn.Module,
     test_loader: DataLoader,
-    threshold: float = 0.5,
-) -> np.ndarray:
+) -> tuple:
     """
-    Calculate confusion matrix for binary classification.
-    Returns a 2x2 numpy array where:
-    [0,0] = TN, [0,1] = FP
-    [1,0] = FN, [1,1] = TP
+    Run model inference on test data and return raw probabilities and true labels.
+
+    Returns:
+        tuple: (probabilities, true_labels)
     """
     device = next(model.parameters()).device.type
     model.eval()
-    all_preds = []
+    all_probs = []
     all_labels = []
 
     with torch.no_grad():
@@ -37,8 +37,6 @@ def get_confusion_matrix(
 
             # Convert logits to probabilities using softmax
             probs = torch.softmax(logits, dim=1)
-            # Get predictions based on threshold of positive class probability
-            y_pred_batch = (probs[:, 1] >= threshold).cpu().numpy()
 
             # Convert labels to numpy array
             if len(y_batch.shape) > 1:  # one-hot encoded
@@ -46,16 +44,43 @@ def get_confusion_matrix(
             else:
                 y_batch = y_batch.cpu().numpy()
 
-            all_preds.append(y_pred_batch)
+            all_probs.append(
+                probs[:, 1].cpu().numpy()
+            )  # Store positive class probability
             all_labels.append(y_batch)
 
     # Concatenate batches
     y_true = np.concatenate(all_labels)
-    y_pred = np.concatenate(all_preds)
+    probs = np.concatenate(all_probs)
 
-    print(f"Accuracy: {accuracy_score(y_true, y_pred):.3f}")
+    return probs, y_true
 
-    return confusion_matrix(y_true, y_pred)
+
+def get_confusion_matrix(
+    probabilities: np.ndarray,
+    true_labels: np.ndarray,
+    threshold: float = 0.5,
+    plot: bool = True,
+) -> np.ndarray:
+    """
+    Calculate confusion matrix from probabilities and true labels.
+
+    Args:
+        probabilities: Array of probabilities for the positive class
+        true_labels: Array of true binary labels
+        threshold: Classification threshold
+    """
+    # Apply threshold to get predictions
+    y_pred = (probabilities >= threshold).astype(int)
+
+    print(f"Accuracy: {accuracy_score(true_labels, y_pred):.3f}")
+
+    conf_matrix = confusion_matrix(true_labels, y_pred)
+
+    if plot:
+        plot_confusion_matrix(conf_matrix)
+
+    return conf_matrix
 
 
 def plot_confusion_matrix(conf_matrix: np.ndarray) -> None:
@@ -65,8 +90,8 @@ def plot_confusion_matrix(conf_matrix: np.ndarray) -> None:
         annot=True,
         fmt="d",
         cmap="Blues",
-        xticklabels=["Decreases", "Increases"],
-        yticklabels=["Decreases", "Increases"],
+        xticklabels=["Increases", "Decreases"],
+        yticklabels=["Increases", "Decreases"],
     )
     plt.title("Confusion Matrix")
     plt.ylabel("True Label")
@@ -75,41 +100,14 @@ def plot_confusion_matrix(conf_matrix: np.ndarray) -> None:
 
 
 def plot_roc_curve(
-    model: nn.Module,
-    test_loader: DataLoader,
+    probs: np.ndarray,
+    y_true: np.ndarray,
 ) -> None:
     """
     Plot ROC curve and calculate AUC score for binary classification.
     """
-    device = next(model.parameters()).device.type
-    model.eval()
-    all_labels = []
-    all_scores = []
 
-    with torch.no_grad():
-        for X_batch, y_batch in test_loader:
-            X_batch = X_batch.to(device)
-            logits = model(X_batch)
-
-            # Convert logits to probabilities using softmax
-            probs = torch.softmax(logits, dim=1)
-            # Get probability of positive class (class 1)
-            y_scores_batch = probs[:, 1].cpu().numpy()
-
-            # Convert labels to numpy array
-            if len(y_batch.shape) > 1:  # one-hot encoded
-                y_batch = y_batch[:, 1].cpu().numpy()
-            else:
-                y_batch = y_batch.cpu().numpy()
-
-            all_labels.append(y_batch)
-            all_scores.append(y_scores_batch)
-
-    # Concatenate batches
-    y_true = np.concatenate(all_labels)
-    y_scores = np.concatenate(all_scores)
-
-    fpr, tpr, thresholds = roc_curve(y_true, y_scores)
+    fpr, tpr, thresholds = roc_curve(y_true, probs)
     auc_score = auc(fpr, tpr)
 
     # Find optimal threshold
@@ -139,43 +137,15 @@ def plot_roc_curve(
 
 
 def plot_pr_curve(
-    model: nn.Module,
-    test_loader: DataLoader,
-) -> None:
+    probs: np.ndarray,
+    y_true: np.ndarray,
+) -> tuple:
     """
     Plot Precision-Recall curve and calculate Average Precision score for binary classification.
     """
-    device = next(model.parameters()).device.type
-    model.eval()
-    all_labels = []
-    all_scores = []
-
-    with torch.no_grad():
-        for X_batch, y_batch in test_loader:
-            X_batch = X_batch.to(device)
-            logits = model(X_batch)
-
-            # Convert logits to probabilities using softmax
-            probs = torch.softmax(logits, dim=1)
-            # Get probability of positive class (class 1)
-            y_scores_batch = probs[:, 1].cpu().numpy()
-
-            # Convert labels to numpy array
-            if len(y_batch.shape) > 1:  # one-hot encoded
-                y_batch = y_batch[:, 1].cpu().numpy()
-            else:
-                y_batch = y_batch.cpu().numpy()
-
-            all_labels.append(y_batch)
-            all_scores.append(y_scores_batch)
-
-    # Concatenate batches
-    y_true = np.concatenate(all_labels)
-    y_scores = np.concatenate(all_scores)
-
     # Calculate precision-recall curve
-    precision, recall, thresholds = precision_recall_curve(y_true, y_scores)
-    avg_precision = average_precision_score(y_true, y_scores)
+    precision, recall, thresholds = precision_recall_curve(y_true, probs)
+    avg_precision = average_precision_score(y_true, probs)
 
     # Calculate F1 score at each threshold to find optimal threshold
     f1_scores = (
@@ -209,4 +179,4 @@ def plot_pr_curve(
     plt.grid(True)
     plt.show()
 
-    return avg_precision, optimal_threshold
+    return (avg_precision, optimal_threshold)
