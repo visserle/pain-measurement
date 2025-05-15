@@ -18,7 +18,7 @@ def analyze_per_participant(
     batch_size: int = 64,
     threshold: float = 0.5,
     pseudonymize: bool = True,
-) -> dict:
+) -> pl.DataFrame:
     """
     Analyze model performance for each participant separately.
 
@@ -167,7 +167,7 @@ def _participant_metrics_to_df(participant_metrics: dict) -> pl.DataFrame:
     overall_row = df.filter(pl.col("participant") == "overall")
     regular_rows = df.filter(pl.col("participant") != "overall")
 
-    # Sort participants numerically (if they're numbers)
+    # Sort participants numerically
     regular_rows = (
         regular_rows.with_columns(
             pl.col("participant").cast(pl.Int32).alias("participant_int")
@@ -180,6 +180,35 @@ def _participant_metrics_to_df(participant_metrics: dict) -> pl.DataFrame:
     df = pl.concat([regular_rows, overall_row])
 
     return df
+
+
+def get_summary_statistics(
+    results_df: pl.DataFrame,
+) -> pl.DataFrame:
+    # Extract overall accuracy and create a DataFrame without the overall row
+    overall_row = results_df.filter(pl.col("participant") == "overall")
+    overall_accuracy = overall_row["accuracy"][0]
+    participants_df = results_df.filter(pl.col("participant") != "overall")
+
+    # Generate the table with cleaner code
+    return pl.DataFrame(
+        {
+            "Measure": [
+                "Overall accuracy",
+                "Participants above chance level",
+                "Participants above overall accuracy",
+                "Highest accuracy (Participant ID)",
+                "Lowest accuracy (Participant ID)",
+            ],
+            "Value": [
+                f"{overall_accuracy:.1%}",
+                f"{participants_df.filter(pl.col('accuracy') > 0.5).height} out of {participants_df.height}",
+                f"{participants_df.filter(pl.col('accuracy') > overall_accuracy).height} out of {participants_df.height}",
+                f"{participants_df['accuracy'].max():.1%} (ID: {participants_df.filter(pl.col('accuracy') == participants_df['accuracy'].max())['participant'][0]})",
+                f"{participants_df['accuracy'].min():.1%} (ID: {participants_df.filter(pl.col('accuracy') == participants_df['accuracy'].min())['participant'][0]})",
+            ],
+        }
+    )
 
 
 def plot_participant_performance(
@@ -212,7 +241,7 @@ def plot_participant_performance(
     colors = ["#2c7bb6" for acc in accuracies]
 
     # Plot bars
-    bars = plt.bar(participants, accuracies, color=colors, width=0.7)
+    bars = plt.bar(participants, accuracies, color=colors, width=0.7)  # noqa
 
     # Add reference lines
     plt.axhline(

@@ -1,5 +1,4 @@
 from src.models.architectures.Crossformer import Crossformer
-from src.models.architectures.LongShortTermMemory import LongShortTermMemory
 from src.models.architectures.MultiLayerPerceptron import MultiLayerPerceptron
 from src.models.architectures.NonstationaryTransformer import (
     NonstationarityTransformer,
@@ -7,6 +6,11 @@ from src.models.architectures.NonstationaryTransformer import (
 from src.models.architectures.PatchTST import PatchTST
 from src.models.architectures.TimesNet import TimesNet
 from src.models.architectures.Transformer import Transformer
+
+RANDOM_SEED = 42
+BATCH_SIZE = 64
+N_EPOCHS = 100
+N_TRIALS = 20
 
 MODELS = {
     "MLP": {

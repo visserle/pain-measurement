@@ -16,13 +16,8 @@ from src.models.model_selection import (
     run_model_selection,
     train_evaluate_and_save_best_model,
 )
-from src.models.models_config import MODELS
+from src.models.models_config import BATCH_SIZE, MODELS, N_EPOCHS, N_TRIALS, RANDOM_SEED
 from src.models.utils import get_device, set_seed
-
-RANDOM_SEED = 42
-BATCH_SIZE = 64
-N_EPOCHS = 100
-N_TRIALS = 20
 
 configure_logging(
     stream_level=logging.DEBUG,
