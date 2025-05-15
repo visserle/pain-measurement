@@ -105,7 +105,6 @@ def save_model(
     data_sample is used to determine the input shape of the model and can be a
     DataLoader or a numpy array.
     """
-    # Create directory if it doesn't exist
     model_path = Path(model_path)
     model_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -118,7 +117,6 @@ def save_model(
         "feature_list": feature_list,
     }
 
-    # Use the path directly without modification
     torch.save(save_dict, model_path)
     logger.info(f"Final model saved as {model_path} with accuracy {accuracy:.2f}%")
 
@@ -133,7 +131,6 @@ def load_model(
 
     # Load the saved dictionary
     save_dict = torch.load(model_path, map_location=device)
-    # Extract components
     model_name = save_dict["model_name"]
     hyperparams = save_dict["hyperparameters"]
     state_dict = save_dict["model_state_dict"]
@@ -148,15 +145,11 @@ def load_model(
         device,
         **hyperparams,
     )
-
-    # Load the weights
     model.load_state_dict(state_dict)
-
-    # Set model to evaluation mode
     model.eval()
 
     logger.info(
-        f"Loaded {model_name} model with test accuracy {test_accuracy:.2f}% to {device}."
+        f"Loaded {model_name} model with test accuracy {test_accuracy:.2f}% to {device}"
     )
     logger.info(f"Input shape: {input_shape} | Features: {feature_list}")
 

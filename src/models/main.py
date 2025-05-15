@@ -11,12 +11,13 @@ from src.features.resampling import add_normalized_timestamp
 from src.log_config import configure_logging
 from src.models.data_loader import create_dataloaders
 from src.models.data_preparation import prepare_data
+from src.models.main_config import BATCH_SIZE, N_EPOCHS, N_TRIALS, RANDOM_SEED
 from src.models.model_selection import (
     ExperimentTracker,
     run_model_selection,
     train_evaluate_and_save_best_model,
 )
-from src.models.models_config import BATCH_SIZE, MODELS, N_EPOCHS, N_TRIALS, RANDOM_SEED
+from src.models.models_config import MODELS
 from src.models.utils import get_device, set_seed
 
 configure_logging(
