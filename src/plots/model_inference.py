@@ -52,7 +52,12 @@ def create_samples_full_stimulus(df, features, sample_duration=5000, step_size=1
 
 
 def analyze_test_dataset_for_one_stimulus(
-    model, db, features, participant_ids, stimulus_seed, logging=True
+    model,
+    db,
+    features,
+    participant_ids,
+    stimulus_seed,
+    logging=True,
 ):
     """
     Analyze the entire test dataset with the specified stimulus seed.
@@ -63,15 +68,13 @@ def analyze_test_dataset_for_one_stimulus(
         participant_ids: List of participant IDs to analyze
         stimulus_seed: Stimulus seed to filter for
     Returns:
-        all_predictions: Dictionary mapping participant_id to their predictions
-        all_confidences: Dictionary mapping participant_id to their confidences
+        all_probabilities: Dictionary mapping participant_id to their class probabilities
         participant_trials: Dictionary mapping participant_id to number of trials
     """
 
     device = next(model.parameters()).device.type
 
-    all_predictions = {}
-    all_confidences = {}
+    all_probabilities = {}
     participant_trials = {}
 
     # Process each participant
@@ -95,8 +98,7 @@ def analyze_test_dataset_for_one_stimulus(
         # Create a proper key for the participant (use the actual ID, not the index)
         participant_key = str(participant_id)
 
-        participant_predictions = []
-        participant_confidences = []
+        participant_probabilities = []
 
         # Create samples for this trial
         samples = create_samples_full_stimulus(participant_df, features)
@@ -108,9 +110,8 @@ def analyze_test_dataset_for_one_stimulus(
                 )
             continue
 
-        # Get predictions and confidences for this trial
-        trial_predictions = []
-        trial_confidences = []
+        # Get probabilities for this trial
+        trial_probabilities = []
         for sample in samples:
             tensor = (
                 torch.tensor(sample.to_numpy(), dtype=torch.float32)
@@ -119,47 +120,60 @@ def analyze_test_dataset_for_one_stimulus(
             )
             logits = model(tensor)
             probabilities = torch.softmax(logits, dim=1)
-            pred_class = probabilities.argmax(dim=1).item()
-            pred_confidence = probabilities[0, pred_class].item()
-            trial_predictions.append(pred_class)
-            trial_confidences.append(pred_confidence)
+            trial_probabilities.append(probabilities[0].cpu().detach().numpy())
 
-        participant_predictions.append(trial_predictions)
-        participant_confidences.append(trial_confidences)
+        participant_probabilities.append(trial_probabilities)
 
-        if participant_predictions:
-            all_predictions[participant_key] = participant_predictions
-            all_confidences[participant_key] = participant_confidences
-            participant_trials[participant_key] = len(participant_predictions)
+        if participant_probabilities:
+            all_probabilities[participant_key] = participant_probabilities
+            participant_trials[participant_key] = len(participant_probabilities)
 
-    return all_predictions, all_confidences, participant_trials
+    return all_probabilities, participant_trials
 
 
-def create_aggregate_visualization(
-    all_predictions,
-    all_confidences,
+def plot_prediction_confidence_heatmap(
+    all_probabilities,
     stimulus_seed,
+    classification_threshold=0.5,
     pseudonymize=True,
 ):
     """
     Create a heatmap visualization of model predictions across all participants.
     Args:
-        all_predictions: Dictionary of all predictions for each participant
-        all_confidences: Dictionary of all confidences for each participant
+        all_probabilities: Dictionary of all probabilities for each participant
         stimulus_seed: Seed used for the stimulus generation
+        classification_threshold: Threshold used for binary classification (default: 0.5)
     """
     # Prepare data structures to track participant IDs with their confidence data
     confidence_data = []  # List of (participant_id, confidence_array) tuples
 
-    for participant_id, trial_confidences_list in all_confidences.items():
-        for i, trial_confidences in enumerate(trial_confidences_list):
-            trial_predictions = all_predictions[participant_id][i]
+    for participant_id, trial_probabilities_list in all_probabilities.items():
+        for i, trial_probabilities in enumerate(trial_probabilities_list):
+            # Extract increase (class 1) probabilities
+            increase_probs = np.array([probs[1] for probs in trial_probabilities])
 
-            # Transform classifier confidences to centered, scaled values [-1, 1]
-            signed_confidences = [
-                -(conf - 0.5) * 2 if pred == 0 else (conf - 0.5) * 2
-                for conf, pred in zip(trial_confidences, trial_predictions)
-            ]
+            # Scale values to account for the classification threshold
+            # Values below threshold will be negative (decrease)
+            # Values above threshold will be positive (increase)
+            # The exact threshold will map to 0
+            signed_confidences = np.zeros_like(increase_probs)
+
+            # For probabilities below threshold (decrease predictions)
+            below_threshold = increase_probs < classification_threshold
+            if np.any(below_threshold):
+                # Scale from [0, threshold] to [-1, 0]
+                signed_confidences[below_threshold] = (
+                    increase_probs[below_threshold] - classification_threshold
+                ) / classification_threshold
+
+            # For probabilities above threshold (increase predictions)
+            above_threshold = increase_probs >= classification_threshold
+            if np.any(above_threshold):
+                # Scale from [threshold, 1] to [0, 1]
+                signed_confidences[above_threshold] = (
+                    increase_probs[above_threshold] - classification_threshold
+                ) / (1 - classification_threshold)
+
             confidence_data.append((participant_id, signed_confidences))
 
     # Convert confidence values to array and calculate average confidence for sorting
@@ -172,9 +186,9 @@ def create_aggregate_visualization(
     sorted_confidence_array = confidence_array[sort_indices]
     sorted_participant_ids = [confidence_data[i][0] for i in sort_indices]
 
-    # Create custom colormap: blue for negative, white for 0, orange for positive
-    colors = [(0, 0, 1), (1, 1, 1), (1, 0.42, 0.21)]  # Blue, White, Orange
-    cmap = LinearSegmentedColormap.from_list("BlueWhiteOrange", colors, N=100)
+    # Create custom colormap: orange for negative, white for 0, blue for positive
+    colors = [(1, 0.42, 0.21), (1, 1, 1), (0, 0, 1)]  # Orange, White, Blue
+    cmap = LinearSegmentedColormap.from_list("OrangeWhiteBlue", colors, N=256)
 
     # Create time axis
     time_points = np.linspace(0, 180, confidence_array.shape[1])
@@ -227,10 +241,9 @@ def create_aggregate_visualization(
     )
 
     # Add labels and statistics
-    num_participants = len(all_confidences)
     total_trials = len(sorted_confidence_array)
     ax.set_title(
-        f"Stimulus {stimulus_seed}: {num_participants} participants, {total_trials} trials",
+        f"Stimulus {stimulus_seed}: {total_trials} trials, classification threshold {classification_threshold}",
         fontsize=16,
     )
     ax.set_xlabel("Time (seconds)")
@@ -260,4 +273,4 @@ def create_aggregate_visualization(
         # we have to reverse the order of the y-ticks else they are upside down
 
     plt.tight_layout()
-    return fig
+    plt.show()
