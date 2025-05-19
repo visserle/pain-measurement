@@ -11,7 +11,13 @@ from src.features.resampling import add_normalized_timestamp
 from src.log_config import configure_logging
 from src.models.data_loader import create_dataloaders
 from src.models.data_preparation import prepare_data
-from src.models.main_config import BATCH_SIZE, N_EPOCHS, N_TRIALS, RANDOM_SEED
+from src.models.main_config import (
+    BATCH_SIZE,
+    N_EPOCHS,
+    N_TRIALS,
+    RANDOM_SEED,
+    SAMPLE_DURATION_MS,
+)
 from src.models.model_selection import (
     ExperimentTracker,
     run_model_selection,
@@ -106,7 +112,7 @@ def main():
 
     # Prepare data
     X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
-        prepare_data(df, args.features, 5000, RANDOM_SEED)
+        prepare_data(df, args.features, SAMPLE_DURATION_MS, RANDOM_SEED)
     )
 
     # Create dataloaders

@@ -53,7 +53,7 @@ def create_samples(
 
     samples = _cap_intervals_to_sample_length(df, intervals, length_ms, offsets_ms)
     samples = _generate_sample_ids(samples, intervals, label_mapping)
-    samples = _remove_samples_that_are_too_short(samples)
+    samples = _remove_samples_that_are_too_short(samples, length_ms)
     samples = _remove_samples_from_stimulus_start(samples, label_mapping)
 
     return samples
@@ -170,7 +170,7 @@ def _generate_sample_ids(
 
 def _remove_samples_that_are_too_short(
     samples: pl.DataFrame,
-    length_ms: int = 5000,
+    length_ms: int = 3000,
 ) -> pl.DataFrame:
     is_equidistant = not (
         samples.filter(col("sample_id") == col("sample_id").first())
@@ -180,18 +180,18 @@ def _remove_samples_that_are_too_short(
     )
 
     # Only EEG data is not perfectly equidistant and needs special handling
-    # NOTE: This is all hardcoded to work with 5000 ms samples.
+    # NOTE: This is all hardcoded to work with 3000 ms samples.
     if not is_equidistant:
-        assert length_ms == 5000, (
-            "Only 5000 ms samples are supported for EEG data. Or fix the code."
+        assert length_ms == 3000, (
+            "Only 3000 ms samples are supported for EEG data. Or fix the code."
         )
         logger.warning("Sampling rate is not equidistant with 10 Hz.")
         # Fix EEG samples to ensure consistent length
         new = []
         for sample in samples.group_by("sample_id", maintain_order=True):
             sample = sample[1]
-            sample = sample.head(1250)
-            while sample.height < 1250:
+            sample = sample.head(750)  # 250 * 3 = 750
+            while sample.height < 750:
                 sample = pl.concat([sample, sample.tail(1)])
             new.append(sample)
 
@@ -305,4 +305,11 @@ def make_sample_set_balanced(
         .unique()
         .sort()
     )
+
+    # Sanity check
+    assert len(keep_ids) == minority_class_sample_n * 2, (
+        "Sample set is not balanced. "
+        f"Expected {minority_class_sample_n * 2} samples, got {len(keep_ids)}"
+    )
+
     return samples.filter(col("sample_id").is_in(keep_ids))

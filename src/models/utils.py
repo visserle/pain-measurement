@@ -97,6 +97,7 @@ def save_model(
     best_model_name: str,
     data_sample: np.ndarray | DataLoader,
     feature_list: list,
+    sample_duration_ms: int,
     model_path: str | Path,
 ) -> None:
     """
@@ -115,6 +116,7 @@ def save_model(
         "test_accuracy": accuracy,
         "input_shape": get_input_shape(best_model_name, data_sample),
         "feature_list": feature_list,
+        "sample_duration_ms": sample_duration_ms,
     }
 
     torch.save(save_dict, model_path)
@@ -137,6 +139,7 @@ def load_model(
     test_accuracy = save_dict["test_accuracy"]
     input_shape = save_dict["input_shape"]
     feature_list = save_dict["feature_list"]
+    sample_duration_ms = save_dict.get("sample_duration_ms", 5000)
 
     # Initialize the model with the same architecture and hyperparameters
     model, _, _, _ = initialize_model(
@@ -149,7 +152,7 @@ def load_model(
     model.eval()
 
     logger.info(
-        f"Loaded {model_name} model with test accuracy {test_accuracy:.2f}% to {device}"
+        f"Loaded {model_name} model with test accuracy {test_accuracy:.2f} to {device}"
     )
     logger.info(f"Input shape: {input_shape} | Features: {feature_list}")
 
