@@ -8,14 +8,13 @@ from matplotlib import rcParams
 from sklearn.metrics import (
     accuracy_score,
 )
+from torch.utils.data import DataLoader
 
 
 def analyze_per_participant(
     model: nn.Module,
-    X_test: np.ndarray,
-    y_test: np.ndarray,
+    test_loader: DataLoader,
     test_groups: np.ndarray,
-    batch_size: int = 64,
     threshold: float = 0.5,
     pseudonymize: bool = True,
 ) -> pl.DataFrame:
@@ -24,99 +23,84 @@ def analyze_per_participant(
 
     Args:
         model: The trained model
-        X_test: Test features
-        y_test: Test labels
+        test_loader: DataLoader containing test data
         test_groups: Array of participant IDs for each sample
-        batch_size: Batch size for processing
-        threshold: Classification threshold
+        threshold: Classification threshold for binary predictions
+        pseudonymize: Whether to replace real participant IDs with sequential numbers
 
     Returns:
-        Dictionary with participant IDs as keys and dictionaries of metrics as values
+        Polars DataFrame with performance metrics per participant
     """
-    device = next(model.parameters()).device.type
+    device = next(model.parameters()).device
     model.eval()
 
-    # Get unique participants
-    unique_participants = np.unique(test_groups)  # note that unique is sorted
-    participant_metrics = {}
+    # Get unique participants, note that unique() sorts the array
+    unique_participants = np.unique(test_groups)
 
-    # First, evaluate on the entire test set to get the overall performance
-    X_test_tensor = torch.FloatTensor(X_test)
-    y_test_tensor = torch.LongTensor(y_test)
-
+    # Initialize containers for batch results
     all_true = []
-    all_pred = []
     all_scores = []
+    batch_index = 0
+    sample_indices = []
 
-    # Create DataLoader for all test data
-    test_dataset = torch.utils.data.TensorDataset(X_test_tensor, y_test_tensor)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
-
+    # Process all batches
     with torch.no_grad():
         for X_batch, y_batch in test_loader:
             X_batch = X_batch.to(device)
-            logits = model(X_batch)
+            batch_size = X_batch.shape[0]
 
-            # Convert logits to probabilities
+            # Track indices for mapping predictions back to participants
+            sample_indices.extend(range(batch_index, batch_index + batch_size))
+            batch_index += batch_size
+
+            # Forward pass
+            logits = model(X_batch)
             probs = torch.softmax(logits, dim=1)
             scores = probs[:, 1].cpu().numpy()
 
-            # Get predicted labels
-            y_pred_batch = (scores >= threshold).astype(int)
-
-            # Convert labels to numpy array
+            # Process labels
             if len(y_batch.shape) > 1:  # one-hot encoded
-                y_batch = y_batch[:, 1].cpu().numpy()
+                y_true = y_batch[:, 1].cpu().numpy()
             else:
-                y_batch = y_batch.cpu().numpy()
+                y_true = y_batch.cpu().numpy()
 
-            all_true.append(y_batch)
-            all_pred.append(y_pred_batch)
+            all_true.append(y_true)
             all_scores.append(scores)
 
-    # Concatenate all results
+    # Concatenate results
     overall_y_true = np.concatenate(all_true)
-    overall_y_pred = np.concatenate(all_pred)
     overall_scores = np.concatenate(all_scores)
+    overall_y_pred = (overall_scores >= threshold).astype(int)
 
-    # Calculate overall metrics
+    # Calculate overall accuracy
     overall_acc = accuracy_score(overall_y_true, overall_y_pred)
 
-    # Store the scores and true labels for each participant
-    participant_true = {}
-    participant_scores = {}
+    # Group results by participant
+    participant_metrics = {}
 
-    for i, (true_label, score, group) in enumerate(
-        zip(overall_y_true, overall_scores, test_groups)
-    ):
-        if str(group) not in participant_true:
-            participant_true[str(group)] = []
-            participant_scores[str(group)] = []
-
-        participant_true[str(group)].append(true_label)
-        participant_scores[str(group)].append(score)
-
-    # Now calculate metrics for each participant
-    for idx, participant in enumerate(unique_participants):
+    for participant in unique_participants:
         participant_id = str(participant)
-        participant_id_pseud = str(idx + 1)
+        # Find samples belonging to this participant
+        mask = test_groups == participant
 
-        # Get true labels and predicted scores for this participant
-        p_true = np.array(participant_true[participant_id])
-        p_scores = np.array(participant_scores[participant_id])
-        p_pred = (p_scores >= threshold).astype(int)
+        # Get true labels and predictions for this participant
+        p_true = overall_y_true[mask]
+        p_scores = overall_scores[mask]
+        p_pred = overall_y_pred[mask]
 
-        # Count samples for each class
+        # Calculate metrics
+        p_acc = accuracy_score(p_true, p_pred)
         class_0_count = np.sum(p_true == 0)
         class_1_count = np.sum(p_true == 1)
 
-        # Calculate accuracy
-        p_acc = accuracy_score(p_true, p_pred)
+        # Store with proper ID based on pseudonymization preference
+        display_id = (
+            str(np.where(unique_participants == participant)[0][0] + 1)
+            if pseudonymize
+            else participant_id
+        )
 
-        # Store metrics
-        participant_metrics[
-            participant_id_pseud if pseudonymize else participant_id
-        ] = {
+        participant_metrics[display_id] = {
             "accuracy": p_acc,
             "samples": len(p_true),
             "class_distribution": {"0": int(class_0_count), "1": int(class_1_count)},

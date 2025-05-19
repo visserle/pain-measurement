@@ -72,18 +72,21 @@ def get_confusion_matrix(
     """
     # Apply threshold to get predictions
     y_pred = (probabilities >= threshold).astype(int)
-
-    print(f"Accuracy: {accuracy_score(true_labels, y_pred):.3f}")
+    accuracy = accuracy_score(true_labels, y_pred)
 
     conf_matrix = confusion_matrix(true_labels, y_pred)
 
     if plot:
-        plot_confusion_matrix(conf_matrix)
+        _plot_confusion_matrix(conf_matrix, threshold, accuracy)
 
     return conf_matrix
 
 
-def plot_confusion_matrix(conf_matrix: np.ndarray) -> None:
+def _plot_confusion_matrix(
+    conf_matrix: np.ndarray,
+    threshold: float,
+    accuracy_score: float,
+) -> None:
     plt.figure(figsize=(8, 6))
     sns.heatmap(
         conf_matrix,
@@ -93,7 +96,9 @@ def plot_confusion_matrix(conf_matrix: np.ndarray) -> None:
         xticklabels=["Increases", "Decreases"],
         yticklabels=["Increases", "Decreases"],
     )
-    plt.title("Confusion Matrix")
+    plt.title(
+        f"Confusion Matrix (Threshold: {threshold:.2f}, Accuracy: {accuracy_score:.2f})"
+    )
     plt.ylabel("True Label")
     plt.xlabel("Predicted Label")
     plt.show()
