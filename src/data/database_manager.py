@@ -53,7 +53,7 @@ class DatabaseManager:
     ```
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.conn = None
         self._initialize_tables()
 
@@ -79,7 +79,7 @@ class DatabaseManager:
             self.conn.close()
             self.conn = None
 
-    def _ensure_connection(self):
+    def _ensure_connection(self) -> None:
         """Helper method to check connection status."""
         if self.conn is None:
             raise ConnectionError(
@@ -188,9 +188,11 @@ class DatabaseManager:
         """
         # DuckDB does not support hyphens in table names
         table_name = table_name.replace("-", "_")
-        self.execute(
-            f"CREATE OR REPLACE TABLE {table_name} AS FROM df"
-        )  # df is taken from context by DuckDB
+
+        # Register the DataFrame explicitly first
+        self.conn.register("temp_df", df)
+        self.execute(f"CREATE OR REPLACE TABLE {table_name} AS SELECT * FROM temp_df")
+        self.conn.unregister("temp_df")
 
     def insert_trials(
         self,
@@ -198,7 +200,9 @@ class DatabaseManager:
     ) -> None:
         columns = ", ".join(trials_df.columns)
         try:
+            self.conn.register("trials_df", trials_df)
             self.execute(f"INSERT INTO Trials ({columns}) SELECT * FROM trials_df")
+            self.conn.unregister("trials_df")
         except duckdb.ConstraintException as e:
             logger.warning(f"Trial data already exists in the database: {e}")
 
@@ -213,6 +217,7 @@ class DatabaseManager:
             table_name,
             raw_data_df.schema,
         )
+        self.conn.register("raw_data_df", raw_data_df)
         self.execute(f"""
             INSERT INTO {table_name}
             SELECT t.trial_id, r.*
@@ -222,6 +227,7 @@ class DatabaseManager:
                 AND r.participant_id = t.participant_id
             ORDER BY r.rownumber;
         """)
+        self.conn.unregister("raw_data_df")
 
     # Note that in constrast to raw data, preprocessed and feature-engineered data is
     # not inserted into the database per participant, but per modality over all
@@ -236,12 +242,14 @@ class DatabaseManager:
             table_name,
             preprocess_data_df.schema,
         )
+        self.conn.register("preprocess_data_df", preprocess_data_df)
         self.execute(f"""
             INSERT INTO {table_name}
             SELECT *
             FROM preprocess_data_df
             ORDER BY trial_id, timestamp;
         """)
+        self.conn.unregister("preprocess_data_df")
 
     def insert_feature_data(
         self,
@@ -253,12 +261,14 @@ class DatabaseManager:
             table_name,
             feature_data_df.schema,
         )
+        self.conn.register("feature_data_df", feature_data_df)
         self.execute(f"""
             INSERT INTO {table_name}
             SELECT *
             FROM feature_data_df
             ORDER BY trial_id, timestamp;
         """)
+        self.conn.unregister("feature_data_df")
 
 
 def main():

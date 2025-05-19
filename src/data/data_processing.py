@@ -43,6 +43,7 @@ def create_calibration_results_df():
     return (
         pl.read_csv(DataConfig.CALIBRATION_RESULTS_FILE)
         .rename({"id": "participant_id"})
+        .drop("preexposure_painful", "vas0_temps", "vas70_temps")  # can be found in log
         .filter(~col("participant_id").is_in(INVALID_PARTICIPANTS))
     )
 
