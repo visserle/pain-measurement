@@ -29,34 +29,45 @@ def create_objective_function(
         'create_objective_function' has finished execution as they are captured by the
         function closure (similar to partial functions).
         """
-        # Suggest hyperparameters
-        hyperparams = suggest_hyperparameters(trial, model_info)
+        # try-except block to prevent memory leaks if optuna prunes the trial
+        try:
+            # Suggest hyperparameters
+            hyperparams = suggest_hyperparameters(trial, model_info)
 
-        # Train the model with the suggested hyperparameters
-        model, criterion, optimizer, scheduler = initialize_model(
-            model_name,
-            get_input_shape(model_name, val_loader),
-            device,
-            **hyperparams,
-        )
-        train_model(
-            model,
-            train_loader,
-            val_loader,
-            criterion,
-            optimizer,
-            scheduler,
-            n_epochs,
-            device,
-            is_test=False,
-            trial=trial,
-        )
-        average_loss, accuracy = evaluate_model(model, val_loader, criterion, device)
+            # Train the model with the suggested hyperparameters
+            model, criterion, optimizer, scheduler = initialize_model(
+                model_name,
+                get_input_shape(model_name, val_loader),
+                device,
+                **hyperparams,
+            )
+            train_model(
+                model,
+                train_loader,
+                val_loader,
+                criterion,
+                optimizer,
+                scheduler,
+                n_epochs,
+                device,
+                is_test=False,
+                trial=trial,
+            )
+            average_loss, accuracy = evaluate_model(
+                model, val_loader, criterion, device
+            )
 
-        logger.info(
-            f"Validation Loss: {average_loss:.2f} | Validation Accuracy: {accuracy:.2f}"
-        )
-        return accuracy
+            logger.info(
+                f"Validation Loss: {average_loss:.2f} | Validation Accuracy: {accuracy:.2f}"
+            )
+            return accuracy
+        finally:
+            # Clean up GPU memory if using CUDA
+            if device == "cuda" or (
+                isinstance(device, torch.device) and device.type == "cuda"
+            ):
+                torch.cuda.empty_cache()
+                logger.debug("Cleared CUDA cache after training model")
 
     return objective  # returns a function
 
