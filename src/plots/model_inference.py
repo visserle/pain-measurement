@@ -8,12 +8,104 @@ from matplotlib.colors import LinearSegmentedColormap
 from scipy.interpolate import interp1d
 from scipy.stats import rankdata
 
+from src.data.database_manager import DatabaseManager
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 
 logger = logging.Logger(__name__.rsplit(".", 1)[-1])
 
 
-def create_samples_full_stimulus(df, features, sample_duration=5000, step_size=1000):
+def analyze_test_dataset_for_one_stimulus(
+    model: torch.nn.Module,
+    db: DatabaseManager,
+    features: list,
+    participant_ids: list,
+    stimulus_seed: int,
+    sample_duration: int = 3000,
+    log: bool = True,
+) -> tuple[dict, dict]:
+    """
+    Analyze the entire test dataset with the specified stimulus seed.
+    Args:
+        model: Trained model to use for predictions
+        db: DatabaseManager instance to access the database
+        features: List of features to use for analysis
+        participant_ids: List of participant IDs to analyze
+        stimulus_seed: Stimulus seed to filter for
+    Returns:
+        probabilities: Dictionary mapping participant_id to their class probabilities
+        participant_trials: Dictionary mapping participant_id to number of trials
+    """
+
+    device = next(model.parameters()).device.type
+
+    # Renamed to result_probabilities to avoid name collision
+    result_probabilities = {}
+    participant_trials = {}
+
+    # Process each participant
+    for participant_id in participant_ids:
+        if log:
+            logger.info(f"Processing participant {participant_id}...")
+        # Get data for this participant and stimulus seed
+        with db:
+            participant_df = db.get_table("merged_and_labeled_data").filter(
+                (pl.col("participant_id") == participant_id)
+                & (pl.col("stimulus_seed") == stimulus_seed)
+            )
+
+        if participant_df.is_empty():
+            if log:
+                logger.info(
+                    f"No data found for participant {participant_id} with stimulus seed {stimulus_seed}"
+                )
+            continue
+
+        # Create a proper key for the participant (use the actual ID, not the index)
+        participant_key = str(participant_id)
+
+        participant_probabilities = []
+
+        # Create samples for this trial
+        samples = _create_samples_full_stimulus(
+            participant_df, features, sample_duration
+        )
+
+        if not samples:
+            if log:
+                logger.info(
+                    f" No valid samples for trial {participant_df.get_column('trial_id').unique().item()}"
+                )
+            continue
+
+        # Get probabilities for this trial
+        batch_samples = []
+        with torch.inference_mode():
+            for sample in samples:
+                batch_samples.append(sample.to_numpy())
+
+            # Process all samples in a single batch
+            if batch_samples:
+                # Convert all samples to a single tensor batch
+                batch_tensor = torch.tensor(
+                    np.stack(batch_samples), dtype=torch.float32
+                ).to(device)
+                logits = model(batch_tensor)
+                probs = torch.softmax(logits, dim=1)
+                trial_probabilities = probs.cpu().detach().numpy().tolist()
+                participant_probabilities.append(trial_probabilities)
+
+        if participant_probabilities:
+            result_probabilities[participant_key] = participant_probabilities
+            participant_trials[participant_key] = len(participant_probabilities)
+    return result_probabilities, participant_trials
+
+
+def _create_samples_full_stimulus(
+    df: pl.DataFrame,
+    features: list,
+    sample_duration: int = 3000,
+    step_size: int = 1000,
+) -> list[pl.DataFrame]:
     """
     Create samples from dataframe with specified duration and step size.
 
@@ -46,108 +138,33 @@ def create_samples_full_stimulus(df, features, sample_duration=5000, step_size=1
 
     if logging:
         logger.info(
-            f"Created {len(samples)} samples of {sample_duration}ms duration with {step_size}ms spacing"
+            f"Created {len(samples)} samples of {sample_duration}ms duration with {step_size} ms spacing"
         )
     return samples
 
 
-def analyze_test_dataset_for_one_stimulus(
-    model,
-    db,
-    features,
-    participant_ids,
-    stimulus_seed,
-    logging=True,
-):
-    """
-    Analyze the entire test dataset with the specified stimulus seed.
-    Args:
-        model: Trained model to use for predictions
-        db: DatabaseManager instance to access the database
-        features: List of features to use for analysis
-        participant_ids: List of participant IDs to analyze
-        stimulus_seed: Stimulus seed to filter for
-    Returns:
-        all_probabilities: Dictionary mapping participant_id to their class probabilities
-        participant_trials: Dictionary mapping participant_id to number of trials
-    """
-
-    device = next(model.parameters()).device.type
-
-    all_probabilities = {}
-    participant_trials = {}
-
-    # Process each participant
-    for participant_id in participant_ids:
-        if logging:
-            logger.info(f"Processing participant {participant_id}...")
-        # Get data for this participant and stimulus seed
-        with db:
-            participant_df = db.get_table("merged_and_labeled_data").filter(
-                (pl.col("participant_id") == participant_id)
-                & (pl.col("stimulus_seed") == stimulus_seed)
-            )
-
-        if participant_df.is_empty():
-            if logging:
-                logger.info(
-                    f"No data found for participant {participant_id} with stimulus seed {stimulus_seed}"
-                )
-            continue
-
-        # Create a proper key for the participant (use the actual ID, not the index)
-        participant_key = str(participant_id)
-
-        participant_probabilities = []
-
-        # Create samples for this trial
-        samples = create_samples_full_stimulus(participant_df, features)
-
-        if not samples:
-            if logging:
-                logger.info(
-                    f" No valid samples for trial {participant_df.get_column('trial_id').unique().item()}"
-                )
-            continue
-
-        # Get probabilities for this trial
-        trial_probabilities = []
-        for sample in samples:
-            tensor = (
-                torch.tensor(sample.to_numpy(), dtype=torch.float32)
-                .unsqueeze(0)
-                .to(device)
-            )
-            logits = model(tensor)
-            probabilities = torch.softmax(logits, dim=1)
-            trial_probabilities.append(probabilities[0].cpu().detach().numpy())
-
-        participant_probabilities.append(trial_probabilities)
-
-        if participant_probabilities:
-            all_probabilities[participant_key] = participant_probabilities
-            participant_trials[participant_key] = len(participant_probabilities)
-
-    return all_probabilities, participant_trials
-
-
 def plot_prediction_confidence_heatmap(
-    all_probabilities,
-    stimulus_seed,
-    classification_threshold=0.5,
-    pseudonymize=True,
-):
+    probabilities: dict,
+    stimulus_seed: int,
+    sample_duration: int = 3000,
+    step_size: int = 1000,
+    classification_threshold: float = 0.5,
+    pseudonymize: bool = True,
+) -> None:
     """
     Create a heatmap visualization of model predictions across all participants.
     Args:
-        all_probabilities: Dictionary of all probabilities for each participant
+        probabilities: Dictionary of all probabilities for each participant
         stimulus_seed: Seed used for the stimulus generation
         classification_threshold: Threshold used for binary classification (default: 0.5)
     """
+    if sample_duration % 1000:
+        raise ValueError("Sample duration must be a multiple of 1000 milliseconds.")
+
     # Prepare data structures to track participant IDs with their confidence data
     confidence_data = []  # List of (participant_id, confidence_array) tuples
 
-    for participant_id, trial_probabilities_list in all_probabilities.items():
+    for participant_id, trial_probabilities_list in probabilities.items():
         for i, trial_probabilities in enumerate(trial_probabilities_list):
             # Extract increase (class 1) probabilities
             increase_probs = np.array([probs[1] for probs in trial_probabilities])
@@ -179,6 +196,11 @@ def plot_prediction_confidence_heatmap(
     # Convert confidence values to array and calculate average confidence for sorting
     confidence_arrays = [data[1] for data in confidence_data]
     confidence_array = np.array(confidence_arrays)
+    # pad with zeros to reflect that the first 5 seconds are needed for the first sample
+    padded_array = np.zeros((confidence_array.shape[0], 180))
+    padded_array[:, int(sample_duration / 1000 - 1) :] = confidence_array
+    confidence_array = padded_array
+
     avg_confidence = np.mean(np.abs(confidence_array), axis=1)
 
     # Sort by average confidence
@@ -194,21 +216,10 @@ def plot_prediction_confidence_heatmap(
     time_points = np.linspace(0, 180, confidence_array.shape[1])
 
     # Get and process stimulus signal
-    stim = StimulusGenerator(seed=stimulus_seed)
-    stimulus = stim.y[::10]  # Downsample to match typical alignment length
-
-    # Resample stimulus to match confidence array length
-    f = interp1d(np.linspace(0, 1, len(stimulus)), stimulus)
-    stimulus_resampled = f(np.linspace(0, 1, confidence_array.shape[1]))
-
+    stimulus = StimulusGenerator(seed=stimulus_seed, config={"sample_rate": 1}).y
     # Normalize stimulus to [-1, 1]
     stimulus_line = (
-        2
-        * (
-            (stimulus_resampled - stimulus_resampled.min())
-            / (stimulus_resampled.max() - stimulus_resampled.min())
-        )
-        - 1
+        2 * ((stimulus - stimulus.min()) / (stimulus.max() - stimulus.min())) - 1
     )
 
     # Create figure
@@ -221,7 +232,7 @@ def plot_prediction_confidence_heatmap(
         cmap=cmap,
         vmin=-1,
         vmax=1,
-        extent=(0, 180, 0, len(sorted_confidence_array)),
+        extent=(0, 183, 0, len(sorted_confidence_array)),
     )
 
     # Add colorbar
