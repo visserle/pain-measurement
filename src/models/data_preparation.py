@@ -20,14 +20,15 @@ def prepare_data(
 ) -> tuple:
     """Prepare data for model training, including creating and splitting samples."""
     intervals = {
-        "decreases": "major_decreasing_intervals",
         "increases": "strictly_increasing_intervals",
+        "decreases": "major_decreasing_intervals",
     }
     label_mapping = {
         "increases": 0,
         "decreases": 1,
     }
     offsets_ms = {
+        "increases": 0,
         "decreases": 2000,
     }
 
@@ -62,12 +63,11 @@ def prepare_data(
 
     # Log sample information
     logger.debug(
-        f"Preparing data with sample duration {sample_duration_ms}ms and random seed {random_seed}"
+        f"Preparing data with sample duration {sample_duration_ms} ms and random seed {random_seed}"
     )
-    logger.debug(
-        f"Samples are based on intervals: {intervals} and label mapping: {label_mapping}"
-    )
+    logger.debug(f"Samples are based on intervals: {intervals}")
     logger.debug(f"Offsets for intervals: {offsets_ms}")
+    logger.debug(f"Label mapping: {label_mapping}")
 
     # Log group information
     for name, group_indices in [

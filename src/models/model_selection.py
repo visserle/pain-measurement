@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 
 from src.models.evaluation import evaluate_model
 from src.models.hyperparameter_tuning import create_objective_function
+from src.models.main_config import SAMPLE_DURATION_MS
 from src.models.training_loop import train_model
 from src.models.utils import get_input_shape, initialize_model, save_model
 
@@ -160,6 +161,7 @@ def train_evaluate_and_save_best_model(
         best_model_name=model_name,
         data_sample=test_loader,
         feature_list=experiment_tracker.features,
+        sample_duration_ms=experiment_tracker.sample_duration_ms,
         model_path=model_path,
     )
 
@@ -185,6 +187,7 @@ class ExperimentTracker:
     def __init__(
         self,
         features: list[str],
+        sample_duration_ms: int = SAMPLE_DURATION_MS,
         result_dir: str | Path = RESULT_DIR,
     ):
         """
@@ -196,6 +199,7 @@ class ExperimentTracker:
         """
         self.features = features
         self.feature_string = "_".join(sorted(features))  # Sort for consistency
+        self.sample_duration_ms = sample_duration_ms
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
         # Initialize result storage
@@ -214,6 +218,7 @@ class ExperimentTracker:
         self.results = {
             "features": self.features,
             "feature_string": self.feature_string,
+            "sample_duration_ms": self.sample_duration_ms,
             "timestamp": self.timestamp,
             "models": {},
         }
@@ -317,7 +322,8 @@ class ExperimentTracker:
 
         # Create summary file
         with open(summary_file, "w") as f:
-            f.write(f"Features: {', '.join(self.features)}\n\n")
+            f.write(f"Features: {', '.join(self.features)}\n")
+            f.write(f"Sample Duration (ms): {self.sample_duration_ms}\n\n")
             f.write("MODEL PERFORMANCE SUMMARY:\n")
             f.write("=" * 60 + "\n")
 
