@@ -1,0 +1,34 @@
+Features: eda_phasic, eda_tonic, heartrate, pupil_mean
+Sample Duration (ms): 3000
+
+MODEL PERFORMANCE SUMMARY:
+============================================================
+Model: PatchTST
+Validation Accuracy: 0.8959
+Best Parameters: {'d_model': 64, 'e_layers': 3, 'd_ff': 256, 'patch_len': 32, 'stride': 16, 'top_k': 5, 'dropout': 0.42791964225623225, 'factor': 1, 'lr': 0.0020334798846028297}
+------------------------------------------------------------
+Model: Crossformer
+Validation Accuracy: 0.7825
+Best Parameters: {'d_model': 64, 'n_heads': 9, 'e_layers': 2, 'd_ff': 256, 'factor': 2, 'dropout': 0.15338634801704698, 'lr': 4.988659002053655e-05}
+------------------------------------------------------------
+Model: MLP
+Validation Accuracy: 0.7718
+Best Parameters: {'hidden_size': 1024, 'depth': 3, 'lr': 0.0007554209839772323, 'dropout_rate': 0.7525601798069858}
+------------------------------------------------------------
+Model: TimesNet
+Validation Accuracy: 0.7596
+Best Parameters: {'d_model': 8, 'e_layers': 3, 'd_ff': 32, 'top_k': 2, 'num_kernels': 4, 'dropout': 0.48947304074390996, 'lr': 0.00035994743766112826}
+------------------------------------------------------------
+Model: NonstationaryTransformer
+Validation Accuracy: 0.7519
+Best Parameters: {'d_model': 256, 'e_layers': 2, 'd_ff': 128, 'n_heads': 7, 'factor': 1, 'dropout': 0.4343797461937378, 'lr': 3.92519309168782e-05}
+------------------------------------------------------------
+
+OVERALL BEST MODEL:
+Model: PatchTST
+Validation Accuracy: 0.8959
+Parameters: {'d_model': 64, 'e_layers': 3, 'd_ff': 256, 'patch_len': 32, 'stride': 16, 'top_k': 5, 'dropout': 0.42791964225623225, 'factor': 1, 'lr': 0.0020334798846028297}
+
+TEST PERFORMANCE:
+Test Accuracy: 0.8539
+Test Loss: 0.3748
