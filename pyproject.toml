@@ -7,7 +7,7 @@ docstring-code-format = true
 
 [tool.ruff.lint]
 select = ["E", "F"]
-unfixable = ["F401"]  # do not remove unused imports
+unfixable = ["F401"]  # do not auto-remove unused imports
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
