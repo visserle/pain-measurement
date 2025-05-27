@@ -57,7 +57,7 @@ def get_input_shape(
 def initialize_model(
     model_name: str,
     input_shape: int,
-    device: torch.device,
+    device: torch.device | str | None = None,
     **hyperparams,
 ) -> tuple[
     nn.Module,
@@ -126,7 +126,7 @@ def save_model(
 def load_model(
     model_path: str | Path,
     device: torch.device | str | None = None,
-) -> tuple[nn.Module, list]:
+) -> tuple[nn.Module, list, int]:
     if device is None:
         device = get_device(log_device=False)
     logger.info(f"Using device: {device}")
@@ -156,4 +156,4 @@ def load_model(
     )
     logger.info(f"Input shape: {input_shape} | Features: {feature_list}")
 
-    return model, feature_list
+    return model, feature_list, sample_duration_ms
