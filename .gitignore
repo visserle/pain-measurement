@@ -22,6 +22,7 @@ src/models/mlp.py
 src/models/models_2.py
 src/questionnaires/archive
 src/experiments/oddball.py
+src/features/_stuff
 
 # Licensed questionnaires
 src/experiments/questionnaires/archive
