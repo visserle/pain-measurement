@@ -18,6 +18,6 @@ Furthermore, there are additional tables for the experiment metadata, calibratio
 
 ## Inavlid Data Handling
 
-- Invalid participants were excluded from the analysis from the very beginning. There data is not present in the database.
+- Invalid participants were excluded from the analysis from the very beginning. Their data is not present in the database.
 - Invalid trials with thermode or rating issues were exclude from all measurement tables, from the trial tables and from the PANAS questionnaire as the pre post values are not valid.
 - Trials with measurement issues of one or more modalities can be excluded using the `exclude_trials_with_measurement_problems` keyword from the `get_table` method.
