@@ -154,6 +154,8 @@ def load_model(
     logger.info(
         f"Loaded {model_name} model with test accuracy {test_accuracy:.2f} to {device}"
     )
-    logger.info(f"Input shape: {input_shape} | Features: {feature_list}")
+    logger.info(
+        f"Input shape: {input_shape} | Features: {feature_list} | Sample duration: {sample_duration_ms} ms"
+    )
 
     return model, feature_list, sample_duration_ms

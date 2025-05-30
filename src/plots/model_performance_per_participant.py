@@ -270,9 +270,4 @@ def plot_participant_performance(
 
     # Ensure clean spacing
     plt.tight_layout()
-
-    # Save in high resolution for publication (300 dpi is journal standard)
-    plt.savefig("participant_accuracy.pdf", dpi=300, bbox_inches="tight")
-    plt.savefig("participant_accuracy.png", dpi=300, bbox_inches="tight")
-
     plt.show()
