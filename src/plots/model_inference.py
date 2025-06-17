@@ -1,5 +1,6 @@
 import logging
 
+import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
@@ -150,13 +151,26 @@ def plot_prediction_confidence_heatmap(
     step_size: int = 1000,
     classification_threshold: float = 0.5,
     pseudonymize: bool = True,
+    figure_size: tuple = (15, 8),
+    stimulus_linewidth: int = 4,
+    stimulus_color: str = "black",
+    stimulus_scale: float = 0.4,
 ) -> None:
     """
     Create a heatmap visualization of model predictions across all participants.
+    Optimized for presentation in PowerPoint.
+
     Args:
         probabilities: Dictionary of all probabilities for each participant
         stimulus_seed: Seed used for the stimulus generation
+        sample_duration: Duration of each sample in milliseconds
+        step_size: Step size between samples in milliseconds
         classification_threshold: Threshold used for binary classification (default: 0.5)
+        pseudonymize: Whether to use pseudonyms instead of participant IDs
+        figure_size: Size of the figure (width, height)
+        stimulus_linewidth: Width of the stimulus line
+        stimulus_color: Color of the stimulus line
+        stimulus_scale: Scale factor for the stimulus amplitude
     """
     if sample_duration % 1000:
         raise ValueError("Sample duration must be a multiple of 1000 milliseconds.")
@@ -209,7 +223,11 @@ def plot_prediction_confidence_heatmap(
     sorted_participant_ids = [confidence_data[i][0] for i in sort_indices]
 
     # Create custom colormap: orange for negative, white for 0, blue for positive
-    colors = [(1, 0.42, 0.21), (1, 1, 1), (0, 0, 1)]  # Orange, White, Blue
+    colors = [
+        (1.0, 0.35, 0.1),
+        (0.98, 0.98, 0.98),
+        (0.0, 0.2, 0.8),
+    ]  # Orange, White, Blue
     cmap = LinearSegmentedColormap.from_list("OrangeWhiteBlue", colors, N=256)
 
     # Create time axis
@@ -222,10 +240,10 @@ def plot_prediction_confidence_heatmap(
         2 * ((stimulus - stimulus.min()) / (stimulus.max() - stimulus.min())) - 1
     )
 
-    # Create figure
-    fig, ax = plt.subplots(figsize=(15, 6))
+    # Create figure with higher resolution for presentations
+    fig, ax = plt.subplots(figsize=figure_size, dpi=120)
 
-    # Plot heatmap
+    # Plot heatmap with slightly transparent colors to make stimulus more visible
     im = ax.imshow(
         sorted_confidence_array,
         aspect="auto",
@@ -233,55 +251,71 @@ def plot_prediction_confidence_heatmap(
         vmin=-1,
         vmax=1,
         extent=(0, 183, 0, len(sorted_confidence_array)),
+        alpha=0.9,  # Reduced transparency to increase color saturation
     )
 
-    # Add colorbar
+    # Add colorbar with larger font size
     cbar = fig.colorbar(im, ax=ax)
     cbar.set_label(
-        "Signed Confidence (- = Decrease, + = Increase)", rotation=270, labelpad=20
+        "Prediction Confidence\n(- = Decrease, + = Increase)",
+        rotation=270,
+        labelpad=25,
+        fontsize=12,
     )
+    cbar.ax.tick_params(labelsize=10)
 
-    # Add stimulus line overlay
+    # Add stimulus line overlay with improved visibility
     scaled_stimulus_y = len(sorted_confidence_array) / 2
     ax.plot(
         time_points,
-        stimulus_line * (scaled_stimulus_y / 3) + scaled_stimulus_y,
-        linewidth=3,
-        color="#404040",
+        stimulus_line * (scaled_stimulus_y * stimulus_scale) + scaled_stimulus_y,
+        linewidth=stimulus_linewidth,
+        color=stimulus_color,
         label="Stimulus",
+        zorder=10,  # Ensure stimulus is on top
+        path_effects=[
+            path_effects.SimpleLineShadow(offset=(1, -1), alpha=0.3),
+            path_effects.Normal(),
+        ],  # Add shadow for better visibility
     )
 
-    # Add labels and statistics
+    # Add legend for the stimulus line
+    ax.legend(loc="upper right", fontsize=12, framealpha=0.8)
+
+    # Add labels and statistics with larger font sizes
     total_trials = len(sorted_confidence_array)
     ax.set_title(
-        f"Stimulus {stimulus_seed}: {total_trials} trials, classification threshold {classification_threshold}",
-        fontsize=16,
+        f"Stimulus {stimulus_seed}: {total_trials} trials, threshold {classification_threshold}",
+        fontsize=14,
+        fontweight="bold",
     )
-    ax.set_xlabel("Time (seconds)")
-    ax.set_ylabel("Participants (sorted by confidence)")
+    ax.set_xlabel("Time (seconds)", fontsize=12)
+    ax.set_ylabel("Participants (sorted by confidence)", fontsize=12)
+    ax.tick_params(axis="both", which="major", labelsize=10)
 
-    # Add participant IDs as y-ticks
-    y_positions = np.linspace(
-        0,
-        len(sorted_confidence_array) - 1,
-        min(10, len(sorted_confidence_array)),
-    )
+    # Add participant IDs as y-ticks (with improved formatting)
+    num_ticks = min(10, len(sorted_confidence_array))
+    y_positions = np.linspace(0, len(sorted_confidence_array) - 1, num_ticks)
     y_positions = np.round(y_positions).astype(int)
 
     if not pseudonymize:
         # Use actual participant IDs
-        ax.set_yticks(np.arange(len(sorted_confidence_array)))
-        ax.set_yticklabels(sorted_participant_ids[::-1])
-        # we have to reverse the order of the y-ticks else they are upside down
+        tick_indices = np.linspace(
+            0, len(sorted_participant_ids) - 1, num_ticks
+        ).astype(int)
+        ax.set_yticks(y_positions)
+        ax.set_yticklabels([sorted_participant_ids[i] for i in tick_indices][::-1])
     else:
         # Use pseudonymized participant IDs
-        sorted_participant_ids = np.array(
-            sorted_participant_ids, dtype=int
-        )  # ids are strings
+        sorted_participant_ids = np.array(sorted_participant_ids, dtype=int)
         pseudonymized_ids = rankdata(sorted_participant_ids, method="dense")
         ax.set_yticks(y_positions)
-        ax.set_yticklabels(pseudonymized_ids[::-1])
-        # we have to reverse the order of the y-ticks else they are upside down
+        ax.set_yticklabels(pseudonymized_ids[y_positions][::-1])
+
+    # Add gridlines for better readability
+    ax.grid(which="major", axis="x", linestyle="--", alpha=0.3)
+
+    # Add x-axis ticks every 30 seconds for better readability
+    ax.set_xticks(np.arange(0, 181, 30))
 
     plt.tight_layout()
-    plt.show()
