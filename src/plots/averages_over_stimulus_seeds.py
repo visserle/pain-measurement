@@ -221,7 +221,7 @@ def calculate_max_crosscorr_lag_over_averages(
     return lag_df
 
 
-def create_correlation_heatmap(averages):
+def plot_correlation_heatmap(averages):
     # Get correlation matrix
     corr_matrix = (
         averages.select(pl.col("^avg.*$"))
