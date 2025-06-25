@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 import scipy.stats as stats
+import seaborn as sns
+from matplotlib.colors import LinearSegmentedColormap
 from polars import col
 from scipy import signal
 
@@ -217,3 +219,93 @@ def calculate_max_crosscorr_lag_over_averages(
         f"{col1} : {col2} | mean lag: {lag_df['lag'].mean():.2f}, std lag: {lag_df['lag'].std():.2f}"
     )
     return lag_df
+
+
+def create_correlation_heatmap(averages):
+    # Get correlation matrix
+    corr_matrix = (
+        averages.select(pl.col("^avg.*$"))
+        .select(  # reorder columns
+            "avg_temperature",
+            "avg_rating",
+            "avg_pupil_mean",
+            "avg_eda_tonic",
+            "avg_heartrate",
+            "avg_eda_phasic",
+        )
+        .rename(
+            {
+                "avg_pupil_mean": "avg_pupil_size",
+                "avg_heartrate": "avg_heart_rate",
+            }
+        )
+        .corr()
+    )
+
+    # Create more professional labels
+    labels = [
+        col.replace("avg_", "").replace("_", " ").title() for col in corr_matrix.columns
+    ]
+
+    # Create a custom colormap
+    dark_blue = "#0033cc"
+    light_blue = "#e8eef7"
+    colors = [light_blue, dark_blue]
+    custom_cmap = LinearSegmentedColormap.from_list("dark_blues", colors, N=256)
+
+    # Create a mask for the upper triangle
+    mask = np.triu(np.ones_like(corr_matrix), k=1)
+
+    # Set blue as the main color for the plot styling
+    plt.rcParams["axes.edgecolor"] = "black"
+    plt.rcParams["axes.labelcolor"] = "black"
+    plt.rcParams["xtick.color"] = "black"
+    plt.rcParams["ytick.color"] = "black"
+
+    # Create the figure with higher DPI for better quality
+    plt.figure(figsize=(10, 8), dpi=300, facecolor="white")
+
+    # Plot the heatmap with color styling
+    heatmap = sns.heatmap(
+        corr_matrix,
+        annot=True,
+        cmap=custom_cmap,
+        vmin=0,  # Set minimum to 0 since all correlations are positive
+        vmax=1,
+        xticklabels=labels,
+        yticklabels=labels,
+        mask=mask,
+        annot_kws={"size": 14, "weight": "bold", "color": "black"},
+        cbar_kws={"shrink": 0.8, "label": "Correlation Strength"},
+        linewidths=0.5,
+        linecolor="white",
+    )
+
+    # Access the colorbar and set its label font properties
+    cbar = heatmap.collections[0].colorbar
+    cbar.ax.set_ylabel("Correlation Strength", fontsize=14, fontweight="bold")
+
+    # Set annotation colors based on background darkness for better readability
+    for text in heatmap.texts:
+        value = float(text.get_text())
+        text.set_color("black" if value < 0.6 else "white")
+
+    # Adjust font sizes and styles for conference poster visibility
+    plt.xticks(rotation=45, ha="right", fontsize=14, fontweight="bold")
+    plt.yticks(rotation=0, fontsize=14, fontweight="bold")
+
+    # Add a border to the heatmap
+    for _, spine in heatmap.spines.items():
+        spine.set_visible(False)
+        spine.set_linewidth(2)
+
+    # Ensure everything fits within the figure bounds
+    plt.tight_layout()
+
+    # Save the figure in high resolution
+    plt.savefig("correlation_matrix_poster.png", dpi=300, bbox_inches="tight")
+    plt.savefig(
+        "correlation_matrix_poster.pdf", bbox_inches="tight"
+    )  # Vector format for scaling
+
+    plt.show()
