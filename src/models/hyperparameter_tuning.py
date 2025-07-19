@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 
 import optuna
 import torch
@@ -18,7 +19,7 @@ def create_objective_function(
     model_info: dict,
     device: torch.device,
     n_epochs: int,
-) -> callable:
+) -> Callable:
     """
     Create an objective function for hyperparameter tuning using Optuna.
     """

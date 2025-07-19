@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 from functools import reduce, wraps
 
 import polars as pl
@@ -15,7 +16,7 @@ def map_by_group(group_col: str):
         group_col (str): The column name to group by
     """
 
-    def decorator(func: callable):
+    def decorator(func: Callable):
         @wraps(func)
         def wrapper(
             df: pl.DataFrame,
@@ -39,14 +40,14 @@ def map_by_group(group_col: str):
     return decorator
 
 
-def map_trials(func: callable):
+def map_trials(func: Callable):
     """
     Decorator to apply a function to each trial in a pl.DataFrame.
     """
     return map_by_group("trial_id")(func)
 
 
-def map_participants(func: callable):
+def map_participants(func: Callable):
     """
     Decorator to apply a function to each participant in a pl.DataFrame.
     """
