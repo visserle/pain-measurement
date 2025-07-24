@@ -104,15 +104,18 @@ class DatabaseManager:
     def get_table(
         self,
         table_name: str,
-        exclude_trials_with_measurement_problems: bool | str = True,
+        exclude_trials_with_measurement_problems: bool | str | list[str] = True,
     ) -> pl.DataFrame:
         """Return the data from a table as a Polars DataFrame.
 
         Args:
             table_name: The name of the table to retrieve.
-            exclude_trials_with_measurement_problems: If True, excludes all trials with measurement problems.
-                If a string, excludes only trials with problems in the specified modality (e.g., 'eeg').
-                If False, includes all trials.
+            exclude_trials_with_measurement_problems:
+                - If True, excludes all trials with measurement problems.
+                - If a string, excludes only trials with problems in the specified modality (e.g., 'eeg').
+                - If a list of strings, excludes trials with problems in any of the specified modalities.
+                Modality matching is partial, so 'eeg' will match entries like 'eeg/eda'.
+                - If False, includes all trials.
         """
 
         df = self.execute(
@@ -125,15 +128,27 @@ class DatabaseManager:
             return df
 
         if exclude_trials_with_measurement_problems:
-            # Filter invalid trials by modality if a specific modality is specified
+            # Filter invalid trials by modality if a specific modality or list is specified
             filtered_invalid_trials = invalid_trials
+
             if isinstance(exclude_trials_with_measurement_problems, str):
-                # Filter to only include trials with problems in the specified modality
-                # Using str.contains to match entries like "eeg/eda" when looking for "eeg"
+                # Single modality case
                 modality = exclude_trials_with_measurement_problems
                 filtered_invalid_trials = invalid_trials.filter(
-                    col("modality").str.contains(modality)
+                    pl.col("modality").str.contains(modality)
                 )
+            elif isinstance(exclude_trials_with_measurement_problems, list):
+                # Multiple modalities case - create a filter condition for each modality
+                filter_conditions = [
+                    pl.col("modality").str.contains(mod)
+                    for mod in exclude_trials_with_measurement_problems
+                ]
+                # Combine conditions with logical OR
+                if filter_conditions:
+                    combined_filter = filter_conditions[0]
+                    for condition in filter_conditions[1:]:
+                        combined_filter = combined_filter | condition
+                    filtered_invalid_trials = invalid_trials.filter(combined_filter)
 
             if "participant_id" in df.columns and "trial_number" in df.columns:
                 # Note that not every participant has 12 trials, so a filter using the
@@ -159,10 +174,10 @@ class DatabaseManager:
                 only_invalid_trials = (
                     filtered_invalid_trials.group_by("participant_id")
                     .agg(pl.len().alias("count"))
-                    .filter(col("count") == 12)
+                    .filter(pl.col("count") == 12)
                     .get_column("participant_id")
                 )
-                df = df.filter(~col("participant_id").is_in(only_invalid_trials))
+                df = df.filter(~pl.col("participant_id").is_in(only_invalid_trials))
             else:  # not all tables have trial information, e.g. questionnaires
                 # no filtering necessary, invalid participants are already excluded
                 pass
