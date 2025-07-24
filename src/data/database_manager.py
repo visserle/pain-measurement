@@ -104,9 +104,16 @@ class DatabaseManager:
     def get_table(
         self,
         table_name: str,
-        exclude_trials_with_measurement_problems: bool = True,
+        exclude_trials_with_measurement_problems: bool | str = True,
     ) -> pl.DataFrame:
-        """Return the data from a table as a Polars DataFrame."""
+        """Return the data from a table as a Polars DataFrame.
+
+        Args:
+            table_name: The name of the table to retrieve.
+            exclude_trials_with_measurement_problems: If True, excludes all trials with measurement problems.
+                If a string, excludes only trials with problems in the specified modality (e.g., 'eeg').
+                If False, includes all trials.
+        """
 
         df = self.execute(
             f"SELECT * FROM {table_name}"
@@ -118,23 +125,41 @@ class DatabaseManager:
             return df
 
         if exclude_trials_with_measurement_problems:
-            if "participant_id" and "trial_number" in df.columns:
+            # Filter invalid trials by modality if a specific modality is specified
+            filtered_invalid_trials = invalid_trials
+            if isinstance(exclude_trials_with_measurement_problems, str):
+                # Filter to only include trials with problems in the specified modality
+                # Using str.contains to match entries like "eeg/eda" when looking for "eeg"
+                modality = exclude_trials_with_measurement_problems
+                filtered_invalid_trials = invalid_trials.filter(
+                    col("modality").str.contains(modality)
+                )
+
+            if "participant_id" in df.columns and "trial_number" in df.columns:
                 # Note that not every participant has 12 trials, so a filter using the
                 # trial_id would remove the wrong trials
                 df = df.filter(
                     ~pl.struct(["participant_id", "trial_number"]).is_in(
-                        invalid_trials.select(["participant_id", "trial_number"])
+                        filtered_invalid_trials.select(
+                            ["participant_id", "trial_number"]
+                        )
                         .unique()
                         .to_struct()
                     )
                 )
-            elif "participants" or "questionnaire" or "result" in table_name.lower():
+            elif (
+                "participants" in table_name.lower()
+                or "questionnaire" in table_name.lower()
+                or "result" in table_name.lower()
+            ):
                 # remove participants that only have invalid trials
                 # (note that this is different from the invalid participants table)
+
+                # If filtering by modality, only consider trials with that modality
                 only_invalid_trials = (
-                    invalid_trials.group_by("participant_id")
+                    filtered_invalid_trials.group_by("participant_id")
                     .agg(pl.len().alias("count"))
-                    .filter(pl.col("count") == 12)
+                    .filter(col("count") == 12)
                     .get_column("participant_id")
                 )
                 df = df.filter(~col("participant_id").is_in(only_invalid_trials))
