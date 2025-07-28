@@ -1,0 +1,30 @@
+Features: eda_phasic
+Sample Duration (ms): 3000
+
+MODEL PERFORMANCE SUMMARY:
+============================================================
+Model: MLP
+Validation Accuracy: 0.8086
+Best Parameters: {'hidden_size': 512, 'depth': 3, 'lr': 0.0012435539468880223, 'dropout_rate': 0.23237516456323426}
+------------------------------------------------------------
+Model: Crossformer
+Validation Accuracy: 0.7948
+Best Parameters: {'d_model': 64, 'n_heads': 8, 'e_layers': 2, 'd_ff': 128, 'factor': 1, 'dropout': 0.2748726531904876, 'lr': 0.0016389464362845866}
+------------------------------------------------------------
+Model: TimesNet
+Validation Accuracy: 0.7933
+Best Parameters: {'d_model': 16, 'e_layers': 1, 'd_ff': 64, 'top_k': 2, 'num_kernels': 7, 'dropout': 0.09003737227047798, 'lr': 0.001207888131734648}
+------------------------------------------------------------
+Model: PatchTST
+Validation Accuracy: 0.7427
+Best Parameters: {'d_model': 128, 'e_layers': 1, 'd_ff': 512, 'patch_len': 16, 'stride': 4, 'top_k': 3, 'dropout': 0.49005841856686244, 'factor': 2, 'lr': 0.002939716250619237}
+------------------------------------------------------------
+
+OVERALL BEST MODEL:
+Model: MLP
+Validation Accuracy: 0.8086
+Parameters: {'hidden_size': 512, 'depth': 3, 'lr': 0.0012435539468880223, 'dropout_rate': 0.23237516456323426}
+
+TEST PERFORMANCE:
+Test Accuracy: 0.7685
+Test Loss: 0.5161
