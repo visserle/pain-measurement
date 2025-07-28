@@ -61,7 +61,7 @@ def get_confusion_matrix(
     true_labels: np.ndarray,
     threshold: float = 0.5,
     plot: bool = True,
-) -> np.ndarray:
+) -> tuple:
     """
     Calculate confusion matrix from probabilities and true labels.
 
@@ -77,7 +77,9 @@ def get_confusion_matrix(
     conf_matrix = confusion_matrix(true_labels, y_pred)
 
     if plot:
-        _plot_confusion_matrix(conf_matrix, threshold, accuracy)
+        conf_matrix_plot = _plot_confusion_matrix(conf_matrix, threshold, accuracy)
+        conf_matrix_plot.show()
+        return conf_matrix, conf_matrix_plot
 
     return conf_matrix
 
@@ -87,7 +89,7 @@ def _plot_confusion_matrix(
     threshold: float,
     accuracy_score: float,
 ) -> None:
-    plt.figure(figsize=(8, 6))
+    fig = plt.figure(figsize=(8, 6))
     sns.heatmap(
         conf_matrix,
         annot=True,
@@ -101,7 +103,7 @@ def _plot_confusion_matrix(
     )
     plt.ylabel("True Label")
     plt.xlabel("Predicted Label")
-    plt.show()
+    return fig
 
 
 def plot_roc_curve(

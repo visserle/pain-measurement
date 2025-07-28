@@ -43,7 +43,7 @@ def get_input_shape(
     """Return input length and number of features (dimensions) for the model."""
     data_format = MODELS[model_name]["format"]
     if isinstance(X, DataLoader):
-        X = next(iter(X))[0].numpy()
+        X: np.ndarray = next(iter(X))[0].numpy()
     match data_format:
         case "2D":
             input_shape = X.shape[2] * X.shape[1], 1
@@ -56,7 +56,7 @@ def get_input_shape(
 
 def initialize_model(
     model_name: str,
-    input_shape: int,
+    input_shape: tuple[int, int],
     device: torch.device | str | None = None,
     **hyperparams,
 ) -> tuple[

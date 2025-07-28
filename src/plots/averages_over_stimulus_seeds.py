@@ -191,19 +191,19 @@ def calculate_max_crosscorr_lag_over_averages(
     for stimulus in (
         averages_df.get_column("stimulus_seed").unique(maintain_order=True).to_numpy()
     ):
-        temperature = averages_df.filter(stimulus_seed=stimulus)[col1].to_numpy()
-        rating = averages_df.filter(stimulus_seed=stimulus)[col2].to_numpy()
+        col1_arr = averages_df.filter(stimulus_seed=stimulus)[col1].to_numpy()
+        col2_arr = averages_df.filter(stimulus_seed=stimulus)[col2].to_numpy()
 
         # Cross-correlation
         corr = signal.correlate(
-            temperature,
-            rating,
+            col1_arr,
+            col2_arr,
             method="auto",
         )
         # Lag indices for the cross-correlation
         lags = signal.correlation_lags(
-            len(temperature),
-            len(rating),
+            len(col1_arr),
+            len(col2_arr),
         )
         if plot:
             plt.plot(lags, corr)
@@ -263,7 +263,7 @@ def plot_correlation_heatmap(averages):
     plt.rcParams["ytick.color"] = "black"
 
     # Create the figure with higher DPI for better quality
-    plt.figure(figsize=(10, 8), dpi=300, facecolor="white")
+    fig = plt.figure(figsize=(10, 8), dpi=300, facecolor="white")
 
     # Plot the heatmap with color styling
     heatmap = sns.heatmap(
@@ -302,10 +302,4 @@ def plot_correlation_heatmap(averages):
     # Ensure everything fits within the figure bounds
     plt.tight_layout()
 
-    # Save the figure in high resolution
-    plt.savefig("correlation_matrix_poster.png", dpi=300, bbox_inches="tight")
-    plt.savefig(
-        "correlation_matrix_poster.pdf", bbox_inches="tight"
-    )  # Vector format for scaling
-
-    plt.show()
+    return fig

@@ -6,7 +6,6 @@ import numpy as np
 import polars as pl
 import torch
 from matplotlib.colors import LinearSegmentedColormap
-from scipy.interpolate import interp1d
 from scipy.stats import rankdata
 
 from src.data.database_manager import DatabaseManager
@@ -150,7 +149,7 @@ def plot_prediction_confidence_heatmap(
     sample_duration: int = 3000,
     step_size: int = 1000,
     classification_threshold: float = 0.5,
-    pseudonymize: bool = True,
+    pseudonymize: bool = False,
     figure_size: tuple = (15, 8),
     stimulus_linewidth: int = 4,
     stimulus_color: str = "black",
@@ -257,10 +256,11 @@ def plot_prediction_confidence_heatmap(
     # Add colorbar with larger font size
     cbar = fig.colorbar(im, ax=ax)
     cbar.set_label(
-        "Prediction Confidence\n(- = Decrease, + = Increase)",
+        "Prediction Confidence\n(+ = Decrease, - = Increase)",
         rotation=270,
         labelpad=25,
-        fontsize=12,
+        fontsize=14,
+        fontweight="bold",
     )
     cbar.ax.tick_params(labelsize=10)
 
@@ -271,7 +271,7 @@ def plot_prediction_confidence_heatmap(
         stimulus_line * (scaled_stimulus_y * stimulus_scale) + scaled_stimulus_y,
         linewidth=stimulus_linewidth,
         color=stimulus_color,
-        label="Stimulus",
+        label="Normalized Temperature Curve",
         zorder=10,  # Ensure stimulus is on top
         path_effects=[
             path_effects.SimpleLineShadow(offset=(1, -1), alpha=0.3),
@@ -280,7 +280,7 @@ def plot_prediction_confidence_heatmap(
     )
 
     # Add legend for the stimulus line
-    ax.legend(loc="upper right", fontsize=12, framealpha=0.8)
+    ax.legend(loc="upper right", fontsize=14, framealpha=0.8)
 
     # Add labels and statistics with larger font sizes
     total_trials = len(sorted_confidence_array)
@@ -289,8 +289,8 @@ def plot_prediction_confidence_heatmap(
         fontsize=14,
         fontweight="bold",
     )
-    ax.set_xlabel("Time (seconds)", fontsize=12)
-    ax.set_ylabel("Participants (sorted by confidence)", fontsize=12)
+    ax.set_xlabel("Time (seconds)", fontsize=14, fontweight="bold")
+    ax.set_ylabel("Participant", fontsize=14, fontweight="bold")
     ax.tick_params(axis="both", which="major", labelsize=10)
 
     # Add participant IDs as y-ticks (with improved formatting)

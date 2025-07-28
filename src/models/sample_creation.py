@@ -183,7 +183,8 @@ def _remove_samples_that_are_too_short(
     # NOTE: This is all hardcoded to work with 3000 ms samples.
     if not is_equidistant:
         assert length_ms == 3000, (
-            "Only 3000 ms samples are supported for EEG data. Or fix the code."
+            "Only 3000 ms samples are supported for EEG data as of now. "
+            "Please adjust the code if you want to use different sample lengths."
         )
         logger.warning("Sampling rate is not equidistant with 10 Hz.")
         # Fix EEG samples to ensure consistent length
@@ -226,7 +227,7 @@ def _remove_samples_that_are_too_short(
     removed_count = samples.get_column("sample_id").n_unique() - valid_sample_ids.len()
     if removed_count > 0:
         logger.debug(
-            f"Removed {removed_count} samples that were shorter than {min_length_ms} ms"
+            f"Removed {removed_count} samples had less than {int(min_length_ms / 100)} data points."
         )
 
     return filtered_samples

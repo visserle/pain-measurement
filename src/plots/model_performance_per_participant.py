@@ -215,7 +215,7 @@ def plot_participant_performance(
     participant_df = participant_df.sort("accuracy", descending=True)
 
     # Create figure with appropriate dimensions for a journal column
-    plt.figure(figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
 
     # Plot with subtle, professional colors
     participants = participant_df["participant"].to_list()
@@ -270,4 +270,5 @@ def plot_participant_performance(
 
     # Ensure clean spacing
     plt.tight_layout()
-    plt.show()
+
+    return fig

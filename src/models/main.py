@@ -100,14 +100,20 @@ def main():
     db = DatabaseManager()
     with db:
         if any(channel in eeg_features for channel in args.features):
-            eeg = db.get_table("Preprocess_EEG")
-            trials = db.get_table("Trials")
+            eeg = db.get_table(
+                "Preprocess_EEG",
+                exclude_trials_with_measurement_problems=True,
+            )
+            trials = db.get_table(
+                "Trials",
+                exclude_trials_with_measurement_problems=True,
+            )
             eeg = add_normalized_timestamp(eeg)
             df = add_labels(eeg, trials)
         else:
             df = db.get_table(
                 "Merged_and_Labeled_Data",
-                exclude_trials_with_measurement_problems=True,
+                exclude_trials_with_measurement_problems=True
             )
 
     # Prepare data

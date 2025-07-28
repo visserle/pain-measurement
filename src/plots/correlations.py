@@ -230,7 +230,7 @@ def aggregate_correlations_fisher_z(
     return result.sort(group_by_column).drop("mean_z", "se_z")
 
 
-def plot_mean_correlations_by_participant(
+def plot_correlations_by_participant(
     corr_by_participant: pl.DataFrame,
     col1: str,
     col2: str,

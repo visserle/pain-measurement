@@ -52,7 +52,7 @@ def low_pass_filter_ppg(
 ) -> pl.DataFrame:
     """Low-pass filter the heartrate data using a butterworth filter.
     This filter has the function to turn the stepwise signal into a smooth one.
-    (Not physically motivated, just to make sure that the linear interpolated data
+    (Not physiologically motivated, just to make sure that the linear interpolated data
     from the previous step plus the original stepwise data is not too far off.)
     """
     return df.with_columns(
