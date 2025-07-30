@@ -15,34 +15,18 @@ class iTransformer(nn.Module):
     Paper link: https://arxiv.org/abs/2310.06625
     """
 
-    def __init__(
-        self,
-        input_len: int,
-        input_dim: int,
-        pred_len: int = 96,
-        d_model: int = 512,
-        n_heads: int = 8,
-        e_layers: int = 2,
-        d_ff: int = 2048,
-        factor: int = 1,
-        dropout: float = 0.1,
-        embed: str = "timeF",
-        freq: str = "h",
-        activation: str = "gelu",
-        num_class: int = 2,
-    ):
+    def __init__(self, configs):
         super().__init__()
-        self.seq_len = input_len
-        self.enc_in = input_dim
-        self.pred_len = pred_len
-
+        self.task_name = configs.task_name
+        self.seq_len = configs.seq_len
+        self.pred_len = configs.pred_len
         # Embedding
         self.enc_embedding = DataEmbedding_inverted(
-            self.seq_len,
-            d_model,
-            embed,
-            freq,
-            dropout,
+            configs.seq_len,
+            configs.d_model,
+            configs.embed,
+            configs.freq,
+            configs.dropout,
         )
         # Encoder
         self.encoder = Encoder(
@@ -51,26 +35,26 @@ class iTransformer(nn.Module):
                     AttentionLayer(
                         FullAttention(
                             False,
-                            factor,
-                            attention_dropout=dropout,
+                            configs.factor,
+                            attention_dropout=configs.dropout,
                             output_attention=False,
                         ),
-                        d_model,
-                        n_heads,
+                        configs.d_model,
+                        configs.n_heads,
                     ),
-                    d_model,
-                    d_ff,
-                    dropout=dropout,
-                    activation=activation,
+                    configs.d_model,
+                    configs.d_ff,
+                    dropout=configs.dropout,
+                    activation=configs.activation,
                 )
-                for l in range(e_layers)
+                for l in range(configs.e_layers)
             ],
-            norm_layer=torch.nn.LayerNorm(d_model),
+            norm_layer=torch.nn.LayerNorm(configs.d_model),
         )
         # Decoder
         self.act = F.gelu
-        self.dropout = nn.Dropout(dropout)
-        self.projection = nn.Linear(d_model * self.enc_in, num_class)
+        self.dropout = nn.Dropout(configs.dropout)
+        self.projection = nn.Linear(configs.d_model * configs.enc_in, configs.num_class)
 
     def forward(self, x_enc):
         # Embedding
