@@ -1,12 +1,13 @@
 from src.models.architectures.Crossformer import Crossformer
+from src.models.architectures.DLinear import DLinear
+from src.models.architectures.ETSformer import ETSformer
 from src.models.architectures.iTransformer import iTransformer
+from src.models.architectures.LightTS import LightTS
 from src.models.architectures.MultiLayerPerceptron import MultiLayerPerceptron
-from src.models.architectures.NonstationaryTransformer import (
-    NonstationarityTransformer,
-)
 from src.models.architectures.PatchTST import PatchTST
+from src.models.architectures.Pyraformer import Pyraformer
+from src.models.architectures.Reformer import Reformer
 from src.models.architectures.TimesNet import TimesNet
-from src.models.architectures.Transformer import Transformer
 
 # for exponential search space
 # 2^3 = 8
@@ -65,10 +66,10 @@ MODELS = {
         "class": Crossformer,
         "format": "3D",
         "hyperparameters": {
-            "d_model": {"type": "exp", "low": 6, "high": 7},  # 64 to 256
+            "d_model": {"type": "exp", "low": 6, "high": 7},
             "n_heads": {"type": "int", "low": 6, "high": 10},
             "e_layers": {"type": "int", "low": 1, "high": 4},
-            "d_ff": {"type": "exp", "low": 7, "high": 9},  # 128 to 512
+            "d_ff": {"type": "exp", "low": 7, "high": 9},
             "factor": {"type": "int", "low": 1, "high": 2},
             "dropout": {"type": "float", "low": 0.0, "high": 0.5},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
@@ -78,13 +79,73 @@ MODELS = {
         "class": TimesNet,
         "format": "3D",
         "hyperparameters": {
-            "d_model": {"type": "exp", "low": 3, "high": 5},  # 8 to 32
+            "d_model": {"type": "exp", "low": 3, "high": 5},
             "e_layers": {"type": "int", "low": 1, "high": 3},
-            "d_ff": {"type": "exp", "low": 3, "high": 6},  # 32 to 256
+            "d_ff": {"type": "exp", "low": 3, "high": 6},
             "top_k": {"type": "int", "low": 2, "high": 4},
             "num_kernels": {"type": "int", "low": 4, "high": 8},
             "dropout": {"type": "float", "low": 0.0, "high": 0.5},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
+        },
+    },
+    "Reformer": {
+        "class": Reformer,
+        "format": "3D",
+        "hyperparameters": {
+            "e_layers": {"type": "int", "low": 2, "high": 6},
+            "d_model": {"type": "exp", "low": 6, "high": 9},
+            "d_ff": {"type": "exp", "low": 7, "high": 10},
+            "top_k": {"type": "int", "low": 1, "high": 8},
+            "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
+        },
+    },
+    "DLinear": {
+        "class": DLinear,
+        "format": "3D",
+        "hyperparameters": {
+            "e_layers": {"type": "int", "low": 1, "high": 5},
+            "d_model": {"type": "exp", "low": 6, "high": 9},
+            "d_ff": {"type": "exp", "low": 7, "high": 10},
+            "batch_size": {"type": "categorical", "choices": [8, 16, 32, 64]},
+            "top_k": {"type": "int", "low": 1, "high": 5},
+            "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
+        },
+    },
+    "ETSformer": {
+        "class": ETSformer,
+        "format": "3D",
+        "hyperparameters": {
+            "d_model": {"type": "choice", "values": [64, 128, 256, 512]},
+            "d_ff": {"type": "choice", "values": [128, 256, 512, 1024]},
+            "e_layers": {"type": "int", "low": 1, "high": 6},
+            "d_layers": {"type": "int", "low": 1, "high": 6},
+            "top_k": {"type": "int", "low": 1, "high": 5},
+            "dropout": {"type": "float", "low": 0.0, "high": 0.5},
+            "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
+        },
+    },
+    "Pyraformer": {
+        "class": Pyraformer,
+        "format": "3D",
+        "hyperparameters": {
+            "d_model": {"type": "choice", "values": [64, 128, 256, 512]},
+            "d_ff": {"type": "choice", "values": [128, 256, 512, 1024]},
+            "e_layers": {"type": "int", "low": 2, "high": 6},
+            "top_k": {"type": "int", "low": 2, "high": 5},
+            "dropout": {"type": "float", "low": 0.0, "high": 0.5},
+            "lr": {"type": "float", "low": 1e-4, "high": 1e-2, "log": True},
+        },
+    },
+    "LightTS": {
+        "class": LightTS,
+        "format": "3D",
+        "hyperparameters": {
+            "d_model": {"type": "choice", "values": [64, 128, 256, 512]},
+            "d_ff": {"type": "choice", "values": [128, 256, 512, 1024]},
+            "e_layers": {"type": "int", "low": 1, "high": 6},
+            "top_k": {"type": "int", "low": 1, "high": 5},
+            "dropout": {"type": "float", "low": 0.0, "high": 0.5},
+            "lr": {"type": "float", "low": 1e-4, "high": 1e-2, "log": True},
         },
     },
     # Commented out as they did not scale well with EEG data:
