@@ -27,7 +27,7 @@ MODELS = {
         "class": MultiLayerPerceptron,
         "format": "2D",
         "hyperparameters": {
-            "hidden_size": {"type": "exp", "low": 8, "high": 13},  # 256 to 8192
+            "hidden_size": {"type": "exp", "low": 8, "high": 12},  # 256 to 8192
             "depth": {"type": "int", "low": 1, "high": 5},
             "dropout_rate": {"type": "float", "low": 0.0, "high": 0.8},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
@@ -55,7 +55,6 @@ MODELS = {
             "d_model": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
             "e_layers": {"type": "int", "low": 1, "high": 4},
             "d_ff": {"type": "exp", "low": 7, "high": 9},  # 128 to 512
-            "n_heads": {"type": "int", "low": 6, "high": 10},
             "top_k": {"type": "int", "low": 2, "high": 5},
             "dropout": {"type": "float", "low": 0.0, "high": 0.5},
             "factor": {"type": "int", "low": 1, "high": 2},
@@ -67,7 +66,6 @@ MODELS = {
         "format": "3D",
         "hyperparameters": {
             "d_model": {"type": "exp", "low": 6, "high": 7},
-            "n_heads": {"type": "int", "low": 6, "high": 10},
             "e_layers": {"type": "int", "low": 1, "high": 4},
             "d_ff": {"type": "exp", "low": 7, "high": 9},
             "factor": {"type": "int", "low": 1, "high": 2},
@@ -93,7 +91,7 @@ MODELS = {
         "format": "3D",
         "hyperparameters": {
             "e_layers": {"type": "int", "low": 2, "high": 6},
-            "d_model": {"type": "exp", "low": 6, "high": 9},
+            "d_model": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
             "d_ff": {"type": "exp", "low": 7, "high": 10},
             "top_k": {"type": "int", "low": 1, "high": 8},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
@@ -104,9 +102,8 @@ MODELS = {
         "format": "3D",
         "hyperparameters": {
             "e_layers": {"type": "int", "low": 1, "high": 5},
-            "d_model": {"type": "exp", "low": 6, "high": 9},
+            "d_model": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
             "d_ff": {"type": "exp", "low": 7, "high": 10},
-            "batch_size": {"type": "categorical", "choices": [8, 16, 32, 64]},
             "top_k": {"type": "int", "low": 1, "high": 5},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
         },
@@ -115,8 +112,8 @@ MODELS = {
         "class": ETSformer,
         "format": "3D",
         "hyperparameters": {
-            "d_model": {"type": "choice", "values": [64, 128, 256, 512]},
-            "d_ff": {"type": "choice", "values": [128, 256, 512, 1024]},
+            "d_model": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
+            "d_ff": {"type": "exp", "low": 7, "high": 9},  # 128 to 512
             "e_layers": {"type": "int", "low": 1, "high": 6},
             "d_layers": {"type": "int", "low": 1, "high": 6},
             "top_k": {"type": "int", "low": 1, "high": 5},
@@ -128,8 +125,8 @@ MODELS = {
         "class": Pyraformer,
         "format": "3D",
         "hyperparameters": {
-            "d_model": {"type": "choice", "values": [64, 128, 256, 512]},
-            "d_ff": {"type": "choice", "values": [128, 256, 512, 1024]},
+            "d_model": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
+            "d_ff": {"type": "exp", "low": 7, "high": 9},  # 128 to 512
             "e_layers": {"type": "int", "low": 2, "high": 6},
             "top_k": {"type": "int", "low": 2, "high": 5},
             "dropout": {"type": "float", "low": 0.0, "high": 0.5},
@@ -140,12 +137,12 @@ MODELS = {
         "class": LightTS,
         "format": "3D",
         "hyperparameters": {
-            "d_model": {"type": "choice", "values": [64, 128, 256, 512]},
-            "d_ff": {"type": "choice", "values": [128, 256, 512, 1024]},
+            "d_model": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
+            "d_ff": {"type": "exp", "low": 7, "high": 9},  # 128 to 512
             "e_layers": {"type": "int", "low": 1, "high": 6},
             "top_k": {"type": "int", "low": 1, "high": 5},
             "dropout": {"type": "float", "low": 0.0, "high": 0.5},
-            "lr": {"type": "float", "low": 1e-4, "high": 1e-2, "log": True},
+            "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
         },
     },
     # Commented out as they did not scale well with EEG data:
@@ -156,7 +153,6 @@ MODELS = {
     #         "d_model": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
     #         "e_layers": {"type": "int", "low": 1, "high": 4},
     #         "d_ff": {"type": "exp", "low": 7, "high": 9},  # 128 to 512
-    #         "n_heads": {"type": "int", "low": 6, "high": 10},
     #         "factor": {"type": "int", "low": 1, "high": 2},
     #         "dropout": {"type": "float", "low": 0.0, "high": 0.5},
     #         "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
@@ -169,7 +165,6 @@ MODELS = {
     #         "d_model": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
     #         "e_layers": {"type": "int", "low": 1, "high": 4},
     #         "d_ff": {"type": "exp", "low": 7, "high": 9},  # 128 to 512
-    #         "n_heads": {"type": "int", "low": 6, "high": 10},
     #         "factor": {"type": "int", "low": 1, "high": 2},
     #         "dropout": {"type": "float", "low": 0.0, "high": 0.5},
     #         "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
