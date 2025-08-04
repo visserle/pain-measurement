@@ -16,21 +16,29 @@ def prepare_data(
     feature_list: list,
     sample_duration_ms: int = 5000,
     random_seed: int = 42,
+    intervals: dict | None = None,
+    label_mapping: dict | None = None,
+    offsets_ms: dict | None = None,
     only_return_test_groups: bool = False,  # for the participant_ids in the test set
 ) -> tuple:
     """Prepare data for model training, including creating and splitting samples."""
-    intervals = {
-        "increases": "strictly_increasing_intervals",
-        "decreases": "major_decreasing_intervals",
-    }
-    label_mapping = {
-        "increases": 0,
-        "decreases": 1,
-    }
-    offsets_ms = {
-        "increases": 0,
-        "decreases": 2000,
-    }
+    # Use provided config or fall back to defaults
+    # Note that these parameters do not affect the group splitting
+    if intervals is None:
+        intervals = {
+            "increases": "strictly_increasing_intervals",
+            "decreases": "major_decreasing_intervals",
+        }
+    if label_mapping is None:
+        label_mapping = {
+            "increases": 0,
+            "decreases": 1,
+        }
+    if offsets_ms is None:
+        offsets_ms = {
+            "increases": 0,
+            "decreases": 1000,
+        }
 
     # Create and balance samples
     samples = create_samples(

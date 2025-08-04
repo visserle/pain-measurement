@@ -9,7 +9,6 @@ from torch.utils.data import DataLoader
 
 from src.models.evaluation import evaluate_model
 from src.models.hyperparameter_tuning import create_objective_function
-from src.models.main_config import SAMPLE_DURATION_MS
 from src.models.training_loop import train_model
 from src.models.utils import get_input_shape, initialize_model, save_model
 
@@ -162,6 +161,9 @@ def train_evaluate_and_save_best_model(
         data_sample=test_loader,
         feature_list=experiment_tracker.features,
         sample_duration_ms=experiment_tracker.sample_duration_ms,
+        intervals=experiment_tracker.intervals,
+        label_mapping=experiment_tracker.label_mapping,
+        offset_ms=experiment_tracker.offset_ms,
         model_path=model_path,
     )
 
@@ -187,7 +189,10 @@ class ExperimentTracker:
     def __init__(
         self,
         features: list[str],
-        sample_duration_ms: int = SAMPLE_DURATION_MS,
+        sample_duration_ms: int | None = None,
+        intervals: dict | None = None,
+        label_mapping: dict | None = None,
+        offset_ms: dict | None = None,
         result_dir: str | Path = RESULT_DIR,
     ):
         """
@@ -199,7 +204,10 @@ class ExperimentTracker:
         """
         self.features = features
         self.feature_string = "_".join(sorted(features))  # Sort for consistency
-        self.sample_duration_ms = sample_duration_ms
+        self.sample_duration_ms = sample_duration_ms or None
+        self.intervals = intervals or {}
+        self.label_mapping = label_mapping or {}
+        self.offset_ms = offset_ms or {}
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
         # Initialize result storage
@@ -219,6 +227,9 @@ class ExperimentTracker:
             "features": self.features,
             "feature_string": self.feature_string,
             "sample_duration_ms": self.sample_duration_ms,
+            "intervals": self.intervals,
+            "label_mapping": self.label_mapping,
+            "offset_ms": self.offset_ms,
             "timestamp": self.timestamp,
             "models": {},
         }

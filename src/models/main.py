@@ -13,8 +13,11 @@ from src.models.data_loader import create_dataloaders
 from src.models.data_preparation import prepare_data
 from src.models.main_config import (
     BATCH_SIZE,
+    INTERVALS,
+    LABEL_MAPPING,
     N_EPOCHS,
     N_TRIALS,
+    OFFSET_MS,
     RANDOM_SEED,
     SAMPLE_DURATION_MS,
 )
@@ -37,7 +40,7 @@ device = get_device()
 set_seed(RANDOM_SEED)
 
 # Default feature list
-# for sanity checks only, we can also train on temperature and rating features
+# for sanity checks only, we could train on temperature and rating features only
 default_features = [
     "eda_tonic",
     "eda_phasic",
@@ -94,7 +97,13 @@ def main():
         args.features = eeg_features
 
     # Create experiment tracker
-    experiment_tracker = ExperimentTracker(features=args.features)
+    experiment_tracker = ExperimentTracker(
+        features=args.features,
+        sample_duration_ms=SAMPLE_DURATION_MS,
+        intervals=INTERVALS,
+        label_mapping=LABEL_MAPPING,
+        offset_ms=OFFSET_MS,
+    )
 
     # Load data from database
     db = DatabaseManager()
@@ -112,13 +121,20 @@ def main():
             df = add_labels(eeg, trials)
         else:
             df = db.get_table(
-                "Merged_and_Labeled_Data",
-                exclude_trials_with_measurement_problems=True
+                "Merged_and_Labeled_Data", exclude_trials_with_measurement_problems=True
             )
 
-    # Prepare data
+        # Prepare data
     X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
-        prepare_data(df, args.features, SAMPLE_DURATION_MS, RANDOM_SEED)
+        prepare_data(
+            df,
+            args.features,
+            SAMPLE_DURATION_MS,
+            RANDOM_SEED,
+            INTERVALS,
+            LABEL_MAPPING,
+            OFFSET_MS,
+        )
     )
 
     # Create dataloaders
