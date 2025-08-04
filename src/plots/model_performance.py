@@ -45,8 +45,8 @@ def get_model_predictions(
                 y_batch = y_batch.cpu().numpy()
 
             all_probs.append(
-                probs[:, 1].cpu().numpy()
-            )  # Store positive class probability
+                probs[:, 1].cpu().numpy()  # store probability for class 1 ("decreases")
+            )
             all_labels.append(y_batch)
 
     # Concatenate batches
@@ -109,9 +109,12 @@ def _plot_confusion_matrix(
 def plot_roc_curve(
     probs: np.ndarray,
     y_true: np.ndarray,
-) -> None:
+) -> plt.Figure:
     """
     Plot ROC curve and calculate AUC score for binary classification.
+
+    Returns:
+        plt.Figure: The matplotlib figure object
     """
 
     fpr, tpr, thresholds = roc_curve(y_true, probs)
@@ -121,7 +124,7 @@ def plot_roc_curve(
     optimal_idx = np.argmax(tpr - fpr)
     optimal_threshold = thresholds[optimal_idx]
 
-    plt.figure(figsize=(6, 6))
+    fig = plt.figure(figsize=(6, 6))
     plt.plot(fpr, tpr, label=f"ROC curve (AUC = {auc_score:.3f})")
     plt.plot([0, 1], [0, 1], "k--")  # diagonal line
 
@@ -140,15 +143,19 @@ def plot_roc_curve(
     plt.title("Receiver Operating Characteristic (ROC) Curve")
     plt.legend(loc="lower right")
     plt.grid(True)
-    plt.show()
+
+    return fig
 
 
 def plot_pr_curve(
     probs: np.ndarray,
     y_true: np.ndarray,
-) -> tuple:
+) -> tuple[plt.Figure, float, float]:
     """
     Plot Precision-Recall curve and calculate Average Precision score for binary classification.
+
+    Returns:
+        tuple: (figure, avg_precision, optimal_threshold)
     """
     # Calculate precision-recall curve
     precision, recall, thresholds = precision_recall_curve(y_true, probs)
@@ -162,7 +169,7 @@ def plot_pr_curve(
     optimal_threshold = thresholds[optimal_idx]
 
     # Plot precision-recall curve
-    plt.figure(figsize=(6, 6))
+    fig = plt.figure(figsize=(6, 6))
     plt.plot(recall, precision, label=f"PR curve (AP = {avg_precision:.3f})")
 
     # Add marker for optimal threshold
@@ -184,6 +191,4 @@ def plot_pr_curve(
     plt.title("Precision-Recall Curve")
     plt.legend(loc="lower left")
     plt.grid(True)
-    plt.show()
-
-    return (avg_precision, optimal_threshold)
+    return (fig, avg_precision, optimal_threshold)

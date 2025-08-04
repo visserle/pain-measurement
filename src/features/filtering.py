@@ -11,8 +11,8 @@ def butterworth_filter(
 ):
     """Filter a signal using IIR Butterworth SOS (Second-Order Sections) method.
 
-    Applies the butterworth filter twice, once forward and once backwards using
-    scipy.signal.sosfiltfilt.
+    Applies the butterworth filter causally in forward direction only using
+    scipy.signal.sosfilt.
     """
     freqs, filter_type = _sanitize_filter(
         lowcut=lowcut,
@@ -26,7 +26,7 @@ def butterworth_filter(
         output="sos",
         fs=sample_rate,
     )
-    return scipy.signal.sosfiltfilt(sos, signal)
+    return scipy.signal.sosfilt(sos, signal)
 
 
 def _sanitize_filter(

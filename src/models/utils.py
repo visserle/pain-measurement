@@ -98,6 +98,9 @@ def save_model(
     data_sample: np.ndarray | DataLoader,
     feature_list: list,
     sample_duration_ms: int,
+    intervals: dict,
+    label_mapping: dict,
+    offset_ms: dict,
     model_path: str | Path,
 ) -> None:
     """
@@ -117,6 +120,9 @@ def save_model(
         "input_shape": get_input_shape(best_model_name, data_sample),
         "feature_list": feature_list,
         "sample_duration_ms": sample_duration_ms,
+        "intervals": intervals,
+        "label_mapping": label_mapping,
+        "offset_ms": offset_ms,
     }
 
     torch.save(save_dict, model_path)
@@ -126,7 +132,7 @@ def save_model(
 def load_model(
     model_path: str | Path,
     device: torch.device | str | None = None,
-) -> tuple[nn.Module, list, int]:
+) -> tuple[nn.Module, list, int, dict, dict, dict]:
     if device is None:
         device = get_device(log_device=False)
     logger.info(f"Using device: {device}")
@@ -140,6 +146,9 @@ def load_model(
     input_shape = save_dict["input_shape"]
     feature_list = save_dict["feature_list"]
     sample_duration_ms = save_dict.get("sample_duration_ms", 5000)
+    intervals = save_dict.get("intervals", {})
+    label_mapping = save_dict.get("label_mapping", {})
+    offset_ms = save_dict.get("offset_ms", {})
 
     # Initialize the model with the same architecture and hyperparameters
     model, _, _, _ = initialize_model(
@@ -157,5 +166,8 @@ def load_model(
     logger.info(
         f"Input shape: {input_shape} | Features: {feature_list} | Sample duration: {sample_duration_ms} ms"
     )
+    logger.debug(f"Intervals: {intervals}")
+    logger.debug(f"Label mapping: {label_mapping}")
+    logger.debug(f"Offset ms: {offset_ms}")
 
-    return model, feature_list, sample_duration_ms
+    return model, feature_list, sample_duration_ms, intervals, label_mapping, offset_ms

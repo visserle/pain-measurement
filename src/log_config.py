@@ -12,7 +12,7 @@ def configure_logging(
     file_path: Path | str | None = None,
     stream: bool = True,
     stream_milliseconds: bool = False,
-    ignore_libs: list[str] | None = None,
+    ignore_libs: str | list[str] | None = None,
 ) -> None:
     """
     Configures the root logger for console and file logging with the specified
@@ -66,6 +66,8 @@ def configure_logging(
 
     # Set the logging level for ignored libraries to WARNING
     if ignore_libs:
+        if isinstance(ignore_libs, str):
+            ignore_libs = [ignore_libs]
         for lib in ignore_libs:
             logging.getLogger(lib).setLevel(logging.WARNING)
 

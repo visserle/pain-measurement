@@ -154,6 +154,7 @@ def plot_prediction_confidence_heatmap(
     stimulus_linewidth: int = 4,
     stimulus_color: str = "black",
     stimulus_scale: float = 0.4,
+    filename: str | None = None,
 ) -> None:
     """
     Create a heatmap visualization of model predictions across all participants.
@@ -258,7 +259,7 @@ def plot_prediction_confidence_heatmap(
     cbar.set_label(
         "Prediction Confidence\n(+ = Decrease, - = Increase)",
         rotation=270,
-        labelpad=25,
+        labelpad=30,
         fontsize=14,
         fontweight="bold",
     )
@@ -304,7 +305,7 @@ def plot_prediction_confidence_heatmap(
             0, len(sorted_participant_ids) - 1, num_ticks
         ).astype(int)
         ax.set_yticks(y_positions)
-        ax.set_yticklabels([sorted_participant_ids[i] for i in tick_indices][::-1])
+        ax.set_yticklabels(tick_indices[::-1] + 1)
     else:
         # Use pseudonymized participant IDs
         sorted_participant_ids = np.array(sorted_participant_ids, dtype=int)
@@ -319,3 +320,6 @@ def plot_prediction_confidence_heatmap(
     ax.set_xticks(np.arange(0, 181, 30))
 
     plt.tight_layout()
+
+    if filename:
+        plt.savefig(filename, dpi=300, bbox_inches="tight")

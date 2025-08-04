@@ -101,30 +101,13 @@ def remove_line_noise(
     df: pl.DataFrame,
     sfreq: int,
     notch_freq: int = 50,
-    q: int = 30,
     channels: list = CHANNELS,
 ) -> pl.DataFrame:
     """ """
     # Filter EEG channels
     eeg_data = df.select(channels).to_numpy().T
-
-    filtered_eeg = mne.filter.notch_filter(eeg_data, Fs=250, freqs=[50, 100])
-
-    # Create a new DataFrame with filtered EEG data
-    filtered_df = pl.DataFrame(
-        {channel: filtered_eeg[i] for i, channel in enumerate(channels)}
-    )
-
-    info_columns = [column for column in df.columns if column not in channels]
-    info_df = df.select(info_columns)
-
-    # Combine filtered EEG data with non-EEG columns
-    return pl.concat([info_df, filtered_df], how="horizontal")
-
-    # Filter EEG channels
-    eeg_data = df.select(channels).to_numpy().T
     filtered_eeg = mne.filter.notch_filter(
-        eeg_data, Fs=sfreq, freqs=[notch_freq, notch_freq * 2], q=q
+        eeg_data, Fs=sfreq, freqs=[notch_freq, notch_freq * 2]
     )
 
     # Create a new DataFrame with filtered EEG data

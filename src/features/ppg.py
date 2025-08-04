@@ -1,8 +1,8 @@
-"""Heartrate data is directly taken from the Shimmer device.
-(See below for a neurokit2 approach for processing the PPG signal.)"""
+"""Heartrate data is directly taken from the Shimmer device."""
 
 import polars as pl
 from polars import col
+from scipy import signal
 
 from src.features.filtering import butterworth_filter
 from src.features.resampling import decimate, interpolate_and_fill_nulls
@@ -39,6 +39,22 @@ def remove_heartrate_nulls(
     # note that the interpolate function already has the map_trials decorator
     # so we don't need to add it at the top of this function
     return interpolate_and_fill_nulls(df, ["heartrate"])
+
+
+@map_trials
+def median_filter_pupil(
+    df: pl.DataFrame,
+    size_in_seconds: int,
+    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
+) -> pl.DataFrame:
+    return df.with_columns(
+        col(pupil_columns).map_batches(
+            lambda x: signal.medfilt(
+                x,
+                kernel_size=size_in_seconds * SAMPLE_RATE + 1,  # must be odd
+            )
+        )
+    )
 
 
 @map_trials
