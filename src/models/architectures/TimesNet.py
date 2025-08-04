@@ -92,14 +92,10 @@ class TimesNet(nn.Module):
         Number of features/variables in the input data.
     d_model : int, default=16
         The dimension of the model's internal representation.
-    n_heads : int, default=8
-        Number of attention heads for internal operations.
     e_layers : int, default=2
         Number of TimesBlock layers to stack.
     d_ff : int, default=32
         Dimension of the feed-forward network in each TimesBlock.
-    d_conv : int, default=4
-        Kernel size for convolution operations.
     dropout : float, default=0.1
         Dropout rate for regularization.
     embed : str, default='timeF'
@@ -108,7 +104,6 @@ class TimesNet(nn.Module):
         Frequency of the time series for temporal encoding. Options include:
         's' (second), 't' (minute), 'h' (hour), 'd' (day), etc.
     top_k : int, default=3
-        Number of top periods to extract from FFT for time-to-2D reshaping.
     num_kernels : int, default=6
         Number of inception kernels in each TimesBlock.
     num_classes : int, default=2
@@ -120,13 +115,11 @@ class TimesNet(nn.Module):
         input_len: int,
         input_dim: int,
         d_model: int = 16,
-        n_heads: int = 8,
         e_layers: int = 2,
         d_ff: int = 32,
-        d_conv: int = 4,
         dropout: float = 0.1,
-        embed: str = "timeF",  # TODO: try also "fixed"
-        freq: str = "s",  # TODO: try h for hourly and t for minutely
+        embed: str = "timeF",
+        freq: str = "s",
         top_k: int = 3,
         num_kernels: int = 6,
         num_classes: int = 2,

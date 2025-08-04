@@ -62,8 +62,8 @@ class PatchTST(nn.Module):
         """
         super().__init__()
         self.seq_len = input_len
-        padding = stride
         self.enc_in = input_dim
+        padding = stride
         self.patch_len = patch_len
         self.d_model = d_model
         self.e_layers = e_layers

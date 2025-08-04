@@ -71,7 +71,7 @@ class LightTS(nn.Module):
         self.dropout = dropout
         self.act = F.gelu
         self.dropout = nn.Dropout(dropout)
-        self.projection = nn.Linear(self.enc_in * self.seq_len, num_class)
+        self.projection = nn.Linear(self.enc_in * self.pred_len, num_class)
         self._build()
 
     def _build(self):
