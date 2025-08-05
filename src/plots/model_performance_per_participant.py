@@ -16,7 +16,6 @@ def analyze_per_participant(
     test_loader: DataLoader,
     test_groups: np.ndarray,
     threshold: float = 0.5,
-    pseudonymize: bool = True,
 ) -> pl.DataFrame:
     """
     Analyze model performance for each participant separately.
@@ -26,7 +25,6 @@ def analyze_per_participant(
         test_loader: DataLoader containing test data
         test_groups: Array of participant IDs for each sample
         threshold: Classification threshold for binary predictions
-        pseudonymize: Whether to replace real participant IDs with sequential numbers
 
     Returns:
         Polars DataFrame with performance metrics per participant
@@ -93,14 +91,8 @@ def analyze_per_participant(
         class_0_count = np.sum(p_true == 0)
         class_1_count = np.sum(p_true == 1)
 
-        # Store with proper ID based on pseudonymization preference
-        display_id = (
-            str(np.where(unique_participants == participant)[0][0] + 1)
-            if pseudonymize
-            else participant_id
-        )
-
-        participant_metrics[display_id] = {
+        # Store metrics
+        participant_metrics[participant_id] = {
             "accuracy": p_acc,
             "samples": len(p_true),
             "class_distribution": {"0": int(class_0_count), "1": int(class_1_count)},
@@ -254,7 +246,7 @@ def plot_participant_performance(
     plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
 
     # Set y-axis limits from 40% to 100% to better show differences but remain truthful
-    plt.ylim([0.4, 1.0])
+    plt.ylim([0.0, 1.0])
 
     # Add subtle grid lines for readability
     plt.grid(

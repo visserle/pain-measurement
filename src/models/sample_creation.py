@@ -12,7 +12,7 @@ def create_samples(
     df: pl.DataFrame,
     intervals: dict[str, str],
     label_mapping: dict[str, int],
-    length_ms: int = 5000,
+    length_ms: int = 7000,
     offsets_ms: dict[str, int] | None = None,
 ) -> pl.DataFrame:
     """
@@ -170,7 +170,7 @@ def _generate_sample_ids(
 
 def _remove_samples_that_are_too_short(
     samples: pl.DataFrame,
-    length_ms: int = 5000,
+    length_ms: int = 7000,
 ) -> pl.DataFrame:
     is_equidistant = not (
         samples.filter(col("sample_id") == col("sample_id").first())
@@ -180,23 +180,50 @@ def _remove_samples_that_are_too_short(
     )
 
     # Only EEG data is not perfectly equidistant and needs special handling
-    # NOTE: This is all hardcoded to work with 5000 ms samples.
+    # NOTE: This is all hardcoded to work with 7000 ms samples.
     if not is_equidistant:
-        assert length_ms == 5000, (
-            "Only 5000 ms samples are supported for EEG data as of now. "
+        assert length_ms == 7000, (
+            "Only 7000 ms samples are supported for EEG data as of now. "
             "Please adjust the code if you want to use different sample lengths."
+            # NOTE: and also adjust sample height below
         )
         logger.warning("Sampling rate is not equidistant with 10 Hz.")
         # Fix EEG samples to ensure consistent length
-        new = []
-        for sample in samples.group_by("sample_id", maintain_order=True):
-            sample = sample[1]
-            sample = sample.head(750)  # 250 * 3 = 750
-            while sample.height < 750:
-                sample = pl.concat([sample, sample.tail(1)])
-            new.append(sample)
+        target_length = 250 * (
+            length_ms // 1000
+        )  # fs = 250 Hz, so 250 samples per second
 
-        return pl.concat(new)
+        # First, filter out samples that are too short (more than 20 samples away from target)
+        # We have to account for the fact that EEG samples might not be perfectly equidistant
+        # and thus might have a different number of samples than expected.
+        sample_lengths = samples.group_by("sample_id").len("count")
+        valid_samples = sample_lengths.filter(
+            (pl.col("count") >= target_length) | (target_length - pl.col("count") < 20)
+        )
+
+        # Keep only valid samples
+        samples = samples.join(valid_samples.select("sample_id"), on="sample_id")
+
+        # Define a function to pad samples to the target length
+        def pad_sample(df: pl.DataFrame) -> pl.DataFrame:
+            current_height = df.height
+            if current_height >= target_length:
+                return df.head(target_length)
+            else:  # We know it's within 20 samples due to pre-filtering
+                # Calculate how many times to repeat the last row
+                rows_needed = target_length - current_height
+                last_row = df.tail(1)
+
+                # Create padding by repeating the last row
+                padding = pl.concat([last_row] * rows_needed)
+
+                return pl.concat([df, padding])
+
+        # Process each group and apply padding
+        samples = samples.group_by("sample_id", maintain_order=True).map_groups(
+            pad_sample
+        )
+        return samples
 
     # Calculate the minimum length of samples by subtracting the sampling distance
     # from the length (else we would filter out all samples)
@@ -227,7 +254,7 @@ def _remove_samples_that_are_too_short(
     removed_count = samples.get_column("sample_id").n_unique() - valid_sample_ids.len()
     if removed_count > 0:
         logger.debug(
-            f"Removed {removed_count} samples with less than {int(min_length_ms / 100)} data points."
+            f"Removed {removed_count} samples with less than {int(min_length_ms / 100)} data points"
         )
 
     return filtered_samples

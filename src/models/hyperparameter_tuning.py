@@ -63,7 +63,7 @@ def create_objective_function(
             )
             return accuracy
         finally:
-            # Clean up GPU memory if using CUDA
+            # clean up GPU memory if using CUDA
             if device == "cuda" or (
                 isinstance(device, torch.device) and device.type == "cuda"
             ):

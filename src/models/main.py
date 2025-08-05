@@ -17,7 +17,7 @@ from src.models.main_config import (
     LABEL_MAPPING,
     N_EPOCHS,
     N_TRIALS,
-    OFFSET_MS,
+    OFFSETS_MS,
     RANDOM_SEED,
     SAMPLE_DURATION_MS,
 )
@@ -102,7 +102,7 @@ def main():
         sample_duration_ms=SAMPLE_DURATION_MS,
         intervals=INTERVALS,
         label_mapping=LABEL_MAPPING,
-        offset_ms=OFFSET_MS,
+        offsets_ms=OFFSETS_MS,
     )
 
     # Load data from database
@@ -124,7 +124,7 @@ def main():
                 "Merged_and_Labeled_Data", exclude_trials_with_measurement_problems=True
             )
 
-        # Prepare data
+    # Prepare data
     X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
         prepare_data(
             df,
@@ -133,7 +133,7 @@ def main():
             RANDOM_SEED,
             INTERVALS,
             LABEL_MAPPING,
-            OFFSET_MS,
+            OFFSETS_MS,
         )
     )
 

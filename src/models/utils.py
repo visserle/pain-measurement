@@ -100,7 +100,7 @@ def save_model(
     sample_duration_ms: int,
     intervals: dict,
     label_mapping: dict,
-    offset_ms: dict,
+    offsets_ms: dict,
     model_path: str | Path,
 ) -> None:
     """
@@ -122,7 +122,7 @@ def save_model(
         "sample_duration_ms": sample_duration_ms,
         "intervals": intervals,
         "label_mapping": label_mapping,
-        "offset_ms": offset_ms,
+        "offsets_ms": offsets_ms,
     }
 
     torch.save(save_dict, model_path)
@@ -148,7 +148,7 @@ def load_model(
     sample_duration_ms = save_dict.get("sample_duration_ms", 5000)
     intervals = save_dict.get("intervals", {})
     label_mapping = save_dict.get("label_mapping", {})
-    offset_ms = save_dict.get("offset_ms", {})
+    offsets_ms = save_dict.get("offsets_ms", {})
 
     # Initialize the model with the same architecture and hyperparameters
     model, _, _, _ = initialize_model(
@@ -168,6 +168,6 @@ def load_model(
     )
     logger.debug(f"Intervals: {intervals}")
     logger.debug(f"Label mapping: {label_mapping}")
-    logger.debug(f"Offset ms: {offset_ms}")
+    logger.debug(f"Offset ms: {offsets_ms}")
 
-    return model, feature_list, sample_duration_ms, intervals, label_mapping, offset_ms
+    return model, feature_list, sample_duration_ms, intervals, label_mapping, offsets_ms

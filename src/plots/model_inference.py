@@ -149,7 +149,7 @@ def plot_prediction_confidence_heatmap(
     sample_duration: int = 3000,
     step_size: int = 1000,
     classification_threshold: float = 0.5,
-    pseudonymize: bool = False,
+    leaderboard: list | None = None,
     figure_size: tuple = (15, 8),
     stimulus_linewidth: int = 4,
     stimulus_color: str = "black",
@@ -166,7 +166,7 @@ def plot_prediction_confidence_heatmap(
         sample_duration: Duration of each sample in milliseconds
         step_size: Step size between samples in milliseconds
         classification_threshold: Threshold used for binary classification (default: 0.5)
-        pseudonymize: Whether to use pseudonyms instead of participant IDs
+        leaderboard: Optional list of participant IDs ordered by performance (best first)
         figure_size: Size of the figure (width, height)
         stimulus_linewidth: Width of the stimulus line
         stimulus_color: Color of the stimulus line
@@ -215,10 +215,22 @@ def plot_prediction_confidence_heatmap(
     padded_array[:, int(sample_duration / 1000 - 1) :] = confidence_array
     confidence_array = padded_array
 
-    avg_confidence = np.mean(np.abs(confidence_array), axis=1)
+    # Sort by leaderboard if provided, otherwise by average confidence
+    if leaderboard is not None:
+        # Create a mapping from participant ID to leaderboard position
+        leaderboard_positions = {pid: i for i, pid in enumerate(leaderboard)}
+        participant_ids = [data[0] for data in confidence_data]
 
-    # Sort by average confidence
-    sort_indices = np.argsort(-avg_confidence)
+        # Sort by leaderboard position (best first = position 0)
+        sort_indices = sorted(
+            range(len(participant_ids)),
+            key=lambda i: leaderboard_positions.get(participant_ids[i], float("inf")),
+        )
+    else:
+        # Fall back to sorting by average confidence
+        avg_confidence = np.mean(np.abs(confidence_array), axis=1)
+        sort_indices = np.argsort(-avg_confidence)
+
     sorted_confidence_array = confidence_array[sort_indices]
     sorted_participant_ids = [confidence_data[i][0] for i in sort_indices]
 
@@ -281,7 +293,7 @@ def plot_prediction_confidence_heatmap(
     )
 
     # Add legend for the stimulus line
-    ax.legend(loc="upper right", fontsize=14, framealpha=0.8)
+    ax.legend(loc="lower right", fontsize=14, framealpha=0.8)
 
     # Add labels and statistics with larger font sizes
     total_trials = len(sorted_confidence_array)
@@ -299,19 +311,12 @@ def plot_prediction_confidence_heatmap(
     y_positions = np.linspace(0, len(sorted_confidence_array) - 1, num_ticks)
     y_positions = np.round(y_positions).astype(int)
 
-    if not pseudonymize:
-        # Use actual participant IDs
-        tick_indices = np.linspace(
-            0, len(sorted_participant_ids) - 1, num_ticks
-        ).astype(int)
-        ax.set_yticks(y_positions)
-        ax.set_yticklabels(tick_indices[::-1] + 1)
-    else:
-        # Use pseudonymized participant IDs
-        sorted_participant_ids = np.array(sorted_participant_ids, dtype=int)
-        pseudonymized_ids = rankdata(sorted_participant_ids, method="dense")
-        ax.set_yticks(y_positions)
-        ax.set_yticklabels(pseudonymized_ids[y_positions][::-1])
+    # Use actual participant IDs
+    tick_indices = np.linspace(0, len(sorted_participant_ids) - 1, num_ticks).astype(
+        int
+    )
+    ax.set_yticks(y_positions)
+    ax.set_yticklabels([sorted_participant_ids[i] for i in tick_indices[::-1]])
 
     # Add gridlines for better readability
     ax.grid(which="major", axis="x", linestyle="--", alpha=0.3)
