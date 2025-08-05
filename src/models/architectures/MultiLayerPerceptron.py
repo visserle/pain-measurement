@@ -15,7 +15,7 @@ class MultiLayerPerceptron(nn.Module):
         hidden_size: int,
         input_dim: int = 1,
         depth: int = 2,
-        dropout_rate: float = 0.2,
+        dropout: float = 0.2,
         num_classes: int = 2,
     ) -> None:
         super().__init__()
@@ -28,13 +28,13 @@ class MultiLayerPerceptron(nn.Module):
         # First layer: input_len -> hidden_size
         layers.append(nn.Linear(input_len, hidden_size))
         layers.append(nn.ReLU())
-        layers.append(nn.Dropout(dropout_rate))
+        layers.append(nn.Dropout(dropout))
 
         # Middle layers: hidden_size -> hidden_size (depth-1 additional hidden layers)
         for _ in range(depth - 1):
             layers.append(nn.Linear(hidden_size, hidden_size))
             layers.append(nn.ReLU())
-            layers.append(nn.Dropout(dropout_rate))
+            layers.append(nn.Dropout(dropout))
 
         # Output layer: hidden_size -> num_classes
         layers.append(nn.Linear(hidden_size, num_classes))
