@@ -5,7 +5,6 @@ from pathlib import Path
 
 import optuna.logging
 
-from features import face
 from src.data.database_manager import DatabaseManager
 from src.features.labels import add_labels
 from src.features.resampling import add_normalized_timestamp
