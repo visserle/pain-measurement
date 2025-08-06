@@ -33,7 +33,7 @@ def average_over_stimulus_seeds(
     df: pl.DataFrame,
     signals: list[str],
     scaling: str | None = "min_max",
-    bin_size: int = BIN_SIZE,
+    bin_size: int | float = BIN_SIZE,
 ) -> pl.DataFrame:
     """Aggregate over stimulus seeds for each trial using group_by_dynamic.
     Using scaling, the data can be scaled before aggregation.
@@ -43,8 +43,8 @@ def average_over_stimulus_seeds(
             df = scale_min_max(
                 df,
                 exclude_additional_columns=[
-                    "rating",  # already normalized
                     "temperature",  # already normalized
+                    "pain_rating",  # already normalized
                 ],
             )
         case "standard":
@@ -227,17 +227,11 @@ def plot_correlation_heatmap(averages):
         averages.select(pl.col("^avg.*$"))
         .select(  # reorder columns
             "avg_temperature",
-            "avg_rating",
-            "avg_pupil_mean",
+            "avg_pain_rating",
+            "avg_pupil_diameter",
             "avg_eda_tonic",
-            "avg_heartrate",
+            "avg_heart_rate",
             "avg_eda_phasic",
-        )
-        .rename(
-            {
-                "avg_pupil_mean": "avg_pupil_size",
-                "avg_heartrate": "avg_heart_rate",
-            }
         )
         .corr()
     )
