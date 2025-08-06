@@ -312,7 +312,7 @@ class DatabaseManager:
 
 
 def main():
-    # MODALITIES = ["PPG", "Stimulus"]
+    # MODALITIES = ["Face"]
     with DatabaseManager() as db:
         # Participant data, experiment and questionnaire results
         db.ctas("Invalid_Participants", DataConfig.load_invalid_participants_config())

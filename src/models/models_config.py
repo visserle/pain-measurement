@@ -25,7 +25,7 @@ MODELS = {
         "format": "2D",
         "hyperparameters": {
             "hidden_size": {"type": "exp", "low": 8, "high": 12},  # 256 to 8192
-            "depth": {"type": "int", "low": 1, "high": 5},
+            "depth": {"type": "int", "low": 1, "high": 4},
             "dropout": {"type": "float", "low": 0.0, "high": 0.8},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
         },
@@ -34,7 +34,7 @@ MODELS = {
         "class": PatchTST,
         "format": "3D",
         "hyperparameters": {
-            "d_model": {"type": "exp", "low": 6, "high": 7},  # 64 to 256
+            "d_model": {"type": "exp", "low": 5, "high": 7},  # 32 to 256
             "e_layers": {"type": "int", "low": 1, "high": 4},
             "d_ff": {"type": "exp", "low": 7, "high": 9},  # 128 to 512
             "patch_len": {"type": "exp", "low": 2, "high": 5},  # 4 to 32
@@ -49,7 +49,7 @@ MODELS = {
         "class": iTransformer,
         "format": "3D",
         "hyperparameters": {
-            "d_model": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
+            "d_model": {"type": "exp", "low": 5, "high": 7},  # 32 to 256
             "e_layers": {"type": "int", "low": 1, "high": 4},
             "d_ff": {"type": "exp", "low": 7, "high": 9},  # 128 to 512
             "top_k": {"type": "int", "low": 2, "high": 5},
@@ -87,7 +87,7 @@ MODELS = {
         "class": LightTS,
         "format": "3D",
         "hyperparameters": {
-            "d_model": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
+            "d_model": {"type": "exp", "low": 5, "high": 7},  # 32 to 256
             "dropout": {"type": "float", "low": 0.0, "high": 0.5},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
         },

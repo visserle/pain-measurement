@@ -26,6 +26,7 @@ def adaptive_ema_smooth(
 ):
     """
     Adaptive Exponential Moving Average (EMA) smoothing.
+    Can be used for real-time applications (causal).
     Uses a faster alpha for large changes and a slower alpha for small changes.
     """
     smoothed = np.zeros_like(signal)

@@ -91,7 +91,7 @@ def low_pass_filter_heart_rate_non_causal(
     )
 
 
-# For neurokit2 library to process the PPG signal, you can use the following function:
+# For neurokit2 library to process the PPG signal, use the following function:
 
 # import neurokit2 as nk
 

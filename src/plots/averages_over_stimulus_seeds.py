@@ -44,7 +44,12 @@ def average_over_stimulus_seeds(
                 df,
                 exclude_additional_columns=[
                     "temperature",  # already normalized
-                    "pain_rating",  # already normalized
+                    "pain_rating",
+                    "brow_furrow",
+                    "cheek_raise",
+                    "mouth_open",
+                    "upper_lip_raise",
+                    "nose_wrinkle",
                 ],
             )
         case "standard":
@@ -221,21 +226,29 @@ def calculate_max_crosscorr_lag_over_averages(
     return lag_df
 
 
-def plot_correlation_heatmap(averages):
-    # Get correlation matrix
-    corr_matrix = (
-        averages.select(pl.col("^avg.*$"))
-        .select(  # reorder columns
+def plot_correlation_heatmap(
+    averages: pl.DataFrame,
+    features: list[str] | None = None,
+):
+    # Default feature list if none provided
+    if features is None:
+        features = [
             "avg_temperature",
             "avg_pain_rating",
             "avg_pupil_diameter",
             "avg_eda_tonic",
             "avg_heart_rate",
             "avg_eda_phasic",
-        )
+        ]
+    else:
+        features = [f"avg_{feature}" for feature in features]
+
+    # Get correlation matrix
+    corr_matrix = (
+        averages.select(pl.col("^avg.*$"))
+        .select(features)  # Use the features parameter
         .corr()
     )
-
     # Create more professional labels
     labels = [
         col.replace("avg_", "").replace("_", " ").title() for col in corr_matrix.columns

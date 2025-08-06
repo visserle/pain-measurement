@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
 COLORS = {
-    "temperature_rating_corr": "red",
+    "temperature_pain_rating_corr": "red",
     "temperature_pupil_corr": "#ff7f0e",
     "temperature_eda_tonic_corr": "#2ca02c",
     "temperature_eda_phasic_corr": "#d62728",

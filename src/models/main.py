@@ -5,6 +5,7 @@ from pathlib import Path
 
 import optuna.logging
 
+from features import face
 from src.data.database_manager import DatabaseManager
 from src.features.labels import add_labels
 from src.features.resampling import add_normalized_timestamp
@@ -46,11 +47,13 @@ default_features = [
     "eda_phasic",
     "pupil_mean",
     "heart_rate",
-    "brow_furrow",
+]
+face_features = [
     "cheek_raise",
     "mouth_open",
     "upper_lip_raise",
     "nose_wrinkle",
+    "brow_furrow",
 ]
 # Note that EEG data cannot be merged with other features
 eeg_features = ["f3", "f4", "c3", "c4", "cz", "p3", "p4", "oz"]
@@ -93,7 +96,9 @@ def parse_args():
 def main():
     args = parse_args()
     args.features = sorted(args.features)
-    if args.features == ["eeg"]:
+    if "face" in args.features:
+        args.features = [f for f in args.features if f != "face"] + face_features
+    if args.features == ["eeg"]:  # cannot be merged with other features
         args.features = eeg_features
 
     # Create experiment tracker
