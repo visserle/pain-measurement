@@ -33,7 +33,7 @@ COLORS = {
     "temperature_pupil_corr": "#ff7f0e",
     "temperature_eda_tonic_corr": "#2ca02c",
     "temperature_eda_phasic_corr": "#d62728",
-    "temperature_heartrate_corr": "#9467bd",
+    "temperature_heart_rate_corr": "#9467bd",
     "temperature_random_walk_corr": "gray",
     "temperature_brow_furrow_corr": "red",
     "temperature_cheek_raise_corr": "#2ca02c",
