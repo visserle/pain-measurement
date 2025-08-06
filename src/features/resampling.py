@@ -47,7 +47,9 @@ def decimate(
         else:
             return column.gather_every(factor)
 
-    return df.select(pl.all().map_batches(decimate_column))
+    return df.select(
+        pl.all().map_batches(decimate_column)
+    )  # no need to add aliases here
 
 
 @map_trials

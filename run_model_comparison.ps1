@@ -33,20 +33,15 @@ Write-Host ""
 Write-Host "This is the model comparison script for different feature combinations."
 Write-Host ""
 Write-Host ""
-Write-Host "Press [Enter] to start..."
-Read-Host
-
+Write-Host "Starting..."
 # Execute Python scripts
-python -m src.models.main --features eda_tonic --models MLP TimesNet Crossformer PatchTST iTransformer
-python -m src.models.main --features eda_phasic --models MLP TimesNet Crossformer PatchTST iTransformer 
-python -m src.models.main --features eda_tonic eda_phasic --models MLP TimesNet Crossformer PatchTST iTransformer 
-python -m src.models.main --features pupil_mean --models MLP TimesNet Crossformer PatchTST iTransformer 
-python -m src.models.main --features heartrate --models MLP TimesNet Crossformer PatchTST iTransformer 
-python -m src.models.main --features eda_tonic eda_phasic heartrate --models MLP TimesNet Crossformer PatchTST iTransformer 
-python -m src.models.main --features eda_tonic eda_phasic heartrate pupil_mean --models MLP TimesNet Crossformer PatchTST iTransformer 
-python -m src.models.main --features eda_tonic eda_phasic pupil_mean --models MLP TimesNet Crossformer PatchTST iTransformer 
-python -m src.models.main --features brow_furrow cheek_raise mouth_open upper_lip_raise nose_wrinkle --models MLP TimesNet Crossformer PatchTST iTransformer 
-python -m src.models.main --features eeg --models MLP TimesNet Crossformer PatchTST iTransformer 
+python -m src.models.main --features pupil_mean --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
+python -m src.models.main --features heart_rate --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
+python -m src.models.main --features eda_raw heart_rate --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
+python -m src.models.main --features eda_raw heart_rate pupil_mean --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
+python -m src.models.main --features eda_raw pupil_mean --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
+python -m src.models.main --features brow_furrow cheek_raise mouth_open upper_lip_raise nose_wrinkle --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
+python -m src.models.main --features eeg --models MLP TimesNet Crossformer PatchTST iTransformer LightTS EEGNet
 
 Write-Host "Model comparison completed."
 Write-Host ""

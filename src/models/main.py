@@ -45,7 +45,7 @@ default_features = [
     "eda_tonic",
     "eda_phasic",
     "pupil_mean",
-    "heartrate",
+    "heart_rate",
     "brow_furrow",
     "cheek_raise",
     "mouth_open",

@@ -39,7 +39,7 @@ PPG:
     - "IBI PPG ALG"
   rename_columns:
     "Internal ADC A13 PPG CAL": "ppg_raw"
-    "Heart Rate PPG ALG": "ppg_heartrate_shimmer"
+    "Heart Rate PPG ALG": "ppg_heart_rate_shimmer"
     "IBI PPG ALG": "ppg_ibi_shimmer"
   comment: "same device as EDA"
 
