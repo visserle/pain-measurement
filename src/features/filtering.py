@@ -1,5 +1,21 @@
 import numpy as np
 import scipy.signal
+from numpy.lib.stride_tricks import sliding_window_view
+
+
+def median_filter(signal, window_size):
+    """
+    Vectorized implementation of a causal median filter.
+    Can be used for real-time applications.
+    """
+    # Pad signal with first value repeated
+    padded = np.pad(signal, (window_size - 1, 0), mode="edge")
+
+    # Create sliding window view
+    windowed = sliding_window_view(padded, window_size)
+
+    # Take median along window axis
+    return np.median(windowed, axis=1)
 
 
 def butterworth_filter(
@@ -11,8 +27,8 @@ def butterworth_filter(
 ):
     """Filter a signal using IIR Butterworth SOS (Second-Order Sections) method.
 
-    Applies the butterworth filter causally in forward direction only using
-    scipy.signal.sosfilt.
+    Applies the butterworth filter in both directions to avoid phase distortion.
+    This is a non-causal filter, only for exploratory purposes.
     """
     freqs, filter_type = _sanitize_filter(
         lowcut=lowcut,
@@ -26,7 +42,7 @@ def butterworth_filter(
         output="sos",
         fs=sample_rate,
     )
-    return scipy.signal.sosfilt(sos, signal)
+    return scipy.signal.filtfilt(sos, signal)
 
 
 def _sanitize_filter(

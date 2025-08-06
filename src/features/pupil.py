@@ -3,9 +3,9 @@ import operator
 from functools import reduce
 
 import polars as pl
-import scipy.signal as signal
 from polars import col
 
+from src.features.filtering import median_filter
 from src.features.resampling import decimate, interpolate_and_fill_nulls
 from src.features.transforming import map_trials
 
@@ -207,9 +207,9 @@ def median_filter_pupil(
 ) -> pl.DataFrame:
     return df.with_columns(
         col(pupil_columns).map_batches(
-            lambda x: signal.medfilt(
+            lambda x: median_filter(
                 x,
-                kernel_size=size_in_seconds * SAMPLE_RATE + 1,  # must be odd
+                window_size=size_in_seconds * SAMPLE_RATE + 1,  # odd for median
             )
         )
     )
