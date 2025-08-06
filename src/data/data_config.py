@@ -8,7 +8,7 @@ import yaml
 class DataConfig:
     DB_FILE = Path("data/pain-measurement.duckdb")
 
-    MODALITIES = ["Stimulus", "EDA", "EEG", "PPG", "Pupil", "Face"]
+    MODALITIES = ["Stimulus", "EDA", "EEG", "HR", "Pupil", "Face"]
 
     NUM_PARTICIPANTS = 50
     PARTICIPANT_DATA_FILE = Path("runs/experiments/participants.csv")

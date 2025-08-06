@@ -40,12 +40,10 @@ device = get_device()
 set_seed(RANDOM_SEED)
 
 # Default feature list
-# for sanity checks only, we could train on temperature and rating features only
+# for sanity checks, we could train on temperature and rating features only
 default_features = [
-    "eda_tonic",
-    "eda_phasic",
-    "pupil_mean",
-    "heart_rate",
+    "eda_raw",
+    "pupil",
 ]
 face_features = [
     "cheek_raise",

@@ -28,7 +28,7 @@ EDA:
   rename_columns:
     "GSR Conductance CAL": "eda_raw"
 
-PPG:
+HR:
   file_name: "Shimmer3_EDA_&_PPG_Shimmer3_EDA_&_PPG_ET_Shimmer_ShimmerDevice"
   load_columns:
     - "RowNumber"

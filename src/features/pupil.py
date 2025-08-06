@@ -25,11 +25,11 @@ def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
 def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
     df = median_filter_pupil(df, size_in_seconds=1)
     df = median_filter_pupil_non_causal(df, size_in_seconds=1)
-    df = average_pupils(df, result_column="pupil_mean")
+    df = average_pupils(df, result_column="pupil")
     df = average_pupils(
         df,
         pupil_columns=["pupil_r_exploratory", "pupil_l_exploratory"],
-        result_column="pupil_mean_exploratory",
+        result_column="pupil_exploratory",
     )
     df = decimate(df, factor=6)
     return df
@@ -244,7 +244,7 @@ def median_filter_pupil_non_causal(
 def average_pupils(
     df: pl.DataFrame,
     pupil_columns: list[str] = ["pupil_r", "pupil_l"],
-    result_column: str = "pupil_mean",
+    result_column: str = "pupil_diameter",
 ) -> pl.DataFrame:
     return df.with_columns(
         ((col(pupil_columns[0]) + col(pupil_columns[1])) / 2).alias(result_column)

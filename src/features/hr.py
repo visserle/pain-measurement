@@ -15,7 +15,7 @@ MAX_HEARTRATE = 120
 # 20 bpm above the maximum normal heart_rate to account for pain and stress
 
 
-def preprocess_ppg(df: pl.DataFrame) -> pl.DataFrame:
+def preprocess_hr(df: pl.DataFrame) -> pl.DataFrame:
     df = remove_heart_rate_nulls(df)
     df = low_pass_filter_heart_rate_non_causal(df)
     # order matters, since we reuse the heart_rate column
@@ -23,7 +23,7 @@ def preprocess_ppg(df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 
-def feature_ppg(df: pl.DataFrame) -> pl.DataFrame:
+def feature_hr(df: pl.DataFrame) -> pl.DataFrame:
     df = decimate(df, factor=10)
     return df
 
@@ -61,7 +61,7 @@ def ema_smooth_heart_rate(
                 threshold=0.05,
             )
         )
-        .alias(heart_rate_column + "_smooth")
+        .alias(heart_rate_column)
     )
 
 
@@ -89,45 +89,3 @@ def low_pass_filter_heart_rate_non_causal(
         )
         .name.suffix("_exploratory")
     )
-
-
-# For neurokit2 library to process the PPG signal, use the following function:
-
-# import neurokit2 as nk
-
-
-# @map_trials
-# def nk_process_ppg(
-#     df: pl.DataFrame,
-#     sampling_rate: int = SAMPLE_RATE,
-# ) -> pl.DataFrame:
-#     """
-#     Process the raw PPG signal using NeuroKit2 and the "elgendi" method.
-
-#     Creates the following columns:
-#     - ppg_clean
-#     - ppg_rate
-#     - ppg_quality
-#     - ppg_peaks
-
-#     Note that neurokit approach is non-causal, i.e. it uses future data to calculate
-#     the signal.
-#     """
-
-#     return (
-#         df.with_columns(
-#             col("ppg_raw")
-#             .map_batches(
-#                 lambda x: pl.from_pandas(
-#                     nk.ppg_process(  # returns a tuple, we only need the pd.DataFrame
-#                         ppg_signal=x.to_numpy(),
-#                         sampling_rate=sampling_rate,
-#                         method="elgendi",
-#                     )[0].drop("PPG_Raw", axis=1)
-#                 ).to_struct()
-#             )
-#             .alias("ppg_components")
-#         )
-#         .unnest("ppg_components")
-#         .select(pl.all().name.to_lowercase())
-#     )

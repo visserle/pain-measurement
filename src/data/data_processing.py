@@ -13,8 +13,8 @@ from src.experiments.measurement.stimulus_generator import StimulusGenerator
 from src.features.eda import feature_eda, preprocess_eda
 from src.features.eeg import feature_eeg, preprocess_eeg
 from src.features.face import feature_face, preprocess_face
+from src.features.hr import feature_hr, preprocess_hr
 from src.features.labels import add_labels
-from src.features.ppg import feature_ppg, preprocess_ppg
 from src.features.pupil import feature_pupil, preprocess_pupil
 from src.features.resampling import (
     add_normalized_timestamp,
@@ -289,8 +289,8 @@ def create_preprocess_data_df(
         return preprocess_eda(df)
     elif "eeg" in name:
         return preprocess_eeg(df)
-    elif "ppg" in name:
-        return preprocess_ppg(df)
+    elif "hr" in name:
+        return preprocess_hr(df)
     elif "pupil" in name:
         return preprocess_pupil(df)
     elif "face" in name:
@@ -309,8 +309,8 @@ def create_feature_data_df(
         return feature_eda(df)
     elif "eeg" in name:
         return feature_eeg(df)
-    elif "ppg" in name:
-        return feature_ppg(df)
+    elif "hr" in name:
+        return feature_hr(df)
     elif "pupil" in name:
         return feature_pupil(df)
     elif "face" in name:
