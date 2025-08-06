@@ -4,6 +4,7 @@ from functools import reduce
 
 import polars as pl
 from polars import col
+from scipy import signal
 
 from src.features.filtering import median_filter
 from src.features.resampling import decimate, interpolate_and_fill_nulls
@@ -23,7 +24,13 @@ def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
 
 def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
     df = median_filter_pupil(df, size_in_seconds=1)
+    df = median_filter_pupil_non_causal(df, size_in_seconds=1)
     df = average_pupils(df, result_column="pupil_mean")
+    df = average_pupils(
+        df,
+        pupil_columns=["pupil_r_exploratory", "pupil_l_exploratory"],
+        result_column="pupil_mean_exploratory",
+    )
     df = decimate(df, factor=6)
     return df
 
@@ -205,6 +212,7 @@ def median_filter_pupil(
     size_in_seconds: int,
     pupil_columns: list[str] = ["pupil_r", "pupil_l"],
 ) -> pl.DataFrame:
+    """Causal median filter on pupil columns."""
     return df.with_columns(
         col(pupil_columns).map_batches(
             lambda x: median_filter(
@@ -212,6 +220,24 @@ def median_filter_pupil(
                 window_size=size_in_seconds * SAMPLE_RATE + 1,  # odd for median
             )
         )
+    )
+
+
+@map_trials
+def median_filter_pupil_non_causal(
+    df: pl.DataFrame,
+    size_in_seconds: int,
+    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
+) -> pl.DataFrame:
+    return df.with_columns(
+        col(pupil_columns)
+        .map_batches(
+            lambda x: signal.medfilt(
+                x,
+                kernel_size=size_in_seconds * SAMPLE_RATE + 1,  # must be odd
+            )
+        )
+        .name.suffix("_exploratory")
     )
 
 

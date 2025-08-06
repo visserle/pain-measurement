@@ -2,20 +2,24 @@
 
 import polars as pl
 from polars import col
-from scipy import signal
 
-from src.features.filtering import butterworth_filter
+from src.features.filtering import (
+    adaptive_ema_smooth,
+    butterworth_filter_non_causal,
+)
 from src.features.resampling import decimate, interpolate_and_fill_nulls
 from src.features.transforming import map_trials
 
 SAMPLE_RATE = 100
 MAX_HEARTRATE = 120
-# 20 bpm above the maximum normal heartrate to account for pain and stress
+# 20 bpm above the maximum normal heart_rate to account for pain and stress
 
 
 def preprocess_ppg(df: pl.DataFrame) -> pl.DataFrame:
-    df = remove_heartrate_nulls(df)
-    df = low_pass_filter_ppg(df)
+    df = remove_heart_rate_nulls(df)
+    df = low_pass_filter_heart_rate_non_causal(df)
+    # order matters, since we reuse the heart_rate column
+    df = ema_smooth_heart_rate(df)
     return df
 
 
@@ -24,69 +28,70 @@ def feature_ppg(df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 
-def remove_heartrate_nulls(
+def remove_heart_rate_nulls(
     df: pl.DataFrame,
 ) -> pl.DataFrame:
     df = df.with_columns(
-        col("ppg_heartrate_shimmer").cast(pl.Float64),
-        pl.when(col("ppg_heartrate_shimmer") > MAX_HEARTRATE)
+        col("ppg_heart_rate_shimmer").cast(pl.Float64),
+        pl.when(col("ppg_heart_rate_shimmer") > MAX_HEARTRATE)
         .then(None)
-        .when(col("ppg_heartrate_shimmer") == -1)
+        .when(col("ppg_heart_rate_shimmer") == -1)
         .then(None)
-        .otherwise(col("ppg_heartrate_shimmer"))
-        .alias("heartrate"),
-    ).drop("ppg_heartrate_shimmer")
+        .otherwise(col("ppg_heart_rate_shimmer"))
+        .alias("heart_rate"),
+    ).drop("ppg_heart_rate_shimmer")
     # note that the interpolate function already has the map_trials decorator
     # so we don't need to add it at the top of this function
-    return interpolate_and_fill_nulls(df, ["heartrate"])
+    return interpolate_and_fill_nulls(df, ["heart_rate"])
 
 
 @map_trials
-def median_filter_pupil(
+def ema_smooth_heart_rate(
     df: pl.DataFrame,
-    size_in_seconds: int,
-    pupil_columns: list[str] = ["pupil_r", "pupil_l"],
+    heart_rate_column: str = "heart_rate",
 ) -> pl.DataFrame:
+    """Causal median filter on heart_rate column."""
     return df.with_columns(
-        col(pupil_columns).map_batches(
-            lambda x: signal.medfilt(
+        col(heart_rate_column)
+        .map_batches(
+            lambda x: adaptive_ema_smooth(
                 x,
-                kernel_size=size_in_seconds * SAMPLE_RATE + 1,  # must be odd
+                fast_alpha=0.06,
+                slow_alpha=0.006,
+                threshold=0.05,
             )
         )
+        .alias(heart_rate_column + "_smooth")
     )
 
 
 @map_trials
-def low_pass_filter_ppg(
+def low_pass_filter_heart_rate_non_causal(
     df: pl.DataFrame,
-    sample_rate: float = SAMPLE_RATE,
+    sample_rate: int = SAMPLE_RATE,
     lowcut: float = 0,
     highcut: float = 0.8,
     order: int = 2,
-    heartrate_column: list[str] = ["heartrate"],
+    heart_rate_column: list[str] = ["heart_rate"],
 ) -> pl.DataFrame:
-    """Low-pass filter the heartrate data using a butterworth filter.
-    This filter has the function to turn the stepwise signal into a smooth one.
-    (Not physiologically motivated, just to make sure that the linear interpolated data
-    from the previous step plus the original stepwise data is not too far off.)
-    """
+    """Low-pass filter the heart_rate data using a butterworth filter. Non-causal."""
     return df.with_columns(
-        col(heartrate_column).map_batches(
+        col(heart_rate_column)
+        .map_batches(
             # map_batches to apply the filter to each column
-            lambda x: butterworth_filter(
+            lambda x: butterworth_filter_non_causal(
                 x,
-                SAMPLE_RATE,
+                sample_rate,
                 lowcut=lowcut,
                 highcut=highcut,
                 order=order,
             )
         )
+        .name.suffix("_exploratory")
     )
 
 
-# If you want to use the neurokit2 library to process the PPG signal, you can use the
-# following function:
+# For neurokit2 library to process the PPG signal, you can use the following function:
 
 # import neurokit2 as nk
 

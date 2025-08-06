@@ -3,11 +3,13 @@ import polars as pl
 from polars import col
 from scipy.signal import detrend
 
-from src.features.filtering import butterworth_filter
+from src.features.filtering import butterworth_filter_non_causal
 from src.features.resampling import decimate
 from src.features.transforming import map_trials
 
 SAMPLE_RATE = 100
+
+# NOTE: only raw EDA signa is causal and can be used for real-time processing
 
 
 def preprocess_eda(df: pl.DataFrame) -> pl.DataFrame:
@@ -70,7 +72,7 @@ def butterworth_eda_decomposition(
             # Phasic component: high-pass filtered signal (>= 0.05 Hz)
             col("eda_raw")
             .map_batches(
-                lambda x: butterworth_filter(
+                lambda x: butterworth_filter_non_causal(
                     x,
                     sample_rate,
                     lowcut=lowcut,
@@ -82,7 +84,7 @@ def butterworth_eda_decomposition(
             # Tonic component: low-pass filtered signal (< 0.05 Hz)
             col("eda_raw")
             .map_batches(
-                lambda x: butterworth_filter(
+                lambda x: butterworth_filter_non_causal(
                     x,
                     sample_rate,
                     lowcut=0,

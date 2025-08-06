@@ -18,7 +18,29 @@ def median_filter(signal, window_size):
     return np.median(windowed, axis=1)
 
 
-def butterworth_filter(
+def adaptive_ema_smooth(
+    signal,
+    fast_alpha: float,
+    slow_alpha: float,
+    threshold: float,
+):
+    """
+    Adaptive Exponential Moving Average (EMA) smoothing.
+    Uses a faster alpha for large changes and a slower alpha for small changes.
+    """
+    smoothed = np.zeros_like(signal)
+    smoothed[0] = signal[0]
+
+    for i in range(1, len(signal)):
+        change = abs(signal[i] - smoothed[i - 1])
+        # Use faster alpha for large changes, slower for small ones
+        alpha = fast_alpha if change > threshold else slow_alpha
+        smoothed[i] = alpha * signal[i] + (1 - alpha) * smoothed[i - 1]
+
+    return smoothed
+
+
+def butterworth_filter_non_causal(
     signal: np.ndarray,
     sample_rate: int,
     lowcut=None,
@@ -42,7 +64,7 @@ def butterworth_filter(
         output="sos",
         fs=sample_rate,
     )
-    return scipy.signal.filtfilt(sos, signal)
+    return scipy.signal.sosfiltfilt(sos, signal)
 
 
 def _sanitize_filter(
