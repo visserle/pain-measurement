@@ -4,8 +4,8 @@ import polars as pl
 from polars import col
 
 from src.features.filtering import (
-    adaptive_ema_smooth,
     butterworth_filter_non_causal,
+    ema_smooth,
 )
 from src.features.resampling import decimate, interpolate_and_fill_nulls
 from src.features.transforming import map_trials
@@ -17,9 +17,9 @@ MAX_HEARTRATE = 120
 
 def preprocess_hr(df: pl.DataFrame) -> pl.DataFrame:
     df = remove_heart_rate_nulls(df)
+    # order matters here, as we need the original heart_rate column
     df = low_pass_filter_heart_rate_non_causal(df)
-    # order matters, since we reuse the heart_rate column
-    df = ema_smooth_heart_rate(df)
+    df = ema_smooth_heart_rate(df, alpha=0.025)
     return df
 
 
@@ -49,18 +49,12 @@ def remove_heart_rate_nulls(
 def ema_smooth_heart_rate(
     df: pl.DataFrame,
     heart_rate_column: str = "heart_rate",
+    alpha: float = 0.025,
 ) -> pl.DataFrame:
     """Causal median filter on heart_rate column."""
     return df.with_columns(
         col(heart_rate_column)
-        .map_batches(
-            lambda x: adaptive_ema_smooth(
-                x,
-                fast_alpha=0.06,
-                slow_alpha=0.006,
-                threshold=0.05,
-            )
-        )
+        .map_batches(lambda x: ema_smooth(x, alpha))
         .alias(heart_rate_column)
     )
 

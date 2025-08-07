@@ -18,24 +18,23 @@ def median_filter(signal, window_size):
     return np.median(windowed, axis=1)
 
 
-def adaptive_ema_smooth(
+def ema_smooth(
     signal,
-    fast_alpha: float,
-    slow_alpha: float,
-    threshold: float,
+    alpha: float,
 ):
     """
-    Adaptive Exponential Moving Average (EMA) smoothing.
-    Can be used for real-time applications (causal).
-    Uses a faster alpha for large changes and a slower alpha for small changes.
+    Standard Exponential Moving Average (EMA) smoothing.
+
+    Args:
+        signal: Input signal array
+        alpha: Smoothing factor (0 < alpha <= 1)
+               Higher alpha = more responsive to recent changes
+               Lower alpha = more smoothing
     """
     smoothed = np.zeros_like(signal)
     smoothed[0] = signal[0]
 
     for i in range(1, len(signal)):
-        change = abs(signal[i] - smoothed[i - 1])
-        # Use faster alpha for large changes, slower for small ones
-        alpha = fast_alpha if change > threshold else slow_alpha
         smoothed[i] = alpha * signal[i] + (1 - alpha) * smoothed[i - 1]
 
     return smoothed
