@@ -14,31 +14,14 @@ logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 def prepare_data(
     df: pl.DataFrame,
     feature_list: list,
-    sample_duration_ms: int = 5000,
+    sample_duration_ms: int,
+    intervals: dict,
+    label_mapping: dict,
+    offsets_ms: dict,
     random_seed: int = 42,
-    intervals: dict | None = None,
-    label_mapping: dict | None = None,
-    offsets_ms: dict | None = None,
     only_return_test_groups: bool = False,  # for the participant_ids in the test set
 ) -> tuple:
     """Prepare data for model training, including creating and splitting samples."""
-    # Use provided config or fall back to defaults
-    # Note that these parameters do not affect the group splitting
-    if intervals is None:
-        intervals = {
-            "increases": "strictly_increasing_intervals",
-            "decreases": "major_decreasing_intervals",
-        }
-    if label_mapping is None:
-        label_mapping = {
-            "increases": 0,
-            "decreases": 1,
-        }
-    if offsets_ms is None:
-        offsets_ms = {
-            "increases": 0,
-            "decreases": 1000,
-        }
 
     # Create and balance samples
     samples = create_samples(
@@ -52,8 +35,10 @@ def prepare_data(
     # Split into train+val and test sets
     splitter = GroupShuffleSplit(n_splits=1, test_size=0.20, random_state=random_seed)
     idx_train_val, idx_test = next(splitter.split(X, y, groups=groups))
+
     if only_return_test_groups:
         return groups[idx_test]
+
     X_train_val, y_train_val = X[idx_train_val], y[idx_train_val]
     X_test, y_test = X[idx_test], y[idx_test]
 

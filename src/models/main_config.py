@@ -1,5 +1,5 @@
 SAMPLE_DURATION_MS = 7000
-RANDOM_SEED = 1337  # https://xcancel.com/karpathy/status/1249876052047884288
+RANDOM_SEED = 1337  # https://x.com/fchollet/status/1612555896491749376
 BATCH_SIZE = 64
 N_EPOCHS = 100
 N_TRIALS = 20

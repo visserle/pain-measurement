@@ -1,4 +1,3 @@
-from src.models.architectures.Crossformer import Crossformer
 from src.models.architectures.EEGNet import EEGNet
 from src.models.architectures.iTransformer import iTransformer
 from src.models.architectures.LightTS import LightTS
@@ -55,18 +54,6 @@ MODELS = {
             "top_k": {"type": "int", "low": 2, "high": 5},
             "dropout": {"type": "float", "low": 0.0, "high": 0.5},
             "factor": {"type": "int", "low": 1, "high": 2},
-            "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
-        },
-    },
-    "Crossformer": {
-        "class": Crossformer,
-        "format": "3D",
-        "hyperparameters": {
-            "d_model": {"type": "exp", "low": 6, "high": 7},
-            "e_layers": {"type": "int", "low": 1, "high": 3},
-            "d_ff": {"type": "exp", "low": 7, "high": 9},
-            "factor": {"type": "int", "low": 1, "high": 2},
-            "dropout": {"type": "float", "low": 0.0, "high": 0.5},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
         },
     },

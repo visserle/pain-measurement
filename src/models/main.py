@@ -129,13 +129,13 @@ def main():
     # Prepare data
     X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
         prepare_data(
-            df,
-            args.features,
-            SAMPLE_DURATION_MS,
-            RANDOM_SEED,
-            INTERVALS,
-            LABEL_MAPPING,
-            OFFSETS_MS,
+            df=df,
+            feature_list=args.features,
+            sample_duration_ms=SAMPLE_DURATION_MS,
+            intervals=INTERVALS,
+            label_mapping=LABEL_MAPPING,
+            offsets_ms=OFFSETS_MS,
+            random_seed=RANDOM_SEED,
         )
     )
 
@@ -152,13 +152,13 @@ def main():
     experiment_tracker = run_model_selection(
         train_loader=train_loader,
         val_loader=val_loader,
-        feature_list=args.features,
         model_names=args.models,
         models_config=MODELS,
         n_trials=args.trials,
         n_epochs=N_EPOCHS,
         device=device,
         experiment_tracker=experiment_tracker,
+        random_seed=RANDOM_SEED,
     )
 
     # Train final model on combined training+validation data

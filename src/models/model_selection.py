@@ -21,13 +21,13 @@ logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 def run_model_selection(
     train_loader: DataLoader,
     val_loader: DataLoader,
-    feature_list: list[str],
     model_names: list[str],
     models_config: dict,
     n_trials: int,
     n_epochs: int,
     device: str | torch.device,
     experiment_tracker: "ExperimentTracker",
+    random_seed: int,
 ) -> "ExperimentTracker":
     """
     Run model selection and hyperparameter tuning for the specified models.
@@ -68,7 +68,9 @@ def run_model_selection(
             train_loader, val_loader, model_name, model_info, device, n_epochs
         )
 
+        sampler = optuna.samplers.TPESampler(seed=random_seed)
         study = optuna.create_study(
+            sampler=sampler,
             direction="maximize",
             storage="sqlite:///db.sqlite3",
             study_name=study_name,
