@@ -328,5 +328,5 @@ def create_merged_and_labeled_data_df(
     df = interpolate_and_fill_nulls(df)
     df = add_normalized_timestamp(df)
     df = resample_at_10_hz_equidistant(df)
-    df = add_labels(df, trials_df)  #  important: always add labels last
+    df = add_labels(df, trials_df)  #  important: always add labels at the end
     return df

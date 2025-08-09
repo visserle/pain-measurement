@@ -6,7 +6,6 @@ import numpy as np
 import polars as pl
 import torch
 from matplotlib.colors import LinearSegmentedColormap
-from scipy.stats import rankdata
 
 from src.data.database_manager import DatabaseManager
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
@@ -35,9 +34,6 @@ def analyze_test_dataset_for_one_stimulus(
         probabilities: Dictionary mapping participant_id to their class probabilities
         participant_trials: Dictionary mapping participant_id to number of trials
     """
-
-    device = next(model.parameters()).device.type
-
     # Renamed to result_probabilities to avoid name collision
     result_probabilities = {}
     participant_trials = {}
@@ -78,7 +74,9 @@ def analyze_test_dataset_for_one_stimulus(
             continue
 
         # Get probabilities for this trial
+        device = next(model.parameters()).device
         batch_samples = []
+
         with torch.inference_mode():
             for sample in samples:
                 batch_samples.append(sample.to_numpy())
