@@ -1,11 +1,10 @@
-# TODO: add anonymization to the database in the future
-
 import logging
 
 import duckdb
 import polars as pl
 from polars import col
 
+from src.data.anonymize import anonymize_db
 from src.data.data_config import DataConfig
 from src.data.data_processing import (
     create_calibration_results_df,
@@ -312,7 +311,12 @@ class DatabaseManager:
 
 
 def main():
-    # MODALITIES = ["Face"]
+    """
+    Main function for database creation.
+    The first step of this pipeline needs the original deanonymized data.
+    Later steps of this pipeline can be applied using the publicy availible anonymized
+    data.
+    """
     with DatabaseManager() as db:
         # Participant data, experiment and questionnaire results
         db.ctas("Invalid_Participants", DataConfig.load_invalid_participants_config())
@@ -352,6 +356,14 @@ def main():
             logger.debug(f"Raw data for participant {participant_id} inserted.")
         logger.info("Raw data inserted.")
 
+    # Anonymize database
+    anonymize_db(db)
+    logger.info("Anonymized Database.")
+
+    # NOTE: From here on, you can use the pipeline without possessing the original, de-
+    # anonymized data.
+
+    with db:
         # Preprocessed data
         # no check for existing data as it will be overwritten every time
         for modality in MODALITIES:
@@ -379,7 +391,7 @@ def main():
         data_dfs = []
         for modality in MODALITIES:
             if modality == "EEG":
-                continue  # TODO EEG processing is separate
+                continue  # we do not merge EEG data, as it has a different sampling rate
             data_dfs.append(
                 db.get_table(
                     f"Feature_{modality}",
