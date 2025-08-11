@@ -41,10 +41,7 @@ set_seed(RANDOM_SEED)
 
 # Default feature list
 # for sanity checks, we could train on temperature and rating features only
-default_features = [
-    "eda_raw",
-    "pupil",
-]
+default_features = ["eda_raw", "pupil", "hear_rate"]
 face_features = [
     "cheek_raise",
     "mouth_open",

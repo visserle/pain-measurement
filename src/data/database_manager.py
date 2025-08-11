@@ -317,44 +317,48 @@ def main():
     Later steps of this pipeline can be applied using the publicy availible anonymized
     data.
     """
-    with DatabaseManager() as db:
-        # Participant data, experiment and questionnaire results
-        db.ctas("Invalid_Participants", DataConfig.load_invalid_participants_config())
-        db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
-        db.ctas("Participants", create_participants_df())
-        db.ctas("Calibration_Results", create_calibration_results_df())
-        db.ctas("Measurement_Results", create_measurement_results_df())
-        for questionnaire in QUESTIONNAIRES:
-            df = create_questionnaire_df(questionnaire)
-            db.ctas("Questionnaire_" + questionnaire.upper(), df)
-        logger.info("Participant data inserted.")
+    db = DatabaseManager()
+    if not DB_FILE.exists():
+        with db:
+            # Participant data, experiment and questionnaire results
+            db.ctas(
+                "Invalid_Participants", DataConfig.load_invalid_participants_config()
+            )
+            db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
+            db.ctas("Participants", create_participants_df())
+            db.ctas("Calibration_Results", create_calibration_results_df())
+            db.ctas("Measurement_Results", create_measurement_results_df())
+            for questionnaire in QUESTIONNAIRES:
+                df = create_questionnaire_df(questionnaire)
+                db.ctas("Questionnaire_" + questionnaire.upper(), df)
+            logger.info("Participant data inserted.")
 
-        # Raw data
-        for participant_id in range(1, NUM_PARTICIPANTS + 1):
-            if participant_id in (
-                db.execute("SELECT participant_id FROM Invalid_Participants")
-                .pl()  # returns a df
-                .to_series()
-                .to_list()
-            ):
-                logger.debug(f"Participant {participant_id} is invalid.")
-                continue
-            if db.participant_exists(participant_id):
-                logger.debug(
-                    f"Raw data for participant {participant_id} already exists."
-                )
-                continue
+            # Raw data
+            for participant_id in range(1, NUM_PARTICIPANTS + 1):
+                if participant_id in (
+                    db.execute("SELECT participant_id FROM Invalid_Participants")
+                    .pl()  # returns a df
+                    .to_series()
+                    .to_list()
+                ):
+                    logger.debug(f"Participant {participant_id} is invalid.")
+                    continue
+                if db.participant_exists(participant_id):
+                    logger.debug(
+                        f"Raw data for participant {participant_id} already exists."
+                    )
+                    continue
 
-            df = load_imotions_data_df(participant_id, "Trials")
-            trials_df = create_trials_df(participant_id, df)
-            db.insert_trials(trials_df)
+                df = load_imotions_data_df(participant_id, "Trials")
+                trials_df = create_trials_df(participant_id, df)
+                db.insert_trials(trials_df)
 
-            for modality in MODALITIES:
-                df = load_imotions_data_df(participant_id, modality)
-                df = create_raw_data_df(participant_id, df, trials_df)
-                db.insert_raw_data(participant_id, "Raw_" + modality, df)
-            logger.debug(f"Raw data for participant {participant_id} inserted.")
-        logger.info("Raw data inserted.")
+                for modality in MODALITIES:
+                    df = load_imotions_data_df(participant_id, modality)
+                    df = create_raw_data_df(participant_id, df, trials_df)
+                    db.insert_raw_data(participant_id, "Raw_" + modality, df)
+                logger.debug(f"Raw data for participant {participant_id} inserted.")
+            logger.info("Raw data inserted.")
 
     # Anonymize database
     anonymize_db(db)

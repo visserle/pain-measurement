@@ -32,10 +32,7 @@ def anonymize_db(db):
         tables.remove("Seeds")  # no participants here
         tables.insert(0, "Trials")  # 1st place
 
-    Anonymizer = ID_Anonymizer(
-        participants_with_problematic_trials_only,
-        random_seed=42,
-    )
+    Anonymizer = ID_Anonymizer(participants_with_problematic_trials_only)
 
     for table in tables:
         with db:
@@ -56,12 +53,10 @@ class ID_Anonymizer:
     def __init__(
         self,
         participants_with_problematic_trials_only: list | None = None,
-        random_seed: int = 42,
     ):
         self.participants_with_problematic_trials_only = (
             participants_with_problematic_trials_only or []
         )
-        self.random_seed = random_seed
         self._participant_mapping = None
 
     def anonymize_participant_ids(self, df: pl.DataFrame) -> pl.DataFrame:
@@ -120,8 +115,7 @@ class ID_Anonymizer:
 
         # Generate shuffled IDs for normal participants (1 to n-k)
         normal_ids = np.arange(1, len(normal) + 1, dtype=np.uint8)
-        rng = np.random.default_rng(self.random_seed)
-        rng.shuffle(normal_ids)
+        np.random.shuffle(normal_ids)
 
         # Assign highest IDs to problematic participants (n-k+1 to n)
         problematic_ids = np.arange(
