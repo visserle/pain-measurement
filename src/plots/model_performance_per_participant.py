@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
 import polars as pl
 import seaborn as sns
 import torch
 import torch.nn as nn
+from matplotlib import rcParams
 from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
 
@@ -185,6 +187,85 @@ def get_summary_statistics_single_model(
     )
 
 
+def plot_participant_performance_single_model(
+    results_df: pl.DataFrame,
+) -> None:
+    # Set publication-quality parameters
+    rcParams["font.family"] = "Arial"
+    rcParams["font.size"] = 10
+    rcParams["axes.linewidth"] = 1
+    rcParams["axes.spines.top"] = False
+    rcParams["axes.spines.right"] = False
+
+    # Filter and prepare data
+    participant_df = results_df.filter(pl.col("participant") != "overall")
+    overall_accuracy = results_df.filter(pl.col("participant") == "overall")[
+        "accuracy"
+    ][0]
+
+    # Sort participants by accuracy for better visualization
+    participant_df = participant_df.sort("accuracy", descending=True)
+
+    # Create figure with appropriate dimensions for a journal column
+    fig = plt.figure(figsize=(8, 5))
+
+    # Plot with subtle, professional colors
+    participants = participant_df["participant"].to_list()
+    accuracies = participant_df["accuracy"].to_list()
+
+    # Create color scheme: darker for above overall, lighter for below overall
+    colors = ["#2c7bb6" for acc in accuracies]
+
+    # Plot bars
+    bars = plt.bar(participants, accuracies, color=colors, width=0.7)  # noqa
+
+    # Add reference lines
+    plt.axhline(
+        y=overall_accuracy,
+        color="#d73027",
+        linestyle="-",
+        linewidth=1.5,
+        label="Overall accuracy",
+        zorder=5,
+    )
+    plt.axhline(
+        y=0.5,
+        color="#969696",
+        linestyle="--",
+        linewidth=1,
+        label="Chance level (50%)",
+        zorder=5,
+    )
+
+    # Clean up aesthetics
+    plt.xlabel("Participant ID")
+    plt.ylabel("Accuracy")
+    plt.title("Classification Accuracy by Participant", fontsize=12)
+
+    # Format y-axis to show percentages
+    plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
+
+    # Set y-axis limits from 40% to 100% to better show differences but remain truthful
+    plt.ylim([0.0, 1.0])
+
+    # Add subtle grid lines for readability
+    plt.grid(
+        axis="y", linestyle="-", linewidth=0.5, color="#E0E0E0", alpha=0.7, zorder=0
+    )
+
+    # Add a small gap between axis and first tick to improve appearance
+    plt.tick_params(axis="x", which="major", pad=5)
+    plt.tick_params(axis="y", which="major", pad=5)
+
+    # Position legend in a non-intrusive location
+    plt.legend(frameon=False, loc="upper right", bbox_to_anchor=(1, 1))
+
+    # Ensure clean spacing
+    plt.tight_layout()
+
+    return fig
+
+
 def plot_feature_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
     """
     Plot bars for each feature combination across all participants using academic styling.
@@ -231,9 +312,22 @@ def plot_feature_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
         "#50E3C2",  # Teal
         "#F8E71C",  # Yellow
     ]
+    # PARTICIPANT-specific color palette - blues/teals for people
+    participant_colors = [
+        "#1f4e79",  # Navy blue
+        "#2e6da4",  # Medium blue
+        "#428bca",  # Light blue
+        "#5bc0de",  # Cyan
+        "#17a2b8",  # Teal
+        "#20c997",  # Light teal
+        "#6f42c1",  # Indigo
+        "#007bff",  # Primary blue
+        "#17a2b8",  # Info blue
+        "#6c757d",  # Secondary gray
+    ]
 
     # Use only as many colors as needed
-    palette = journal_colors[:n_participants]
+    palette = participant_colors[:n_participants]
 
     # Set academic style
     plt.style.use("default")
@@ -343,9 +437,21 @@ def plot_participant_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
         "#B8E986",  # Light green
         "#50E3C2",  # Teal
     ]
+    # FEATURE-specific color palette - warm colors for features/methods
+    feature_colors = [
+        "#d73027",  # Red
+        "#f46d43",  # Orange-red
+        "#fdae61",  # Orange
+        "#fee08b",  # Yellow-orange
+        "#abd9e9",  # Light blue (contrast)
+        "#74add1",  # Medium blue
+        "#4575b4",  # Dark blue
+        "#313695",  # Navy
+        "#5e3c99",  # Purple
+    ]
 
     # Use only as many colors as needed
-    palette = journal_colors[:n_combinations]
+    palette = feature_colors[:n_combinations]
 
     # Set academic style
     plt.style.use("default")
@@ -424,6 +530,9 @@ def main():
     from src.models.data_preparation import prepare_data
     from src.models.main_config import RANDOM_SEED
     from src.models.utils import load_model
+
+    load_dotenv()
+    FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
 
     configure_logging(
         stream_level=logging.DEBUG,
@@ -530,26 +639,27 @@ def main():
         )
         results[feature_combination] = result_df
 
+        # Save samples size per test set participant
+        results[feature_combinations[0]].drop("accuracy").write_json(
+            FIGURE_DIR / "samples_per_test_participant.json"
+        )
+
     feature_set_acc, _ = plot_feature_accuracy_comparison(
         results, labels, figsize=(10, 6)
     )
-    plt.show()
-
+    # plt.show()
     feature_set_acc_by_participant, _ = plot_participant_accuracy_comparison(
         results, labels, figsize=(13, 6)
     )
-    plt.show()
+    # plt.show()
 
-    # load_dotenv()
-    # FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
-
-    # feature_set_acc.savefig(
-    #     FIGURE_DIR / "feature_set_acc.png", dpi=300, bbox_inches="tight"
-    # )
-
-    # feature_set_acc_by_participant.savefig(
-    #     FIGURE_DIR / "feature_set_acc_by_participant.png", dpi=300, bbox_inches="tight"
-    # )
+    # Save results
+    feature_set_acc.savefig(
+        FIGURE_DIR / "feature_set_acc.png", dpi=300, bbox_inches="tight"
+    )
+    feature_set_acc_by_participant.savefig(
+        FIGURE_DIR / "feature_set_acc_by_participant.png", dpi=300, bbox_inches="tight"
+    )
 
 
 if __name__ == "__main__":
