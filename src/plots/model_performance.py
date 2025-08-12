@@ -25,7 +25,8 @@ def get_model_predictions(
     Returns:
         tuple: (probabilities, true_labels)
     """
-    device = next(model.parameters()).device.type
+    device = next(model.parameters()).device
+
     model.eval()
     all_probs = []
     all_labels = []
@@ -89,34 +90,63 @@ def _plot_confusion_matrix(
     threshold: float,
     accuracy_score: float,
 ) -> None:
-    fig = plt.figure(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(4, 3.5))
+
+    # Create heatmap with professional styling
     sns.heatmap(
         conf_matrix,
         annot=True,
         fmt="d",
         cmap="Blues",
-        xticklabels=["Increases", "Decreases"],
-        yticklabels=["Increases", "Decreases"],
+        xticklabels=["Non-Decrease", "Decrease"],
+        yticklabels=["Non-Decrease", "Decrease"],
+        cbar_kws={"shrink": 0.7},
+        square=True,
+        linewidths=0.5,
+        linecolor="white",
+        annot_kws={"fontsize": 10},
+        ax=ax,
     )
-    plt.title(
-        f"Confusion Matrix (Threshold: {threshold:.2f}, Accuracy: {accuracy_score:.2f})"
+
+    # Professional styling for academic papers
+    ax.set_title(
+        f"Threshold: {threshold:.2f}, Accuracy: {accuracy_score:.2f}",
+        fontsize=10,
+        pad=10,
     )
-    plt.ylabel("True Label")
-    plt.xlabel("Predicted Label")
+    ax.set_ylabel(
+        "True label",
+        fontsize=10,
+    )
+    ax.set_xlabel(
+        "Predicted label",
+        fontsize=10,
+    )
+
+    # Smaller tick labels
+    ax.tick_params(axis="both", which="major", labelsize=9)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center")
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=90, va="center")
+
+    # Add border around the plot
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(1)
+        spine.set_edgecolor("black")
+
+    plt.tight_layout()
     return fig
 
 
-def plot_roc_curve(
+def plot_single_roc_curve(
     probs: np.ndarray,
     y_true: np.ndarray,
 ) -> plt.Figure:
     """
     Plot ROC curve and calculate AUC score for binary classification.
-
     Returns:
-        plt.Figure: The matplotlib figure object
+    plt.Figure: The matplotlib figure object
     """
-
     fpr, tpr, thresholds = roc_curve(y_true, probs)
     auc_score = auc(fpr, tpr)
 
@@ -124,38 +154,62 @@ def plot_roc_curve(
     optimal_idx = np.argmax(tpr - fpr)
     optimal_threshold = thresholds[optimal_idx]
 
-    fig = plt.figure(figsize=(6, 6))
-    plt.plot(fpr, tpr, label=f"ROC curve (AUC = {auc_score:.3f})")
-    plt.plot([0, 1], [0, 1], "k--")  # diagonal line
+    fig, ax = plt.subplots(figsize=(4, 4))
+
+    # Plot ROC curve with professional styling
+    ax.plot(
+        fpr,
+        tpr,
+        color="#1f77b4",
+        linewidth=2,
+        label=f"ROC curve (AUC = {auc_score:.3f})",
+    )
+
+    # Diagonal reference line
+    ax.plot([0, 1], [0, 1], "k--", alpha=0.6, linewidth=1, label="Random classifier")
 
     # Add marker for optimal threshold
-    plt.plot(
+    ax.plot(
         fpr[optimal_idx],
         tpr[optimal_idx],
         "ro",
-        label=f"Optimal (threshold={optimal_threshold:.2f})",
+        markersize=6,
+        label=f"Optimal threshold = {optimal_threshold:.2f}",
     )
 
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title("Receiver Operating Characteristic (ROC) Curve")
-    plt.legend(loc="lower right")
-    plt.grid(True)
+    # Professional styling
+    ax.set_xlim([0.0, 1.0])
+    ax.set_ylim([0.0, 1.0])
+    ax.set_xlabel("False Positive Rate", fontsize=10)
+    ax.set_ylabel("True Positive Rate", fontsize=10)
 
+    # Legend styling
+    ax.legend(loc="lower right", fontsize=8, frameon=True, fancybox=False, shadow=False)
+
+    # Tick styling
+    ax.tick_params(axis="both", which="major", labelsize=8)
+
+    # Equal aspect ratio for square plot
+    ax.set_aspect("equal")
+
+    # Add border
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(1)
+        spine.set_edgecolor("black")
+
+    plt.tight_layout()
     return fig
 
 
-def plot_pr_curve(
+def plot_single_pr_curve(
     probs: np.ndarray,
     y_true: np.ndarray,
 ) -> tuple[plt.Figure, float, float]:
     """
     Plot Precision-Recall curve and calculate Average Precision score for binary classification.
-
     Returns:
-        tuple: (figure, avg_precision, optimal_threshold)
+    tuple: (figure, avg_precision, optimal_threshold)
     """
     # Calculate precision-recall curve
     precision, recall, thresholds = precision_recall_curve(y_true, probs)
@@ -168,27 +222,166 @@ def plot_pr_curve(
     optimal_idx = np.argmax(f1_scores)
     optimal_threshold = thresholds[optimal_idx]
 
-    # Plot precision-recall curve
-    fig = plt.figure(figsize=(6, 6))
-    plt.plot(recall, precision, label=f"PR curve (AP = {avg_precision:.3f})")
+    # Calculate no-skill line (ratio of positive samples)
+    no_skill = sum(y_true) / len(y_true)
+
+    fig, ax = plt.subplots(figsize=(4, 4))
+
+    # Plot PR curve with professional styling
+    ax.plot(
+        recall,
+        precision,
+        color="#1f77b4",
+        linewidth=2,
+        label=f"PR curve (AP = {avg_precision:.3f})",
+    )
+
+    # No-skill baseline
+    ax.axhline(
+        y=no_skill,
+        color="k",
+        linestyle="--",
+        alpha=0.6,
+        linewidth=1,
+        label=f"No skill baseline = {no_skill:.2f}",
+    )
 
     # Add marker for optimal threshold
-    plt.plot(
+    ax.plot(
         recall[optimal_idx],
         precision[optimal_idx],
         "ro",
-        label=f"Optimal (threshold={optimal_threshold:.2f}, F1={f1_scores[optimal_idx]:.2f})",
+        markersize=6,
+        label=f"Optimal (F1 = {f1_scores[optimal_idx]:.2f})",
     )
 
-    # Calculate no-skill line (ratio of positive samples)
-    no_skill = sum(y_true) / len(y_true)
-    plt.plot([0, 1], [no_skill, no_skill], "k--", label=f"No Skill (y={no_skill:.2f})")
+    # Styling
+    ax.set_xlim([0.0, 1.0])
+    ax.set_ylim([0.0, 1.0])
+    ax.set_xlabel("Recall", fontsize=10)
+    ax.set_ylabel("Precision", fontsize=10)
 
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel("Recall")
-    plt.ylabel("Precision")
-    plt.title("Precision-Recall Curve")
-    plt.legend(loc="lower left")
-    plt.grid(True)
+    # Legend styling
+    ax.legend(loc="lower left", fontsize=8, frameon=True, fancybox=False, shadow=False)
+
+    # Tick styling
+    ax.tick_params(axis="both", which="major", labelsize=8)
+
+    # Equal aspect ratio for square plot
+    ax.set_aspect("equal")
+
+    # Add border
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(1)
+        spine.set_edgecolor("black")
+
+    plt.tight_layout()
     return (fig, avg_precision, optimal_threshold)
+
+
+def plot_multiple_roc_curves(
+    model_results: dict,
+) -> plt.Figure:
+    """
+    Plot ROC curves for multiple models and calculate AUC scores for binary classification.
+    Args:
+        model_results: Dictionary where keys are model names and values are tuples of (probs, y_true)
+    Returns:
+        plt.Figure: The matplotlib figure object
+    """
+    # Set publication-ready style
+    plt.rcParams.update(
+        {
+            "font.size": 10,
+            "font.family": "serif",
+            "axes.linewidth": 1.2,
+            "axes.labelsize": 12,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "legend.fontsize": 9,
+            "figure.dpi": 300,
+        }
+    )
+    fig, ax = plt.subplots(figsize=(5, 5))
+    # Academic color palette (colorblind-friendly)
+    colors = [
+        "#1f77b4",
+        "#ff7f0e",
+        "#2ca02c",
+        "#d62728",
+        "#9467bd",
+        "#8c564b",
+        "#e377c2",
+        "#7f7f7f",
+    ]
+    linestyles = ["-", "-", "-", "-", "-", "-", "--", "--"]
+
+    # Sort by AUC for consistent ordering
+    sorted_results = sorted(
+        model_results.items(),
+        key=lambda x: auc(*roc_curve(x[1][1], x[1][0])[:2]),
+        reverse=True,
+    )
+
+    for i, (model_name, (probs, y_true)) in enumerate(sorted_results):
+        fpr, tpr, thresholds = roc_curve(y_true, probs)
+        auc_score = auc(fpr, tpr)
+
+        # Use labels dictionary for clean names, fallback to original method
+        clean_name = labels.get(model_name, model_name.replace("_", " ").title())
+        if len(clean_name) > 20:
+            clean_name = clean_name[:17] + "..."
+
+        color = colors[i % len(colors)]
+        linestyle = linestyles[i % len(linestyles)]
+
+        # Plot ROC curve
+        ax.plot(
+            fpr,
+            tpr,
+            color=color,
+            linestyle=linestyle,
+            linewidth=2,
+            label=f"{clean_name} (AUC = {auc_score:.3f})",
+            alpha=0.8,
+        )
+
+    # Diagonal reference line
+    ax.plot([0, 1], [0, 1], "k--", alpha=0.5, linewidth=1, label="Chance")
+
+    # Professional styling
+    ax.set_xlim([0.0, 1.0])
+    ax.set_ylim([0.0, 1.0])
+    ax.set_xlabel("False Positive Rate", fontweight="bold")
+    ax.set_ylabel("True Positive Rate", fontweight="bold")
+
+    # Grid for better readability
+    ax.grid(True, alpha=0.3, linestyle="-", linewidth=0.5)
+    ax.set_axisbelow(True)
+
+    # Legend positioning and styling
+    legend = ax.legend(
+        loc="lower right",
+        frameon=True,
+        fancybox=False,
+        shadow=False,
+        framealpha=0.95,
+        edgecolor="black",
+        facecolor="white",
+    )
+    legend.get_frame().set_linewidth(0.8)
+
+    # Clean spines
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(1.2)
+        spine.set_edgecolor("black")
+
+    # Set equal aspect ratio
+    ax.set_aspect("equal", adjustable="box")
+
+    # Tight layout
+    plt.tight_layout()
+
+    return fig

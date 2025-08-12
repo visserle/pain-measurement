@@ -146,6 +146,84 @@ def _calculate_z_score(confidence_level: float) -> float:
     return stats.norm.ppf((1 + confidence_level) / 2).round(2)
 
 
+def plot_averages_with_ci_plt(
+    averages_with_ci_df: pl.DataFrame,
+    signals: list[str] = None,
+    muted_alpha: float = 0.0,
+) -> plt.Figure:
+    """
+    Plot confidence intervals for the given modality for all participants for each stimulus seed.
+    """
+    # Get unique stimulus seeds
+    stimulus_seeds = sorted(averages_with_ci_df["stimulus_seed"].unique())
+    n_seeds = len(stimulus_seeds)
+
+    # Create subplot grid (4x3 for 12 plots)
+    n_cols = 3
+    n_rows = (n_seeds + n_cols - 1) // n_cols
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 12), sharex=True, sharey=True)
+    axes = axes.flatten()
+
+    # Color palette for different signals
+    colors = plt.cm.tab10(np.linspace(0, 1, len(signals)))
+
+    for idx, seed in enumerate(stimulus_seeds):
+        ax = axes[idx]
+
+        # Filter data for current stimulus seed
+        seed_data = averages_with_ci_df.filter(pl.col("stimulus_seed") == seed)
+
+        # Plot each signal
+        for sig_idx, sig in enumerate(signals):
+            color = colors[sig_idx]
+            alpha = muted_alpha if muted_alpha > 0 else 1.0
+
+            # Plot the average line
+            ax.plot(
+                seed_data["time_bin"],
+                seed_data[f"avg_{sig}"],
+                label=sig,
+                color=color,
+                alpha=alpha,
+                linewidth=2,
+            )
+
+            # Plot confidence interval
+            ax.fill_between(
+                seed_data["time_bin"],
+                seed_data[f"ci_lower_{sig}"],
+                seed_data[f"ci_upper_{sig}"],
+                color=color,
+                alpha=0.15 * alpha,
+                linewidth=0,
+            )
+
+        # Customize subplot
+        ax.set_title(f"Stimulus {seed}", fontsize=12, fontweight="bold")
+        ax.grid(True, alpha=0.3)
+        ax.set_xlim(seed_data["time_bin"].min(), seed_data["time_bin"].max())
+
+        # Add labels to edge plots only
+        if idx >= (n_rows - 1) * n_cols:
+            ax.set_xlabel("Time (s)", fontsize=10)
+        if idx % n_cols == 0:
+            ax.set_ylabel("Normalized value", fontsize=10)
+
+        # Add legend to first subplot
+        if idx == 0:
+            ax.legend(loc="upper right", fontsize=8)
+
+    # Remove empty subplots
+    for idx in range(n_seeds, len(axes)):
+        fig.delaxes(axes[idx])
+
+    # Adjust layout
+    plt.tight_layout()
+
+    return fig
+
+
 def plot_averages_with_ci(
     averages_with_ci_df: pl.DataFrame,
     signals: list[str] = None,
