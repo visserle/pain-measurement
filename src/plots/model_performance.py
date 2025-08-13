@@ -305,9 +305,9 @@ def plot_multiple_roc_curves(
         "#9467bd",
         "#8c564b",
         "#e377c2",
-        "#7f7f7f",
+        "#17becf",
+        "#000080",
     ]
-    print(results)
 
     for i, (feature_set, (probs, y_true)) in enumerate(results.items()):
         fpr, tpr, thresholds = roc_curve(y_true, probs)
@@ -389,7 +389,8 @@ def plot_multiple_pr_curves(
         "#9467bd",
         "#8c564b",
         "#e377c2",
-        "#7f7f7f",
+        "#17becf",
+        "#000080",
     ]
 
     # Calculate no-skill baseline from first dataset
