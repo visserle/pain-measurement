@@ -69,10 +69,16 @@ def run_model_selection(
         )
 
         sampler = optuna.samplers.TPESampler(seed=random_seed)
+        storage = optuna.storages.RDBStorage(
+            url="sqlite:///db.sqlite3",
+            heartbeat_interval=60,
+            grace_period=180,
+            failed_trial_callback=optuna.storages.RetryFailedTrialCallback(max_retry=5),
+        )
         study = optuna.create_study(
             sampler=sampler,
             direction="maximize",
-            storage="sqlite:///db.sqlite3",
+            storage=storage,
             study_name=study_name,
             pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10),
         )
@@ -205,7 +211,7 @@ class ExperimentTracker:
             result_dir: Base directory for storing results
         """
         self.features = features
-        self.feature_string = "_".join(sorted(features))  # Sort for consistency
+        self.feature_string = "_".join(features)
         self.sample_duration_ms = sample_duration_ms or None
         self.intervals = intervals or {}
         self.label_mapping = label_mapping or {}
