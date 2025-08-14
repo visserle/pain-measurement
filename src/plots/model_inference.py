@@ -335,11 +335,11 @@ def plot_prediction_confidence_heatmap(
     stimulus_color: str = "black",
     stimulus_scale: float = 0.4,
     seeds_to_plot: list | None = None,
-    ncols: int = 3,
+    ncols: int = 2,
 ) -> plt.Figure:
     """
     Create heatmap visualizations of model predictions across all participants for multiple stimulus seeds.
-    Optimized for presentation in PowerPoint.
+    Publication-ready version with clean formatting.
 
     Args:
         all_probabilities: Dictionary structured as {seed: {participant: probabilities}}
@@ -370,9 +370,9 @@ def plot_prediction_confidence_heatmap(
     n_seeds = len(seeds_to_plot)
     nrows = (n_seeds + ncols - 1) // ncols  # Ceiling division
 
-    # Create figure with subplots
+    # Create figure with subplots - adjusted spacing for publication
     fig, axes = plt.subplots(
-        nrows, ncols, figsize=(figure_size[0] * ncols, figure_size[1] * nrows), dpi=120
+        nrows, ncols, figsize=(figure_size[0] * ncols, figure_size[1] * nrows), dpi=300
     )
 
     # Ensure axes is always 2D array for consistent indexing
@@ -476,59 +476,72 @@ def plot_prediction_confidence_heatmap(
             ],
         )
 
-        # Add labels and title
-        total_trials = len(sorted_confidence_array)
-        ax.set_title(
-            f"Stimulus {stimulus_seed} ({total_trials} trials)",
-            fontsize=12,
+        # Publication formatting - no titles, clean labels
+        ax.set_xlabel("Time (s)", fontsize=12, fontweight="bold")
+
+        # Only add y-label to leftmost column
+        if idx % ncols == 0:
+            ax.set_ylabel("Trials", fontsize=12, fontweight="bold")
+
+        # Clean tick formatting
+        ax.tick_params(axis="both", which="major", labelsize=10)
+        ax.set_xticks(np.arange(0, 181, 60))
+
+        # Simplified y-axis - just show trial count
+        ax.set_yticks([0, len(sorted_confidence_array)])
+        ax.set_yticklabels([f"{len(sorted_confidence_array)}", "1"], fontsize=10)
+
+        # Clean grid
+        ax.grid(which="major", axis="x", linestyle="-", alpha=0.2, linewidth=0.5)
+
+        # Add stimulus seed label as text annotation in corner
+        ax.text(
+            0.02,
+            0.98,
+            f"Seed {stimulus_seed}",
+            transform=ax.transAxes,
+            fontsize=10,
             fontweight="bold",
+            ha="left",
+            va="top",
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
         )
-        ax.set_xlabel("Time (seconds)", fontsize=10)
-        ax.set_ylabel("Participant", fontsize=10)
-        ax.tick_params(axis="both", which="major", labelsize=8)
-
-        # Add participant IDs as y-ticks (fewer for multiple plots)
-        num_ticks = min(5, len(sorted_confidence_array))
-        y_positions = np.linspace(0, len(sorted_confidence_array) - 1, num_ticks)
-        y_positions = np.round(y_positions).astype(int)
-        tick_indices = np.linspace(
-            0, len(sorted_participant_ids) - 1, num_ticks
-        ).astype(int)
-        ax.set_yticks(y_positions)
-        ax.set_yticklabels(
-            [sorted_participant_ids[i] for i in tick_indices[::-1]], fontsize=8
-        )
-
-        # Add gridlines
-        ax.grid(which="major", axis="x", linestyle="--", alpha=0.3)
-        ax.set_xticks(np.arange(0, 181, 60))  # Every 60 seconds for cleaner look
 
     # Hide empty subplots
     for idx in range(n_seeds, len(axes_flat)):
         axes_flat[idx].set_visible(False)
 
-    # Add a single colorbar for all subplots
-    fig.subplots_adjust(right=0.9)
-    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    # Adjust layout manually to fix tight_layout warning
+    fig.subplots_adjust(
+        left=0.08, bottom=0.1, right=0.88, top=0.95, wspace=0.15, hspace=0.25
+    )
+
+    # Add colorbar with proper positioning
+    cbar_ax = fig.add_axes([0.9, 0.1, 0.02, 0.85])
     cbar = fig.colorbar(im, cax=cbar_ax)
+
+    # Publication-ready colorbar
     cbar.set_label(
-        "Prediction Confidence\n(- = Decrease, + = Increase)",
+        "Prediction confidence",
         rotation=270,
-        labelpad=30,
+        labelpad=20,
         fontsize=12,
         fontweight="bold",
     )
     cbar.ax.tick_params(labelsize=10)
 
-    # Add overall title
-    fig.suptitle(
-        f"Model Predictions Across {n_seeds} Stimuli (threshold={classification_threshold})",
-        fontsize=16,
-        fontweight="bold",
-        y=0.98,
+    # Add custom tick labels for clarity
+    cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
+    cbar.set_ticklabels(
+        [
+            "Strong\nDecrease",
+            "Weak\nDecrease",
+            "Uncertain",
+            "Weak\nIncrease",
+            "Strong\nIncrease",
+        ]
     )
 
-    plt.tight_layout()
     return fig
 
 
