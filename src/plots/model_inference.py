@@ -330,16 +330,16 @@ def plot_prediction_confidence_heatmap(
     sample_duration: int = 3000,
     step_size: int = 1000,
     classification_threshold: float = 0.5,
-    figure_size: tuple = (15, 8),
-    stimulus_linewidth: int = 4,
+    figure_size: tuple = (2.8, 1.8),  # Optimized for 2-column format
+    stimulus_linewidth: int = 1.5,  # Slightly thinner for cleaner look
     stimulus_color: str = "black",
-    stimulus_scale: float = 0.4,
+    stimulus_scale: float = 0.25,  # Reduced for better visibility
     seeds_to_plot: list | None = None,
     ncols: int = 2,
 ) -> plt.Figure:
     """
-    Create heatmap visualizations of model predictions across all participants for multiple stimulus seeds.
-    Publication-ready version with clean formatting.
+    Create compact heatmap visualizations of model predictions across all participants for multiple stimulus seeds.
+    Publication-ready version optimized for two-column layout with minimal spacing.
 
     Args:
         all_probabilities: Dictionary structured as {seed: {participant: probabilities}}
@@ -370,14 +370,22 @@ def plot_prediction_confidence_heatmap(
     n_seeds = len(seeds_to_plot)
     nrows = (n_seeds + ncols - 1) // ncols  # Ceiling division
 
-    # Create figure with subplots - adjusted spacing for publication
+    # Optimized figure sizing for publication
+    total_width = figure_size[0] * min(ncols, n_seeds)
+    total_height = figure_size[1] * nrows
+
+    # Create figure with minimal spacing
     fig, axes = plt.subplots(
-        nrows, ncols, figsize=(figure_size[0] * ncols, figure_size[1] * nrows), dpi=300
+        nrows,
+        ncols,
+        figsize=(total_width, total_height),
+        dpi=300,
+        gridspec_kw={"hspace": 0.15, "wspace": 0.12},  # Minimal spacing
     )
 
     # Ensure axes is always 2D array for consistent indexing
     if nrows == 1:
-        axes = axes.reshape(1, -1)
+        axes = axes.reshape(1, -1) if ncols > 1 else np.array([[axes]])
     elif ncols == 1:
         axes = axes.reshape(-1, 1)
 
@@ -438,7 +446,6 @@ def plot_prediction_confidence_heatmap(
         sort_indices = sorted(
             range(len(participant_ids)), key=lambda i: participant_ids[i]
         )
-
         sorted_confidence_array = confidence_array[sort_indices]
         sorted_participant_ids = [confidence_data[i][0] for i in sort_indices]
 
@@ -458,11 +465,12 @@ def plot_prediction_confidence_heatmap(
             cmap=cmap,
             vmin=-1,
             vmax=1,
-            extent=(0, 183, 0, len(sorted_confidence_array)),
+            extent=(0, 180, 0, len(sorted_confidence_array)),  # Fixed extent
             alpha=0.9,
+            interpolation="nearest",  # Crisp pixels for publication
         )
 
-        # Add stimulus line overlay
+        # Add stimulus line overlay with reduced visual weight
         scaled_stimulus_y = len(sorted_confidence_array) / 2
         ax.plot(
             time_points,
@@ -470,77 +478,89 @@ def plot_prediction_confidence_heatmap(
             linewidth=stimulus_linewidth,
             color=stimulus_color,
             zorder=10,
+            alpha=0.8,  # Slightly transparent
             path_effects=[
                 path_effects.SimpleLineShadow(offset=(1, -1), alpha=0.3),
                 path_effects.Normal(),
             ],
         )
 
-        # Publication formatting - no titles, clean labels
-        ax.set_xlabel("Time (s)", fontsize=12, fontweight="bold")
+        # Optimized labeling - only on edges
+        if idx >= (nrows - 1) * ncols:  # Bottom row
+            ax.set_xlabel("Time (s)", fontsize=8, fontweight="bold")
+        else:
+            ax.set_xlabel("")
 
-        # Only add y-label to leftmost column
-        if idx % ncols == 0:
-            ax.set_ylabel("Trials", fontsize=12, fontweight="bold")
+        if idx % ncols == 0:  # Left column
+            ax.set_ylabel("Trials", fontsize=8, fontweight="bold")
+        else:
+            ax.set_ylabel("")
 
-        # Clean tick formatting
-        ax.tick_params(axis="both", which="major", labelsize=10)
-        ax.set_xticks(np.arange(0, 181, 60))
+        # Minimal, clean ticks
+        ax.tick_params(axis="both", which="major", labelsize=7, pad=2)
+        ax.set_xticks([0, 90, 180])
 
-        # Simplified y-axis - just show trial count
-        ax.set_yticks([0, len(sorted_confidence_array)])
-        ax.set_yticklabels([f"{len(sorted_confidence_array)}", "1"], fontsize=10)
+        # Y-axis with better spacing
+        n_trials = len(sorted_confidence_array)
+        ax.set_yticks([0, n_trials])
+        ax.set_yticklabels([f"{n_trials}", "1"], fontsize=7)
 
-        # Clean grid
-        ax.grid(which="major", axis="x", linestyle="-", alpha=0.2, linewidth=0.5)
+        # Remove grid for cleaner look
+        ax.grid(False)
 
-        # Add stimulus seed label as text annotation in corner
+        # Compact seed label with better positioning
         ax.text(
-            0.02,
-            0.98,
-            f"Seed {stimulus_seed}",
+            0.97,
+            0.95,
+            f"S{stimulus_seed}",
             transform=ax.transAxes,
-            fontsize=10,
+            fontsize=7,
             fontweight="bold",
-            ha="left",
+            ha="right",
             va="top",
-            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+            bbox=dict(
+                boxstyle="round,pad=0.15", facecolor="white", alpha=0.8, linewidth=0
+            ),
         )
+
+        # Remove spines for cleaner look
+        for spine in ax.spines.values():
+            spine.set_linewidth(0.5)
 
     # Hide empty subplots
     for idx in range(n_seeds, len(axes_flat)):
         axes_flat[idx].set_visible(False)
 
-    # Adjust layout manually to fix tight_layout warning
+    # Optimized layout for publication
     fig.subplots_adjust(
-        left=0.08, bottom=0.1, right=0.88, top=0.95, wspace=0.15, hspace=0.25
+        left=0.09,  # Slightly more room for y-labels
+        bottom=0.15,  # More room for x-labels
+        right=0.82,  # More room for colorbar
+        top=0.97,  # Minimal top margin
+        wspace=0.12,  # Minimal horizontal spacing
+        hspace=0.15,  # Minimal vertical spacing
     )
 
-    # Add colorbar with proper positioning
-    cbar_ax = fig.add_axes([0.9, 0.1, 0.02, 0.85])
+    # Colorbar with optimized positioning and sizing
+    cbar_ax = fig.add_axes([0.84, 0.15, 0.02, 0.82])  # Narrower colorbar
     cbar = fig.colorbar(im, cax=cbar_ax)
 
-    # Publication-ready colorbar
+    # Compact colorbar formatting
     cbar.set_label(
         "Prediction confidence",
         rotation=270,
-        labelpad=20,
-        fontsize=12,
+        labelpad=12,  # Reduced padding
+        fontsize=8,
         fontweight="bold",
     )
-    cbar.ax.tick_params(labelsize=10)
+    cbar.ax.tick_params(labelsize=7, pad=1)
 
-    # Add custom tick labels for clarity
-    cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
-    cbar.set_ticklabels(
-        [
-            "Strong\nDecrease",
-            "Weak\nDecrease",
-            "Uncertain",
-            "Weak\nIncrease",
-            "Strong\nIncrease",
-        ]
-    )
+    # Clean tick labels
+    cbar.set_ticks([-1, 0, 1])
+    cbar.set_ticklabels(["Decrease", "Uncertain", "Increase"])
+
+    # Thinner colorbar outline
+    cbar.outline.set_linewidth(0.5)
 
     return fig
 
