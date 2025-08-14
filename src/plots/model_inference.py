@@ -141,10 +141,10 @@ def _create_samples_full_stimulus(
     return samples
 
 
-def plot_prediction_confidence_heatmap(
+def plot_single_prediction_confidence_heatmap(
     probabilities: dict,
     stimulus_seed: int,
-    sample_duration: int = 3000,
+    sample_duration: int,
     step_size: int = 1000,
     classification_threshold: float = 0.5,
     leaderboard: list | None = None,
@@ -325,6 +325,223 @@ def plot_prediction_confidence_heatmap(
     return fig
 
 
+def plot_prediction_confidence_heatmap(
+    all_probabilities: dict,
+    sample_duration: int = 3000,
+    step_size: int = 1000,
+    classification_threshold: float = 0.5,
+    leaderboard: list | None = None,
+    figure_size: tuple = (15, 8),
+    stimulus_linewidth: int = 4,
+    stimulus_color: str = "black",
+    stimulus_scale: float = 0.4,
+    seeds_to_plot: list | None = None,
+    ncols: int = 3,
+) -> plt.Figure:
+    """
+    Create heatmap visualizations of model predictions across all participants for multiple stimulus seeds.
+    Optimized for presentation in PowerPoint.
+
+    Args:
+        all_probabilities: Dictionary structured as {seed: {participant: probabilities}}
+        sample_duration: Duration of each sample in milliseconds
+        step_size: Step size between samples in milliseconds
+        classification_threshold: Threshold used for binary classification (default: 0.5)
+        leaderboard: Optional list of participant IDs ordered by performance (best first)
+        figure_size: Size of each subplot (width, height)
+        stimulus_linewidth: Width of the stimulus line
+        stimulus_color: Color of the stimulus line
+        stimulus_scale: Scale factor for the stimulus amplitude
+        seeds_to_plot: Optional list of specific seeds to plot. If None, plots all seeds.
+        ncols: Number of columns in the subplot grid
+    """
+    if sample_duration % 1000:
+        raise ValueError("Sample duration must be a multiple of 1000 milliseconds.")
+
+    # Get all available seeds or use specified ones
+    available_seeds = sorted(all_probabilities.keys())
+    if seeds_to_plot is None:
+        seeds_to_plot = available_seeds
+    else:
+        # Validate that requested seeds are available
+        seeds_to_plot = [s for s in seeds_to_plot if s in available_seeds]
+        if not seeds_to_plot:
+            raise ValueError("None of the specified seeds are available in the data.")
+
+    # Calculate grid dimensions
+    n_seeds = len(seeds_to_plot)
+    nrows = (n_seeds + ncols - 1) // ncols  # Ceiling division
+
+    # Create figure with subplots
+    fig, axes = plt.subplots(
+        nrows, ncols, figsize=(figure_size[0] * ncols, figure_size[1] * nrows), dpi=120
+    )
+
+    # Ensure axes is always 2D array for consistent indexing
+    if nrows == 1:
+        axes = axes.reshape(1, -1)
+    elif ncols == 1:
+        axes = axes.reshape(-1, 1)
+
+    # Flatten axes for easier iteration
+    axes_flat = axes.flatten()
+
+    # Create custom colormap
+    colors = [
+        (1.0, 0.35, 0.1),
+        (0.98, 0.98, 0.98),
+        (0.0, 0.2, 0.8),
+    ]  # Orange, White, Blue
+    cmap = LinearSegmentedColormap.from_list("OrangeWhiteBlue", colors, N=256)
+
+    # Plot each seed
+    for idx, stimulus_seed in enumerate(seeds_to_plot):
+        ax = axes_flat[idx]
+        probabilities = all_probabilities[stimulus_seed]
+
+        # Prepare data structures to track participant IDs with their confidence data
+        confidence_data = []  # List of (participant_id, confidence_array) tuples
+
+        for participant_id, trial_probabilities_list in probabilities.items():
+            for i, trial_probabilities in enumerate(trial_probabilities_list):
+                # Extract increase (class 1) probabilities
+                increase_probs = np.array([probs[1] for probs in trial_probabilities])
+
+                # Scale values to account for the classification threshold
+                signed_confidences = np.zeros_like(increase_probs)
+
+                # For probabilities below threshold (decrease predictions)
+                below_threshold = increase_probs < classification_threshold
+                if np.any(below_threshold):
+                    signed_confidences[below_threshold] = (
+                        increase_probs[below_threshold] - classification_threshold
+                    ) / classification_threshold
+
+                # For probabilities above threshold (increase predictions)
+                above_threshold = increase_probs >= classification_threshold
+                if np.any(above_threshold):
+                    signed_confidences[above_threshold] = (
+                        increase_probs[above_threshold] - classification_threshold
+                    ) / (1 - classification_threshold)
+
+                confidence_data.append((participant_id, signed_confidences))
+
+        # Convert confidence values to array
+        confidence_arrays = [data[1] for data in confidence_data]
+        confidence_array = np.array(confidence_arrays)
+
+        # Pad with zeros to reflect that the first samples are needed for the first prediction
+        padded_array = np.zeros((confidence_array.shape[0], 180))
+        padded_array[:, int(sample_duration / 1000 - 1) :] = confidence_array
+        confidence_array = padded_array
+
+        # Sort by leaderboard if provided, otherwise by average confidence
+        if leaderboard is not None:
+            leaderboard_positions = {pid: i for i, pid in enumerate(leaderboard)}
+            participant_ids = [data[0] for data in confidence_data]
+            sort_indices = sorted(
+                range(len(participant_ids)),
+                key=lambda i: leaderboard_positions.get(
+                    participant_ids[i], float("inf")
+                ),
+            )
+        else:
+            avg_confidence = np.mean(np.abs(confidence_array), axis=1)
+            sort_indices = np.argsort(-avg_confidence)
+
+        sorted_confidence_array = confidence_array[sort_indices]
+        sorted_participant_ids = [confidence_data[i][0] for i in sort_indices]
+
+        # Create time axis
+        time_points = np.linspace(0, 180, confidence_array.shape[1])
+
+        # Get and process stimulus signal
+        stimulus = StimulusGenerator(seed=stimulus_seed, config={"sample_rate": 1}).y
+        stimulus_line = (
+            2 * ((stimulus - stimulus.min()) / (stimulus.max() - stimulus.min())) - 1
+        )
+
+        # Plot heatmap
+        im = ax.imshow(
+            sorted_confidence_array,
+            aspect="auto",
+            cmap=cmap,
+            vmin=-1,
+            vmax=1,
+            extent=(0, 183, 0, len(sorted_confidence_array)),
+            alpha=0.9,
+        )
+
+        # Add stimulus line overlay
+        scaled_stimulus_y = len(sorted_confidence_array) / 2
+        ax.plot(
+            time_points,
+            stimulus_line * (scaled_stimulus_y * stimulus_scale) + scaled_stimulus_y,
+            linewidth=stimulus_linewidth,
+            color=stimulus_color,
+            zorder=10,
+            path_effects=[
+                path_effects.SimpleLineShadow(offset=(1, -1), alpha=0.3),
+                path_effects.Normal(),
+            ],
+        )
+
+        # Add labels and title
+        total_trials = len(sorted_confidence_array)
+        ax.set_title(
+            f"Stimulus {stimulus_seed} ({total_trials} trials)",
+            fontsize=12,
+            fontweight="bold",
+        )
+        ax.set_xlabel("Time (seconds)", fontsize=10)
+        ax.set_ylabel("Participant", fontsize=10)
+        ax.tick_params(axis="both", which="major", labelsize=8)
+
+        # Add participant IDs as y-ticks (fewer for multiple plots)
+        num_ticks = min(5, len(sorted_confidence_array))
+        y_positions = np.linspace(0, len(sorted_confidence_array) - 1, num_ticks)
+        y_positions = np.round(y_positions).astype(int)
+        tick_indices = np.linspace(
+            0, len(sorted_participant_ids) - 1, num_ticks
+        ).astype(int)
+        ax.set_yticks(y_positions)
+        ax.set_yticklabels(
+            [sorted_participant_ids[i] for i in tick_indices[::-1]], fontsize=8
+        )
+
+        # Add gridlines
+        ax.grid(which="major", axis="x", linestyle="--", alpha=0.3)
+        ax.set_xticks(np.arange(0, 181, 60))  # Every 60 seconds for cleaner look
+
+    # Hide empty subplots
+    for idx in range(n_seeds, len(axes_flat)):
+        axes_flat[idx].set_visible(False)
+
+    # Add a single colorbar for all subplots
+    fig.subplots_adjust(right=0.9)
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    cbar = fig.colorbar(im, cax=cbar_ax)
+    cbar.set_label(
+        "Prediction Confidence\n(- = Decrease, + = Increase)",
+        rotation=270,
+        labelpad=30,
+        fontsize=12,
+        fontweight="bold",
+    )
+    cbar.ax.tick_params(labelsize=10)
+
+    # Add overall title
+    fig.suptitle(
+        f"Model Predictions Across {n_seeds} Stimuli (threshold={classification_threshold})",
+        fontsize=16,
+        fontweight="bold",
+        y=0.98,
+    )
+
+    plt.tight_layout()
+    return fig
+
+
 def main():
     import json
     import logging
@@ -369,7 +586,7 @@ def main():
     stimulus_seeds = config["stimulus"]["seeds"]
     print(f"Using seeds for stimulus generation: {stimulus_seeds}")
 
-    feature_combination = "eda_raw_heart_rate_pupil"
+    feature_combination = "eda_raw_pupil"
     # "heart_rate",
     # "pupil",
     # "eda_raw",
@@ -477,12 +694,17 @@ def main():
     stimulus_seed = stimulus_seeds[0]
     threshold = 0.7
 
-    a = plot_prediction_confidence_heatmap(
-        probabilities=all_probabilities[stimulus_seed],
-        stimulus_seed=stimulus_seed,
-        classification_threshold=threshold,
-        sample_duration=sample_duration_ms,
-        leaderboard=leaderboard,
+    # a = plot_prediction_confidence_heatmap(
+    #     probabilities=all_probabilities[stimulus_seed],
+    #     stimulus_seed=stimulus_seed,
+    #     classification_threshold=threshold,
+    #     sample_duration=sample_duration_ms,
+    #     leaderboard=leaderboard,
+    # )
+    fig = plot_prediction_confidence_heatmap(
+        all_probabilities,
+        sample_duration_ms,
+        classification_threshold=0.8,
     )
     plt.show()
 
