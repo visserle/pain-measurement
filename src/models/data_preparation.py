@@ -1,10 +1,6 @@
-import argparse
 import logging
-from datetime import datetime
-from pathlib import Path
 
 import numpy as np
-import optuna.logging
 import polars as pl
 from sklearn.model_selection import GroupShuffleSplit
 
@@ -12,28 +8,19 @@ from src.data.database_manager import DatabaseManager
 from src.features.labels import add_labels
 from src.features.resampling import add_normalized_timestamp, interpolate_and_fill_nulls
 from src.features.transforming import merge_dfs
-from src.log_config import configure_logging
-from src.models.data_loader import create_dataloaders, transform_sample_df_to_arrays
-from src.models.data_preparation import prepare_data
-from src.models.main_config import (
-    BATCH_SIZE,
-    INTERVALS,
-    LABEL_MAPPING,
-    N_EPOCHS,
-    N_TRIALS,
-    OFFSETS_MS,
-    RANDOM_SEED,
-    SAMPLE_DURATION_MS,
-)
-from src.models.model_selection import (
-    ExperimentTracker,
-    run_model_selection,
-    train_evaluate_and_save_best_model,
-)
-from src.models.models_config import MODELS
+from src.models.data_loader import transform_sample_df_to_arrays
 from src.models.sample_creation import create_samples, make_sample_set_balanced
 from src.models.scalers import scale_dataset
-from src.models.utils import get_device, set_seed
+
+FACE_FEATURES = [
+    "brow_furrow",
+    "cheek_raise",
+    "mouth_open",
+    "nose_wrinkle",
+    "upper_lip_raise",
+]
+
+EEG_FEATURES = ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"]
 
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
@@ -105,23 +92,32 @@ def prepare_data(
     return X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test
 
 
-def load_data_from_database(feature_list: list):
-    face_features = [
-        "brow_furrow",
-        "cheek_raise",
-        "mouth_open",
-        "nose_wrinkle",
-        "upper_lip_raise",
-    ]
-    eeg_features = ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"]
+def expand_feature_list(feature_list: list) -> list:
+    """Expand shorthand feature names to full feature lists."""
+    expanded_list = feature_list.copy()
 
-    if "face" in feature_list:
-        feature_list = face_features + [f for f in feature_list if f != "face"]
-    if "eeg" in feature_list:
-        feature_list = eeg_features + [f for f in feature_list if f != "eeg"]
-    # Separate EEG and non-EEG features
-    eeg_features_in_list = [f for f in feature_list if f in eeg_features]
-    non_eeg_features = [f for f in feature_list if f not in eeg_features]
+    if "face" in expanded_list:
+        expanded_list = FACE_FEATURES + [f for f in expanded_list if f != "face"]
+    if "eeg" in expanded_list:
+        expanded_list = EEG_FEATURES + [f for f in expanded_list if f != "eeg"]
+
+    return expanded_list
+
+
+def _categorize_features(feature_list: list) -> tuple:
+    """Separate EEG and non-EEG features from the feature list."""
+    eeg_features_in_list = [f for f in feature_list if f in EEG_FEATURES]
+    non_eeg_features = [f for f in feature_list if f not in EEG_FEATURES]
+
+    return eeg_features_in_list, non_eeg_features
+
+
+def load_data_from_database(feature_list: list) -> tuple:
+    """Load data from the database. Allow merging EEG and non-EEG features.
+
+    Used in the main script to load data based on the provided feature list."""
+    # Categorize features
+    eeg_features_in_list, non_eeg_features = _categorize_features(feature_list)
 
     # Load data from database
     db = DatabaseManager()
@@ -185,3 +181,9 @@ def load_data_from_database(feature_list: list):
             )
 
     return df, feature_list
+
+
+if __name__ == "__main__":
+    feature_list = ["face"]
+    flist = expand_feature_list(feature_list)
+    print(flist)

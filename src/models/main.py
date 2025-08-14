@@ -4,15 +4,14 @@ from datetime import datetime
 from pathlib import Path
 
 import optuna.logging
-import polars as pl
 
-from src.data.database_manager import DatabaseManager
-from src.features.labels import add_labels
-from src.features.resampling import add_normalized_timestamp, interpolate_and_fill_nulls
-from src.features.transforming import merge_dfs
 from src.log_config import configure_logging
 from src.models.data_loader import create_dataloaders
-from src.models.data_preparation import load_data_from_database, prepare_data
+from src.models.data_preparation import (
+    expand_feature_list,
+    load_data_from_database,
+    prepare_data,
+)
 from src.models.main_config import (
     BATCH_SIZE,
     INTERVALS,
@@ -74,8 +73,8 @@ def parse_args():
 
 def main():
     args = parse_args()
-    df, feature_list = load_data_from_database(feature_list=args.features)
-    args.features = feature_list  # update args with actual feature list
+    args.features = expand_feature_list(args.features)
+    df = load_data_from_database(args.features)
 
     # Create experiment tracker
     experiment_tracker = ExperimentTracker(
