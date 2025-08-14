@@ -16,6 +16,8 @@ from sklearn.metrics import (
 )
 from torch.utils.data import DataLoader
 
+from src.plots.utils import FEATURE_LABELS
+
 
 def get_model_predictions(
     model: nn.Module,
@@ -284,13 +286,11 @@ def plot_single_pr_curve(
 
 def plot_multiple_roc_curves(
     results: dict,
-    labels: dict = None,
 ) -> plt.Figure:
     """
     Plot ROC curves for multiple models and calculate AUC scores for binary classification.
     Args:
         results: Dictionary where keys are model names and values are tuples of (probs, y_true)
-        labels: Optional dictionary for clean model names
     Returns:
         plt.Figure: The matplotlib figure object
     """
@@ -312,10 +312,10 @@ def plot_multiple_roc_curves(
     for i, (feature_set, (probs, y_true)) in enumerate(results.items()):
         fpr, tpr, thresholds = roc_curve(y_true, probs)
 
-        # Use labels dictionary for clean names
+        # Use feature labels dictionary for clean names
         clean_name = (
-            labels.get(feature_set, feature_set.replace("_", " ").title())
-            if labels
+            FEATURE_LABELS.get(feature_set, feature_set.replace("_", " ").title())
+            if FEATURE_LABELS
             else feature_set.replace("_", " ").title()
         )
 
@@ -368,7 +368,6 @@ def plot_multiple_roc_curves(
 
 def plot_multiple_pr_curves(
     results: dict,
-    labels: dict = None,
 ) -> plt.Figure:
     """
     Plot Precision-Recall curves for multiple models and calculate Average Precision scores for binary classification.
@@ -401,10 +400,10 @@ def plot_multiple_pr_curves(
     for i, (feature_set, (probs, y_true)) in enumerate(results.items()):
         precision, recall, thresholds = precision_recall_curve(y_true, probs)
 
-        # Use labels dictionary for clean names
+        # Use feature labels dictionary for clean names
         clean_name = (
-            labels.get(feature_set, feature_set.replace("_", " ").title())
-            if labels
+            FEATURE_LABELS.get(feature_set, feature_set.replace("_", " ").title())
+            if FEATURE_LABELS
             else feature_set.replace("_", " ").title()
         )
 
@@ -509,7 +508,6 @@ def calculate_performance_metrics(
 def create_performance_table(
     results: dict,
     winning_models: dict = None,
-    labels: dict = None,
     threshold: float = 0.5,
     sort_by: str = "AUC",
 ) -> pl.DataFrame:
@@ -518,7 +516,6 @@ def create_performance_table(
     Args:
         results: Dictionary where keys are model names and values are tuples of (probs, y_true)
         winning_models: Dictionary mapping feature combinations to winning model names
-        labels: Optional dictionary for clean model names
         threshold: Classification threshold
         sort_by: Metric to sort by (default: "AUC")
     Returns:
@@ -530,10 +527,10 @@ def create_performance_table(
         metrics = calculate_performance_metrics(probs, y_true, threshold)
         winning_model = winning_models.get(feature_set, {}).get(feature_set, "")
 
-        # Use labels dictionary for clean names
+        # Use feature labels dictionary for clean names
         feature_set = (
-            labels.get(feature_set, feature_set.replace("_", " ").title())
-            if labels
+            FEATURE_LABELS.get(feature_set, feature_set.replace("_", " ").title())
+            if FEATURE_LABELS
             else feature_set.replace("_", " ").title()
         )
 
@@ -578,7 +575,11 @@ def main():
     from src.features.resampling import add_normalized_timestamp
     from src.log_config import configure_logging
     from src.models.data_loader import create_dataloaders
-    from src.models.data_preparation import prepare_data
+    from src.models.data_preparation import (
+        expand_feature_list,
+        load_data_from_database,
+        prepare_data,
+    )
     from src.models.main_config import RANDOM_SEED
     from src.models.utils import load_model
     from src.plots.model_performance import (
@@ -588,58 +589,26 @@ def main():
 
     configure_logging(stream=True, ignore_libs=["matplotlib"])
 
-    feature_combinations = [
-        "heart_rate",
-        "pupil",
-        "eda_raw",
-        "eda_raw_pupil",
-        "eda_raw_heart_rate",
-        "eda_raw_heart_rate_pupil",
-        "brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise",
-        "brow_furrow_cheek_raise_eda_raw_heart_rate_mouth_open_nose_wrinkle_pupil_upper_lip_raise",
-        "c3_c4_cz_f3_f4_oz_p3_p4",
+    feature_lists = [
+        ["eda_raw", "pupil"],
+        # ["eda_raw", "heart_rate"],
+        # ["eda_raw", "heart_rate", "pupil"],
+        # ["face"],
+        # ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"],
     ]
-
-    labels = {
-        "eda_raw": "EDA",
-        "pupil": "Pupil",
-        "heart_rate": "HR",
-        "eda_raw_pupil": "EDA + Pupil",
-        "eda_raw_heart_rate": "EDA + HR",
-        "eda_raw_heart_rate_pupil": "EDA + HR + Pupil",
-        "brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise": "Facial Expressions",
-        "brow_furrow_cheek_raise_eda_raw_heart_rate_mouth_open_nose_wrinkle_pupil_upper_lip_raise": (
-            "All combined (w/o EEG)"
-        ),
-        "c3_c4_cz_f3_f4_oz_p3_p4": "EEG",
-    }
+    feature_lists = list(map(lambda flist: expand_feature_list(flist), feature_lists))
 
     results = {}
     winning_models = {}
 
-    for feature_combination in feature_combinations:
+    for feature_list in feature_lists:
+        feature_list_str = "_".join(feature_list)
+
         # Load data from database
-        db = DatabaseManager()
-        with db:
-            if feature_combination == "c3_c4_cz_f3_f4_oz_p3_p4":
-                eeg = db.get_table(
-                    "Preprocess_EEG",
-                    exclude_trials_with_measurement_problems=True,
-                )
-                trials = db.get_table(
-                    "Trials",
-                    exclude_trials_with_measurement_problems=True,
-                )
-                eeg = add_normalized_timestamp(eeg)
-                df = add_labels(eeg, trials)
-            else:
-                df = db.get_table(
-                    "Merged_and_Labeled_Data",
-                    exclude_trials_with_measurement_problems=True,
-                )
+        df = load_data_from_database(feature_list)
 
         # Load model
-        json_path = Path(f"results/experiment_{feature_combination}/results.json")
+        json_path = Path(f"results/experiment_{feature_list_str}/results.json")
         dictionary = json.loads(json_path.read_text())
         model_path = Path(dictionary["overall_best"]["model_path"].replace("\\", "/"))
 
@@ -651,39 +620,36 @@ def main():
             label_mapping,
             offsets_ms,
         ) = load_model(model_path, device="cpu")
-        winning_models[feature_combination] = {
-            feature_combination: model.__class__.__name__
-        }
+        assert "_".join(feature_list) == feature_list_str
+        winning_models[feature_list_str] = {feature_list_str: model.__class__.__name__}
 
         # Prepare data
-        X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
-            prepare_data(
-                df=df,
-                feature_list=feature_list,
-                sample_duration_ms=sample_duration_ms,
-                intervals=intervals,
-                label_mapping=label_mapping,
-                offsets_ms=offsets_ms,
-                random_seed=RANDOM_SEED,
-            )
+        X_train, y_train, _, _, _, _, X_test, y_test = prepare_data(
+            df=df,
+            feature_list=feature_list,
+            sample_duration_ms=sample_duration_ms,
+            intervals=intervals,
+            label_mapping=label_mapping,
+            offsets_ms=offsets_ms,
+            random_seed=RANDOM_SEED,
         )
         _, test_loader = create_dataloaders(
-            X_train_val, y_train_val, X_test, y_test, batch_size=64
+            X_train, y_train, X_test, y_test, batch_size=64
         )
         probs, y_true = get_model_predictions(
             model,
             test_loader,
         )
-        results[feature_combination] = (probs, y_true)
+        results[feature_list_str] = (probs, y_true)
 
-    roc_curves = plot_multiple_roc_curves(results, labels=labels)
+    roc_curves = plot_multiple_roc_curves(results)
     plt.show()
-    pr_curves = plot_multiple_pr_curves(results, labels=labels)
+    pr_curves = plot_multiple_pr_curves(results)
     plt.show()
 
     # Create performance table
     performance_df = create_performance_table(
-        results, winning_models=winning_models, labels=labels, threshold=0.5
+        results, winning_models=winning_models, threshold=0.5
     )
 
     # Save the figure

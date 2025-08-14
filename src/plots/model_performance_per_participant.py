@@ -10,6 +10,8 @@ from matplotlib import rcParams
 from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
 
+from src.plots.utils import FEATURE_LABELS
+
 
 def analyze_per_participant(
     model: nn.Module,
@@ -266,7 +268,7 @@ def plot_participant_performance_single_model(
     return fig
 
 
-def plot_feature_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
+def plot_feature_accuracy_comparison(results_dict, figsize=(10, 6)):
     """
     Plot bars for each feature combination across all participants using academic styling.
     Args:
@@ -278,8 +280,8 @@ def plot_feature_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
     for feature_combo, df in results_dict.items():
         # Filter out 'overall' rows
         participant_data = df.filter(pl.col("participant") != "overall")
-        # Use the labels dictionary for better naming
-        display_name = labels.get(
+        # Use the feature labels dictionary for better naming
+        display_name = FEATURE_LABELS.get(
             feature_combo, feature_combo.replace("_", " ").title()
         )
 
@@ -287,7 +289,7 @@ def plot_feature_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
             plot_data.append(
                 {
                     "participant": f"{row['participant']}",
-                    "feature_combination": display_name,
+                    "feature_list_str": display_name,
                     "accuracy": row["accuracy"],
                 }
             )
@@ -324,7 +326,7 @@ def plot_feature_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
     # Create the grouped bar plot with academic styling
     sns.barplot(
         data=plot_df,
-        x="feature_combination",
+        x="feature_list_str",
         y="accuracy",
         hue="participant",
         palette=palette,
@@ -377,12 +379,11 @@ def plot_feature_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
     return fig, ax
 
 
-def plot_participant_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
+def plot_participant_accuracy_comparison(results_dict, figsize=(10, 6)):
     """
     Plot bars for each participant across all feature combinations using academic styling.
     Args:
         results_dict: Dictionary with feature combination names as keys and polars DataFrames as values
-        labels: Dictionary mapping feature combination keys to display names
         figsize: Tuple for figure size (width, height)
     """
     # Prepare data for seaborn (long format)
@@ -390,8 +391,8 @@ def plot_participant_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
     for feature_combo, df in results_dict.items():
         # Filter out 'overall' rows
         participant_data = df.filter(pl.col("participant") != "overall")
-        # Use the labels dictionary for better naming
-        display_name = labels.get(
+        # Use the feature labels dictionary for better naming
+        display_name = FEATURE_LABELS.get(
             feature_combo, feature_combo.replace("_", " ").title()
         )
 
@@ -399,7 +400,7 @@ def plot_participant_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
             plot_data.append(
                 {
                     "participant": f"{row['participant']}",
-                    "feature_combination": display_name,
+                    "feature_list_str": display_name,
                     "accuracy": row["accuracy"],
                 }
             )
@@ -408,7 +409,7 @@ def plot_participant_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
     plot_df = pd.DataFrame(plot_data)
 
     # Check how many feature combinations we have
-    n_combinations = len(plot_df["feature_combination"].unique())
+    n_combinations = len(plot_df["feature_list_str"].unique())
 
     # FEATURE-specific color palette - warm colors for features/methods
     feature_colors = [
@@ -437,7 +438,7 @@ def plot_participant_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
         data=plot_df,
         x="participant",
         y="accuracy",
-        hue="feature_combination",
+        hue="feature_list_str",
         palette=palette,
         alpha=0.8,
         ax=ax,
@@ -500,7 +501,11 @@ def main():
     from src.features.resampling import add_normalized_timestamp
     from src.log_config import configure_logging
     from src.models.data_loader import create_dataloaders
-    from src.models.data_preparation import prepare_data
+    from src.models.data_preparation import (
+        expand_feature_list,
+        load_data_from_database,
+        prepare_data,
+    )
     from src.models.main_config import RANDOM_SEED
     from src.models.utils import load_model
 
@@ -514,58 +519,23 @@ def main():
 
     pl.Config.set_tbl_rows(12)  # for the 12 trials
 
-    feature_combinations = [
-        "heart_rate",
-        "pupil",
-        "eda_raw",
-        "eda_raw_pupil",
-        "eda_raw_heart_rate",
-        "eda_raw_heart_rate_pupil",
-        "brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise",
-        "brow_furrow_cheek_raise_eda_raw_heart_rate_mouth_open_nose_wrinkle_pupil_upper_lip_raise",
-        "c3_c4_cz_f3_f4_oz_p3_p4",
+    feature_lists = [
+        ["eda_raw", "pupil"],
+        # ["eda_raw", "heart_rate"],
+        # ["eda_raw", "heart_rate", "pupil"],
+        # ["face"],
+        # ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"],
     ]
-
-    labels = {
-        "eda_raw": "EDA",
-        "pupil": "Pupil",
-        "heart_rate": "HR",
-        "eda_raw_pupil": "EDA + Pupil",
-        "eda_raw_heart_rate": "EDA + HR",
-        "eda_raw_heart_rate_pupil": "EDA + HR + Pupil",
-        "brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise": "Facial Expressions",
-        "brow_furrow_cheek_raise_eda_raw_heart_rate_mouth_open_nose_wrinkle_pupil_upper_lip_raise": (
-            "All combined (w/o EEG)"
-        ),
-        "c3_c4_cz_f3_f4_oz_p3_p4": "EEG",
-    }
-
-    # Load data from database
-    db = DatabaseManager()
-    with db:
-        df = db.get_table(
-            "Merged_and_Labeled_Data",
-            exclude_trials_with_measurement_problems=True,
-        )
+    feature_lists = list(map(lambda flist: expand_feature_list(flist), feature_lists))
 
     results = {}
 
-    for feature_combination in feature_combinations:
-        if feature_combination == "c3_c4_cz_f3_f4_oz_p3_p4":
-            with db:
-                eeg = db.get_table(
-                    "Preprocess_EEG",
-                    exclude_trials_with_measurement_problems=True,
-                )
-                trials = db.get_table(
-                    "Trials",
-                    exclude_trials_with_measurement_problems=True,
-                )
-                eeg = add_normalized_timestamp(eeg)
-                df = add_labels(eeg, trials)
-
+    for feature_list in feature_lists:
+        feature_list_str = "_".join(feature_list)
+        # Load data from database
+        df = load_data_from_database(feature_list=feature_lists[0])
         # Load model
-        json_path = Path(f"results/experiment_{feature_combination}/results.json")
+        json_path = Path(f"results/experiment_{feature_list_str}/results.json")
         dictionary = json.loads(json_path.read_text())
         model_path = Path(dictionary["overall_best"]["model_path"].replace("\\", "/"))
 
@@ -577,18 +547,17 @@ def main():
             label_mapping,
             offsets_ms,
         ) = load_model(model_path, device="cpu")
+        assert "_".join(feature_list) == feature_list_str
 
         # Prepare data
-        X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
-            prepare_data(
-                df=df,
-                feature_list=feature_list,
-                sample_duration_ms=sample_duration_ms,
-                intervals=intervals,
-                label_mapping=label_mapping,
-                offsets_ms=offsets_ms,
-                random_seed=RANDOM_SEED,
-            )
+        X_train, y_train, _, _, _, _, X_test, y_test = prepare_data(
+            df=df,
+            feature_list=feature_list,
+            sample_duration_ms=sample_duration_ms,
+            intervals=intervals,
+            label_mapping=label_mapping,
+            offsets_ms=offsets_ms,
+            random_seed=RANDOM_SEED,
         )
         test_groups = prepare_data(
             df=df,
@@ -601,7 +570,7 @@ def main():
             only_return_test_groups=True,
         )
         _, test_loader = create_dataloaders(
-            X_train_val, y_train_val, X_test, y_test, batch_size=64
+            X_train, y_train, X_test, y_test, batch_size=64
         )
 
         result_df = analyze_per_participant(
@@ -610,19 +579,17 @@ def main():
             test_groups,
             threshold=0.50,
         )
-        results[feature_combination] = result_df
+        results[feature_list_str] = result_df
 
-        # Save samples size per test set participant
-        results[feature_combinations[0]].drop("accuracy").write_json(
-            FIGURE_DIR / "samples_per_test_participant.json"
-        )
-
-    feature_set_acc, _ = plot_feature_accuracy_comparison(
-        results, labels, figsize=(10, 6)
+    # Save samples size per test set participant
+    results["_".join(feature_lists[0])].drop("accuracy").write_json(
+        FIGURE_DIR / "samples_per_test_participant.json"
     )
+
+    feature_set_acc, _ = plot_feature_accuracy_comparison(results, figsize=(10, 6))
     # plt.show()
     feature_set_acc_by_participant, _ = plot_participant_accuracy_comparison(
-        results, labels, figsize=(13, 6)
+        results, figsize=(13, 6)
     )
     # plt.show()
 

@@ -634,9 +634,6 @@ def main():
     )
     from src.plots.model_performance_per_participant import analyze_per_participant
 
-    load_dotenv()
-    FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
-
     configure_logging(
         stream_level=logging.DEBUG,
         ignore_libs=["matplotlib", "Comm", "bokeh", "tornado"],
@@ -655,8 +652,8 @@ def main():
         ["face"],
         ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"],
     ]
+    feature_lists = list(map(lambda flist: expand_feature_list(flist), feature_lists))
     feature_list = feature_lists[0]
-    feature_list = expand_feature_list(feature_list)
 
     # Load data from database
     df = load_data_from_database(feature_list=[feature_list])
@@ -724,6 +721,9 @@ def main():
     )
 
     # Save the figure
+    load_dotenv()
+    FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
+
     fig_path = FIGURE_DIR / f"model_inference_{('_').join(feature_list)}.png"
     fig.savefig(fig_path, bbox_inches="tight", dpi=300)
     logger.info(f"Saved figure to {fig_path}")
