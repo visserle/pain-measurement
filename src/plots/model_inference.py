@@ -259,7 +259,7 @@ def plot_single_prediction_confidence_heatmap(
         cmap=cmap,
         vmin=-1,
         vmax=1,
-        extent=(0, 183, 0, len(sorted_confidence_array)),
+        extent=(0, 180, 0, len(sorted_confidence_array)),
         alpha=0.9,
     )
 
@@ -330,10 +330,9 @@ def plot_prediction_confidence_heatmap(
     sample_duration: int = 3000,
     step_size: int = 1000,
     classification_threshold: float = 0.5,
-    figure_size: tuple = (2.8, 1.8),  # Optimized for 2-column format
-    stimulus_linewidth: int = 1.5,  # Slightly thinner for cleaner look
-    stimulus_color: str = "black",
-    stimulus_scale: float = 0.25,  # Reduced for better visibility
+    figure_size: tuple = (2.8, 1.8),
+    stimulus_linewidth: float = 1.5,
+    stimulus_scale: float = 0.25,
     seeds_to_plot: list | None = None,
     ncols: int = 2,
 ) -> plt.Figure:
@@ -347,222 +346,260 @@ def plot_prediction_confidence_heatmap(
         step_size: Step size between samples in milliseconds
         classification_threshold: Threshold used for binary classification (default: 0.5)
         figure_size: Size of each subplot (width, height)
-        stimulus_linewidth: Width of the stimulus line
-        stimulus_color: Color of the stimulus line
-        stimulus_scale: Scale factor for the stimulus amplitude
+        stimulus_linewidth: Line width for stimulus overlay
+        stimulus_scale: Scale factor for stimulus amplitude
         seeds_to_plot: Optional list of specific seeds to plot. If None, plots all seeds.
         ncols: Number of columns in the subplot grid
     """
+    # Validate inputs
+    _validate_inputs(sample_duration, all_probabilities, seeds_to_plot)
+
+    # Setup plotting parameters
+    seeds_to_plot = _get_seeds_to_plot(all_probabilities, seeds_to_plot)
+    fig, axes = _create_figure_and_axes(seeds_to_plot, ncols, figure_size)
+    cmap = _create_colormap()
+
+    # Plot each seed
+    for idx, stimulus_seed in enumerate(seeds_to_plot):
+        _plot_single_heatmap(
+            axes.flatten()[idx],
+            all_probabilities[stimulus_seed],
+            stimulus_seed,
+            sample_duration,
+            classification_threshold,
+            cmap,
+            stimulus_linewidth,
+            stimulus_scale,
+            idx,
+            ncols,
+            len(seeds_to_plot) // ncols,
+        )
+
+    # Hide unused subplots
+    _hide_empty_subplots(axes.flatten(), len(seeds_to_plot))
+
+    # Add colorbar and finalize layout
+    _finalize_figure_layout(fig, axes.flatten()[0], cmap)
+
+    return fig
+
+
+def _validate_inputs(
+    sample_duration: int, all_probabilities: dict, seeds_to_plot: list | None
+):
+    """Validate input parameters."""
     if sample_duration % 1000:
         raise ValueError("Sample duration must be a multiple of 1000 milliseconds.")
 
-    # Get all available seeds or use specified ones
+
+def _get_seeds_to_plot(all_probabilities: dict, seeds_to_plot: list | None) -> list:
+    """Get list of seeds to plot, validating availability."""
     available_seeds = sorted(all_probabilities.keys())
+
     if seeds_to_plot is None:
-        seeds_to_plot = available_seeds
-    else:
-        # Validate that requested seeds are available
-        seeds_to_plot = [s for s in seeds_to_plot if s in available_seeds]
-        if not seeds_to_plot:
-            raise ValueError("None of the specified seeds are available in the data.")
+        return available_seeds
 
-    # Calculate grid dimensions
+    valid_seeds = [s for s in seeds_to_plot if s in available_seeds]
+    if not valid_seeds:
+        raise ValueError("None of the specified seeds are available in the data.")
+
+    return valid_seeds
+
+
+def _create_figure_and_axes(seeds_to_plot: list, ncols: int, figure_size: tuple):
+    """Create figure with optimized subplot layout."""
     n_seeds = len(seeds_to_plot)
-    nrows = (n_seeds + ncols - 1) // ncols  # Ceiling division
+    nrows = (n_seeds + ncols - 1) // ncols
 
-    # Optimized figure sizing for publication
     total_width = figure_size[0] * min(ncols, n_seeds)
     total_height = figure_size[1] * nrows
 
-    # Create figure with minimal spacing
     fig, axes = plt.subplots(
         nrows,
         ncols,
         figsize=(total_width, total_height),
         dpi=300,
-        gridspec_kw={"hspace": 0.15, "wspace": 0.12},  # Minimal spacing
+        gridspec_kw={"hspace": 0.05, "wspace": 0.05},
     )
 
-    # Ensure axes is always 2D array for consistent indexing
+    # Ensure consistent 2D array structure
     if nrows == 1:
         axes = axes.reshape(1, -1) if ncols > 1 else np.array([[axes]])
     elif ncols == 1:
         axes = axes.reshape(-1, 1)
 
-    # Flatten axes for easier iteration
-    axes_flat = axes.flatten()
+    return fig, axes
 
-    # Create custom colormap
-    colors = [
-        (1.0, 0.35, 0.1),
-        (0.98, 0.98, 0.98),
-        (0.0, 0.2, 0.8),
-    ]  # Orange, White, Blue
-    cmap = LinearSegmentedColormap.from_list("OrangeWhiteBlue", colors, N=256)
 
-    # Plot each seed
-    for idx, stimulus_seed in enumerate(seeds_to_plot):
-        ax = axes_flat[idx]
-        probabilities = all_probabilities[stimulus_seed]
+def _create_colormap():
+    """Create custom orange-white-blue colormap."""
+    colors = [(1.0, 0.35, 0.1), (0.98, 0.98, 0.98), (0.0, 0.2, 0.8)]
+    return LinearSegmentedColormap.from_list("OrangeWhiteBlue", colors, N=256)
 
-        # Prepare data structures to track participant IDs with their confidence data
-        confidence_data = []  # List of (participant_id, confidence_array) tuples
 
-        for participant_id, trial_probabilities_list in probabilities.items():
-            for i, trial_probabilities in enumerate(trial_probabilities_list):
-                # Extract increase (class 1) probabilities
-                increase_probs = np.array([probs[1] for probs in trial_probabilities])
+def _process_confidence_data(
+    probabilities: dict, classification_threshold: float, sample_duration: int
+):
+    """Process raw probabilities into signed confidence values."""
+    confidence_data = []
 
-                # Scale values to account for the classification threshold
-                signed_confidences = np.zeros_like(increase_probs)
+    for participant_id, trial_probabilities_list in probabilities.items():
+        for trial_probabilities in trial_probabilities_list:
+            increase_probs = np.array([probs[1] for probs in trial_probabilities])
+            signed_confidences = _calculate_signed_confidence(
+                increase_probs, classification_threshold
+            )
+            confidence_data.append((participant_id, signed_confidences))
 
-                # For probabilities below threshold (decrease predictions)
-                below_threshold = increase_probs < classification_threshold
-                if np.any(below_threshold):
-                    signed_confidences[below_threshold] = (
-                        increase_probs[below_threshold] - classification_threshold
-                    ) / classification_threshold
+    # Convert to array and sort by participant ID
+    confidence_arrays = [data[1] for data in confidence_data]
+    confidence_array = np.array(confidence_arrays)
 
-                # For probabilities above threshold (increase predictions)
-                above_threshold = increase_probs >= classification_threshold
-                if np.any(above_threshold):
-                    signed_confidences[above_threshold] = (
-                        increase_probs[above_threshold] - classification_threshold
-                    ) / (1 - classification_threshold)
+    # Add padding for initial samples
+    padded_array = np.zeros((confidence_array.shape[0], 180))
+    padded_array[:, int(sample_duration / 1000 - 1) :] = confidence_array
 
-                confidence_data.append((participant_id, signed_confidences))
+    # Sort by participant ID
+    participant_ids = [data[0] for data in confidence_data]
+    sort_indices = sorted(range(len(participant_ids)), key=lambda i: participant_ids[i])
+    sorted_confidence_array = padded_array[sort_indices]
 
-        # Convert confidence values to array
-        confidence_arrays = [data[1] for data in confidence_data]
-        confidence_array = np.array(confidence_arrays)
+    return sorted_confidence_array
 
-        # Pad with zeros to reflect that the first samples are needed for the first prediction
-        padded_array = np.zeros((confidence_array.shape[0], 180))
-        padded_array[:, int(sample_duration / 1000 - 1) :] = confidence_array
-        confidence_array = padded_array
 
-        # Sort by participant ID
-        participant_ids = [data[0] for data in confidence_data]
-        sort_indices = sorted(
-            range(len(participant_ids)), key=lambda i: participant_ids[i]
-        )
-        sorted_confidence_array = confidence_array[sort_indices]
-        sorted_participant_ids = [confidence_data[i][0] for i in sort_indices]
+def _calculate_signed_confidence(
+    increase_probs: np.ndarray, threshold: float
+) -> np.ndarray:
+    """Calculate signed confidence values based on classification threshold."""
+    signed_confidences = np.zeros_like(increase_probs)
 
-        # Create time axis
-        time_points = np.linspace(0, 180, confidence_array.shape[1])
+    # Below threshold (decrease predictions)
+    below_mask = increase_probs < threshold
+    signed_confidences[below_mask] = (
+        increase_probs[below_mask] - threshold
+    ) / threshold
 
-        # Get and process stimulus signal
-        stimulus = StimulusGenerator(seed=stimulus_seed, config={"sample_rate": 1}).y
-        stimulus_line = (
-            2 * ((stimulus - stimulus.min()) / (stimulus.max() - stimulus.min())) - 1
-        )
+    # Above threshold (increase predictions)
+    above_mask = increase_probs >= threshold
+    signed_confidences[above_mask] = (increase_probs[above_mask] - threshold) / (
+        1 - threshold
+    )
 
-        # Plot heatmap
-        im = ax.imshow(
-            sorted_confidence_array,
-            aspect="auto",
-            cmap=cmap,
-            vmin=-1,
-            vmax=1,
-            extent=(0, 180, 0, len(sorted_confidence_array)),  # Fixed extent
-            alpha=0.9,
-            interpolation="nearest",  # Crisp pixels for publication
-        )
+    return signed_confidences
 
-        # Add stimulus line overlay with reduced visual weight
-        scaled_stimulus_y = len(sorted_confidence_array) / 2
-        ax.plot(
-            time_points,
-            stimulus_line * (scaled_stimulus_y * stimulus_scale) + scaled_stimulus_y,
-            linewidth=stimulus_linewidth,
-            color=stimulus_color,
-            zorder=10,
-            alpha=0.8,  # Slightly transparent
-            path_effects=[
-                path_effects.SimpleLineShadow(offset=(1, -1), alpha=0.3),
-                path_effects.Normal(),
-            ],
-        )
 
-        # Optimized labeling - only on edges
-        if idx >= (nrows - 1) * ncols:  # Bottom row
-            ax.set_xlabel("Time (s)", fontsize=8, fontweight="bold")
-        else:
-            ax.set_xlabel("")
+def _plot_single_heatmap(
+    ax,
+    probabilities,
+    stimulus_seed,
+    sample_duration,
+    classification_threshold,
+    cmap,
+    stimulus_linewidth,
+    stimulus_scale,
+    subplot_idx,
+    ncols,
+    nrows,
+):
+    """Plot heatmap for a single stimulus seed."""
+    # Process confidence data
+    confidence_array = _process_confidence_data(
+        probabilities, classification_threshold, sample_duration
+    )
 
-        if idx % ncols == 0:  # Left column
-            ax.set_ylabel("Trials", fontsize=8, fontweight="bold")
-        else:
-            ax.set_ylabel("")
+    # Plot heatmap
+    im = ax.imshow(
+        confidence_array,
+        aspect="auto",
+        cmap=cmap,
+        vmin=-1,
+        vmax=1,
+        extent=(0, 180, 0, len(confidence_array)),
+        alpha=0.9,
+        interpolation="nearest",
+    )
 
-        # Minimal, clean ticks
-        ax.tick_params(axis="both", which="major", labelsize=7, pad=2)
+    # Add stimulus overlay
+    _add_stimulus_overlay(
+        ax, stimulus_seed, confidence_array, stimulus_linewidth, stimulus_scale
+    )
+
+    # Format axes
+    _format_subplot_axes(ax, subplot_idx, ncols, nrows)
+
+    return im
+
+
+def _add_stimulus_overlay(ax, stimulus_seed, confidence_array, linewidth, scale):
+    """Add stimulus signal overlay to heatmap."""
+    stimulus = StimulusGenerator(seed=stimulus_seed, config={"sample_rate": 1}).y
+    stimulus_normalized = (
+        2 * ((stimulus - stimulus.min()) / (stimulus.max() - stimulus.min())) - 1
+    )
+
+    time_points = np.linspace(0, 180, confidence_array.shape[1])
+    y_center = len(confidence_array) / 2
+    y_amplitude = y_center * scale
+
+    ax.plot(
+        time_points,
+        stimulus_normalized * y_amplitude + y_center,
+        linewidth=linewidth,
+        color="black",
+        zorder=10,
+        alpha=0.8,
+    )
+
+
+def _format_subplot_axes(ax, subplot_idx, ncols, nrows):
+    """Format individual subplot axes with minimal styling."""
+    # X-axis formatting (bottom row only)
+    if subplot_idx >= (nrows - 1) * ncols:
+        ax.set_xlabel("Time (s)", fontsize=12, fontweight="normal")
         ax.set_xticks([0, 90, 180])
+        ax.tick_params(axis="x", which="major", labelsize=10, pad=2)
+    else:
+        ax.set_xlabel("")
+        ax.set_xticks([])
 
-        # Y-axis with better spacing
-        n_trials = len(sorted_confidence_array)
-        ax.set_yticks([0, n_trials])
-        ax.set_yticklabels([f"{n_trials}", "1"], fontsize=7)
+    # Y-axis formatting (left column only)
+    if subplot_idx % ncols == 0:
+        ax.set_ylabel("", fontsize=10, fontweight="bold")
+    else:
+        ax.set_ylabel("")
 
-        # Remove grid for cleaner look
-        ax.grid(False)
+    # Clean styling
+    ax.set_yticks([])
+    ax.grid(False)
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.5)
 
-        # Compact seed label with better positioning
-        ax.text(
-            0.97,
-            0.95,
-            f"S{stimulus_seed}",
-            transform=ax.transAxes,
-            fontsize=7,
-            fontweight="bold",
-            ha="right",
-            va="top",
-            bbox=dict(
-                boxstyle="round,pad=0.15", facecolor="white", alpha=0.8, linewidth=0
-            ),
-        )
 
-        # Remove spines for cleaner look
-        for spine in ax.spines.values():
-            spine.set_linewidth(0.5)
-
-    # Hide empty subplots
-    for idx in range(n_seeds, len(axes_flat)):
+def _hide_empty_subplots(axes_flat, n_used_subplots):
+    """Hide unused subplot axes."""
+    for idx in range(n_used_subplots, len(axes_flat)):
         axes_flat[idx].set_visible(False)
 
-    # Optimized layout for publication
+
+def _finalize_figure_layout(fig, sample_ax, cmap):
+    """Add colorbar and adjust figure layout."""
+    # Adjust subplot spacing
     fig.subplots_adjust(
-        left=0.09,  # Slightly more room for y-labels
-        bottom=0.15,  # More room for x-labels
-        right=0.82,  # More room for colorbar
-        top=0.97,  # Minimal top margin
-        wspace=0.12,  # Minimal horizontal spacing
-        hspace=0.15,  # Minimal vertical spacing
+        left=0.09, bottom=0.15, right=0.82, top=0.97, wspace=0.12, hspace=0.15
     )
 
-    # Colorbar with optimized positioning and sizing
-    cbar_ax = fig.add_axes([0.84, 0.15, 0.02, 0.82])  # Narrower colorbar
-    cbar = fig.colorbar(im, cax=cbar_ax)
-
-    # Compact colorbar formatting
+    # Add colorbar
+    cbar_ax = fig.add_axes([0.84, 0.15, 0.02, 0.82])
+    cbar = fig.colorbar(sample_ax.images[0], cax=cbar_ax)
     cbar.set_label(
-        "Prediction confidence",
+        "Prediction Confidence\n(+ = Decrease, - = Increase)",
         rotation=270,
-        labelpad=12,  # Reduced padding
-        fontsize=8,
-        fontweight="bold",
+        labelpad=30,
+        fontsize=12,
+        fontweight="normal",
     )
-    cbar.ax.tick_params(labelsize=7, pad=1)
-
-    # Clean tick labels
-    cbar.set_ticks([-1, 0, 1])
-    cbar.set_ticklabels(["Decrease", "Uncertain", "Increase"])
-
-    # Thinner colorbar outline
+    cbar.ax.tick_params(labelsize=10)
     cbar.outline.set_linewidth(0.5)
-
-    return fig
 
 
 def main():
