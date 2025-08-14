@@ -15,7 +15,6 @@ logger = logging.Logger(__name__.rsplit(".", 1)[-1])
 
 def analyze_test_dataset_for_one_stimulus(
     model: torch.nn.Module,
-    db: DatabaseManager,
     features: list,
     participant_ids: list,
     stimulus_seed: int,
@@ -43,7 +42,7 @@ def analyze_test_dataset_for_one_stimulus(
         if log:
             logger.info(f"Processing participant {participant_id}...")
         # Get data for this participant and stimulus seed
-        with db:
+        with DatabaseManager() as db:
             participant_df = db.get_table("merged_and_labeled_data").filter(
                 (pl.col("participant_id") == participant_id)
                 & (pl.col("stimulus_seed") == stimulus_seed)
@@ -585,16 +584,23 @@ def _finalize_figure_layout(fig, sample_ax, cmap):
     """Add colorbar and adjust figure layout."""
     # Adjust subplot spacing
     fig.subplots_adjust(
-        left=0.09, bottom=0.15, right=0.82, top=0.97, wspace=0.12, hspace=0.15
+        # left=0.0,
+        bottom=0.15,
+        right=0.85,
+        top=0.97,
+        wspace=0.12,
+        hspace=0.15,
     )
 
     # Add colorbar
-    cbar_ax = fig.add_axes([0.84, 0.15, 0.02, 0.82])
+    cbar_ax = fig.add_axes([0.87, 0.15, 0.01, 0.82])
+
     cbar = fig.colorbar(sample_ax.images[0], cax=cbar_ax)
     cbar.set_label(
-        "Prediction Confidence\n(+ = Decrease, - = Increase)",
+        "Signed Prediction Confidence\n(+ = Decrease, – = Increase)",
+        # "Signed Prediction Confidence\n(Decrease ← 0 → Increase)",
         rotation=270,
-        labelpad=30,
+        labelpad=33,
         fontsize=12,
         fontweight="normal",
     )
@@ -608,20 +614,18 @@ def main():
     import os
     from pathlib import Path
 
-    import holoviews as hv
-    import hvplot.polars  # noqa
-    import matplotlib.pyplot as plt
     import numpy as np
     import polars as pl
     import tomllib
     from dotenv import load_dotenv
 
-    from src.data.database_manager import DatabaseManager
-    from src.features.labels import add_labels
-    from src.features.resampling import add_normalized_timestamp
     from src.log_config import configure_logging
     from src.models.data_loader import create_dataloaders
-    from src.models.data_preparation import prepare_data
+    from src.models.data_preparation import (
+        expand_feature_list,
+        load_data_from_database,
+        prepare_data,
+    )
     from src.models.main_config import RANDOM_SEED
     from src.models.utils import load_model
     from src.plots.model_inference import (
@@ -638,49 +642,27 @@ def main():
         ignore_libs=["matplotlib", "Comm", "bokeh", "tornado"],
     )
 
-    pl.Config.set_tbl_rows(12)  # for the 12 trials
-
     config_path = Path("src/experiments/measurement/measurement_config.toml")
     with open(config_path, "rb") as file:
         config = tomllib.load(file)
     stimulus_seeds = config["stimulus"]["seeds"]
     print(f"Using seeds for stimulus generation: {stimulus_seeds}")
 
-    feature_combination = "eda_raw_pupil"
-    # "heart_rate",
-    # "pupil",
-    # "eda_raw",
-    # "eda_raw_pupil",
-    # "eda_raw_heart_rate",
-    # "eda_raw_heart_rate_pupil",
-    # "brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise",
-    # "brow_furrow_cheek_raise_eda_raw_heart_rate_mouth_open_nose_wrinkle_pupil_upper_lip_raise",
-    # "c3_c4_cz_f3_f4_oz_p3_p4",
-
-    results = {}
+    feature_lists = [
+        ["eda_raw", "pupil"],
+        ["eda_raw", "heart_rate"],
+        ["eda_raw", "heart_rate", "pupil"],
+        ["face"],
+        ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"],
+    ]
+    feature_list = feature_lists[0]
+    feature_list = expand_feature_list(feature_list)
 
     # Load data from database
-    db = DatabaseManager()
-    with db:
-        if feature_combination == "c3_c4_cz_f3_f4_oz_p3_p4":
-            eeg = db.get_table(
-                "Preprocess_EEG",
-                exclude_trials_with_measurement_problems=True,
-            )
-            trials = db.get_table(
-                "Trials",
-                exclude_trials_with_measurement_problems=True,
-            )
-            eeg = add_normalized_timestamp(eeg)
-            df = add_labels(eeg, trials)
-        else:
-            df = db.get_table(
-                "Merged_and_Labeled_Data",
-                exclude_trials_with_measurement_problems=True,
-            )
+    df = load_data_from_database(feature_list=[feature_list])
 
     # Load model
-    json_path = Path(f"results/experiment_{feature_combination}/results.json")
+    json_path = Path(f"results/experiment_{('_').join(feature_list)}/results.json")
     dictionary = json.loads(json_path.read_text())
     model_path = Path(dictionary["overall_best"]["model_path"].replace("\\", "/"))
 
@@ -688,20 +670,16 @@ def main():
         load_model(model_path, device="cpu")
     )
 
-    # Get participant leaderboard
-    # = a list of participant IDs in the test set, sorted by their accuracy on the test set, from highest to lowest.
-
     # Prepare data
-    X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
-        prepare_data(
-            df=df,
-            feature_list=feature_list,
-            sample_duration_ms=sample_duration_ms,
-            intervals=intervals,
-            label_mapping=label_mapping,
-            offsets_ms=offsets_ms,
-            random_seed=RANDOM_SEED,
-        )
+    # we need train data to create the dataloaders, but we will not use it
+    X_train, y_train, _, _, X_test, y_test = prepare_data(
+        df=df,
+        feature_list=feature_list,
+        sample_duration_ms=sample_duration_ms,
+        intervals=intervals,
+        label_mapping=label_mapping,
+        offsets_ms=offsets_ms,
+        random_seed=RANDOM_SEED,
     )
     test_groups = prepare_data(
         df=df,
@@ -715,23 +693,7 @@ def main():
     )
     test_ids = np.unique(test_groups)
 
-    _, test_loader = create_dataloaders(
-        X_train_val, y_train_val, X_test, y_test, batch_size=64
-    )
-
-    results_df = analyze_per_participant(
-        model,
-        test_loader,
-        test_groups,
-        threshold=0.50,
-    )
-
-    leaderboard = (
-        results_df.remove(participant="overall")
-        .sort("accuracy", descending=True)
-        .get_column("participant")
-        .to_list()
-    )
+    _, test_loader = create_dataloaders(X_train, y_train, X_test, y_test, batch_size=64)
 
     # Analyze the entire test dataset
     all_probabilities = {}
@@ -740,7 +702,6 @@ def main():
     for stimulus_seed in stimulus_seeds:
         probabilities, participant_trials = analyze_test_dataset_for_one_stimulus(
             model,
-            db,
             feature_list,
             test_ids,
             stimulus_seed,
@@ -751,22 +712,21 @@ def main():
         all_probabilities[stimulus_seed] = probabilities
         all_participant_trials[stimulus_seed] = participant_trials
 
-    stimulus_seed = stimulus_seeds[0]
-    threshold = 0.7
-
-    # a = plot_prediction_confidence_heatmap(
-    #     probabilities=all_probabilities[stimulus_seed],
-    #     stimulus_seed=stimulus_seed,
-    #     classification_threshold=threshold,
-    #     sample_duration=sample_duration_ms,
-    #     leaderboard=leaderboard,
-    # )
+    # Plot all available stimuli
     fig = plot_prediction_confidence_heatmap(
         all_probabilities,
         sample_duration_ms,
         classification_threshold=0.8,
+        ncols=2,
+        figure_size=(7, 2),
+        stimulus_scale=0.5,
+        stimulus_linewidth=1.5,
     )
-    plt.show()
+
+    # Save the figure
+    fig_path = FIGURE_DIR / f"model_inference_{('_').join(feature_list)}.png"
+    fig.savefig(fig_path, bbox_inches="tight", dpi=300)
+    logger.info(f"Saved figure to {fig_path}")
 
 
 if __name__ == "__main__":
