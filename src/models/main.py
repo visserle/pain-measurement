@@ -12,7 +12,7 @@ from src.features.resampling import add_normalized_timestamp, interpolate_and_fi
 from src.features.transforming import merge_dfs
 from src.log_config import configure_logging
 from src.models.data_loader import create_dataloaders
-from src.models.data_preparation import prepare_data
+from src.models.data_preparation import load_data_from_database, prepare_data
 from src.models.main_config import (
     BATCH_SIZE,
     INTERVALS,
@@ -41,44 +41,27 @@ optuna.logging.enable_propagation()
 device = get_device()
 set_seed(RANDOM_SEED)
 
-# Default feature list
-# for sanity checks, we could train on temperature and rating features only
-default_features = ["eda_raw", "pupil", "hear_rate"]
-face_features = [
-    "cheek_raise",
-    "mouth_open",
-    "upper_lip_raise",
-    "nose_wrinkle",
-    "brow_furrow",
-]
-# Note that EEG data cannot be merged with other features
-eeg_features = ["f3", "f4", "c3", "c4", "cz", "p3", "p4", "oz"]
-
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Train models with different feature combinations"
     )
-
     parser.add_argument(
+        # for sanity checks, we can also train on temperature/rating
         "--features",
         nargs="+",
-        default=default_features,
-        help="List of features to include in the model. Default: all available features",
+        help="List of features to include in the model.",
     )
-
     available_models = list(MODELS.keys())
     parser.add_argument(
         "--models",
         nargs="+",
-        default=available_models,
         choices=available_models,
         type=lambda x: next(
             m for m in available_models if m.lower() == x.lower()
         ),  # case-insensitive matching
-        help="List of model architectures to train. Default: all available models",
+        help="List of model architectures to train.",
     )
-
     parser.add_argument(
         "--trials",
         type=int,
@@ -91,14 +74,8 @@ def parse_args():
 
 def main():
     args = parse_args()
-    args.features = sorted(args.features)
-    if "face" in args.features:
-        args.features = face_features + [f for f in args.features if f != "face"]
-    if "eeg" in args.features:
-        args.features = eeg_features + [f for f in args.features if f != "eeg"]
-    # Separate EEG and non-EEG features
-    eeg_features_in_list = [f for f in args.features if f in eeg_features]
-    non_eeg_features = [f for f in args.features if f not in eeg_features]
+    df, feature_list = load_data_from_database(feature_list=args.features)
+    args.features = feature_list  # update args with actual feature list
 
     # Create experiment tracker
     experiment_tracker = ExperimentTracker(
@@ -108,67 +85,6 @@ def main():
         label_mapping=LABEL_MAPPING,
         offsets_ms=OFFSETS_MS,
     )
-
-    # Load data from database
-    db = DatabaseManager()
-    with db:
-        if eeg_features_in_list:  # If any EEG features are requested
-            if non_eeg_features:  # Mixed EEG and non-EEG features
-                eeg = db.get_table(
-                    "Feature_EEG", exclude_trials_with_measurement_problems=True
-                ).with_columns(marker=1)  # add marker to keep eeg sampling unchanged
-
-                data = (
-                    db.get_table(
-                        "Merged_and_Labeled_Data",
-                        exclude_trials_with_measurement_problems=True,
-                    ).with_columns(marker=0)
-                ).select(
-                    [
-                        "participant_id",
-                        "trial_id",
-                        "trial_number",
-                        "timestamp",
-                        "marker",
-                    ]
-                    + non_eeg_features
-                )
-
-                trials = db.get_table(
-                    "Trials", exclude_trials_with_measurement_problems=True
-                )
-
-                df = merge_dfs(
-                    [eeg, data],
-                    on=[
-                        "participant_id",
-                        "trial_id",
-                        "trial_number",
-                        "timestamp",
-                        "marker",
-                    ],
-                )
-                df = interpolate_and_fill_nulls(df, non_eeg_features).filter(
-                    pl.col("marker") == 1  # keep only EEG data after interpolation
-                )
-                df = add_normalized_timestamp(df)
-                df = add_labels(df, trials)
-            else:  # Only EEG features
-                eeg = db.get_table(
-                    "Feature_EEG",
-                    exclude_trials_with_measurement_problems=True,
-                )
-                trials = db.get_table(
-                    "Trials",
-                    exclude_trials_with_measurement_problems=True,
-                )
-                eeg = add_normalized_timestamp(eeg)
-                df = add_labels(eeg, trials)
-        else:  # No EEG features
-            df = db.get_table(
-                "Merged_and_Labeled_Data",
-                exclude_trials_with_measurement_problems=True,
-            )
 
     # Prepare data
     X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
