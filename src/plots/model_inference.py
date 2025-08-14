@@ -152,8 +152,7 @@ def plot_prediction_confidence_heatmap(
     stimulus_linewidth: int = 4,
     stimulus_color: str = "black",
     stimulus_scale: float = 0.4,
-    filename: str | None = None,
-) -> None:
+) -> plt.Figure:
     """
     Create a heatmap visualization of model predictions across all participants.
     Optimized for presentation in PowerPoint.
@@ -250,7 +249,7 @@ def plot_prediction_confidence_heatmap(
         2 * ((stimulus - stimulus.min()) / (stimulus.max() - stimulus.min())) - 1
     )
 
-    # Create figure with higher resolution for presentations
+    # Create figure
     fig, ax = plt.subplots(figsize=figure_size, dpi=120)
 
     # Plot heatmap with slightly transparent colors to make stimulus more visible
@@ -261,7 +260,7 @@ def plot_prediction_confidence_heatmap(
         vmin=-1,
         vmax=1,
         extent=(0, 183, 0, len(sorted_confidence_array)),
-        alpha=0.9,  # Reduced transparency to increase color saturation
+        alpha=0.9,
     )
 
     # Add colorbar with larger font size
@@ -323,6 +322,170 @@ def plot_prediction_confidence_heatmap(
     ax.set_xticks(np.arange(0, 181, 30))
 
     plt.tight_layout()
+    return fig
 
-    if filename:
-        plt.savefig(filename, dpi=300, bbox_inches="tight")
+
+def main():
+    import json
+    import logging
+    import os
+    from pathlib import Path
+
+    import holoviews as hv
+    import hvplot.polars  # noqa
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import polars as pl
+    import tomllib
+    from dotenv import load_dotenv
+
+    from src.data.database_manager import DatabaseManager
+    from src.features.labels import add_labels
+    from src.features.resampling import add_normalized_timestamp
+    from src.log_config import configure_logging
+    from src.models.data_loader import create_dataloaders
+    from src.models.data_preparation import prepare_data
+    from src.models.main_config import RANDOM_SEED
+    from src.models.utils import load_model
+    from src.plots.model_inference import (
+        analyze_test_dataset_for_one_stimulus,
+        plot_prediction_confidence_heatmap,
+    )
+    from src.plots.model_performance_per_participant import analyze_per_participant
+
+    load_dotenv()
+    FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
+
+    configure_logging(
+        stream_level=logging.DEBUG,
+        ignore_libs=["matplotlib", "Comm", "bokeh", "tornado"],
+    )
+
+    pl.Config.set_tbl_rows(12)  # for the 12 trials
+
+    config_path = Path("src/experiments/measurement/measurement_config.toml")
+    with open(config_path, "rb") as file:
+        config = tomllib.load(file)
+    stimulus_seeds = config["stimulus"]["seeds"]
+    print(f"Using seeds for stimulus generation: {stimulus_seeds}")
+
+    feature_combination = "eda_raw_heart_rate_pupil"
+    # "heart_rate",
+    # "pupil",
+    # "eda_raw",
+    # "eda_raw_pupil",
+    # "eda_raw_heart_rate",
+    # "eda_raw_heart_rate_pupil",
+    # "brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise",
+    # "brow_furrow_cheek_raise_eda_raw_heart_rate_mouth_open_nose_wrinkle_pupil_upper_lip_raise",
+    # "c3_c4_cz_f3_f4_oz_p3_p4",
+
+    results = {}
+
+    # Load data from database
+    db = DatabaseManager()
+    with db:
+        if feature_combination == "c3_c4_cz_f3_f4_oz_p3_p4":
+            eeg = db.get_table(
+                "Preprocess_EEG",
+                exclude_trials_with_measurement_problems=True,
+            )
+            trials = db.get_table(
+                "Trials",
+                exclude_trials_with_measurement_problems=True,
+            )
+            eeg = add_normalized_timestamp(eeg)
+            df = add_labels(eeg, trials)
+        else:
+            df = db.get_table(
+                "Merged_and_Labeled_Data",
+                exclude_trials_with_measurement_problems=True,
+            )
+
+    # Load model
+    json_path = Path(f"results/experiment_{feature_combination}/results.json")
+    dictionary = json.loads(json_path.read_text())
+    model_path = Path(dictionary["overall_best"]["model_path"].replace("\\", "/"))
+
+    model, feature_list, sample_duration_ms, intervals, label_mapping, offsets_ms = (
+        load_model(model_path, device="cpu")
+    )
+
+    # Get participant leaderboard
+    # = a list of participant IDs in the test set, sorted by their accuracy on the test set, from highest to lowest.
+
+    # Prepare data
+    X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
+        prepare_data(
+            df=df,
+            feature_list=feature_list,
+            sample_duration_ms=sample_duration_ms,
+            intervals=intervals,
+            label_mapping=label_mapping,
+            offsets_ms=offsets_ms,
+            random_seed=RANDOM_SEED,
+        )
+    )
+    test_groups = prepare_data(
+        df=df,
+        feature_list=feature_list,
+        sample_duration_ms=sample_duration_ms,
+        intervals=intervals,
+        label_mapping=label_mapping,
+        offsets_ms=offsets_ms,
+        random_seed=RANDOM_SEED,
+        only_return_test_groups=True,
+    )
+    test_ids = np.unique(test_groups)
+
+    _, test_loader = create_dataloaders(
+        X_train_val, y_train_val, X_test, y_test, batch_size=64
+    )
+
+    results_df = analyze_per_participant(
+        model,
+        test_loader,
+        test_groups,
+        threshold=0.50,
+    )
+
+    leaderboard = (
+        results_df.remove(participant="overall")
+        .sort("accuracy", descending=True)
+        .get_column("participant")
+        .to_list()
+    )
+
+    # Analyze the entire test dataset
+    all_probabilities = {}
+    all_participant_trials = {}
+
+    for stimulus_seed in stimulus_seeds:
+        probabilities, participant_trials = analyze_test_dataset_for_one_stimulus(
+            model,
+            db,
+            feature_list,
+            test_ids,
+            stimulus_seed,
+            sample_duration_ms,
+            log=True,
+        )
+
+        all_probabilities[stimulus_seed] = probabilities
+        all_participant_trials[stimulus_seed] = participant_trials
+
+    stimulus_seed = stimulus_seeds[0]
+    threshold = 0.7
+
+    a = plot_prediction_confidence_heatmap(
+        probabilities=all_probabilities[stimulus_seed],
+        stimulus_seed=stimulus_seed,
+        classification_threshold=threshold,
+        sample_duration=sample_duration_ms,
+        leaderboard=leaderboard,
+    )
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()

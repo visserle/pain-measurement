@@ -286,7 +286,7 @@ def plot_feature_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
         for row in participant_data.iter_rows(named=True):
             plot_data.append(
                 {
-                    "participant": f"P{row['participant']}",
+                    "participant": f"{row['participant']}",
                     "feature_combination": display_name,
                     "accuracy": row["accuracy"],
                 }
@@ -298,20 +298,6 @@ def plot_feature_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
     # Check how many participants we have
     n_participants = len(plot_df["participant"].unique())
 
-    # Academic journal color palette - grayscale and muted colors
-    # These colors work well in both color and grayscale printing
-    journal_colors = [
-        "#2F2F2F",  # Dark gray
-        "#7F7F7F",  # Medium gray
-        "#BFBFBF",  # Light gray
-        "#4A90E2",  # Muted blue
-        "#7ED321",  # Muted green
-        "#F5A623",  # Muted orange
-        "#BD10E0",  # Muted purple
-        "#B8E986",  # Light green
-        "#50E3C2",  # Teal
-        "#F8E71C",  # Yellow
-    ]
     # PARTICIPANT-specific color palette - blues/teals for people
     participant_colors = [
         "#1f4e79",  # Navy blue
@@ -356,7 +342,7 @@ def plot_feature_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
 
     # Customize legend for academic style - place outside the plot
     legend = ax.legend(
-        title="Participant",
+        title="Participant ID",
         frameon=True,
         fancybox=False,
         shadow=False,
@@ -376,8 +362,8 @@ def plot_feature_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
     ax.set_axisbelow(True)
 
     # Set y-axis limits and ticks
-    ax.set_ylim(0, 1.0)
-    ax.set_yticks([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    ax.set_ylim(0.35, 1.0)
+    ax.set_yticks([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
 
     # Clean up spines (academic standard)
     ax.spines["top"].set_visible(False)
@@ -412,7 +398,7 @@ def plot_participant_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
         for row in participant_data.iter_rows(named=True):
             plot_data.append(
                 {
-                    "participant": f"P{row['participant']}",
+                    "participant": f"{row['participant']}",
                     "feature_combination": display_name,
                     "accuracy": row["accuracy"],
                 }
@@ -424,19 +410,6 @@ def plot_participant_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
     # Check how many feature combinations we have
     n_combinations = len(plot_df["feature_combination"].unique())
 
-    # Academic journal color palette - grayscale and muted colors
-    # These colors work well in both color and grayscale printing
-    journal_colors = [
-        "#2F2F2F",  # Dark gray
-        "#7F7F7F",  # Medium gray
-        "#BFBFBF",  # Light gray
-        "#4A90E2",  # Muted blue
-        "#7ED321",  # Muted green
-        "#F5A623",  # Muted orange
-        "#BD10E0",  # Muted purple
-        "#B8E986",  # Light green
-        "#50E3C2",  # Teal
-    ]
     # FEATURE-specific color palette - warm colors for features/methods
     feature_colors = [
         "#d73027",  # Red
@@ -472,7 +445,7 @@ def plot_participant_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
     )
 
     # Academic styling
-    ax.set_xlabel("Participant", fontsize=12)
+    ax.set_xlabel("Participant ID", fontsize=12)
     ax.set_ylabel("Classification Accuracy", fontsize=12)
 
     # Customize legend for academic style - place outside the plot
@@ -497,8 +470,8 @@ def plot_participant_accuracy_comparison(results_dict, labels, figsize=(10, 6)):
     ax.set_axisbelow(True)
 
     # Set y-axis limits and ticks
-    ax.set_ylim(0, 1.0)
-    ax.set_yticks([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    ax.set_ylim(0.35, 1.0)
+    ax.set_yticks([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
 
     # Clean up spines (academic standard)
     ax.spines["top"].set_visible(False)

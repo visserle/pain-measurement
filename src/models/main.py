@@ -4,10 +4,12 @@ from datetime import datetime
 from pathlib import Path
 
 import optuna.logging
+import polars as pl
 
 from src.data.database_manager import DatabaseManager
 from src.features.labels import add_labels
-from src.features.resampling import add_normalized_timestamp
+from src.features.resampling import add_normalized_timestamp, interpolate_and_fill_nulls
+from src.features.transforming import merge_dfs
 from src.log_config import configure_logging
 from src.models.data_loader import create_dataloaders
 from src.models.data_preparation import prepare_data
@@ -91,9 +93,12 @@ def main():
     args = parse_args()
     args.features = sorted(args.features)
     if "face" in args.features:
-        args.features = [f for f in args.features if f != "face"] + face_features
-    if args.features == ["eeg"]:  # cannot be merged with other features
-        args.features = eeg_features
+        args.features = face_features + [f for f in args.features if f != "face"]
+    if "eeg" in args.features:
+        args.features = eeg_features + [f for f in args.features if f != "eeg"]
+    # Separate EEG and non-EEG features
+    eeg_features_in_list = [f for f in args.features if f in eeg_features]
+    non_eeg_features = [f for f in args.features if f not in eeg_features]
 
     # Create experiment tracker
     experiment_tracker = ExperimentTracker(
@@ -107,20 +112,62 @@ def main():
     # Load data from database
     db = DatabaseManager()
     with db:
-        if any(channel in eeg_features for channel in args.features):
-            eeg = db.get_table(
-                "Preprocess_EEG",
-                exclude_trials_with_measurement_problems=True,
-            )
-            trials = db.get_table(
-                "Trials",
-                exclude_trials_with_measurement_problems=True,
-            )
-            eeg = add_normalized_timestamp(eeg)
-            df = add_labels(eeg, trials)
-        else:
+        if eeg_features_in_list:  # If any EEG features are requested
+            if non_eeg_features:  # Mixed EEG and non-EEG features
+                eeg = db.get_table(
+                    "Feature_EEG", exclude_trials_with_measurement_problems=True
+                ).with_columns(marker=1)  # add marker to keep eeg sampling unchanged
+
+                data = (
+                    db.get_table(
+                        "Merged_and_Labeled_Data",
+                        exclude_trials_with_measurement_problems=True,
+                    ).with_columns(marker=0)
+                ).select(
+                    [
+                        "participant_id",
+                        "trial_id",
+                        "trial_number",
+                        "timestamp",
+                        "marker",
+                    ]
+                    + non_eeg_features
+                )
+
+                trials = db.get_table(
+                    "Trials", exclude_trials_with_measurement_problems=True
+                )
+
+                df = merge_dfs(
+                    [eeg, data],
+                    on=[
+                        "participant_id",
+                        "trial_id",
+                        "trial_number",
+                        "timestamp",
+                        "marker",
+                    ],
+                )
+                df = interpolate_and_fill_nulls(df, non_eeg_features).filter(
+                    pl.col("marker") == 1  # keep only EEG data after interpolation
+                )
+                df = add_normalized_timestamp(df)
+                df = add_labels(df, trials)
+            else:  # Only EEG features
+                eeg = db.get_table(
+                    "Feature_EEG",
+                    exclude_trials_with_measurement_problems=True,
+                )
+                trials = db.get_table(
+                    "Trials",
+                    exclude_trials_with_measurement_problems=True,
+                )
+                eeg = add_normalized_timestamp(eeg)
+                df = add_labels(eeg, trials)
+        else:  # No EEG features
             df = db.get_table(
-                "Merged_and_Labeled_Data", exclude_trials_with_measurement_problems=True
+                "Merged_and_Labeled_Data",
+                exclude_trials_with_measurement_problems=True,
             )
 
     # Prepare data

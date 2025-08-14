@@ -259,49 +259,59 @@ def plot_averages_with_ci(
     return plots
 
 
-def calculate_max_crosscorr_lag_over_averages(
+def calculate_crosscorr_matrix(
     averages_df: pl.DataFrame,
-    col1: str,
-    col2: str,
+    signals: list[str],
+    reference_signal: str = "temperature",
     fs: int = 10,
-    plot: bool = False,
 ):
-    # Note that normalizing cross correlations for intpretation is done by dividing by
-    # the maximum value of the cross-correlation so that the maximum value is 1.
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.correlate.html
-    lag_arr = []
-    stimulus_seed = []
-    for stimulus in (
-        averages_df.get_column("stimulus_seed").unique(maintain_order=True).to_numpy()
-    ):
-        col1_arr = averages_df.filter(stimulus_seed=stimulus)[col1].to_numpy()
-        col2_arr = averages_df.filter(stimulus_seed=stimulus)[col2].to_numpy()
+    """Calculate cross-correlation lags between reference signal and all other signals."""
+    results = []
 
-        # Cross-correlation
-        corr = signal.correlate(
-            col1_arr,
-            col2_arr,
-            method="auto",
+    for sig in signals:
+        if sig == reference_signal:
+            continue
+
+        col1 = f"avg_{reference_signal}"
+        col2 = f"avg_{sig}"
+
+        lag_arr = []
+        stimulus_seeds = []
+
+        for stimulus in (
+            averages_df.get_column("stimulus_seed")
+            .unique(maintain_order=True)
+            .to_numpy()
+        ):
+            col1_arr = averages_df.filter(stimulus_seed=stimulus)[col1].to_numpy()
+            col2_arr = averages_df.filter(stimulus_seed=stimulus)[col2].to_numpy()
+
+            # Cross-correlation
+            corr = signal.correlate(col1_arr, col2_arr, method="auto")
+            lags = signal.correlation_lags(len(col1_arr), len(col2_arr))
+
+            # Find the maximum correlation and the lag
+            lag = lags[np.argmax(corr)] / fs  # lag in seconds
+            lag_arr.append(lag)
+            stimulus_seeds.append(stimulus)
+
+        # Create summary statistics for this signal pair
+        lag_arr = np.array(lag_arr)
+        mean_lag = np.mean(lag_arr)
+        std_lag = np.std(lag_arr)
+
+        # Add to results
+        results.append(
+            {
+                "reference_signal": reference_signal,
+                "target_signal": sig,
+                "mean_lag": mean_lag,
+                "std_lag": std_lag,
+                "individual_lags": lag_arr.tolist(),
+                "stimulus_seeds": stimulus_seeds,
+            }
         )
-        # Lag indices for the cross-correlation
-        lags = signal.correlation_lags(
-            len(col1_arr),
-            len(col2_arr),
-        )
-        if plot:
-            plt.plot(lags, corr)
-
-        # Find the maximum correlation and the lag
-        lag = lags[np.argmax(corr)] / fs  # lag in seconds
-        lag_arr.append(lag)
-        stimulus_seed.append(stimulus)
-
-    lag_arr = np.array(lag_arr)
-    lag_df = pl.DataFrame({"stimulus_seed": stimulus_seed, "lag": lag_arr})
-    logger.info(
-        f"{col1} : {col2} | mean lag: {lag_df['lag'].mean():.2f}, std lag: {lag_df['lag'].std():.2f}"
-    )
-    return lag_df
+    return pl.DataFrame(results).sort("mean_lag", descending=True)
 
 
 def plot_correlation_heatmap(
@@ -314,8 +324,8 @@ def plot_correlation_heatmap(
             "avg_temperature",
             "avg_pain_rating",
             "avg_pupil_diameter",
-            "avg_eda_tonic",
             "avg_heart_rate",
+            "avg_eda_tonic",
             "avg_eda_phasic",
         ]
     else:
