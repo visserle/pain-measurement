@@ -330,7 +330,6 @@ def plot_prediction_confidence_heatmap(
     sample_duration: int = 3000,
     step_size: int = 1000,
     classification_threshold: float = 0.5,
-    leaderboard: list | None = None,
     figure_size: tuple = (15, 8),
     stimulus_linewidth: int = 4,
     stimulus_color: str = "black",
@@ -347,7 +346,6 @@ def plot_prediction_confidence_heatmap(
         sample_duration: Duration of each sample in milliseconds
         step_size: Step size between samples in milliseconds
         classification_threshold: Threshold used for binary classification (default: 0.5)
-        leaderboard: Optional list of participant IDs ordered by performance (best first)
         figure_size: Size of each subplot (width, height)
         stimulus_linewidth: Width of the stimulus line
         stimulus_color: Color of the stimulus line
@@ -435,19 +433,11 @@ def plot_prediction_confidence_heatmap(
         padded_array[:, int(sample_duration / 1000 - 1) :] = confidence_array
         confidence_array = padded_array
 
-        # Sort by leaderboard if provided, otherwise by average confidence
-        if leaderboard is not None:
-            leaderboard_positions = {pid: i for i, pid in enumerate(leaderboard)}
-            participant_ids = [data[0] for data in confidence_data]
-            sort_indices = sorted(
-                range(len(participant_ids)),
-                key=lambda i: leaderboard_positions.get(
-                    participant_ids[i], float("inf")
-                ),
-            )
-        else:
-            avg_confidence = np.mean(np.abs(confidence_array), axis=1)
-            sort_indices = np.argsort(-avg_confidence)
+        # Sort by participant ID
+        participant_ids = [data[0] for data in confidence_data]
+        sort_indices = sorted(
+            range(len(participant_ids)), key=lambda i: participant_ids[i]
+        )
 
         sorted_confidence_array = confidence_array[sort_indices]
         sorted_participant_ids = [confidence_data[i][0] for i in sort_indices]
