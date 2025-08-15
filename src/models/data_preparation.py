@@ -66,15 +66,16 @@ def load_data_from_database(feature_list: list) -> pl.DataFrame:
     with db:
         if eeg_features_in_list:  # if any EEG features are requested
             if non_eeg_features:  # mixed EEG and non-EEG features
+                # add marker to keep eeg sampling rate unchanged
                 eeg = db.get_table(
                     "Feature_EEG", exclude_trials_with_measurement_problems=True
-                ).with_columns(marker_eeg=1)  #  to keep eeg sampling rate unchanged
+                ).with_columns(marker_eeg=pl.lit(True))
 
                 data = (
                     db.get_table(
                         "Merged_and_Labeled_Data",
                         exclude_trials_with_measurement_problems=True,
-                    ).with_columns(marker_eeg=0)
+                    ).with_columns(marker_eeg=pl.lit(False))
                 ).select(
                     [
                         "participant_id",
@@ -101,7 +102,7 @@ def load_data_from_database(feature_list: list) -> pl.DataFrame:
                     ],
                 )
                 df = interpolate_and_fill_nulls(df, non_eeg_features).filter(
-                    pl.col("marker_eeg") == 1  # keep only EEG data after interpolation
+                    pl.col("marker_eeg")  # keep only EEG data after interpolation
                 )
                 df = add_normalized_timestamp(df)
                 df = add_labels(df, trials)

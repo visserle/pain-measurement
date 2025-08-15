@@ -22,14 +22,14 @@ def add_labels(
         "for each trial, see resampling.py."
     )
     # Add temporary markers so that we can remove rows from trials from the real data
-    trials_df = trials_df.with_columns(marker=0)
-    data_df = data_df.with_columns(marker=1)
+    trials_df = trials_df.with_columns(label_marker=pl.lit(False))
+    data_df = data_df.with_columns(label_marker=pl.lit(True))
 
     # Merge data and trials DataFrames
     df = (
         merge_dfs(
             [data_df, trials_df],
-            on=["trial_id", "participant_id", "trial_number", "marker"],
+            on=["trial_id", "participant_id", "trial_number", "label_marker"],
         )
         .drop("duration", "timestamp_end", "timestamp_start")
         # Add stimulus seed info to all columns so that we can group after it later
@@ -38,7 +38,7 @@ def add_labels(
         .with_columns(col(["stimulus_seed", "skin_patch"]).forward_fill())
     )
     # Process labels
-    return process_labels(df).filter(marker=1).drop("marker")
+    return process_labels(df).filter(label_marker=pl.lit(True)).drop("label_marker")
 
 
 def process_labels(df: pl.DataFrame) -> pl.DataFrame:
