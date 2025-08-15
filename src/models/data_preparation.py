@@ -25,9 +25,18 @@ EEG_FEATURES = ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"]
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
-def expand_feature_list(feature_list: list) -> list:
-    """Expand shorthand feature names to full feature lists."""
-    expanded_list = feature_list.copy()
+def expand_feature_list(feature_list) -> list:
+    """Expand shorthand feature names to full feature lists, supporting nested lists."""
+    # Handle nested lists recursively
+    if isinstance(feature_list, list) and any(
+        isinstance(item, list) for item in feature_list
+    ):
+        return [expand_feature_list(item) for item in feature_list]
+
+    # Handle single feature list
+    expanded_list = (
+        feature_list.copy() if isinstance(feature_list, list) else [feature_list]
+    )
 
     if "face" in expanded_list:
         expanded_list = FACE_FEATURES + [f for f in expanded_list if f != "face"]
