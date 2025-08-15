@@ -7,21 +7,28 @@ import polars as pl
 import torch
 from matplotlib.colors import LinearSegmentedColormap
 
-from src.data.database_manager import DatabaseManager
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
+from src.models.data_loader import transform_sample_df_to_arrays
+from src.models.data_preparation import (
+    EEG_FEATURES,
+    load_data_from_database,
+    prepare_data,
+)
+from src.models.main_config import INTERVALS, LABEL_MAPPING, OFFSETS_MS, RANDOM_SEED
+from src.models.scalers import StandardScaler3D
 
-logger = logging.Logger(__name__.rsplit(".", 1)[-1])
+logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 plt.style.use("./src/plots/style.mplstyle")
 
 
 def analyze_test_dataset_for_one_stimulus(
+    df: pl.DataFrame,
     model: torch.nn.Module,
     features: list,
     participant_ids: list,
     stimulus_seed: int,
-    sample_duration: int = 3000,
-    log: bool = True,
+    sample_duration: int,
 ) -> tuple[dict, dict]:
     """
     Analyze the entire test dataset with the specified stimulus seed.
@@ -35,26 +42,36 @@ def analyze_test_dataset_for_one_stimulus(
         probabilities: Dictionary mapping participant_id to their class probabilities
         participant_trials: Dictionary mapping participant_id to number of trials
     """
-    # Renamed to result_probabilities to avoid name collision
+    # Get scaler from train+validation data
+    scaler: StandardScaler3D = prepare_data(
+        df=df,
+        feature_list=features,
+        sample_duration_ms=sample_duration,
+        intervals=INTERVALS,
+        label_mapping=LABEL_MAPPING,
+        offsets_ms=OFFSETS_MS,
+        random_seed=RANDOM_SEED,
+        only_return_scaler=True,
+    )  # ignore
+
     result_probabilities = {}
     participant_trials = {}
 
+    # for debugging purposes
+    participant_ids = [31]
+
     # Process each participant
     for participant_id in participant_ids:
-        if log:
-            logger.info(f"Processing participant {participant_id}...")
+        logger.info(f"Processing participant {participant_id}...")
         # Get data for this participant and stimulus seed
-        with DatabaseManager() as db:
-            participant_df = db.get_table("merged_and_labeled_data").filter(
-                (pl.col("participant_id") == participant_id)
-                & (pl.col("stimulus_seed") == stimulus_seed)
-            )
+        participant_df = df.filter(participant_id=participant_id).filter(
+            stimulus_seed=stimulus_seed
+        )
 
         if participant_df.is_empty():
-            if log:
-                logger.info(
-                    f"No data found for participant {participant_id} with stimulus seed {stimulus_seed}"
-                )
+            logger.info(
+                f"No data found for participant {participant_id} with stimulus seed {stimulus_seed}"
+            )
             continue
 
         # Create a proper key for the participant (use the actual ID, not the index)
@@ -63,83 +80,112 @@ def analyze_test_dataset_for_one_stimulus(
         participant_probabilities = []
 
         # Create samples for this trial
-        samples = _create_samples_full_stimulus(
+        samples_df = _create_samples_full_stimulus(
             participant_df, features, sample_duration
         )
 
-        if not samples:
-            if log:
-                logger.info(
-                    f" No valid samples for trial {participant_df.get_column('trial_id').unique().item()}"
-                )
+        if samples_df is None or samples_df.is_empty():
+            logger.info(
+                f" No valid samples for trial {participant_df.get_column('trial_id').unique().item()}"
+            )
             continue
 
-        # Get probabilities for this trial
+        # Transform samples and scale them
+        X, _, _ = transform_sample_df_to_arrays(
+            samples_df,  # Combine all sample DataFrames
+            feature_columns=features,
+            label_column=None,  # No labels needed for inference
+            group_column=None,  # No grouping needed
+        )
+        X = scaler.transform(X)
+
+        # Get predictions
         device = next(model.parameters()).device
-        batch_samples = []
-
         with torch.inference_mode():
-            for sample in samples:
-                batch_samples.append(sample.to_numpy())
-
-            # Process all samples in a single batch
-            if batch_samples:
-                # Convert all samples to a single tensor batch
-                batch_tensor = torch.tensor(
-                    np.stack(batch_samples), dtype=torch.float32
-                ).to(device)
-                logits = model(batch_tensor)
-                probs = torch.softmax(logits, dim=1)
-                trial_probabilities = probs.cpu().detach().numpy().tolist()
-                participant_probabilities.append(trial_probabilities)
+            batch_tensor = torch.tensor(X, dtype=torch.float32).to(device)
+            logits = model(batch_tensor)
+            probs = torch.softmax(logits, dim=1)
+            trial_probabilities = probs.cpu().detach().numpy().tolist()
+            participant_probabilities.append(trial_probabilities)
 
         if participant_probabilities:
             result_probabilities[participant_key] = participant_probabilities
             participant_trials[participant_key] = len(participant_probabilities)
+
     return result_probabilities, participant_trials
 
 
 def _create_samples_full_stimulus(
     df: pl.DataFrame,
     features: list,
-    sample_duration: int = 3000,
+    sample_duration: int,
     step_size: int = 1000,
-) -> list[pl.DataFrame]:
+) -> pl.DataFrame:
     """
     Create samples from dataframe with specified duration and step size.
+    Returns a single DataFrame with sample_id column for grouping.
 
     Args:
         df: Polars DataFrame with a 'normalized_timestamp' column
-        sample_duration: Duration of each sample in milliseconds (default: 5000)
-        step_size: Spacing between sample starts in milliseconds (default: 1000)
+        features: List of features to include in the samples
+        sample_duration: Duration of each sample in milliseconds
+        step_size: Spacing between sample starts in milliseconds
 
     Returns:
-        List of DataFrames, each representing a sample
+        DataFrame with sample_id column and all samples concatenated
     """
     # Get min and max timestamps
-    min_time = df["normalized_timestamp"].min()
-    max_time = df["normalized_timestamp"].max()
-
+    min_time, max_time = 0.0, 180000.0
     # Generate sample start times
     sample_starts = np.arange(min_time, max_time - sample_duration + 1, step_size)
 
-    # Create samples
-    samples = []
-    for start in sample_starts:
+    # Initialize list to store sample DataFrames
+    sample_dfs = []
+
+    # Check if we're dealing with EEG data
+    eeg_features_present = [f for f in features if f in EEG_FEATURES]
+    target_length = 250 * (sample_duration // 1000) if eeg_features_present else None
+
+    for sample_idx, start in enumerate(sample_starts):
         end = start + sample_duration
         sample = df.filter(
-            (df["normalized_timestamp"] >= start) & (df["normalized_timestamp"] < end)
-        ).select(features)
-
-        # Only include non-empty samples
-        if sample.height > 0:
-            samples.append(sample)
-
-    if logging:
-        logger.info(
-            f"Created {len(samples)} samples of {sample_duration}ms duration with {step_size} ms spacing"
+            (pl.col("normalized_timestamp") >= start)
+            & (pl.col("normalized_timestamp") < end)
         )
-    return samples
+
+        if sample.height == 0:
+            continue
+
+        if eeg_features_present:
+            # Handle EEG data with specific length requirements
+            if sample.height >= target_length or (target_length - sample.height < 20):
+                if sample.height > target_length:
+                    sample = sample.head(target_length)
+                elif sample.height < target_length:
+                    # Pad with repeated last row
+                    last_row = sample.tail(1)
+                    padding = pl.concat([last_row] * (target_length - sample.height))
+                    sample = pl.concat([sample, padding])
+            else:
+                continue
+
+        # Add sample_id column
+        sample = sample.with_columns(sample_id=pl.lit(sample_idx))
+        sample_dfs.append(sample)
+
+    if not sample_dfs:
+        logger.info("No valid samples created")
+        return None
+
+    # Combine all samples into one DataFrame
+    result_df = pl.concat(sample_dfs)
+
+    logger.info(
+        f"Created {len(sample_dfs)} samples of {sample_duration}ms duration "
+        f"with {step_size}ms spacing"
+    )
+
+    return result_df.select(["sample_id"] + features)
 
 
 def plot_single_prediction_confidence_heatmap(
@@ -639,10 +685,8 @@ def main():
     from src.models.data_loader import create_dataloaders
     from src.models.data_preparation import (
         expand_feature_list,
-        load_data_from_database,
         prepare_data,
     )
-    from src.models.main_config import RANDOM_SEED
     from src.models.utils import load_model
     from src.plots.model_inference import (
         analyze_test_dataset_for_one_stimulus,
@@ -658,21 +702,21 @@ def main():
     with open(config_path, "rb") as file:
         config = tomllib.load(file)
     stimulus_seeds = config["stimulus"]["seeds"]
-    print(f"Using seeds for stimulus generation: {stimulus_seeds}")
+    logging.info(f"Using seeds for stimulus generation: {stimulus_seeds}")
 
     feature_lists = [
-        ["eda_raw", "pupil"],
-        ["eda_raw", "heart_rate"],
+        # ["eda_raw", "pupil"],
+        # ["eda_raw", "heart_rate"],
         # ["eda_raw", "heart_rate", "pupil"],
         # ["face"],
-        # ["eeg"],
+        ["eeg"],
     ]
     feature_lists = expand_feature_list(feature_lists)
 
     for feature_list in feature_lists:
         feature_list_str = "_".join(feature_list)
         # Load data from database
-        df = load_data_from_database(feature_list=[feature_list])
+        df = load_data_from_database(feature_list=feature_list)
 
         # Load model
         json_path = Path(f"results/experiment_{feature_list_str}/results.json")
@@ -689,7 +733,7 @@ def main():
         ) = load_model(model_path, device="cpu")
 
         # Prepare data
-        X_train, y_train, _, _, _, _, X_test, y_test = prepare_data(
+        _, _, _, _, X_train_val, y_train_val, X_test, y_test = prepare_data(
             df=df,
             feature_list=feature_list,
             sample_duration_ms=sample_duration_ms,
@@ -711,7 +755,7 @@ def main():
         test_ids = np.unique(test_groups)
         # train data is not used in this analysis, but we need to create the dataloaders
         _, test_loader = create_dataloaders(
-            X_train, y_train, X_test, y_test, batch_size=64
+            X_train_val, y_train_val, X_test, y_test, batch_size=64
         )
 
         # Analyze the entire test dataset
@@ -720,12 +764,12 @@ def main():
 
         for stimulus_seed in stimulus_seeds:
             probabilities, participant_trials = analyze_test_dataset_for_one_stimulus(
+                df,
                 model,
                 feature_list,
                 test_ids,
                 stimulus_seed,
                 sample_duration_ms,
-                log=True,
             )
 
             all_probabilities[stimulus_seed] = probabilities
@@ -735,7 +779,7 @@ def main():
         fig = plot_prediction_confidence_heatmap(
             all_probabilities,
             sample_duration_ms,
-            classification_threshold=0.95,
+            classification_threshold=0.5,
             ncols=2,
             figure_size=(7, 2),
             stimulus_scale=0.5,
@@ -748,8 +792,9 @@ def main():
         FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
 
         fig_path = FIGURE_DIR / f"model_inference_{feature_list_str}.png"
-        fig.savefig(fig_path, bbox_inches="tight", dpi=300)
-        logger.info(f"Saved figure to {fig_path}")
+        # fig.savefig(fig_path, bbox_inches="tight", dpi=300)
+        logging.info(f"Saved figure to {fig_path}")
+        plt.show()
 
 
 if __name__ == "__main__":
