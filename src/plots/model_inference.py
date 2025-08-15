@@ -12,6 +12,8 @@ from src.experiments.measurement.stimulus_generator import StimulusGenerator
 
 logger = logging.Logger(__name__.rsplit(".", 1)[-1])
 
+plt.style.use("./src/plots/style.mplstyle")
+
 
 def analyze_test_dataset_for_one_stimulus(
     model: torch.nn.Module,
@@ -245,9 +247,8 @@ def plot_single_prediction_confidence_heatmap(
     stimulus_line = (
         2 * ((stimulus - stimulus.min()) / (stimulus.max() - stimulus.min())) - 1
     )
-
     # Create figure
-    fig, ax = plt.subplots(figsize=figure_size, dpi=120)
+    fig, ax = plt.subplots(figsize=figure_size)  # Removed dpi=120
 
     # Plot heatmap with slightly transparent colors to make stimulus more visible
     im = ax.imshow(
@@ -256,20 +257,17 @@ def plot_single_prediction_confidence_heatmap(
         cmap=cmap,
         vmin=-1,
         vmax=1,
-        extent=(0, 180, 0, len(sorted_confidence_array)),
+        extent=(0, 180, len(sorted_confidence_array)),
         alpha=0.9,
     )
 
-    # Add colorbar with larger font size
+    # Add colorbar - removed font size specifications
     cbar = fig.colorbar(im, ax=ax)
     cbar.set_label(
         "Prediction Confidence\n(+ = Decrease, - = Increase)",
         rotation=270,
         labelpad=30,
-        fontsize=14,
-        fontweight="bold",
     )
-    cbar.ax.tick_params(labelsize=10)
 
     # Add stimulus line overlay with improved visibility
     scaled_stimulus_y = len(sorted_confidence_array) / 2
@@ -279,26 +277,23 @@ def plot_single_prediction_confidence_heatmap(
         linewidth=stimulus_linewidth,
         color=stimulus_color,
         label="Normalized Temperature Curve",
-        zorder=10,  # Ensure stimulus is on top
+        zorder=10,
         path_effects=[
             path_effects.SimpleLineShadow(offset=(1, -1), alpha=0.3),
             path_effects.Normal(),
-        ],  # Add shadow for better visibility
+        ],
     )
 
-    # Add legend for the stimulus line
-    ax.legend(loc="lower right", fontsize=14, framealpha=0.8)
+    # Add legend for the stimulus line - removed fontsize
+    ax.legend(loc="lower right", framealpha=0.8)
 
-    # Add labels and statistics with larger font sizes
+    # Add labels and statistics - removed font sizes and weights
     total_trials = len(sorted_confidence_array)
     ax.set_title(
-        f"Stimulus {stimulus_seed}: {total_trials} trials, threshold {classification_threshold}",
-        fontsize=14,
-        fontweight="bold",
+        f"Stimulus {stimulus_seed}: {total_trials} trials, threshold {classification_threshold}"
     )
-    ax.set_xlabel("Time (seconds)", fontsize=14, fontweight="bold")
-    ax.set_ylabel("Participant", fontsize=14, fontweight="bold")
-    ax.tick_params(axis="both", which="major", labelsize=10)
+    ax.set_xlabel("Time (seconds)")
+    ax.set_ylabel("Participant")
 
     # Add participant IDs as y-ticks (with improved formatting)
     num_ticks = min(10, len(sorted_confidence_array))
@@ -415,7 +410,6 @@ def _create_figure_and_axes(seeds_to_plot: list, ncols: int, figure_size: tuple)
         nrows,
         ncols,
         figsize=(total_width, total_height),
-        dpi=300,
         gridspec_kw={"hspace": 0.05, "wspace": 0.05},
     )
 
@@ -452,7 +446,6 @@ def _process_confidence_data(
 ):
     """Process raw probabilities into signed confidence values."""
     confidence_data = []
-
     for participant_id, trial_probabilities_list in probabilities.items():
         for trial_probabilities in trial_probabilities_list:
             increase_probs = np.array([probs[1] for probs in trial_probabilities])
@@ -469,12 +462,15 @@ def _process_confidence_data(
     padded_array = np.zeros((confidence_array.shape[0], 180))
     padded_array[:, int(sample_duration / 1000 - 1) :] = confidence_array
 
-    # Sort by participant ID
+    # Sort by participant ID as integers
     participant_ids = [data[0] for data in confidence_data]
-    sort_indices = sorted(range(len(participant_ids)), key=lambda i: participant_ids[i])
+    sort_indices = sorted(
+        range(len(participant_ids)), key=lambda i: int(participant_ids[i])
+    )
     sorted_confidence_array = padded_array[sort_indices]
+    sorted_participant_ids = [participant_ids[i] for i in sort_indices][::-1]
 
-    return sorted_confidence_array
+    return sorted_confidence_array, sorted_participant_ids
 
 
 def _calculate_signed_confidence(
@@ -514,7 +510,7 @@ def _plot_single_heatmap(
 ):
     """Plot heatmap for a single stimulus seed."""
     # Process confidence data
-    confidence_array = _process_confidence_data(
+    confidence_array, participant_ids = _process_confidence_data(
         probabilities, classification_threshold, sample_duration
     )
 
@@ -540,7 +536,7 @@ def _plot_single_heatmap(
     )
 
     # Format axes
-    _format_subplot_axes(ax, subplot_idx, ncols, nrows)
+    _format_subplot_axes(ax, subplot_idx, ncols, nrows, participant_ids)
 
     return im
 
@@ -566,25 +562,31 @@ def _add_stimulus_overlay(ax, stimulus_seed, confidence_array, linewidth, scale)
     )
 
 
-def _format_subplot_axes(ax, subplot_idx, ncols, nrows):
+def _format_subplot_axes(ax, subplot_idx, ncols, nrows, participant_ids):
     """Format individual subplot axes with minimal styling."""
     # X-axis formatting (bottom row only)
     if subplot_idx >= (nrows - 1) * ncols:
-        ax.set_xlabel("Time (s)", fontsize=12, fontweight="normal")
+        ax.set_xlabel("Time (s)")
         ax.set_xticks([0, 90, 180])
-        ax.tick_params(axis="x", which="major", labelsize=10, pad=2)
+        ax.tick_params(axis="x", which="major", pad=2)
     else:
         ax.set_xlabel("")
         ax.set_xticks([])
 
     # Y-axis formatting (left column only)
     if subplot_idx % ncols == 0:
-        ax.set_ylabel("", fontsize=10, fontweight="bold")
+        ax.set_ylabel("Participant ID")
+        # Set y-ticks to show participant IDs
+        n_participants = len(participant_ids)
+        y_positions = np.arange(0.5, n_participants, 1)  # Center ticks on each row
+        ax.set_yticks(y_positions)
+        ax.set_yticklabels(participant_ids)
+        ax.tick_params(axis="y", which="major", pad=2)
     else:
         ax.set_ylabel("")
+        ax.set_yticks([])
 
     # Clean styling
-    ax.set_yticks([])
     ax.grid(False)
     for spine in ax.spines.values():
         spine.set_linewidth(0.5)
@@ -611,23 +613,12 @@ def _finalize_figure_layout(fig, sample_ax, cmap):
     # Add colorbar
     # for bar over full height of the figure
     # cbar_ax = fig.add_axes([0.87, 0.15, 0.01, 0.82])
-    cbar_ax = fig.add_axes(
-        [
-            0.87,  # x position
-            0.2,  # y position
-            0.015,  # width
-            0.7,  # height
-        ]
-    )
+    cbar_ax = fig.add_axes([0.87, 0.2, 0.015, 0.7])
     cbar = fig.colorbar(sample_ax.images[0], cax=cbar_ax)
     cbar.set_label(
         "Prediction Confidence for Decreases",
-        # rotation=270,
         labelpad=8,
-        fontsize=12,
-        fontweight="normal",
     )
-    cbar.ax.tick_params(labelsize=10)
     cbar.outline.set_linewidth(0.0)
 
 
@@ -742,7 +733,7 @@ def main():
         fig = plot_prediction_confidence_heatmap(
             all_probabilities,
             sample_duration_ms,
-            classification_threshold=0.9,
+            classification_threshold=0.95,
             ncols=2,
             figure_size=(7, 2),
             stimulus_scale=0.5,
