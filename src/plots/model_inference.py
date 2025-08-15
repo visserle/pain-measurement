@@ -236,7 +236,7 @@ def plot_single_prediction_confidence_heatmap(
         (0.98, 0.98, 0.98),
         (0.0, 0.2, 0.8),
     ]  # Orange, White, Blue
-    cmap = LinearSegmentedColormap.from_list("OrangeWhiteBlue", colors, N=256)
+    cmap = LinearSegmentedColormap.from_list("CustomColors", colors, N=256)
 
     # Create time axis
     time_points = np.linspace(0, 180, confidence_array.shape[1])
@@ -334,6 +334,7 @@ def plot_prediction_confidence_heatmap(
     stimulus_scale: float = 0.25,
     seeds_to_plot: list | None = None,
     ncols: int = 2,
+    only_decreases: bool = True,
 ) -> plt.Figure:
     """
     Create compact heatmap visualizations of model predictions across all participants for multiple stimulus seeds.
@@ -356,7 +357,7 @@ def plot_prediction_confidence_heatmap(
     # Setup plotting parameters
     seeds_to_plot = _get_seeds_to_plot(all_probabilities, seeds_to_plot)
     fig, axes = _create_figure_and_axes(seeds_to_plot, ncols, figure_size)
-    cmap = _create_colormap()
+    cmap = _create_colormap(only_decreases)
 
     # Plot each seed
     for idx, stimulus_seed in enumerate(seeds_to_plot):
@@ -372,6 +373,7 @@ def plot_prediction_confidence_heatmap(
             idx,
             ncols,
             len(seeds_to_plot) // ncols,
+            only_decreases,
         )
 
     # Hide unused subplots
@@ -430,10 +432,14 @@ def _create_figure_and_axes(seeds_to_plot: list, ncols: int, figure_size: tuple)
     return fig, axes
 
 
-def _create_colormap():
-    """Create custom orange-white-blue colormap."""
-    colors = [(1.0, 0.35, 0.1), (0.98, 0.98, 0.98), (0.0, 0.2, 0.8)]
-    return LinearSegmentedColormap.from_list("OrangeWhiteBlue", colors, N=256)
+def _create_colormap(only_decreases) -> LinearSegmentedColormap:
+    """Create custom colormap."""
+    colors = [
+        (1, 1, 1) if only_decreases else (1.0, 0.35, 0.1),  # orange for increases
+        (1, 1, 1),
+        (0.0, 0.2, 0.8),
+    ]
+    return LinearSegmentedColormap.from_list("CustomColors", colors, N=256)
 
 
 def _process_confidence_data(
@@ -499,6 +505,7 @@ def _plot_single_heatmap(
     subplot_idx,
     ncols,
     nrows,
+    only_decreases,
 ):
     """Plot heatmap for a single stimulus seed."""
     # Process confidence data
@@ -511,7 +518,7 @@ def _plot_single_heatmap(
         confidence_array,
         aspect="auto",
         cmap=cmap,
-        vmin=-1,
+        vmin=0 if only_decreases else -1,
         vmax=1,
         extent=(0, 180, 0, len(confidence_array)),
         alpha=0.9,
@@ -632,7 +639,6 @@ def main():
         analyze_test_dataset_for_one_stimulus,
         plot_prediction_confidence_heatmap,
     )
-    from src.plots.model_performance_per_participant import analyze_per_participant
 
     configure_logging(
         stream_level=logging.DEBUG,
@@ -650,9 +656,9 @@ def main():
         ["eda_raw", "heart_rate"],
         ["eda_raw", "heart_rate", "pupil"],
         ["face"],
-        ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"],
+        ["eeg"],
     ]
-    feature_lists = list(map(lambda flist: expand_feature_list(flist), feature_lists))
+    feature_lists = expand_feature_list(feature_lists)
     feature_list = feature_lists[0]
 
     # Load data from database
@@ -668,8 +674,7 @@ def main():
     )
 
     # Prepare data
-    # we need train data to create the dataloaders, but we will not use it
-    X_train, y_train, _, _, X_test, y_test = prepare_data(
+    X_train, y_train, _, _, _, _, X_test, y_test = prepare_data(
         df=df,
         feature_list=feature_list,
         sample_duration_ms=sample_duration_ms,
@@ -689,7 +694,7 @@ def main():
         only_return_test_groups=True,
     )
     test_ids = np.unique(test_groups)
-
+    # train data is not used in this analysis, but we need to create the dataloaders
     _, test_loader = create_dataloaders(X_train, y_train, X_test, y_test, batch_size=64)
 
     # Analyze the entire test dataset
