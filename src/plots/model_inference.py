@@ -144,7 +144,6 @@ def plot_single_prediction_confidence_heatmap(
     probabilities: dict,
     stimulus_seed: int,
     sample_duration: int,
-    step_size: int = 1000,
     classification_threshold: float = 0.5,
     leaderboard: list | None = None,
     figure_size: tuple = (15, 8),
@@ -160,7 +159,6 @@ def plot_single_prediction_confidence_heatmap(
         probabilities: Dictionary of all probabilities for each participant
         stimulus_seed: Seed used for the stimulus generation
         sample_duration: Duration of each sample in milliseconds
-        step_size: Step size between samples in milliseconds
         classification_threshold: Threshold used for binary classification (default: 0.5)
         leaderboard: Optional list of participant IDs ordered by performance (best first)
         figure_size: Size of the figure (width, height)
@@ -327,7 +325,6 @@ def plot_single_prediction_confidence_heatmap(
 def plot_prediction_confidence_heatmap(
     all_probabilities: dict,
     sample_duration: int = 3000,
-    step_size: int = 1000,
     classification_threshold: float = 0.5,
     figure_size: tuple = (2.8, 1.8),
     stimulus_linewidth: float = 1.5,
@@ -343,7 +340,6 @@ def plot_prediction_confidence_heatmap(
     Args:
         all_probabilities: Dictionary structured as {seed: {participant: probabilities}}
         sample_duration: Duration of each sample in milliseconds
-        step_size: Step size between samples in milliseconds
         classification_threshold: Threshold used for binary classification (default: 0.5)
         figure_size: Size of each subplot (width, height)
         stimulus_linewidth: Line width for stimulus overlay
@@ -434,11 +430,13 @@ def _create_figure_and_axes(seeds_to_plot: list, ncols: int, figure_size: tuple)
 
 def _create_colormap(only_decreases) -> LinearSegmentedColormap:
     """Create custom colormap."""
-    colors = [
-        (1, 1, 1) if only_decreases else (1.0, 0.35, 0.1),  # orange for increases
-        (1, 1, 1),
-        (0.0, 0.2, 0.8),
-    ]
+    if only_decreases:
+        # For decreases only: white to blue
+        colors = [(1, 1, 1), (0.0, 0.2, 0.8)]
+    else:
+        # For both increases and decreases: orange to white to blue
+        colors = [(1.0, 0.35, 0.1), (1, 1, 1), (0.0, 0.2, 0.8)]
+
     return LinearSegmentedColormap.from_list("CustomColors", colors, N=256)
 
 
@@ -513,13 +511,17 @@ def _plot_single_heatmap(
         probabilities, classification_threshold, sample_duration
     )
 
+    # Set vmin and vmax based on only_decreases parameter
+    vmin = 0 if only_decreases else -1
+    vmax = 1
+
     # Plot heatmap
     im = ax.imshow(
         confidence_array,
         aspect="auto",
         cmap=cmap,
-        vmin=0 if only_decreases else -1,
-        vmax=1,
+        vmin=vmin,
+        vmax=vmax,
         extent=(0, 180, 0, len(confidence_array)),
         alpha=0.9,
         interpolation="nearest",
@@ -604,10 +606,9 @@ def _finalize_figure_layout(fig, sample_ax, cmap):
 
     cbar = fig.colorbar(sample_ax.images[0], cax=cbar_ax)
     cbar.set_label(
-        "Signed Prediction Confidence\n(+ = Decrease, – = Increase)",
-        # "Signed Prediction Confidence\n(Decrease ← 0 → Increase)",
+        "Prediction Confidence for Decreases",
         rotation=270,
-        labelpad=33,
+        labelpad=20,
         fontsize=12,
         fontweight="normal",
     )
@@ -654,84 +655,93 @@ def main():
     feature_lists = [
         ["eda_raw", "pupil"],
         ["eda_raw", "heart_rate"],
-        ["eda_raw", "heart_rate", "pupil"],
-        ["face"],
-        ["eeg"],
+        # ["eda_raw", "heart_rate", "pupil"],
+        # ["face"],
+        # ["eeg"],
     ]
     feature_lists = expand_feature_list(feature_lists)
-    feature_list = feature_lists[0]
 
-    # Load data from database
-    df = load_data_from_database(feature_list=[feature_list])
+    for feature_list in feature_lists:
+        feature_list_str = "_".join(feature_list)
+        # Load data from database
+        df = load_data_from_database(feature_list=[feature_list])
 
-    # Load model
-    json_path = Path(f"results/experiment_{('_').join(feature_list)}/results.json")
-    dictionary = json.loads(json_path.read_text())
-    model_path = Path(dictionary["overall_best"]["model_path"].replace("\\", "/"))
+        # Load model
+        json_path = Path(f"results/experiment_{feature_list_str}/results.json")
+        dictionary = json.loads(json_path.read_text())
+        model_path = Path(dictionary["overall_best"]["model_path"].replace("\\", "/"))
 
-    model, feature_list, sample_duration_ms, intervals, label_mapping, offsets_ms = (
-        load_model(model_path, device="cpu")
-    )
-
-    # Prepare data
-    X_train, y_train, _, _, _, _, X_test, y_test = prepare_data(
-        df=df,
-        feature_list=feature_list,
-        sample_duration_ms=sample_duration_ms,
-        intervals=intervals,
-        label_mapping=label_mapping,
-        offsets_ms=offsets_ms,
-        random_seed=RANDOM_SEED,
-    )
-    test_groups = prepare_data(
-        df=df,
-        feature_list=feature_list,
-        sample_duration_ms=sample_duration_ms,
-        intervals=intervals,
-        label_mapping=label_mapping,
-        offsets_ms=offsets_ms,
-        random_seed=RANDOM_SEED,
-        only_return_test_groups=True,
-    )
-    test_ids = np.unique(test_groups)
-    # train data is not used in this analysis, but we need to create the dataloaders
-    _, test_loader = create_dataloaders(X_train, y_train, X_test, y_test, batch_size=64)
-
-    # Analyze the entire test dataset
-    all_probabilities = {}
-    all_participant_trials = {}
-
-    for stimulus_seed in stimulus_seeds:
-        probabilities, participant_trials = analyze_test_dataset_for_one_stimulus(
+        (
             model,
             feature_list,
-            test_ids,
-            stimulus_seed,
             sample_duration_ms,
-            log=True,
+            intervals,
+            label_mapping,
+            offsets_ms,
+        ) = load_model(model_path, device="cpu")
+
+        # Prepare data
+        X_train, y_train, _, _, _, _, X_test, y_test = prepare_data(
+            df=df,
+            feature_list=feature_list,
+            sample_duration_ms=sample_duration_ms,
+            intervals=intervals,
+            label_mapping=label_mapping,
+            offsets_ms=offsets_ms,
+            random_seed=RANDOM_SEED,
+        )
+        test_groups = prepare_data(
+            df=df,
+            feature_list=feature_list,
+            sample_duration_ms=sample_duration_ms,
+            intervals=intervals,
+            label_mapping=label_mapping,
+            offsets_ms=offsets_ms,
+            random_seed=RANDOM_SEED,
+            only_return_test_groups=True,
+        )
+        test_ids = np.unique(test_groups)
+        # train data is not used in this analysis, but we need to create the dataloaders
+        _, test_loader = create_dataloaders(
+            X_train, y_train, X_test, y_test, batch_size=64
         )
 
-        all_probabilities[stimulus_seed] = probabilities
-        all_participant_trials[stimulus_seed] = participant_trials
+        # Analyze the entire test dataset
+        all_probabilities = {}
+        all_participant_trials = {}
 
-    # Plot all available stimuli
-    fig = plot_prediction_confidence_heatmap(
-        all_probabilities,
-        sample_duration_ms,
-        classification_threshold=0.8,
-        ncols=2,
-        figure_size=(7, 2),
-        stimulus_scale=0.5,
-        stimulus_linewidth=1.5,
-    )
+        for stimulus_seed in stimulus_seeds:
+            probabilities, participant_trials = analyze_test_dataset_for_one_stimulus(
+                model,
+                feature_list,
+                test_ids,
+                stimulus_seed,
+                sample_duration_ms,
+                log=True,
+            )
 
-    # Save the figure
-    load_dotenv()
-    FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
+            all_probabilities[stimulus_seed] = probabilities
+            all_participant_trials[stimulus_seed] = participant_trials
 
-    fig_path = FIGURE_DIR / f"model_inference_{('_').join(feature_list)}.png"
-    fig.savefig(fig_path, bbox_inches="tight", dpi=300)
-    logger.info(f"Saved figure to {fig_path}")
+        # Plot all available stimuli
+        fig = plot_prediction_confidence_heatmap(
+            all_probabilities,
+            sample_duration_ms,
+            classification_threshold=0.9,
+            ncols=2,
+            figure_size=(7, 2),
+            stimulus_scale=0.5,
+            stimulus_linewidth=1.5,
+            only_decreases=True,
+        )
+
+        # Save the figure
+        load_dotenv()
+        FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
+
+        fig_path = FIGURE_DIR / f"model_inference_{feature_list_str}.png"
+        fig.savefig(fig_path, bbox_inches="tight", dpi=300)
+        logger.info(f"Saved figure to {fig_path}")
 
 
 if __name__ == "__main__":
