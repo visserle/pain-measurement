@@ -30,7 +30,6 @@ def train_model(
         f"{dataset}_accuracy": [],
         f"{dataset}_loss": [],
     }
-    early_stopping = EarlyStopping()
 
     for epoch in range(n_epochs):
         model.train()
@@ -68,17 +67,8 @@ def train_model(
             f"· {dataset} {test_loss:.4f} ({test_accuracy:.1%})"
         )
 
-        # Early stopping
-        if epoch > 20:
-            if early_stopping(test_accuracy).early_stop:
-                logger.debug(f"Early stopping at epoch {epoch + 1}")
-                break
-
-        # Adjust learning rate
-        learning_rate = optimizer.param_groups[0]["lr"]
-        scheduler.step(test_accuracy)
-        if learning_rate != scheduler.get_last_lr()[0]:
-            logger.debug(f"Learning rate adjusted to: {scheduler.get_last_lr()[0]}")
+        # Update scheduler at the end of each epoch (no validation dependency)
+        scheduler.step()
 
         # Save history
         history["train_loss"].append(epoch_loss)
@@ -99,6 +89,8 @@ def train_model(
     return history
 
 
+# not used in the current codebase, as the final model training combines train and val
+# data and we cannot evaluate on the validation set anymore
 class EarlyStopping:
     """Early stopping based on score improvement (maximization)."""
 
