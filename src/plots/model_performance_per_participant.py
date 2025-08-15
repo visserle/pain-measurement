@@ -496,9 +496,6 @@ def main():
     import polars as pl
     from dotenv import load_dotenv
 
-    from src.data.database_manager import DatabaseManager
-    from src.features.labels import add_labels
-    from src.features.resampling import add_normalized_timestamp
     from src.log_config import configure_logging
     from src.models.data_loader import create_dataloaders
     from src.models.data_preparation import (
@@ -526,7 +523,7 @@ def main():
         # ["face"],
         # ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"],
     ]
-    feature_lists = list(map(lambda flist: expand_feature_list(flist), feature_lists))
+    feature_lists = expand_feature_list(feature_lists)
 
     results = {}
 

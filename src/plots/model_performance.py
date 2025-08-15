@@ -594,9 +594,9 @@ def main():
         # ["eda_raw", "heart_rate"],
         # ["eda_raw", "heart_rate", "pupil"],
         # ["face"],
-        # ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"],
+        # ["eeg"],
     ]
-    feature_lists = list(map(lambda flist: expand_feature_list(flist), feature_lists))
+    feature_lists = expand_feature_list(feature_lists)
 
     results = {}
     winning_models = {}

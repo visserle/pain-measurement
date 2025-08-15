@@ -432,10 +432,17 @@ def _create_colormap(only_decreases) -> LinearSegmentedColormap:
     """Create custom colormap."""
     if only_decreases:
         # For decreases only: white to blue
-        colors = [(1, 1, 1), (0.0, 0.2, 0.8)]
+        colors = [
+            (1, 1, 1),
+            (0.0, 0.2, 0.8),
+        ]
     else:
         # For both increases and decreases: orange to white to blue
-        colors = [(1.0, 0.35, 0.1), (1, 1, 1), (0.0, 0.2, 0.8)]
+        colors = [
+            (1.0, 0.35, 0.1),
+            (1, 1, 1),
+            (0.0, 0.2, 0.8),
+        ]
 
     return LinearSegmentedColormap.from_list("CustomColors", colors, N=256)
 
@@ -602,18 +609,26 @@ def _finalize_figure_layout(fig, sample_ax, cmap):
     )
 
     # Add colorbar
-    cbar_ax = fig.add_axes([0.87, 0.15, 0.01, 0.82])
-
+    # for bar over full height of the figure
+    # cbar_ax = fig.add_axes([0.87, 0.15, 0.01, 0.82])
+    cbar_ax = fig.add_axes(
+        [
+            0.87,  # x position
+            0.2,  # y position
+            0.015,  # width
+            0.7,  # height
+        ]
+    )
     cbar = fig.colorbar(sample_ax.images[0], cax=cbar_ax)
     cbar.set_label(
         "Prediction Confidence for Decreases",
-        rotation=270,
-        labelpad=20,
+        # rotation=270,
+        labelpad=8,
         fontsize=12,
         fontweight="normal",
     )
     cbar.ax.tick_params(labelsize=10)
-    cbar.outline.set_linewidth(0.5)
+    cbar.outline.set_linewidth(0.0)
 
 
 def main():
