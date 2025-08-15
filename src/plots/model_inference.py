@@ -284,7 +284,7 @@ def plot_single_prediction_confidence_heatmap(
         ],
     )
 
-    # Add legend for the stimulus line - removed fontsize
+    # Add legend for the stimulus line
     ax.legend(loc="lower right", framealpha=0.8)
 
     # Add labels and statistics - removed font sizes and weights
@@ -564,24 +564,25 @@ def _add_stimulus_overlay(ax, stimulus_seed, confidence_array, linewidth, scale)
 
 def _format_subplot_axes(ax, subplot_idx, ncols, nrows, participant_ids):
     """Format individual subplot axes with minimal styling."""
+
     # X-axis formatting (bottom row only)
     if subplot_idx >= (nrows - 1) * ncols:
-        ax.set_xlabel("Time (s)")
         ax.set_xticks([0, 90, 180])
         ax.tick_params(axis="x", which="major", pad=2)
+        # No individual subplot labels - will add figure-level label
     else:
         ax.set_xlabel("")
         ax.set_xticks([])
 
     # Y-axis formatting (left column only)
     if subplot_idx % ncols == 0:
-        ax.set_ylabel("Participant ID")
         # Set y-ticks to show participant IDs
         n_participants = len(participant_ids)
-        y_positions = np.arange(0.5, n_participants, 1)  # Center ticks on each row
+        y_positions = np.arange(0.5, n_participants, 1)
         ax.set_yticks(y_positions)
         ax.set_yticklabels(participant_ids)
         ax.tick_params(axis="y", which="major", pad=2)
+        # No individual subplot labels - will add figure-level label
     else:
         ax.set_ylabel("")
         ax.set_yticks([])
@@ -602,7 +603,6 @@ def _finalize_figure_layout(fig, sample_ax, cmap):
     """Add colorbar and adjust figure layout."""
     # Adjust subplot spacing
     fig.subplots_adjust(
-        # left=0.0,
         bottom=0.15,
         right=0.85,
         top=0.97,
@@ -610,9 +610,11 @@ def _finalize_figure_layout(fig, sample_ax, cmap):
         hspace=0.15,
     )
 
+    # Add figure-level axis labels
+    fig.text(0.488, 0.12, "Time (s)", ha="center", va="center")
+    fig.text(0.091, 0.55, "Participant ID", ha="center", va="center", rotation=90)
+
     # Add colorbar
-    # for bar over full height of the figure
-    # cbar_ax = fig.add_axes([0.87, 0.15, 0.01, 0.82])
     cbar_ax = fig.add_axes([0.87, 0.2, 0.015, 0.7])
     cbar = fig.colorbar(sample_ax.images[0], cax=cbar_ax)
     cbar.set_label(

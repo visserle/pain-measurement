@@ -6,11 +6,12 @@ import polars as pl
 import seaborn as sns
 import torch
 import torch.nn as nn
-from matplotlib import rcParams
 from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
 
 from src.plots.utils import FEATURE_LABELS
+
+plt.style.use("./src/plots/style.mplstyle")
 
 
 def analyze_per_participant(
@@ -192,13 +193,6 @@ def get_summary_statistics_single_model(
 def plot_participant_performance_single_model(
     results_df: pl.DataFrame,
 ) -> None:
-    # Set publication-quality parameters
-    rcParams["font.family"] = "Arial"
-    rcParams["font.size"] = 10
-    rcParams["axes.linewidth"] = 1
-    rcParams["axes.spines.top"] = False
-    rcParams["axes.spines.right"] = False
-
     # Filter and prepare data
     participant_df = results_df.filter(pl.col("participant") != "overall")
     overall_accuracy = results_df.filter(pl.col("participant") == "overall")[
@@ -242,7 +236,7 @@ def plot_participant_performance_single_model(
     # Clean up aesthetics
     plt.xlabel("Participant ID")
     plt.ylabel("Accuracy")
-    plt.title("Classification Accuracy by Participant", fontsize=12)
+    plt.title("Classification Accuracy by Participant")
 
     # Format y-axis to show percentages
     plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
@@ -254,10 +248,6 @@ def plot_participant_performance_single_model(
     plt.grid(
         axis="y", linestyle="-", linewidth=0.5, color="#E0E0E0", alpha=0.7, zorder=0
     )
-
-    # Add a small gap between axis and first tick to improve appearance
-    plt.tick_params(axis="x", which="major", pad=5)
-    plt.tick_params(axis="y", which="major", pad=5)
 
     # Position legend in a non-intrusive location
     plt.legend(frameon=False, loc="upper right", bbox_to_anchor=(1, 1))
@@ -317,9 +307,6 @@ def plot_feature_accuracy_comparison(results_dict, figsize=(10, 6)):
     # Use only as many colors as needed
     palette = participant_colors[:n_participants]
 
-    # Set academic style
-    plt.style.use("default")
-
     # Create figure with proper size for academic papers
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -336,25 +323,21 @@ def plot_feature_accuracy_comparison(results_dict, figsize=(10, 6)):
     )
 
     # Academic styling
-    ax.set_xlabel("", fontsize=0)
-    ax.set_ylabel("Classification Accuracy", fontsize=12)
+    ax.set_xlabel("")
+    ax.set_ylabel("Classification Accuracy")
 
     # Rotate x-axis labels for better readability
-    ax.tick_params(axis="x", rotation=45, labelsize=10)
+    ax.tick_params(axis="x", rotation=45)
 
-    # Customize legend for academic style - place outside the plot
+    # Customize legend - place outside the plot
     legend = ax.legend(
         title="Participant ID",
         frameon=True,
         fancybox=False,
         shadow=False,
-        fontsize=10,
-        title_fontsize=11,
         bbox_to_anchor=(1.05, 1),
         loc="upper left",
     )
-    legend.get_frame().set_linewidth(0.5)
-    legend.get_frame().set_edgecolor("black")
 
     # Add chance level reference line
     ax.axhline(y=0.5, color="red", linestyle="--", alpha=0.7, linewidth=1)
@@ -366,12 +349,6 @@ def plot_feature_accuracy_comparison(results_dict, figsize=(10, 6)):
     # Set y-axis limits and ticks
     ax.set_ylim(0.35, 1.0)
     ax.set_yticks([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-
-    # Clean up spines (academic standard)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_linewidth(0.5)
-    ax.spines["bottom"].set_linewidth(0.5)
 
     # Tight layout for proper spacing
     plt.tight_layout()
@@ -427,9 +404,6 @@ def plot_participant_accuracy_comparison(results_dict, figsize=(10, 6)):
     # Use only as many colors as needed
     palette = feature_colors[:n_combinations]
 
-    # Set academic style
-    plt.style.use("default")
-
     # Create figure with proper size for academic papers
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -446,22 +420,18 @@ def plot_participant_accuracy_comparison(results_dict, figsize=(10, 6)):
     )
 
     # Academic styling
-    ax.set_xlabel("Participant ID", fontsize=12)
-    ax.set_ylabel("Classification Accuracy", fontsize=12)
+    ax.set_xlabel("Participant ID")
+    ax.set_ylabel("Classification Accuracy")
 
-    # Customize legend for academic style - place outside the plot
+    # Customize legend - place outside the plot
     legend = ax.legend(
         title="Feature Combination",
         frameon=True,
         fancybox=False,
         shadow=False,
-        fontsize=10,
-        title_fontsize=11,
         bbox_to_anchor=(1.05, 1),
         loc="upper left",
     )
-    legend.get_frame().set_linewidth(0.5)
-    legend.get_frame().set_edgecolor("black")
 
     # Add chance level reference line
     ax.axhline(y=0.5, color="red", linestyle="--", alpha=0.7, linewidth=1)
@@ -473,12 +443,6 @@ def plot_participant_accuracy_comparison(results_dict, figsize=(10, 6)):
     # Set y-axis limits and ticks
     ax.set_ylim(0.35, 1.0)
     ax.set_yticks([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-
-    # Clean up spines (academic standard)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_linewidth(0.5)
-    ax.spines["bottom"].set_linewidth(0.5)
 
     # Tight layout for proper spacing
     plt.tight_layout()

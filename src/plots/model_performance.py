@@ -110,27 +110,15 @@ def _plot_confusion_matrix(
         square=True,
         linewidths=0.5,
         linecolor="white",
-        annot_kws={"fontsize": 10},
         ax=ax,
     )
 
-    # Professional styling for academic papers
-    ax.set_title(
-        f"Threshold: {threshold:.2f}, Accuracy: {accuracy_score:.2f}",
-        fontsize=10,
-        pad=10,
-    )
-    ax.set_ylabel(
-        "True label",
-        fontsize=10,
-    )
-    ax.set_xlabel(
-        "Predicted label",
-        fontsize=10,
-    )
+    # Professional styling
+    ax.set_title(f"Threshold: {threshold:.2f}, Accuracy: {accuracy_score:.2f}", pad=10)
+    ax.set_ylabel("True label")
+    ax.set_xlabel("Predicted label")
 
-    # Smaller tick labels
-    ax.tick_params(axis="both", which="major", labelsize=9)
+    # Tick styling
     ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center")
     ax.set_yticklabels(ax.get_yticklabels(), rotation=90, va="center")
 
@@ -186,16 +174,11 @@ def plot_single_roc_curve(
     # Professional styling
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.0])
-    ax.set_xlabel("False Positive Rate", fontsize=12)
-    ax.set_ylabel("True Positive Rate", fontsize=12)
+    ax.set_xlabel("False Positive Rate")
+    ax.set_ylabel("True Positive Rate")
 
     # Legend styling
-    ax.legend(
-        loc="lower right", fontsize=10, frameon=True, fancybox=False, shadow=False
-    )
-
-    # Tick styling
-    ax.tick_params(axis="both", which="major", labelsize=8)
+    ax.legend(loc="lower right", frameon=True, fancybox=False, shadow=False)
 
     # Equal aspect ratio for square plot
     ax.set_aspect("equal")
@@ -266,14 +249,11 @@ def plot_single_pr_curve(
     # Styling
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.0])
-    ax.set_xlabel("Recall", fontsize=10)
-    ax.set_ylabel("Precision", fontsize=10)
+    ax.set_xlabel("Recall")
+    ax.set_ylabel("Precision")
 
     # Legend styling
-    ax.legend(loc="lower left", fontsize=10, frameon=True, fancybox=False, shadow=False)
-
-    # Tick styling
-    ax.tick_params(axis="both", which="major", labelsize=10)
+    ax.legend(loc="lower left", frameon=True, fancybox=False, shadow=False)
 
     # Equal aspect ratio for square plot
     ax.set_aspect("equal")
@@ -337,16 +317,15 @@ def plot_multiple_roc_curves(
     # Diagonal reference line
     ax.plot([0, 1], [0, 1], "k--", alpha=0.6, linewidth=1, label="Random classifier")
 
-    # Professional styling (matching single plot)
+    # Professional styling
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.0])
-    ax.set_xlabel("False Positive Rate", fontsize=12)
-    ax.set_ylabel("True Positive Rate", fontsize=12)
+    ax.set_xlabel("False Positive Rate")
+    ax.set_ylabel("True Positive Rate")
 
-    # Legend with smaller font and tighter spacing
+    # Legend with tighter spacing
     ax.legend(
         loc="lower right",
-        fontsize=10,
         frameon=True,
         fancybox=False,
         shadow=False,
@@ -354,8 +333,6 @@ def plot_multiple_roc_curves(
         handletextpad=0.3,
         labelspacing=0.3,
     )
-    # Tick styling
-    ax.tick_params(axis="both", which="major", labelsize=8)
 
     # Equal aspect ratio for square plot
     ax.set_aspect("equal")
@@ -447,8 +424,6 @@ def plot_multiple_pr_curves(
         handletextpad=0.3,
         labelspacing=0.3,
     )
-
-    ax.tick_params(axis="both", which="major")
 
     # Equal aspect ratio for square plot
     ax.set_aspect("equal")

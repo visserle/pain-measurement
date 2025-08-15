@@ -26,6 +26,19 @@ plt.style.use("./src/plots/style.mplstyle")
 BIN_SIZE = 0.1  # in seconds
 CONFIDENCE_LEVEL = 1.96  # 95% confidence interval
 # (95% chance your population mean will fall between lower and upper limit)
+LABELS = {
+    "temperature": "Temperature",
+    "pain_rating": "Pain rating",
+    "pupil_diameter": "Pupil diameter",
+    "heart_rate": "Heart rate",
+    "eda_tonic": "Tonic EDA",
+    "eda_phasic": "Phasic EDA",
+    "brow_furrow": "Brow furrow",
+    "cheek_raise": "Cheek raise",
+    "mouth_open": "Mouth open",
+    "nose_wrinkle": "Nose wrinkle",
+    "upper_lip_raise": "Upper lip raise",
+}
 
 
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
@@ -163,7 +176,6 @@ def plot_averages_with_ci_plt(
     # Create subplot grid (4x3 for 12 plots)
     n_cols = 3
     n_rows = (n_seeds + n_cols - 1) // n_cols
-
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 12), sharex=True, sharey=True)
     axes = axes.flatten()
 
@@ -180,12 +192,13 @@ def plot_averages_with_ci_plt(
         for sig_idx, sig in enumerate(signals):
             color = colors[sig_idx]
             alpha = muted_alpha if muted_alpha > 0 else 1.0
+            signal_label = LABELS.get(sig, sig)
 
             # Plot the average line
             ax.plot(
                 seed_data["time_bin"],
                 seed_data[f"avg_{sig}"],
-                label=sig,
+                label=signal_label,
                 color=color,
                 alpha=alpha,
             )
@@ -201,26 +214,43 @@ def plot_averages_with_ci_plt(
             )
 
         # Customize subplot
-        ax.set_title(f"Stimulus {seed}", fontweight="bold")
-        ax.grid(True, alpha=0.3)
         ax.set_xlim(seed_data["time_bin"].min(), seed_data["time_bin"].max())
 
-        # Add labels to edge plots only
-        if idx >= (n_rows - 1) * n_cols:
-            ax.set_xlabel("Time (s)")
-        if idx % n_cols == 0:
-            ax.set_ylabel("Normalized value")
+        # Configure ticks: only show on bottom row and leftmost column
+        row = idx // n_cols
+        col = idx % n_cols
 
-        # Add legend to first subplot
-        if idx == 0:
-            ax.legend(loc="upper right")
+        # Show x-axis ticks only on bottom row
+        if row < n_rows - 1:
+            ax.tick_params(bottom=False, labelbottom=False)
+
+        # Show y-axis ticks only on leftmost column
+        if col > 0:
+            ax.tick_params(left=False, labelleft=False)
 
     # Remove empty subplots
     for idx in range(n_seeds, len(axes)):
         fig.delaxes(axes[idx])
 
-    # Adjust layout
+    # Adjust layout with more bottom padding for legend
     plt.tight_layout()
+    plt.subplots_adjust(bottom=0.1, left=0.07)  # Add left padding
+
+    # Add single x and y labels to the figure
+    fig.text(0.5, 0.06, "Time (s)", ha="center", va="bottom")
+    fig.text(
+        0.04, 0.55, "Normalized value", ha="center", va="center", rotation="vertical"
+    )
+
+    # Add legend to the bottom of the figure
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.025),
+        ncol=len(signals),
+    )
 
     return fig
 
@@ -330,11 +360,16 @@ def plot_correlation_heatmap(
             "eda_phasic",
         ]
 
-    # Get correlation matrix and create labels
+    # Get correlation matrix and create labels using LABELS dict
     feature_cols = [f"avg_{f}" for f in features]
     corr_matrix = averages.select(feature_cols).corr()
+
+    # Use LABELS dict for better feature names
     labels = [
-        col.replace("avg_", "").replace("_", " ").title() for col in corr_matrix.columns
+        LABELS.get(
+            col.replace("avg_", ""), col.replace("avg_", "").replace("_", " ").title()
+        )
+        for col in corr_matrix.columns
     ]
 
     # Create figure and heatmap
