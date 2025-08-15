@@ -570,7 +570,7 @@ def main():
         # ["eda_raw", "heart_rate"],
         # ["eda_raw", "heart_rate", "pupil"],
         # ["face"],
-        # ["eeg"],
+        ["eeg"],
     ]
     feature_lists = expand_feature_list(feature_lists)
 
@@ -600,7 +600,7 @@ def main():
         winning_models[feature_list_str] = {feature_list_str: model.__class__.__name__}
 
         # Prepare data
-        X_train, y_train, _, _, _, _, X_test, y_test = prepare_data(
+        _, _, _, _, X_train_val, y_train_val, X_test, y_test = prepare_data(
             df=df,
             feature_list=feature_list,
             sample_duration_ms=sample_duration_ms,
@@ -610,7 +610,7 @@ def main():
             random_seed=RANDOM_SEED,
         )
         _, test_loader = create_dataloaders(
-            X_train, y_train, X_test, y_test, batch_size=64
+            X_train_val, y_train_val, X_test, y_test, batch_size=64
         )
         probs, y_true = get_model_predictions(
             model,

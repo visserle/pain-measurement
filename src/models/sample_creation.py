@@ -180,7 +180,7 @@ def _remove_samples_that_are_too_short(
     )
 
     # Only EEG data is not perfectly equidistant and needs special handling
-    # NOTE: This is all hardcoded to work with 7000 ms samples.
+    # NOTE: This is all hardcoded to work with 7000 ms samples and 250 Hz sampling rate.
     if not is_equidistant:
         assert length_ms == 7000, (
             "Only 7000 ms samples are supported for EEG data as of now. "

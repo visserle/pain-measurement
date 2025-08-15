@@ -485,7 +485,7 @@ def main():
         # ["eda_raw", "heart_rate"],
         # ["eda_raw", "heart_rate", "pupil"],
         # ["face"],
-        # ["f3", "f4", "c3", "cz", "c4", "p3", "p4", "oz"],
+        ["eeg"],
     ]
     feature_lists = expand_feature_list(feature_lists)
 
@@ -494,7 +494,7 @@ def main():
     for feature_list in feature_lists:
         feature_list_str = "_".join(feature_list)
         # Load data from database
-        df = load_data_from_database(feature_list=feature_lists[0])
+        df = load_data_from_database(feature_list=feature_list)
         # Load model
         json_path = Path(f"results/experiment_{feature_list_str}/results.json")
         dictionary = json.loads(json_path.read_text())
@@ -511,7 +511,7 @@ def main():
         assert "_".join(feature_list) == feature_list_str
 
         # Prepare data
-        X_train, y_train, _, _, _, _, X_test, y_test = prepare_data(
+        _, _, _, _, X_train_val, y_train_val, X_test, y_test = prepare_data(
             df=df,
             feature_list=feature_list,
             sample_duration_ms=sample_duration_ms,
@@ -531,7 +531,7 @@ def main():
             only_return_test_groups=True,
         )
         _, test_loader = create_dataloaders(
-            X_train, y_train, X_test, y_test, batch_size=64
+            X_train_val, y_train_val, X_test, y_test, batch_size=64
         )
 
         result_df = analyze_per_participant(
@@ -542,17 +542,17 @@ def main():
         )
         results[feature_list_str] = result_df
 
-    # Save samples size per test set participant
-    results["_".join(feature_lists[0])].drop("accuracy").write_json(
-        FIGURE_DIR / "samples_per_test_participant.json"
-    )
+    # # Save samples size per test set participant
+    # results["_".join(feature_lists[0])].drop("accuracy").write_json(
+    #     FIGURE_DIR / "samples_per_test_participant.json"
+    # )
 
     feature_set_acc, _ = plot_feature_accuracy_comparison(results, figsize=(10, 6))
     # plt.show()
     feature_set_acc_by_participant, _ = plot_participant_accuracy_comparison(
         results, figsize=(13, 6)
     )
-    # plt.show()
+    plt.show()
 
     # Save results
     feature_set_acc.savefig(

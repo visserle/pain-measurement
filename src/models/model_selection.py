@@ -70,7 +70,7 @@ def run_model_selection(
 
         sampler = optuna.samplers.TPESampler(seed=random_seed)
         storage = optuna.storages.RDBStorage(url="sqlite:///db.sqlite3")
-        pruner = optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10)
+        pruner = optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=8)
         study = optuna.create_study(
             sampler=sampler,
             direction="maximize",

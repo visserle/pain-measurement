@@ -10,7 +10,7 @@ from src.features.resampling import add_normalized_timestamp, interpolate_and_fi
 from src.features.transforming import merge_dfs
 from src.models.data_loader import transform_sample_df_to_arrays
 from src.models.sample_creation import create_samples, make_sample_set_balanced
-from src.models.scalers import scale_dataset
+from src.models.scalers import StandardScaler3D
 
 FACE_FEATURES = [
     "brow_furrow",
@@ -48,10 +48,10 @@ def expand_feature_list(feature_list) -> list:
 
 def _categorize_features(feature_list: list) -> tuple:
     """Separate EEG and non-EEG features from the feature list."""
-    eeg_features_in_list = [f for f in feature_list if f in EEG_FEATURES]
+    eeg_features_present = [f for f in feature_list if f in EEG_FEATURES]
     non_eeg_features = [f for f in feature_list if f not in EEG_FEATURES]
 
-    return eeg_features_in_list, non_eeg_features
+    return eeg_features_present, non_eeg_features
 
 
 def load_data_from_database(feature_list: list) -> pl.DataFrame:
@@ -59,12 +59,12 @@ def load_data_from_database(feature_list: list) -> pl.DataFrame:
 
     Used in the main script to load data based on the provided feature list."""
     # Categorize features
-    eeg_features_in_list, non_eeg_features = _categorize_features(feature_list)
+    eeg_features_present, non_eeg_features = _categorize_features(feature_list)
 
     # Load data from database
     db = DatabaseManager()
     with db:
-        if eeg_features_in_list:  # if any EEG features are requested
+        if eeg_features_present:  # if any EEG features are requested
             if non_eeg_features:  # mixed EEG and non-EEG features
                 # add marker to keep eeg sampling rate unchanged
                 eeg = db.get_table(
@@ -135,6 +135,7 @@ def prepare_data(
     offsets_ms: dict,
     random_seed: int = 42,
     only_return_test_groups: bool = False,  # for the participant_ids in the test set
+    only_return_scaler: bool = False,  # for the inference task
 ) -> tuple:
     """Prepare data for model training, including creating and splitting samples."""
 
@@ -166,8 +167,16 @@ def prepare_data(
     X_val, y_val = X_train_val[idx_val], y_train_val[idx_val]
 
     # Scale the data
-    X_train, X_val = scale_dataset(X_train, X_val)
-    X_train_val, X_test = scale_dataset(X_train_val, X_test)
+    train_scaler = StandardScaler3D()
+    X_train = train_scaler.fit_transform(X_train)
+    X_val = train_scaler.transform(X_val)
+
+    train_val_scaler = StandardScaler3D()
+    X_train_val = train_val_scaler.fit_transform(X_train_val)
+    X_test = train_val_scaler.transform(X_test)
+
+    if only_return_scaler:
+        return train_val_scaler
 
     # Log sample information
     logger.debug(
