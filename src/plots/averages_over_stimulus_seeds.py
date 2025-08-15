@@ -21,6 +21,8 @@ from scipy import signal
 from src.features.resampling import add_normalized_timestamp, add_timestamp_μs_column
 from src.features.scaling import scale_min_max, scale_robust_standard, scale_standard
 
+plt.style.use("./src/plots/style.mplstyle")
+
 BIN_SIZE = 0.1  # in seconds
 CONFIDENCE_LEVEL = 1.96  # 95% confidence interval
 # (95% chance your population mean will fall between lower and upper limit)
@@ -186,7 +188,6 @@ def plot_averages_with_ci_plt(
                 label=sig,
                 color=color,
                 alpha=alpha,
-                linewidth=2,
             )
 
             # Plot confidence interval
@@ -200,19 +201,19 @@ def plot_averages_with_ci_plt(
             )
 
         # Customize subplot
-        ax.set_title(f"Stimulus {seed}", fontsize=12, fontweight="bold")
+        ax.set_title(f"Stimulus {seed}", fontweight="bold")
         ax.grid(True, alpha=0.3)
         ax.set_xlim(seed_data["time_bin"].min(), seed_data["time_bin"].max())
 
         # Add labels to edge plots only
         if idx >= (n_rows - 1) * n_cols:
-            ax.set_xlabel("Time (s)", fontsize=10)
+            ax.set_xlabel("Time (s)")
         if idx % n_cols == 0:
-            ax.set_ylabel("Normalized value", fontsize=10)
+            ax.set_ylabel("Normalized value")
 
         # Add legend to first subplot
         if idx == 0:
-            ax.legend(loc="upper right", fontsize=8)
+            ax.legend(loc="upper right")
 
     # Remove empty subplots
     for idx in range(n_seeds, len(axes)):
@@ -318,83 +319,49 @@ def plot_correlation_heatmap(
     averages: pl.DataFrame,
     features: list[str] | None = None,
 ):
-    # Default feature list if none provided
+    # Default features if none provided
     if features is None:
         features = [
-            "avg_temperature",
-            "avg_pain_rating",
-            "avg_pupil_diameter",
-            "avg_heart_rate",
-            "avg_eda_tonic",
-            "avg_eda_phasic",
+            "temperature",
+            "pain_rating",
+            "pupil_diameter",
+            "heart_rate",
+            "eda_tonic",
+            "eda_phasic",
         ]
-    else:
-        features = [f"avg_{feature}" for feature in features]
 
-    # Get correlation matrix
-    corr_matrix = (
-        averages.select(pl.col("^avg.*$"))
-        .select(features)  # Use the features parameter
-        .corr()
-    )
-    # Create more professional labels
+    # Get correlation matrix and create labels
+    feature_cols = [f"avg_{f}" for f in features]
+    corr_matrix = averages.select(feature_cols).corr()
     labels = [
         col.replace("avg_", "").replace("_", " ").title() for col in corr_matrix.columns
     ]
 
-    # Create a custom colormap
-    dark_blue = "#0033cc"
-    light_blue = "#e8eef7"
-    colors = [light_blue, dark_blue]
-    custom_cmap = LinearSegmentedColormap.from_list("dark_blues", colors, N=256)
+    # Create figure and heatmap
+    fig, ax = plt.subplots(figsize=(6, 5), dpi=300)
 
-    # Create a mask for the upper triangle
+    # Custom colormap and upper triangle mask
+    custom_cmap = LinearSegmentedColormap.from_list("blues", ["#e8eef7", "#0033cc"])
     mask = np.triu(np.ones_like(corr_matrix), k=1)
 
-    # Set blue as the main color for the plot styling
-    plt.rcParams["axes.edgecolor"] = "black"
-    plt.rcParams["axes.labelcolor"] = "black"
-    plt.rcParams["xtick.color"] = "black"
-    plt.rcParams["ytick.color"] = "black"
-
-    # Create the figure with higher DPI for better quality
-    fig = plt.figure(figsize=(10, 8), dpi=300, facecolor="white")
-
-    # Plot the heatmap with color styling
-    heatmap = sns.heatmap(
+    # Plot heatmap
+    sns.heatmap(
         corr_matrix,
         annot=True,
+        fmt=".2f",
         cmap=custom_cmap,
-        vmin=0,  # Set minimum to 0 since all correlations are positive
+        vmin=0,
         vmax=1,
         xticklabels=labels,
         yticklabels=labels,
         mask=mask,
-        annot_kws={"size": 14, "weight": "bold", "color": "black"},
-        cbar_kws={"shrink": 0.8, "label": "Correlation Strength"},
-        linewidths=0.5,
-        linecolor="white",
+        cbar_kws={"shrink": 0.8, "label": "Pearson correlation coefficient"},
+        linewidths=0.3,
+        ax=ax,
     )
 
-    # Access the colorbar and set its label font properties
-    cbar = heatmap.collections[0].colorbar
-    cbar.ax.set_ylabel("Correlation Strength", fontsize=14, fontweight="bold")
-
-    # Set annotation colors based on background darkness for better readability
-    for text in heatmap.texts:
-        value = float(text.get_text())
-        text.set_color("black" if value < 0.6 else "white")
-
-    # Adjust font sizes and styles for conference poster visibility
-    plt.xticks(rotation=45, ha="right", fontsize=14, fontweight="bold")
-    plt.yticks(rotation=0, fontsize=14, fontweight="bold")
-
-    # Add a border to the heatmap
-    for _, spine in heatmap.spines.items():
-        spine.set_visible(False)
-        spine.set_linewidth(2)
-
-    # Ensure everything fits within the figure bounds
+    plt.xticks(rotation=45, ha="right")
+    plt.yticks(rotation=0)
     plt.tight_layout()
 
     return fig
