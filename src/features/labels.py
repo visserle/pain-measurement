@@ -120,7 +120,13 @@ def number_intervals(
 
     # We need to temporarely insert a dummy line at the very beginning of the df to
     # avoid missing the very first interval (increasing interval)
-    dummy_line = pl.DataFrame({column: 0 for column in df.columns}, schema=df.schema)
+    dummy_values = {
+        column: False
+        if dtype == pl.Boolean  # false only for the marker, int =/= bool
+        else 0
+        for column, dtype in df.schema.items()
+    }
+    dummy_line = pl.DataFrame(dummy_values, schema=df.schema)
     df = pl.concat([dummy_line, df]).sort("trial_id", "normalized_timestamp")
 
     return (

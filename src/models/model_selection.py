@@ -69,18 +69,14 @@ def run_model_selection(
         )
 
         sampler = optuna.samplers.TPESampler(seed=random_seed)
-        storage = optuna.storages.RDBStorage(
-            url="sqlite:///db.sqlite3",
-            heartbeat_interval=60,
-            grace_period=180,
-            failed_trial_callback=optuna.storages.RetryFailedTrialCallback(max_retry=5),
-        )
+        storage = optuna.storages.RDBStorage(url="sqlite:///db.sqlite3")
+        pruner = optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10)
         study = optuna.create_study(
             sampler=sampler,
             direction="maximize",
             storage=storage,
             study_name=study_name,
-            pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10),
+            pruner=pruner,
         )
         study.optimize(objective_function, n_trials=n_trials)
 
@@ -197,7 +193,7 @@ class ExperimentTracker:
     def __init__(
         self,
         features: list[str],
-        sample_duration_ms: int | None = None,
+        sample_duration_ms: int,
         intervals: dict | None = None,
         label_mapping: dict | None = None,
         offsets_ms: dict | None = None,

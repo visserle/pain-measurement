@@ -371,7 +371,7 @@ def plot_prediction_confidence_heatmap(
     _hide_empty_subplots(axes.flatten(), len(seeds_to_plot))
 
     # Add colorbar and finalize layout
-    _finalize_figure_layout(fig, axes.flatten()[0], cmap)
+    _finalize_figure_layout(fig, axes.flatten()[0])
 
     return fig
 
@@ -599,7 +599,7 @@ def _hide_empty_subplots(axes_flat, n_used_subplots):
         axes_flat[idx].set_visible(False)
 
 
-def _finalize_figure_layout(fig, sample_ax, cmap):
+def _finalize_figure_layout(fig, sample_ax):
     """Add colorbar and adjust figure layout."""
     # Adjust subplot spacing
     fig.subplots_adjust(

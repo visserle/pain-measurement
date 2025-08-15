@@ -8,6 +8,7 @@ import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
 
+from src.models.main_config import N_EPOCHS
 from src.models.models_config import MODELS
 
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
@@ -65,8 +66,9 @@ def initialize_model(
     optim.Optimizer,
     optim.lr_scheduler._LRScheduler,
 ]:
-    # Extracting lr from hyperparams and not passing it to the model's constructor
+    # Extracting hyperparameter that are not model parameters
     lr = hyperparams.pop("lr")
+
     try:
         model_class = MODELS[model_name]["class"]
     except KeyError:
@@ -80,12 +82,10 @@ def initialize_model(
     ).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)  # note that TSL uses RAdam
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(
         optimizer,
-        mode="max",
-        factor=0.5,
-        patience=10,
-        cooldown=5,
+        T_max=N_EPOCHS,
+        eta_min=1e-6,
     )
     return model, criterion, optimizer, scheduler
 
