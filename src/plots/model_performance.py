@@ -18,6 +18,8 @@ from torch.utils.data import DataLoader
 
 from src.plots.utils import FEATURE_LABELS
 
+plt.style.use("./src/plots/style.mplstyle")
+
 
 def get_model_predictions(
     model: nn.Module,
@@ -184,11 +186,13 @@ def plot_single_roc_curve(
     # Professional styling
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.0])
-    ax.set_xlabel("False Positive Rate", fontsize=10)
-    ax.set_ylabel("True Positive Rate", fontsize=10)
+    ax.set_xlabel("False Positive Rate", fontsize=12)
+    ax.set_ylabel("True Positive Rate", fontsize=12)
 
     # Legend styling
-    ax.legend(loc="lower right", fontsize=8, frameon=True, fancybox=False, shadow=False)
+    ax.legend(
+        loc="lower right", fontsize=10, frameon=True, fancybox=False, shadow=False
+    )
 
     # Tick styling
     ax.tick_params(axis="both", which="major", labelsize=8)
@@ -266,10 +270,10 @@ def plot_single_pr_curve(
     ax.set_ylabel("Precision", fontsize=10)
 
     # Legend styling
-    ax.legend(loc="lower left", fontsize=8, frameon=True, fancybox=False, shadow=False)
+    ax.legend(loc="lower left", fontsize=10, frameon=True, fancybox=False, shadow=False)
 
     # Tick styling
-    ax.tick_params(axis="both", which="major", labelsize=8)
+    ax.tick_params(axis="both", which="major", labelsize=10)
 
     # Equal aspect ratio for square plot
     ax.set_aspect("equal")
@@ -336,13 +340,13 @@ def plot_multiple_roc_curves(
     # Professional styling (matching single plot)
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.0])
-    ax.set_xlabel("False Positive Rate", fontsize=10)
-    ax.set_ylabel("True Positive Rate", fontsize=10)
+    ax.set_xlabel("False Positive Rate", fontsize=12)
+    ax.set_ylabel("True Positive Rate", fontsize=12)
 
     # Legend with smaller font and tighter spacing
     ax.legend(
         loc="lower right",
-        fontsize=7,
+        fontsize=10,
         frameon=True,
         fancybox=False,
         shadow=False,
@@ -377,7 +381,7 @@ def plot_multiple_pr_curves(
     Returns:
         plt.Figure: The matplotlib figure object
     """
-    fig, ax = plt.subplots(figsize=(6, 4))  # Wider to accommodate external legend
+    fig, ax = plt.subplots(figsize=(6, 4))
 
     # Simple color palette (same as ROC curves for consistency)
     colors = [
@@ -406,7 +410,6 @@ def plot_multiple_pr_curves(
             if FEATURE_LABELS
             else feature_set.replace("_", " ").title()
         )
-
         color = colors[i % len(colors)]
 
         # Plot PR curve with professional styling
@@ -428,16 +431,15 @@ def plot_multiple_pr_curves(
         label="No skill baseline",
     )
 
-    # Professional styling (matching single plot and ROC curves)
+    # Professional styling
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.0])
-    ax.set_xlabel("Recall", fontsize=10)
-    ax.set_ylabel("Precision", fontsize=10)
+    ax.set_xlabel("Recall")
+    ax.set_ylabel("Precision")
 
-    # Legend with smaller font and tighter spacing
+    # Legend styling
     ax.legend(
         loc="lower right",
-        fontsize=7,
         frameon=True,
         fancybox=False,
         shadow=False,
@@ -446,8 +448,7 @@ def plot_multiple_pr_curves(
         labelspacing=0.3,
     )
 
-    # Tick styling
-    ax.tick_params(axis="both", which="major", labelsize=8)
+    ax.tick_params(axis="both", which="major")
 
     # Equal aspect ratio for square plot
     ax.set_aspect("equal")
