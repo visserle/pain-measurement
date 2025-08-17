@@ -137,3 +137,4 @@ notebooks/dataset_size.ipynb
 db.sqlite3
 src/data/imotions_data_config_old.yaml
 *oddball*
+src/data/invalid_trials_strict.csv
