@@ -1,0 +1,34 @@
+Features: eda_raw
+Sample Duration (ms): 7000
+
+MODEL PERFORMANCE SUMMARY:
+============================================================
+Model: PatchTST
+Validation Accuracy: 0.7153
+Best Parameters: {'d_model': 64, 'e_layers': 3, 'd_ff': 512, 'patch_len': 16, 'stride': 8, 'top_k': 2, 'dropout': 0.08681094935582451, 'factor': 1, 'lr': 0.0003894893361926137}
+------------------------------------------------------------
+Model: LightTS
+Validation Accuracy: 0.6854
+Best Parameters: {'d_model': 128, 'dropout': 0.2247992542004105, 'lr': 0.009928729834255703}
+------------------------------------------------------------
+Model: TimesNet
+Validation Accuracy: 0.6801
+Best Parameters: {'d_model': 16, 'e_layers': 2, 'd_ff': 32, 'top_k': 2, 'num_kernels': 8, 'dropout': 0.04566433267697194, 'lr': 0.0020178913139904642}
+------------------------------------------------------------
+Model: MLP
+Validation Accuracy: 0.6678
+Best Parameters: {'hidden_size': 4096, 'depth': 3, 'dropout': 0.15313118621173363, 'lr': 0.0004221329465508774}
+------------------------------------------------------------
+Model: iTransformer
+Validation Accuracy: 0.6643
+Best Parameters: {'d_model': 64, 'e_layers': 1, 'd_ff': 512, 'top_k': 5, 'dropout': 0.005068277212814004, 'factor': 2, 'lr': 0.0006974528377703529}
+------------------------------------------------------------
+
+OVERALL BEST MODEL:
+Model: PatchTST
+Validation Accuracy: 0.7153
+Parameters: {'d_model': 64, 'e_layers': 3, 'd_ff': 512, 'patch_len': 16, 'stride': 8, 'top_k': 2, 'dropout': 0.08681094935582451, 'factor': 1, 'lr': 0.0003894893361926137}
+
+TEST PERFORMANCE:
+Test Accuracy: 0.7003
+Test Loss: 0.5496

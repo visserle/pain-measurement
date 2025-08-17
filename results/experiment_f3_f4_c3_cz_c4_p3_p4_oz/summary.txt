@@ -1,0 +1,30 @@
+Features: f3, f4, c3, cz, c4, p3, p4, oz
+Sample Duration (ms): 7000
+
+MODEL PERFORMANCE SUMMARY:
+============================================================
+Model: MLP
+Validation Accuracy: 0.5694
+Best Parameters: {'hidden_size': 1024, 'depth': 2, 'dropout': 0.4635650791717625, 'lr': 1.1321021804230373e-05}
+------------------------------------------------------------
+Model: EEGNet
+Validation Accuracy: 0.5659
+Best Parameters: {'F1': 8, 'D': 4, 'dropout': 0.2727780074568463, 'lr': 7.476312062252303e-05}
+------------------------------------------------------------
+Model: iTransformer
+Validation Accuracy: 0.5589
+Best Parameters: {'d_model': 64, 'e_layers': 2, 'd_ff': 512, 'top_k': 5, 'dropout': 0.3099713804123697, 'factor': 1, 'lr': 1.9175443370511815e-05}
+------------------------------------------------------------
+Model: LightTS
+Validation Accuracy: 0.5308
+Best Parameters: {'d_model': 64, 'dropout': 0.4601157065095051, 'lr': 0.0011495037107507725}
+------------------------------------------------------------
+
+OVERALL BEST MODEL:
+Model: MLP
+Validation Accuracy: 0.5694
+Parameters: {'hidden_size': 1024, 'depth': 2, 'dropout': 0.4635650791717625, 'lr': 1.1321021804230373e-05}
+
+TEST PERFORMANCE:
+Test Accuracy: 0.5627
+Test Loss: 0.7604

@@ -1,0 +1,34 @@
+Features: pupil
+Sample Duration (ms): 7000
+
+MODEL PERFORMANCE SUMMARY:
+============================================================
+Model: LightTS
+Validation Accuracy: 0.6977
+Best Parameters: {'d_model': 32, 'dropout': 0.10290896153229523, 'lr': 0.00044394310902918095}
+------------------------------------------------------------
+Model: PatchTST
+Validation Accuracy: 0.6960
+Best Parameters: {'d_model': 32, 'e_layers': 1, 'd_ff': 512, 'patch_len': 8, 'stride': 16, 'top_k': 4, 'dropout': 0.2664140457942149, 'factor': 1, 'lr': 8.43431533805628e-05}
+------------------------------------------------------------
+Model: iTransformer
+Validation Accuracy: 0.6854
+Best Parameters: {'d_model': 32, 'e_layers': 3, 'd_ff': 512, 'top_k': 2, 'dropout': 0.0651196757188283, 'factor': 1, 'lr': 0.0026985248594746433}
+------------------------------------------------------------
+Model: MLP
+Validation Accuracy: 0.6801
+Best Parameters: {'hidden_size': 512, 'depth': 1, 'dropout': 0.5473864212097256, 'lr': 0.00020914981329035596}
+------------------------------------------------------------
+Model: TimesNet
+Validation Accuracy: 0.6467
+Best Parameters: {'d_model': 8, 'e_layers': 1, 'd_ff': 8, 'top_k': 2, 'num_kernels': 5, 'dropout': 0.13567451588694796, 'lr': 0.003063462210622081}
+------------------------------------------------------------
+
+OVERALL BEST MODEL:
+Model: LightTS
+Validation Accuracy: 0.6977
+Parameters: {'d_model': 32, 'dropout': 0.10290896153229523, 'lr': 0.00044394310902918095}
+
+TEST PERFORMANCE:
+Test Accuracy: 0.7034
+Test Loss: 0.5572
