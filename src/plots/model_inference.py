@@ -222,16 +222,16 @@ def plot_single_prediction_confidence_heatmap(
 
     for participant_id, trial_probabilities_list in probabilities.items():
         for i, trial_probabilities in enumerate(trial_probabilities_list):
-            # Extract increase (class 1) probabilities
+            # Extract decrease (class 1) probabilities
             increase_probs = np.array([probs[1] for probs in trial_probabilities])
 
             # Scale values to account for the classification threshold
-            # Values below threshold will be negative (decrease)
-            # Values above threshold will be positive (increase)
+            # Values below threshold will be negative (increase)
+            # Values above threshold will be positive (decrease)
             # The exact threshold will map to 0
             signed_confidences = np.zeros_like(increase_probs)
 
-            # For probabilities below threshold (decrease predictions)
+            # For probabilities below threshold (increase predictions)
             below_threshold = increase_probs < classification_threshold
             if np.any(below_threshold):
                 # Scale from [0, threshold] to [-1, 0]
@@ -239,7 +239,7 @@ def plot_single_prediction_confidence_heatmap(
                     increase_probs[below_threshold] - classification_threshold
                 ) / classification_threshold
 
-            # For probabilities above threshold (increase predictions)
+            # For probabilities above threshold (decrease predictions)
             above_threshold = increase_probs >= classification_threshold
             if np.any(above_threshold):
                 # Scale from [threshold, 1] to [0, 1]
@@ -525,13 +525,13 @@ def _calculate_signed_confidence(
     """Calculate signed confidence values based on classification threshold."""
     signed_confidences = np.zeros_like(increase_probs)
 
-    # Below threshold (decrease predictions)
+    # Below threshold (increase predictions)
     below_mask = increase_probs < threshold
     signed_confidences[below_mask] = (
         increase_probs[below_mask] - threshold
     ) / threshold
 
-    # Above threshold (increase predictions)
+    # Above threshold (decrease predictions)
     above_mask = increase_probs >= threshold
     signed_confidences[above_mask] = (increase_probs[above_mask] - threshold) / (
         1 - threshold
@@ -779,7 +779,7 @@ def main():
         fig = plot_prediction_confidence_heatmap(
             all_probabilities,
             sample_duration_ms,
-            classification_threshold=0.5,
+            classification_threshold=0.8,
             ncols=2,
             figure_size=(7, 2),
             stimulus_scale=0.5,

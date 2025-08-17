@@ -82,11 +82,7 @@ def initialize_model(
     ).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)  # note that TSL uses RAdam
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(
-        optimizer,
-        T_max=N_EPOCHS,
-        eta_min=1e-6,
-    )
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=N_EPOCHS)
     return model, criterion, optimizer, scheduler
 
 

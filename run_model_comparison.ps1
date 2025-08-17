@@ -34,14 +34,18 @@ Write-Host "This is the model comparison script for different feature combinatio
 Write-Host ""
 Write-Host ""
 Write-Host "Starting..."
+
 # Execute Python scripts
-python -m src.models.main --features eda_raw pupil --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
-python -m src.models.main --features eda_raw heart_rate --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
-python -m src.models.main --features eda_raw heart_rate pupil --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
-python -m src.models.main --features pupil --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
-python -m src.models.main --features heart_rate --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
-python -m src.models.main --features face --models MLP TimesNet Crossformer PatchTST iTransformer LightTS 
-python -m src.models.main --features eeg --models MLP EEGNet TimesNet Crossformer PatchTST iTransformer LightTS 
+python -m src.models.main --features eda_raw pupil --models MLP LightTS TimesNet PatchTST iTransformer
+python -m src.models.main --features pupil --models MLP LightTS TimesNet PatchTST iTransformer
+python -m src.models.main --features heart_rate --models MLP LightTS TimesNet PatchTST iTransformer
+python -m src.models.main --features eda_raw --models MLP LightTS TimesNet PatchTST iTransformer
+python -m src.models.main --features eda_raw heart_rate --models MLP LightTS TimesNet PatchTST iTransformer
+python -m src.models.main --features eda_raw heart_rate pupil --models MLP LightTS TimesNet PatchTST iTransformer
+python -m src.models.main --features face --models MLP LightTS TimesNet PatchTST iTransformer
+python -m src.models.main --features face eda_raw heart_rate pupil --models MLP LightTS TimesNet PatchTST iTransformer
+python -m src.models.main --features eeg --models MLP LightTS EEGNet iTransformer
+python -m src.models.main --features eeg face eda_raw heart_rate pupil --models MLP LightTS EEGNet iTransformer
 
 Write-Host "Model comparison completed."
 Write-Host ""

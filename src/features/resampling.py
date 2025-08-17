@@ -130,8 +130,9 @@ def resample_at_10_hz_equidistant(
     """Resample a DataFrame to equidistant time steps of 100 ms.
     Made for feature-engineering data that was already decimated to 10 Hz.
 
-    DO NOT USE AFTER LABEL CREATION. This function is badly written and does
-    shady stuff in the background (see code comments).
+    DO NOT USE AFTER LABEL CREATION. This function is not the most elegant way to
+    resample data, but it is fast and works for the current use case
+    (see code comments).
 
     Note: Only works with normalized timestamps (starting from 0 in each trial).
     """

@@ -481,11 +481,16 @@ def main():
     pl.Config.set_tbl_rows(12)  # for the 12 trials
 
     feature_lists = [
+        ["eda_raw"],
+        ["heart_rate"],
+        ["pupil"],
+        ["eda_raw", "heart_rate"],
+        ["eda_raw", "heart_rate", "pupil"],
         ["eda_raw", "pupil"],
-        # ["eda_raw", "heart_rate"],
-        # ["eda_raw", "heart_rate", "pupil"],
-        # ["face"],
+        ["face"],
+        ["face", "eda_raw", "heart_rate", "pupil"],
         ["eeg"],
+        ["eeg", "face", "eda_raw", "heart_rate", "pupil"],
     ]
     feature_lists = expand_feature_list(feature_lists)
 
@@ -542,10 +547,10 @@ def main():
         )
         results[feature_list_str] = result_df
 
-    # # Save samples size per test set participant
-    # results["_".join(feature_lists[0])].drop("accuracy").write_json(
-    #     FIGURE_DIR / "samples_per_test_participant.json"
-    # )
+    # Save samples size per test set participant
+    results["_".join(feature_lists[0])].drop("accuracy").write_json(
+        FIGURE_DIR / "samples_per_test_participant.json"
+    )
 
     feature_set_acc, _ = plot_feature_accuracy_comparison(results, figsize=(10, 6))
     # plt.show()

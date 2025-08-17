@@ -3,16 +3,19 @@ from polars import col
 
 FEATURE_LABELS = {
     "eda_raw": "EDA",
-    "pupil": "Pupil",
     "heart_rate": "HR",
+    "pupil": "Pupil",
     "eda_raw_pupil": "EDA + Pupil",
     "eda_raw_heart_rate": "EDA + HR",
     "eda_raw_heart_rate_pupil": "EDA + HR + Pupil",
     "brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise": "Facial Expressions",
-    "brow_furrow_cheek_raise_eda_raw_heart_rate_mouth_open_nose_wrinkle_pupil_upper_lip_raise": (
+    "brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise_eda_raw_heart_rate_pupil": (
         "All combined (w/o EEG)"
     ),
-    "c3_c4_cz_f3_f4_oz_p3_p4": "EEG",
+    "f3_f4_c3_cz_c4_p3_p4_oz": "EEG",
+    "f3_f4_c3_cz_c4_p3_p4_oz_brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise_eda_raw_heart_rate_pupil": (
+        "All combined"
+    ),
 }
 
 

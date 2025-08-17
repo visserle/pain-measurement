@@ -33,11 +33,11 @@ LABELS = {
     "heart_rate": "Heart rate",
     "eda_tonic": "Tonic EDA",
     "eda_phasic": "Phasic EDA",
-    "brow_furrow": "Brow furrow",
     "cheek_raise": "Cheek raise",
     "mouth_open": "Mouth open",
-    "nose_wrinkle": "Nose wrinkle",
     "upper_lip_raise": "Upper lip raise",
+    "nose_wrinkle": "Nose wrinkle",
+    "brow_furrow": "Brow furrow",
 }
 
 
