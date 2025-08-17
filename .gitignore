@@ -138,3 +138,7 @@ db.sqlite3
 src/data/imotions_data_config_old.yaml
 *oddball*
 src/data/invalid_trials_strict.csv
+reports/measurement_participants.json
+reports/participants_stats.toml
+reports/participants_stats.txt
+reports/participants.json
