@@ -62,10 +62,10 @@ class ID_Anonymizer:
         Anonymizes participant IDs in the df DataFrame.
         """
         sort_cols = ["participant_id"]
-        if "trial_number" in df.columns:
-            sort_cols.append("trial_number")
         if "timestamp" in df.columns:
             sort_cols.append("timestamp")
+        if "trial_number" in df.columns and "timestamp" not in df.columns:
+            sort_cols.append("trial_number")
 
         participants = (
             df.get_column("participant_id").unique(maintain_order=True).to_numpy()
@@ -89,7 +89,7 @@ class ID_Anonymizer:
         if "trial_id" in df.columns:
             df = self._reassign_trial_ids(df)
 
-        return df
+        return df.sort(sort_cols, descending=False)
 
     def _create_participant_mapping(self, participants):
         """Create mapping between original and anonymized participant IDs.
@@ -134,13 +134,13 @@ class ID_Anonymizer:
         """
         Reassigns trial IDs in the df DataFrame to be sequential starting from 1.
         """
-        # Create mapping from your unique values
-        unique_vals = df["trial_id"].unique(maintain_order=True).to_list()
+        # Create mapping from non-null unique values only
+        unique_vals = df["trial_id"].drop_nulls().unique(maintain_order=True).to_list()
         old_to_new = {val: idx + 1 for idx, val in enumerate(unique_vals)}
 
         return df.with_columns(
             pl.col("trial_id")
-            .replace_strict(old_to_new, default=None)
+            .replace(old_to_new, default=None)
             .alias("trial_id")
             .cast(pl.UInt16)
         )
