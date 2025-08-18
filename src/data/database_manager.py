@@ -407,65 +407,65 @@ def main():
             logger.debug(f"Raw data for participant {participant_id} inserted.")
         logger.info("Raw data inserted.")
 
-        # Anonymize database
-        # anonymize_db(db)
-        # logger.info("Anonymized Database.")
+    # Anonymize database
+    anonymize_db(db)
+    logger.info("Anonymized Database.")
 
-        # # NOTE: From here on, you can use the pipeline without possessing the original, de-
-        # # anonymized data.
+    # NOTE: From here on, you can use the pipeline without possessing the original, de-
+    # anonymized data.
 
-        with db:
-            # Preprocessed data
-            # no check for existing data as it will be overwritten every time
-            for modality in MODALITIES:
-                table_name = "Preprocess_" + modality
-                df = db.get_table("Raw_" + modality)
-                df = create_preprocess_data_df(table_name, df)
-                db.insert_preprocess_data(table_name, df)
-            logger.info("Data preprocessed.")
+    with db:
+        # Preprocessed data
+        # no check for existing data as it will be overwritten every time
+        for modality in MODALITIES:
+            table_name = "Preprocess_" + modality
+            df = db.get_table("Raw_" + modality)
+            df = create_preprocess_data_df(table_name, df)
+            db.insert_preprocess_data(table_name, df)
+        logger.info("Data preprocessed.")
 
-            # Feature-engineered data
-            for modality in MODALITIES:
-                table_name = f"Feature_{modality}"
-                df = db.get_table(f"Preprocess_{modality}")
-                df = create_feature_data_df(table_name, df)
-                db.insert_feature_data(table_name, df)
-            logger.info("Data feature-engineered.")
+        # Feature-engineered data
+        for modality in MODALITIES:
+            table_name = f"Feature_{modality}"
+            df = db.get_table(f"Preprocess_{modality}")
+            df = create_feature_data_df(table_name, df)
+            db.insert_feature_data(table_name, df)
+        logger.info("Data feature-engineered.")
 
-            # Exploratory data
-            for modality in MODALITIES:
-                table_name = f"Explore_{modality}"
-                df = db.get_table(f"Raw_{modality}")
-                df = create_explore_data_df(table_name, df)
-                db.insert_explore_data(table_name, df)
-            logger.info("Data exploratory processed.")
+        # Exploratory data
+        for modality in MODALITIES:
+            table_name = f"Explore_{modality}"
+            df = db.get_table(f"Raw_{modality}")
+            df = create_explore_data_df(table_name, df)
+            db.insert_explore_data(table_name, df)
+        logger.info("Data exploratory processed.")
 
-            # Merge data (trials only) and add labels
-            data_dfs = []
-            data_dfs_explore = []
-            for modality in MODALITIES:
-                if modality == "EEG":
-                    continue  # we do not merge EEG data, as it has a different sampling rate
-                data_dfs.append(
-                    db.get_trials(
-                        f"Feature_{modality}",
-                        exclude_problematic=False,
-                    )
+        # Merge data (trials only) and add labels
+        data_dfs = []
+        data_dfs_explore = []
+        for modality in MODALITIES:
+            if modality == "EEG":
+                continue  # we do not merge EEG data, as it has a different sampling rate
+            data_dfs.append(
+                db.get_trials(
+                    f"Feature_{modality}",
+                    exclude_problematic=False,
                 )
-                data_dfs_explore.append(
-                    db.get_trials(
-                        f"Explore_{modality}",
-                        exclude_problematic=False,
-                    )
+            )
+            data_dfs_explore.append(
+                db.get_trials(
+                    f"Explore_{modality}",
+                    exclude_problematic=False,
                 )
-            trials_df = db.get_trials("Trials", exclude_problematic=False)
-            df = merge_and_label_data_dfs(data_dfs, trials_df)
-            df_explore = merge_and_label_data_dfs(data_dfs_explore, trials_df)
-            db.ctas("Model_Data", df)
-            db.ctas("Explore_Data", df_explore)
-            logger.info("Modeling and exploratory data created.")
+            )
+        trials_df = db.get_trials("Trials", exclude_problematic=False)
+        df = merge_and_label_data_dfs(data_dfs, trials_df)
+        df_explore = merge_and_label_data_dfs(data_dfs_explore, trials_df)
+        db.ctas("Model_Data", df)
+        db.ctas("Explore_Data", df_explore)
+        logger.info("Modeling and exploratory data created.")
 
-        logger.info("Data pipeline completed.")
+    logger.info("Data pipeline completed.")
 
 
 if __name__ == "__main__":
