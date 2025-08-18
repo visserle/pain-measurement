@@ -105,6 +105,15 @@ class DatabaseSchema:
         return DatabaseSchema.create_preprocess_data_table(conn, name, schema)
 
     @staticmethod
+    def create_explore_data_table(
+        conn: duckdb.DuckDBPyConnection,
+        name: str,
+        schema: pl.Schema,
+    ) -> None:
+        # same schema as preprocess data
+        return DatabaseSchema.create_preprocess_data_table(conn, name, schema)
+
+    @staticmethod
     def table_exists(
         conn: duckdb.DuckDBPyConnection,
         name: str,

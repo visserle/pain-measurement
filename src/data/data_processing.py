@@ -12,13 +12,19 @@ from src.data.data_config import DataConfig
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 from src.features.eda import feature_eda, preprocess_eda
 from src.features.eeg import feature_eeg, preprocess_eeg
+from src.features.exploratory.explore_eda import explore_eda
+from src.features.exploratory.explore_eeg import explore_eeg
+from src.features.exploratory.explore_face import explore_face
+from src.features.exploratory.explore_hr import explore_hr
+from src.features.exploratory.explore_pupil import explore_pupil
+from src.features.exploratory.explore_stimulus import explore_stimulus
 from src.features.face import feature_face, preprocess_face
 from src.features.hr import feature_hr, preprocess_hr
 from src.features.labels import add_labels
 from src.features.pupil import feature_pupil, preprocess_pupil
 from src.features.resampling import (
     add_normalized_timestamp,
-    interpolate_and_fill_nulls,
+    interpolate_and_fill_nulls_in_trials,
     resample_at_10_hz_equidistant,
 )
 from src.features.stimulus import feature_stimulus, preprocess_stimulus
@@ -108,7 +114,7 @@ def create_seeds_df():
     )
 
 
-def _remove_trials_with_thermode_or_rating_issues(
+def remove_trials_with_thermode_or_rating_issues(
     df: pl.DataFrame,
 ):
     # remove trials with thermode or rating issues
@@ -138,7 +144,7 @@ def _remove_trials_with_thermode_or_rating_issues(
 
 
 def create_trials_df(
-    participant_id: str,
+    participant_id: int,
     iMotions_Marker: pl.DataFrame,
 ) -> pl.DataFrame:
     """
@@ -211,9 +217,6 @@ def create_trials_df(
         pl.all().exclude(a, b),
     )
 
-    # Remove invalid trials
-    trials_df = _remove_trials_with_thermode_or_rating_issues(trials_df)
-
     logger.debug("Created Trials DataFrame for participant %s.", participant_id)
     return trials_df
 
@@ -222,7 +225,7 @@ def create_raw_data_df(
     participant_id: int,
     imotions_data_df: pl.DataFrame,
     trials_df: pl.DataFrame,
-) -> dict[str, pl.DataFrame]:
+) -> pl.DataFrame:
     """
     Create raw data tables for each data type based on the trial information.
     We only keep rows that are part of a trial from the iMotions data.
@@ -233,7 +236,7 @@ def create_raw_data_df(
         col("timestamp_end").alias("trial_end"),
         col("trial_number"),
         col("participant_id"),
-    )
+    ).filter(participant_id=participant_id)
 
     # Perform an asof join to assign trial numbers to each stimulus
     df = imotions_data_df.join_asof(
@@ -243,22 +246,21 @@ def create_raw_data_df(
         strategy="backward",
     )
 
+    # Apply participant_id to all rows
+    df = df.with_columns(pl.lit(participant_id).alias("participant_id").cast(pl.UInt8))
+
     # Correct backwards join by checking for the end of each trial
-    df = (
-        df.with_columns(
-            pl.when(
-                col("timestamp").is_between(
-                    col("trial_start"),
-                    col("trial_end"),
-                )
+    df = df.with_columns(
+        pl.when(
+            col("timestamp").is_between(
+                col("trial_start"),
+                col("trial_end"),
             )
-            .then(col("trial_number"))
-            .otherwise(None)
-            .alias("trial_number")
         )
-        .filter(col("trial_number").is_not_null())  # drop non-trial rows
-        .drop(["trial_start", "trial_end"])
-    )
+        .then(col("trial_number"))
+        .otherwise(None)
+        .alias("trial_number")
+    ).drop("trial_start", "trial_end")
 
     # Cast row number column
     df = df.with_columns(col("rownumber").cast(pl.UInt32))
@@ -271,10 +273,6 @@ def create_raw_data_df(
         col(b := "participant_id"),
         pl.all().exclude(a, b),
     )
-
-    # Remove invalid trials
-    df = _remove_trials_with_thermode_or_rating_issues(df)
-
     return df
 
 
@@ -295,12 +293,14 @@ def create_preprocess_data_df(
         return preprocess_pupil(df)
     elif "face" in name:
         return preprocess_face(df)
+    else:
+        raise ValueError(f"Unknown feature type: {name}")
 
 
 def create_feature_data_df(
     name: str,
     df: pl.DataFrame,
-) -> dict[str, pl.DataFrame]:
+) -> pl.DataFrame:
     name = name.lower()
     df = df.drop(["rownumber", "samplenumber"], strict=False)
     if "stimulus" in name:
@@ -315,18 +315,42 @@ def create_feature_data_df(
         return feature_pupil(df)
     elif "face" in name:
         return feature_face(df)
+    else:
+        raise ValueError(f"Unknown feature type: {name}")
 
 
-def create_merged_and_labeled_data_df(
+def create_explore_data_df(
+    name: str,
+    df: pl.DataFrame,
+) -> pl.DataFrame:
+    """Create exploratory data for a given feature type."""
+    name = name.lower()
+    if "stimulus" in name:
+        return explore_stimulus(df)
+    elif "eda" in name:
+        return explore_eda(df)
+    elif "eeg" in name:
+        return explore_eeg(df)
+    elif "hr" in name:
+        return explore_hr(df)
+    elif "pupil" in name:
+        return explore_pupil(df)
+    elif "face" in name:
+        return explore_face(df)
+    else:
+        raise ValueError(f"Unknown feature type: {name}")
+
+
+def merge_and_label_data_dfs(
     data_dfs: list[pl.DataFrame],
     trials_df: pl.DataFrame,
 ) -> pl.DataFrame:
     """
-    Merge multiple feature DataFrames into a single DataFrame.
+    Merge multiple feature DataFrames into a single DataFrame. Only for data at 10 Hz.
     """
     df = merge_dfs(data_dfs)
-    df = interpolate_and_fill_nulls(df)
+    df = interpolate_and_fill_nulls_in_trials(df)
     df = add_normalized_timestamp(df)
     df = resample_at_10_hz_equidistant(df)
-    df = add_labels(df, trials_df)  #  important: always add labels at the end
+    df = add_labels(df, trials_df)  #  important: always add labels at the very end
     return df

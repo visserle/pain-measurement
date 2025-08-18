@@ -8,14 +8,16 @@ from src.data.anonymize import anonymize_db
 from src.data.data_config import DataConfig
 from src.data.data_processing import (
     create_calibration_results_df,
+    create_explore_data_df,
     create_feature_data_df,
     create_measurement_results_df,
-    create_merged_and_labeled_data_df,
     create_participants_df,
     create_preprocess_data_df,
     create_questionnaire_df,
     create_raw_data_df,
     create_trials_df,
+    merge_and_label_data_dfs,
+    remove_trials_with_thermode_or_rating_issues,
 )
 from src.data.database_schema import DatabaseSchema
 from src.data.imotions_data import load_imotions_data_df
@@ -47,7 +49,9 @@ class DatabaseManager:
     with db:
         df = db.execute("SELECT * FROM Trials").pl()  # .pl() for Polars DataFrame
         # or alternatively
-        df = db.get_table("Trials", exclude_trials_with_measurement_problems=False)
+        df = db.get_table("Trials")
+        df = db.get_trials("Trials", exclude_problematic=False)
+        # Note that get_trials also can return trials from other tables, e.g. Feature_EEG
     df.head()
     ```
     """
@@ -103,13 +107,32 @@ class DatabaseManager:
     def get_table(
         self,
         table_name: str,
-        exclude_trials_with_measurement_problems: bool | str | list[str] = True,
     ) -> pl.DataFrame:
-        """Return the data from a table as a Polars DataFrame.
+        """Return the full table as a Polars DataFrame.
+
+        For tables with time series data, one should always use the `get_trials` method
+        instead.
 
         Args:
             table_name: The name of the table to retrieve.
-            exclude_trials_with_measurement_problems:
+        """
+        return self.execute(f"SELECT * FROM {table_name}").pl()
+
+    def get_trials(
+        self,
+        table_name: str,
+        exclude_problematic: bool | str | list[str],
+    ) -> pl.DataFrame:
+        """Return the trial data from a table as a Polars DataFrame.
+
+        Note that independent from addition to exclude_problematic,
+        we always remove trial that had rating or thermode issues, as these trials
+        are not valid for the experiment.
+
+
+        Args:
+            table_name: The name of the table to retrieve.
+            exclude_problematic:
                 - If True, excludes all trials with measurement problems.
                 - If a string, excludes only trials with problems in the specified modality (e.g., 'eeg').
                 - If a list of strings, excludes trials with problems in any of the specified modalities.
@@ -121,26 +144,33 @@ class DatabaseManager:
             f"SELECT * FROM {table_name}"
         ).pl()  # could be more efficient by filtering out invalid trials in the query
 
+        # Remove inter-trial rows
+        df = df.filter(col("trial_id").is_not_null())
+
+        # Remove trials with thermode or rating issues
+        if "trial_number" in df.columns:
+            df = remove_trials_with_thermode_or_rating_issues(df)
+
+        # Remove invalid trials if specified
         invalid_trials = self.execute("SELECT * FROM Invalid_Trials").pl()
         # do not filter invalid trials from invalid_trials table, would be empty
         if table_name == "invalid_trials":
             return df
 
-        if exclude_trials_with_measurement_problems:
+        if exclude_problematic:
             # Filter invalid trials by modality if a specific modality or list is specified
             filtered_invalid_trials = invalid_trials
 
-            if isinstance(exclude_trials_with_measurement_problems, str):
+            if isinstance(exclude_problematic, str):
                 # Single modality case
-                modality = exclude_trials_with_measurement_problems
+                modality = exclude_problematic
                 filtered_invalid_trials = invalid_trials.filter(
                     pl.col("modality").str.contains(modality)
                 )
-            elif isinstance(exclude_trials_with_measurement_problems, list):
+            elif isinstance(exclude_problematic, list):
                 # Multiple modalities case - create a filter condition for each modality
                 filter_conditions = [
-                    pl.col("modality").str.contains(mod)
-                    for mod in exclude_trials_with_measurement_problems
+                    pl.col("modality").str.contains(mod) for mod in exclude_problematic
                 ]
                 # Combine conditions with logical OR
                 if filter_conditions:
@@ -233,7 +263,7 @@ class DatabaseManager:
         self.execute(f"CREATE OR REPLACE TABLE {table_name} AS SELECT * FROM temp_df")
         self.conn.unregister("temp_df")
 
-    def insert_trials(
+    def insert_trials_df(
         self,
         trials_df: pl.DataFrame,
     ) -> None:
@@ -261,7 +291,7 @@ class DatabaseManager:
             INSERT INTO {table_name}
             SELECT t.trial_id, r.*
             FROM raw_data_df AS r
-            JOIN Trials AS t 
+            LEFT JOIN Trials AS t -- left join to keep data that has no trial_id
                 ON r.trial_number = t.trial_number 
                 AND r.participant_id = t.participant_id
             ORDER BY r.rownumber;
@@ -286,7 +316,7 @@ class DatabaseManager:
             INSERT INTO {table_name}
             SELECT *
             FROM preprocess_data_df
-            ORDER BY trial_id, timestamp;
+            ORDER BY participant_id, timestamp;
         """)
         self.conn.unregister("preprocess_data_df")
 
@@ -305,9 +335,28 @@ class DatabaseManager:
             INSERT INTO {table_name}
             SELECT *
             FROM feature_data_df
-            ORDER BY trial_id, timestamp;
+            ORDER BY participant_id, timestamp;
         """)
         self.conn.unregister("feature_data_df")
+
+    def insert_explore_data(
+        self,
+        table_name: str,
+        explore_data_df: pl.DataFrame,
+    ) -> None:
+        DatabaseSchema.create_explore_data_table(
+            self.conn,
+            table_name,
+            explore_data_df.schema,
+        )
+        self.conn.register("explore_data_df", explore_data_df)
+        self.execute(f"""
+            INSERT INTO {table_name}
+            SELECT *
+            FROM explore_data_df
+            ORDER BY participant_id, timestamp;
+        """)
+        self.conn.unregister("explore_data_df")
 
 
 def main():
@@ -317,97 +366,104 @@ def main():
     Later steps of this pipeline can be applied using the publicy availible anonymized
     data.
     """
+
     db = DatabaseManager()
-    if not DB_FILE.exists():
-        with db:
-            # Participant data, experiment and questionnaire results
-            db.ctas(
-                "Invalid_Participants", DataConfig.load_invalid_participants_config()
-            )
-            db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
-            db.ctas("Participants", create_participants_df())
-            db.ctas("Calibration_Results", create_calibration_results_df())
-            db.ctas("Measurement_Results", create_measurement_results_df())
-            for questionnaire in QUESTIONNAIRES:
-                df = create_questionnaire_df(questionnaire)
-                db.ctas("Questionnaire_" + questionnaire.upper(), df)
-            logger.info("Participant data inserted.")
-
-            # Raw data
-            for participant_id in range(1, NUM_PARTICIPANTS + 1):
-                if participant_id in (
-                    db.execute("SELECT participant_id FROM Invalid_Participants")
-                    .pl()  # returns a df
-                    .to_series()
-                    .to_list()
-                ):
-                    logger.debug(f"Participant {participant_id} is invalid.")
-                    continue
-                if db.participant_exists(participant_id):
-                    logger.debug(
-                        f"Raw data for participant {participant_id} already exists."
-                    )
-                    continue
-
-                df = load_imotions_data_df(participant_id, "Trials")
-                trials_df = create_trials_df(participant_id, df)
-                db.insert_trials(trials_df)
-
-                for modality in MODALITIES:
-                    df = load_imotions_data_df(participant_id, modality)
-                    df = create_raw_data_df(participant_id, df, trials_df)
-                    db.insert_raw_data(participant_id, "Raw_" + modality, df)
-                logger.debug(f"Raw data for participant {participant_id} inserted.")
-            logger.info("Raw data inserted.")
-
-    # Anonymize database
-    anonymize_db(db)
-    logger.info("Anonymized Database.")
-
-    # NOTE: From here on, you can use the pipeline without possessing the original, de-
-    # anonymized data.
-
     with db:
-        # Preprocessed data
-        # no check for existing data as it will be overwritten every time
-        for modality in MODALITIES:
-            table_name = "Preprocess_" + modality
-            df = db.get_table(
-                "Raw_" + modality,
-                exclude_trials_with_measurement_problems=False,
-            )
-            df = create_preprocess_data_df(table_name, df)
-            db.insert_preprocess_data(table_name, df)
-        logger.info("Data preprocessed.")
+        # Participant data, experiment and questionnaire results
+        db.ctas("Invalid_Participants", DataConfig.load_invalid_participants_config())
+        db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
+        db.ctas("Participants", create_participants_df())
+        db.ctas("Calibration_Results", create_calibration_results_df())
+        db.ctas("Measurement_Results", create_measurement_results_df())
+        for questionnaire in QUESTIONNAIRES:
+            df = create_questionnaire_df(questionnaire)
+            db.ctas("Questionnaire_" + questionnaire.upper(), df)
+        logger.info("Participant data inserted.")
 
-        # Feature-engineered data
-        for modality in MODALITIES:
-            table_name = f"Feature_{modality}"
-            df = db.get_table(
-                f"Preprocess_{modality}",
-                exclude_trials_with_measurement_problems=False,
-            )
-            df = create_feature_data_df(table_name, df)
-            db.insert_feature_data(table_name, df)
-        logger.info("Data feature-engineered.")
-
-        # Merge feature data and add labels
-        data_dfs = []
-        for modality in MODALITIES:
-            if modality == "EEG":
-                continue  # we do not merge EEG data, as it has a different sampling rate
-            data_dfs.append(
-                db.get_table(
-                    f"Feature_{modality}",
-                    exclude_trials_with_measurement_problems=False,
+        # Raw data
+        for participant_id in range(1, NUM_PARTICIPANTS + 1):
+            if participant_id in (
+                db.execute("SELECT participant_id FROM Invalid_Participants")
+                .pl()  # returns a df
+                .to_series()
+                .to_list()
+            ):
+                logger.debug(f"Participant {participant_id} is invalid.")
+                continue
+            if db.participant_exists(participant_id):
+                logger.debug(
+                    f"Raw data for participant {participant_id} already exists."
                 )
-            )
-        trials_df = db.get_table(
-            "Trials", exclude_trials_with_measurement_problems=False
-        )
-        df = create_merged_and_labeled_data_df(data_dfs, trials_df)
-        db.ctas("Merged_and_Labeled_Data", df)
-        logger.info("Data merged and labeled.")
+                continue
+
+            df = load_imotions_data_df(participant_id, "Trials")
+            trials_df = create_trials_df(participant_id, df)
+            db.insert_trials_df(trials_df)
+
+            for modality in MODALITIES:
+                df = load_imotions_data_df(participant_id, modality)
+                df = create_raw_data_df(participant_id, df, trials_df)
+                db.insert_raw_data(participant_id, "Raw_" + modality, df)
+            logger.debug(f"Raw data for participant {participant_id} inserted.")
+        logger.info("Raw data inserted.")
+
+        # Anonymize database
+        # anonymize_db(db)
+        # logger.info("Anonymized Database.")
+
+        # # NOTE: From here on, you can use the pipeline without possessing the original, de-
+        # # anonymized data.
+
+        with db:
+            # Preprocessed data
+            # no check for existing data as it will be overwritten every time
+            for modality in MODALITIES:
+                table_name = "Preprocess_" + modality
+                df = db.get_table("Raw_" + modality)
+                df = create_preprocess_data_df(table_name, df)
+                db.insert_preprocess_data(table_name, df)
+            logger.info("Data preprocessed.")
+
+            # Feature-engineered data
+            for modality in MODALITIES:
+                table_name = f"Feature_{modality}"
+                df = db.get_table(f"Preprocess_{modality}")
+                df = create_feature_data_df(table_name, df)
+                db.insert_feature_data(table_name, df)
+            logger.info("Data feature-engineered.")
+
+            # Exploratory data
+            for modality in MODALITIES:
+                table_name = f"Explore_{modality}"
+                df = db.get_table(f"Raw_{modality}")
+                df = create_explore_data_df(table_name, df)
+                db.insert_explore_data(table_name, df)
+            logger.info("Data exploratory processed.")
+
+            # Merge data (trials only) and add labels
+            data_dfs = []
+            data_dfs_explore = []
+            for modality in MODALITIES:
+                if modality == "EEG":
+                    continue  # we do not merge EEG data, as it has a different sampling rate
+                data_dfs.append(
+                    db.get_trials(
+                        f"Feature_{modality}",
+                        exclude_problematic=False,
+                    )
+                )
+                data_dfs_explore.append(
+                    db.get_trials(
+                        f"Explore_{modality}",
+                        exclude_problematic=False,
+                    )
+                )
+            trials_df = db.get_trials("Trials", exclude_problematic=False)
+            df = merge_and_label_data_dfs(data_dfs, trials_df)
+            df_explore = merge_and_label_data_dfs(data_dfs_explore, trials_df)
+            db.ctas("Model_Data", df)
+            db.ctas("Explore_Data", df_explore)
+            logger.info("Modeling and exploratory data created.")
 
         logger.info("Data pipeline completed.")
 

@@ -4,6 +4,7 @@ import logging
 
 import numpy as np
 import polars as pl
+from polars import col
 
 from src.data.database_manager import DatabaseManager
 
@@ -32,6 +33,7 @@ def check_sample_rate(
     r"""coefficient of variation between trials
     # $ CV=\frac{\sigma}{\mu} $
     """
+    df = df.filter(col("trial_id") > 0)
     # IMPROVE: just do diff mean on timestamp
     if unique_timestamp:
         # actually slightly faster than maintain_order=True (but not lazy)
@@ -42,13 +44,13 @@ def check_sample_rate(
 
     # the question is why I chose not to use maintain_order=True here FIXME TODO
     timestamp_start = (
-        df.group_by("trial_id")
+        df.group_by("trial_id", maintain_order=True)
         .agg(pl.first("timestamp"))
         .sort("trial_id")
         .select("timestamp")
     )
     timestamp_end = (
-        df.group_by("trial_id")
+        df.group_by("trial_id", maintain_order=True)
         .agg(pl.last("timestamp"))
         .sort("trial_id")
         .select("timestamp")
@@ -57,7 +59,7 @@ def check_sample_rate(
     duration_in_s = (timestamp_end - timestamp_start) / 1000
 
     samples = (
-        df.group_by("trial_id")
+        df.group_by("trial_id", maintain_order=True)
         .agg(pl.count("timestamp"))
         .sort("trial_id")
         .select("timestamp")

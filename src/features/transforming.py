@@ -57,7 +57,7 @@ def map_participants(func: Callable):
 def merge_dfs(
     dfs: list[pl.DataFrame],
     on: list[str] = ["participant_id", "trial_id", "trial_number", "timestamp"],
-    sort_by: list[str] = ["trial_id", "timestamp"],
+    sort_by: list[str] = ["participant_id", "trial_number", "timestamp"],
 ) -> pl.DataFrame:
     """
     Merge multiple DataFrames into a single DataFrame.
@@ -72,6 +72,7 @@ def merge_dfs(
         dfs=[stimulus, trials],
         on=["trial_id", "participant_id", "trial_number"],
     )
+    # TODO: update docstring
     ````
     """
     if len(dfs) < 2:

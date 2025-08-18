@@ -481,16 +481,16 @@ def main():
     pl.Config.set_tbl_rows(12)  # for the 12 trials
 
     feature_lists = [
-        ["eda_raw"],
-        ["heart_rate"],
-        ["pupil"],
-        ["eda_raw", "heart_rate"],
-        ["eda_raw", "heart_rate", "pupil"],
-        ["eda_raw", "pupil"],
-        ["face"],
-        ["face", "eda_raw", "heart_rate", "pupil"],
+        # ["eda_raw"],
+        # ["heart_rate"],
+        # ["pupil"],
+        # ["eda_raw", "heart_rate"],
+        # ["eda_raw", "heart_rate", "pupil"],
+        # ["eda_raw", "pupil"],
+        # ["face"],
+        # ["face", "eda_raw", "heart_rate", "pupil"],
         ["eeg"],
-        ["eeg", "face", "eda_raw", "heart_rate", "pupil"],
+        # ["eeg", "face", "eda_raw", "heart_rate", "pupil"],
     ]
     feature_lists = expand_feature_list(feature_lists)
 
@@ -553,7 +553,6 @@ def main():
     )
 
     feature_set_acc, _ = plot_feature_accuracy_comparison(results, figsize=(10, 6))
-    # plt.show()
     feature_set_acc_by_participant, _ = plot_participant_accuracy_comparison(
         results, figsize=(13, 6)
     )

@@ -1,9 +1,6 @@
 # Note that time-columns are mere floats as pl.Duration is not fully supported in Polars
 # and DuckDB yet (end of 2024).
 
-# For comprehensiveness, we could add an upsampling function that uses interpolation with
-# zero-stuffing via polars upsample function (not needed for now)
-
 import logging
 
 import polars as pl
@@ -11,12 +8,12 @@ import scipy.signal as signal
 from polars import col
 from polars.datatypes.group import FLOAT_DTYPES, INTEGER_DTYPES
 
-from src.features.transforming import map_trials
+from src.features.transforming import map_participants, map_trials
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-@map_trials
+@map_participants
 def decimate(
     df: pl.DataFrame,
     factor: int,
@@ -41,7 +38,7 @@ def decimate(
                     x=column.to_numpy(),
                     q=factor,
                     ftype="iir",
-                    zero_phase=True,
+                    zero_phase=False,
                 )
             ).to_series()
         else:
@@ -52,7 +49,7 @@ def decimate(
     )  # no need to add aliases here
 
 
-@map_trials
+@map_participants
 def interpolate_and_fill_nulls(
     df: pl.DataFrame,
     columns: list[str] | None = None,
@@ -61,6 +58,8 @@ def interpolate_and_fill_nulls(
     """
     Linearly interpolate and fill null values of float columns in a DataFrame.
     The interpolation is done based on the time column.
+
+    Note that this function is not causal and has to be used with care.
 
     Args:
         df (pl.DataFrame): The DataFrame to interpolate
@@ -81,6 +80,36 @@ def interpolate_and_fill_nulls(
 
 
 @map_trials
+def interpolate_and_fill_nulls_in_trials(
+    df: pl.DataFrame,
+    columns: list[str] | None = None,
+    time_column: str = "timestamp",
+) -> pl.DataFrame:
+    """
+    Linearly interpolate and fill null values of float columns in a DataFrame.
+    The interpolation is done based on the time column.
+
+    Note that this function is not causal and has to be used with care.
+
+    Args:
+        df (pl.DataFrame): The DataFrame to interpolate
+        columns (list[str], optional): The columns to interpolate.
+            If None, all float columns are interpolated. Defaults to None.
+        time_column (str, optional): The time column. Defaults to "timestamp".
+    """
+    selected_columns = columns or df.select(col(FLOAT_DTYPES)).columns
+
+    return df.with_columns(
+        [col(column).interpolate_by(col(time_column)) for column in selected_columns]
+    ).with_columns(
+        [
+            col(column).fill_null(strategy="forward").fill_null(strategy="backward")
+            for column in selected_columns
+        ]
+    )
+
+
+@map_participants
 def resample_to_equidistant_ms(
     df: pl.DataFrame,
     time_column: str = "timestamp",

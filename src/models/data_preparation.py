@@ -6,7 +6,10 @@ from sklearn.model_selection import GroupShuffleSplit
 
 from src.data.database_manager import DatabaseManager
 from src.features.labels import add_labels
-from src.features.resampling import add_normalized_timestamp, interpolate_and_fill_nulls
+from src.features.resampling import (
+    add_normalized_timestamp,
+    interpolate_and_fill_nulls_in_trials,
+)
 from src.features.transforming import merge_dfs
 from src.models.data_loader import transform_sample_df_to_arrays
 from src.models.sample_creation import create_samples, make_sample_set_balanced
@@ -67,14 +70,13 @@ def load_data_from_database(feature_list: list) -> pl.DataFrame:
         if eeg_features_present:  # if any EEG features are requested
             if non_eeg_features:  # mixed EEG and non-EEG features
                 # add marker to keep eeg sampling rate unchanged
-                eeg = db.get_table(
-                    "Feature_EEG", exclude_trials_with_measurement_problems=True
+                eeg = db.get_trials(
+                    "Feature_EEG", exclude_problematic=True
                 ).with_columns(marker_eeg=pl.lit(True))
 
                 data = (
-                    db.get_table(
-                        "Merged_and_Labeled_Data",
-                        exclude_trials_with_measurement_problems=True,
+                    db.get_trials(
+                        "Merged_and_Labeled_Data", exclude_problematic=True
                     ).with_columns(marker_eeg=pl.lit(False))
                 ).select(
                     [
@@ -87,9 +89,7 @@ def load_data_from_database(feature_list: list) -> pl.DataFrame:
                     + non_eeg_features
                 )
 
-                trials = db.get_table(
-                    "Trials", exclude_trials_with_measurement_problems=True
-                )
+                trials = db.get_trials("Trials", exclude_problematic=True)
 
                 df = merge_dfs(
                     [eeg, data],
@@ -101,27 +101,18 @@ def load_data_from_database(feature_list: list) -> pl.DataFrame:
                         "marker_eeg",
                     ],
                 )
-                df = interpolate_and_fill_nulls(df, non_eeg_features).filter(
-                    pl.col("marker_eeg")  # keep only EEG data after interpolation
+                df = interpolate_and_fill_nulls_in_trials(df, non_eeg_features).filter(
+                    pl.col("marker_eeg")  # keep only original EEG rows
                 )
                 df = add_normalized_timestamp(df)
                 df = add_labels(df, trials)
             else:  # only EEG features
-                eeg = db.get_table(
-                    "Feature_EEG",
-                    exclude_trials_with_measurement_problems=True,
-                )
-                trials = db.get_table(
-                    "Trials",
-                    exclude_trials_with_measurement_problems=True,
-                )
+                eeg = db.get_trials("Feature_EEG", exclude_problematic=True)
+                trials = db.get_trials("Trials", exclude_problematic=True)
                 eeg = add_normalized_timestamp(eeg)
                 df = add_labels(eeg, trials)
         else:  # No EEG features
-            df = db.get_table(
-                "Merged_and_Labeled_Data",
-                exclude_trials_with_measurement_problems=True,
-            )
+            df = db.get_trials("Merged_and_Labeled_Data", exclude_problematic=True)
 
     return df
 
