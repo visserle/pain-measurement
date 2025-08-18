@@ -12,6 +12,7 @@ MAX_HEARTRATE = 120
 
 
 def preprocess_hr(df: pl.DataFrame) -> pl.DataFrame:
+    df = df.drop("ibi")
     df = remove_heart_rate_nulls_and_fill_forward(df)
     return df
 

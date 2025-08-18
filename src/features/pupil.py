@@ -36,7 +36,15 @@ def remove_blinks_and_fill_forward(
             pl.when(col(pupil) == -1).then(None).otherwise(col(pupil)).alias(pupil)
         )
     return df.with_columns(
-        [col(pupil).forward_fill().alias(pupil) for pupil in pupil_columns]
+        [
+            col(pupil)
+            .forward_fill()
+            .backward_fill()  # backward fill to handle initial None values
+            # otherwise, some dl architectures will not work
+            # backward fill is non-causal but this is only a minor detail
+            .alias(pupil)
+            for pupil in pupil_columns
+        ]
     )
 
 

@@ -75,9 +75,9 @@ def load_data_from_database(feature_list: list) -> pl.DataFrame:
                 ).with_columns(marker_eeg=pl.lit(True))
 
                 data = (
-                    db.get_trials(
-                        "Merged_and_Labeled_Data", exclude_problematic=True
-                    ).with_columns(marker_eeg=pl.lit(False))
+                    db.get_trials("Model_Data", exclude_problematic=True).with_columns(
+                        marker_eeg=pl.lit(False)
+                    )
                 ).select(
                     [
                         "participant_id",
@@ -112,7 +112,7 @@ def load_data_from_database(feature_list: list) -> pl.DataFrame:
                 eeg = add_normalized_timestamp(eeg)
                 df = add_labels(eeg, trials)
         else:  # No EEG features
-            df = db.get_trials("Merged_and_Labeled_Data", exclude_problematic=True)
+            df = db.get_trials("Model_Data", exclude_problematic=True)
 
     return df
 
