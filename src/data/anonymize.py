@@ -11,9 +11,7 @@ def anonymize_db(db):
         # Remove invalid participants table
         db.execute("DROP TABLE Invalid_Participants")
         # Get invalid trials for mapping
-        invalid_trials = db.get_table(
-            "invalid_trials", exclude_trials_with_measurement_problems=False
-        )
+        invalid_trials = db.get_table("invalid_trials")
 
     # Count trials per participant and filter for those with exactly 12 trials
     # (i.e. included participants with measurement probblems for one or more modalities)
@@ -36,7 +34,7 @@ def anonymize_db(db):
 
     for table in tables:
         with db:
-            df = db.get_table(table, exclude_trials_with_measurement_problems=False)
+            df = db.get_table(table)
             df = Anonymizer.anonymize_participant_ids(df)
             db.ctas(table, df)
         logger.debug(f"Anonymized table: {table}")

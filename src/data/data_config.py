@@ -10,7 +10,7 @@ class DataConfig:
 
     MODALITIES = ["Stimulus", "EDA", "EEG", "HR", "Pupil", "Face"]
 
-    NUM_PARTICIPANTS = 50
+    NUM_PARTICIPANTS = 6
     PARTICIPANT_DATA_FILE = Path("runs/experiments/participants.csv")
     INVALID_PARTICIPANTS_FILE = Path("src/data/invalid_participants.csv")
     INVALID_TRIALS_FILE = Path("src/data/invalid_trials.csv")

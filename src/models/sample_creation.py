@@ -5,6 +5,8 @@ from functools import reduce
 import polars as pl
 from polars import col
 
+from src.features.eeg import FINAL_SAMPLE_RATE
+
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
 
 
@@ -180,19 +182,9 @@ def _remove_samples_that_are_too_short(
     )
 
     # Only EEG data is not perfectly equidistant and needs special handling
-    # NOTE: This is all hardcoded to work with 7000 ms samples and 250 Hz sampling rate.
     if not is_equidistant:
-        assert length_ms == 7000, (
-            "Only 7000 ms samples are supported for EEG data as of now. "
-            "Please adjust the code if you want to use different sample lengths."
-            # NOTE: and also adjust sample height below
-        )
-        logger.warning("Sampling rate is not equidistant with 10 Hz.")
         # Fix EEG samples to ensure consistent length
-        target_length = 250 * (
-            length_ms // 1000
-        )  # fs = 250 Hz, so 250 samples per second
-
+        target_length = FINAL_SAMPLE_RATE * (length_ms // 1000)
         # First, filter out samples that are too short (more than 20 samples away from target)
         # We have to account for the fact that EEG samples might not be perfectly equidistant
         # and thus might have a different number of samples than expected.

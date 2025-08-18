@@ -83,3 +83,11 @@ def _remove_duplicate_timestamps(
     only 100 unique timestamps. This affects EDA and PPG data.
     """
     return df.unique("timestamp").sort("timestamp")
+
+
+if __name__ == "__main__":
+    # Example usage
+    participant_id = 2
+    modality = "HR"
+    df = load_imotions_data_df(participant_id, modality)
+    print(df.head())

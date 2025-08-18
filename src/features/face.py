@@ -3,7 +3,7 @@ from polars import col
 
 from src.features.filtering import ema_smooth
 from src.features.scaling import scale_percent_to_decimal
-from src.features.transforming import map_trials
+from src.features.transforming import map_participants
 
 INFO_COLUMNS = [
     "participant_id",
@@ -47,13 +47,13 @@ def scale_face(df: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-@map_trials
+@map_participants
 def ema_smooth_face(
     df: pl.DataFrame,
     alpha: float,
     expression_column: list = FEATURE_COLUMNS,
 ) -> pl.DataFrame:
-    """Causal median filter on heart_rate column."""
+    """Causal median filter."""
     return df.with_columns(
         col(expression_column).map_batches(
             lambda x: ema_smooth(x, alpha),
