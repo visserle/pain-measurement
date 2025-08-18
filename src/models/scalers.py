@@ -107,6 +107,36 @@ class Scaler3D(BaseEstimator, TransformerMixin):
         if len(X.shape) != 3:
             raise ValueError("Input array should be a 3D array.")
 
+    @property
+    def scale_(self):
+        """Per feature relative scaling of the data."""
+        return getattr(self.scaler, "scale_", None)
+
+    @property
+    def mean_(self):
+        """The mean value for each feature in the training set."""
+        return getattr(self.scaler, "mean_", None)
+
+    @property
+    def var_(self):
+        """The variance for each feature in the training set."""
+        return getattr(self.scaler, "var_", None)
+
+    @property
+    def n_features_in_(self):
+        """Number of features seen during fit."""
+        return getattr(self.scaler, "n_features_in_", None)
+
+    @property
+    def feature_names_in_(self):
+        """Names of features seen during fit."""
+        return getattr(self.scaler, "feature_names_in_", None)
+
+    @property
+    def n_samples_seen_(self):
+        """The number of samples processed by the estimator for each feature."""
+        return getattr(self.scaler, "n_samples_seen_", None)
+
 
 class StandardScaler3D(Scaler3D):
     """
