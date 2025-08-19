@@ -1,3 +1,4 @@
+from src.models.architectures.EEGFacePhysioEnsemble import EEGFacePhysioEnsemble
 from src.models.architectures.EEGNet import EEGNet
 from src.models.architectures.EEGPhysioEnsemble import EEGPhysioEnsemble
 from src.models.architectures.iTransformer import iTransformer
@@ -104,6 +105,35 @@ MODELS = {
             "d_ff": {"type": "exp", "low": 7, "high": 9},  # 128 to 512
             "patch_len": {"type": "exp", "low": 2, "high": 4},  # 4 to 16
             "stride": {"type": "exp", "low": 2, "high": 3},  # 4 to 8
+            "physio_dropout": {"type": "float", "low": 0.0, "high": 0.5},
+            # Fusion parameters
+            "fusion_hidden_dim": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
+            "fusion_dropout": {"type": "float", "low": 0.1, "high": 0.5},
+            # Common
+            "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
+        },
+    },
+    "EEGFacePhysioEnsemble": {
+        "class": EEGFacePhysioEnsemble,
+        "format": "3D",
+        "hyperparameters": {
+            # EEGNet parameters
+            "F1": {"type": "exp", "low": 3, "high": 4},  # 8 to 16
+            "D": {"type": "int", "low": 2, "high": 5},
+            "eeg_dropout": {"type": "float", "low": 0.1, "high": 0.5},
+            # PatchTST parameters for face data
+            "face_d_model": {"type": "exp", "low": 5, "high": 7},  # 32 to 128
+            "face_e_layers": {"type": "int", "low": 1, "high": 3},
+            "face_d_ff": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
+            "face_patch_len": {"type": "exp", "low": 2, "high": 4},  # 4 to 16
+            "face_stride": {"type": "exp", "low": 2, "high": 3},  # 4 to 8
+            "face_dropout": {"type": "float", "low": 0.0, "high": 0.5},
+            # PatchTST parameters for physio data
+            "physio_d_model": {"type": "exp", "low": 5, "high": 7},  # 32 to 128
+            "physio_e_layers": {"type": "int", "low": 1, "high": 3},
+            "physio_d_ff": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
+            "physio_patch_len": {"type": "exp", "low": 2, "high": 4},  # 4 to 16
+            "physio_stride": {"type": "exp", "low": 2, "high": 3},  # 4 to 8
             "physio_dropout": {"type": "float", "low": 0.0, "high": 0.5},
             # Fusion parameters
             "fusion_hidden_dim": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
