@@ -460,8 +460,8 @@ def main():
             )
         trials_df = db.get_trials("Trials", exclude_problematic=False)
         df = merge_and_label_data_dfs(data_dfs, trials_df)
-        df_explore = merge_and_label_data_dfs(data_dfs_explore, trials_df)
         db.ctas("Model_Data", df)
+        df_explore = merge_and_label_data_dfs(data_dfs_explore, trials_df)
         db.ctas("Explore_Data", df_explore)
         logger.info("Modeling and exploratory data created.")
 

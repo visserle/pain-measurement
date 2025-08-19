@@ -14,9 +14,11 @@ mne.set_log_level(verbose=False)
 
 
 def explore_eeg(df: pl.DataFrame) -> pl.DataFrame:
-    df = non_causal_decimate_eeg(df, factor=2)
-    df = non_causal_highpass_filter_eeg(df, cutoff=0.5, sfreq=250)
-    df = non_causal_line_noise_filter(df, sfreq=250)
+    # beyond the scope of our interest, but could include:
+    # df = non_causal_decimate_eeg(df, factor=2)
+    # df = non_causal_highpass_filter_eeg(df, cutoff=0.5, sfreq=250)
+    # df = non_causal_line_noise_filter(df, sfreq=250)
+    # spectral analysis, etc.
     return df
 
 
