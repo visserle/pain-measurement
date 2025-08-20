@@ -43,6 +43,7 @@ python -m src.models.main --features eda_raw heart_rate --models MLP LightTS Tim
 python -m src.models.main --features eda_raw pupil --models MLP LightTS TimesNet PatchTST iTransformer
 python -m src.models.main --features eda_raw heart_rate pupil --models MLP LightTS TimesNet PatchTST iTransformer
 python -m src.models.main --features face --models MLP LightTS TimesNet PatchTST iTransformer
+python -m src.models.main --features face eda_raw heart_rate pupil --models MLP LightTS TimesNet PatchTST iTransformer
 python -m src.models.main --features eeg --models MLP LightTS iTransformer EEGNet
 python -m src.models.main --features eeg eda_raw --models MLP LightTS iTransformer EEGPhysioEnsemble
 python -m src.models.main --features eeg face eda_raw heart_rate pupil --models MLP LightTS iTransformer EEGFacePhysioEnsemble
