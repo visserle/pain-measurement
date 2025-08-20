@@ -169,11 +169,6 @@ MODELS = {
             "fusion_hidden_dim": {"type": "exp", "low": 6, "high": 8},  # 64 to 256
             "fusion_dropout": {"type": "float", "low": 0.1, "high": 0.5},
             # Common
-            "face_channels": {
-                "type": "int",
-                "low": 5,
-                "high": 5,
-            },  # Fixed at 5 channels
             "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
         },
     },
