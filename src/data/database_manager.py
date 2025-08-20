@@ -147,12 +147,14 @@ class DatabaseManager:
         # Remove inter-trial rows
         df = df.filter(col("trial_id").is_not_null())
 
-        # Remove trials with thermode or rating issues
+        # Remove invalid trials
+        invalid_trials = self.execute("SELECT * FROM Invalid_Trials").pl()
+
+        # Always remove trials with thermode or rating issues
         if "trial_number" in df.columns:
-            df = remove_trials_with_thermode_or_rating_issues(df)
+            df = remove_trials_with_thermode_or_rating_issues(invalid_trials, df)
 
         # Remove invalid trials if specified
-        invalid_trials = self.execute("SELECT * FROM Invalid_Trials").pl()
         # do not filter invalid trials from invalid_trials table, would be empty
         if table_name == "invalid_trials":
             return df

@@ -115,23 +115,20 @@ def create_seeds_df():
 
 
 def remove_trials_with_thermode_or_rating_issues(
+    invalid_trials_df: pl.DataFrame,
     df: pl.DataFrame,
 ):
     # remove trials with thermode or rating issues
-    trials_with_thermode_or_rating_issues = (
-        DataConfig.load_invalid_trials_config()
-        .with_columns(
-            col("participant_id").cast(pl.UInt8),
-            col("trial_number").cast(pl.UInt8),
-            (
-                (col("modality").str.count_matches("thermode"))
-                + (col("modality").str.count_matches("rating"))
-            )
-            .alias("issue_thermode_or_rating")
-            .cast(pl.Boolean),
+    trials_with_thermode_or_rating_issues = invalid_trials_df.with_columns(
+        col("participant_id").cast(pl.UInt8),
+        col("trial_number").cast(pl.UInt8),
+        (
+            (col("modality").str.count_matches("thermode"))
+            + (col("modality").str.count_matches("rating"))
         )
-        .filter(col("issue_thermode_or_rating"))
-    )
+        .alias("issue_thermode_or_rating")
+        .cast(pl.Boolean),
+    ).filter(col("issue_thermode_or_rating"))
     return df.filter(
         ~pl.struct(["participant_id", "trial_number"]).is_in(
             trials_with_thermode_or_rating_issues.select(
