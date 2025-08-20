@@ -67,7 +67,6 @@ class EEGNet(nn.Module):
         # layer 4: Classification
         self.Flatten = nn.Flatten()
         self.Dense = nn.Linear(self.F2 * final_length, num_classes)
-        self.Softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         # Input shape: [batch, time_steps, channels]
@@ -99,6 +98,5 @@ class EEGNet(nn.Module):
         # layer 4: Classification
         y = self.Flatten(y)
         y = self.Dense(y)
-        y = self.Softmax(y)
 
         return y

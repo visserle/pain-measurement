@@ -94,7 +94,6 @@ class EEGFacePhysioEnsemble(nn.Module):
 
         # Remove final classification layers from sub-models
         self.eeg_model.Dense = nn.Identity()
-        self.eeg_model.Softmax = nn.Identity()
         self.face_model.projection = nn.Identity()
         self.physio_model.projection = nn.Identity()
 
@@ -113,7 +112,6 @@ class EEGFacePhysioEnsemble(nn.Module):
             nn.ReLU(),
             nn.Dropout(fusion_dropout),
             nn.Linear(fusion_hidden_dim // 2, num_classes),
-            nn.Softmax(dim=1),
         )
 
     def forward(self, x):

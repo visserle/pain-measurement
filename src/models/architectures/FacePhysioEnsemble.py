@@ -91,7 +91,6 @@ class FacePhysioEnsemble(nn.Module):
             nn.ReLU(),
             nn.Dropout(fusion_dropout),
             nn.Linear(fusion_hidden_dim // 2, num_classes),
-            nn.Softmax(dim=1),
         )
 
     def forward(self, x):
