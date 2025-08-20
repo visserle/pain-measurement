@@ -371,7 +371,7 @@ def main():
     db = DatabaseManager()
 
     # Fill database
-    if DB_FILE.stat().st_size > 1e6:
+    if DB_FILE.stat().st_size < 1e6:
         with db:
             # Participant data, experiment and questionnaire results
             db.ctas(
@@ -453,16 +453,10 @@ def main():
             if modality == "EEG":
                 continue  # we do not merge EEG data, as it has a different sampling rate
             data_dfs.append(
-                db.get_trials(
-                    f"Feature_{modality}",
-                    exclude_problematic=False,
-                )
+                db.get_trials(f"Feature_{modality}", exclude_problematic=False)
             )
             data_dfs_explore.append(
-                db.get_trials(
-                    f"Explore_{modality}",
-                    exclude_problematic=False,
-                )
+                db.get_trials(f"Explore_{modality}", exclude_problematic=False)
             )
         trials_df = db.get_trials("Trials", exclude_problematic=False)
         df = merge_and_label_data_dfs(data_dfs, trials_df)
