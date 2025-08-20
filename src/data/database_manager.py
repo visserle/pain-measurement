@@ -368,50 +368,54 @@ def main():
     Later steps of this pipeline can be applied using the publicy availible anonymized
     data.
     """
-
     db = DatabaseManager()
-    with db:
-        # Participant data, experiment and questionnaire results
-        db.ctas("Invalid_Participants", DataConfig.load_invalid_participants_config())
-        db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
-        db.ctas("Participants", create_participants_df())
-        db.ctas("Calibration_Results", create_calibration_results_df())
-        db.ctas("Measurement_Results", create_measurement_results_df())
-        for questionnaire in QUESTIONNAIRES:
-            df = create_questionnaire_df(questionnaire)
-            db.ctas("Questionnaire_" + questionnaire.upper(), df)
-        logger.info("Participant data inserted.")
 
-        # Raw data
-        for participant_id in range(1, NUM_PARTICIPANTS + 1):
-            if participant_id in (
-                db.execute("SELECT participant_id FROM Invalid_Participants")
-                .pl()  # returns a df
-                .to_series()
-                .to_list()
-            ):
-                logger.debug(f"Participant {participant_id} is invalid.")
-                continue
-            if db.participant_exists(participant_id):
-                logger.debug(
-                    f"Raw data for participant {participant_id} already exists."
-                )
-                continue
+    # Fill database
+    if DB_FILE.stat().st_size > 1e6:
+        with db:
+            # Participant data, experiment and questionnaire results
+            db.ctas(
+                "Invalid_Participants", DataConfig.load_invalid_participants_config()
+            )
+            db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
+            db.ctas("Participants", create_participants_df())
+            db.ctas("Calibration_Results", create_calibration_results_df())
+            db.ctas("Measurement_Results", create_measurement_results_df())
+            for questionnaire in QUESTIONNAIRES:
+                df = create_questionnaire_df(questionnaire)
+                db.ctas("Questionnaire_" + questionnaire.upper(), df)
+            logger.info("Participant data inserted.")
 
-            df = load_imotions_data_df(participant_id, "Trials")
-            trials_df = create_trials_df(participant_id, df)
-            db.insert_trials_df(trials_df)
+            # Raw data
+            for participant_id in range(1, NUM_PARTICIPANTS + 1):
+                if participant_id in (
+                    db.execute("SELECT participant_id FROM Invalid_Participants")
+                    .pl()  # returns a df
+                    .to_series()
+                    .to_list()
+                ):
+                    logger.debug(f"Participant {participant_id} is invalid.")
+                    continue
+                if db.participant_exists(participant_id):
+                    logger.debug(
+                        f"Raw data for participant {participant_id} already exists."
+                    )
+                    continue
 
-            for modality in MODALITIES:
-                df = load_imotions_data_df(participant_id, modality)
-                df = create_raw_data_df(participant_id, df, trials_df)
-                db.insert_raw_data(participant_id, "Raw_" + modality, df)
-            logger.debug(f"Raw data for participant {participant_id} inserted.")
-        logger.info("Raw data inserted.")
+                df = load_imotions_data_df(participant_id, "Trials")
+                trials_df = create_trials_df(participant_id, df)
+                db.insert_trials_df(trials_df)
 
-    # Anonymize database
-    anonymize_db(db)
-    logger.info("Anonymized Database.")
+                for modality in MODALITIES:
+                    df = load_imotions_data_df(participant_id, modality)
+                    df = create_raw_data_df(participant_id, df, trials_df)
+                    db.insert_raw_data(participant_id, "Raw_" + modality, df)
+                logger.debug(f"Raw data for participant {participant_id} inserted.")
+            logger.info("Raw data inserted.")
+
+        # Anonymize database
+        anonymize_db(db)
+        logger.info("Anonymized Database.")
 
     # NOTE: From here on, you can use the pipeline without possessing the original, de-
     # anonymized data.
