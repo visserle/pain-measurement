@@ -9,11 +9,7 @@ from matplotlib.colors import LinearSegmentedColormap
 
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
 from src.models.data_loader import transform_sample_df_to_arrays
-from src.models.data_preparation import (
-    EEG_FEATURES,
-    load_data_from_database,
-    prepare_data,
-)
+from src.models.data_preparation import EEG_FEATURES, prepare_data
 from src.models.main_config import INTERVALS, LABEL_MAPPING, OFFSETS_MS, RANDOM_SEED
 from src.models.scalers import StandardScaler3D
 
@@ -56,9 +52,6 @@ def analyze_test_dataset_for_one_stimulus(
 
     result_probabilities = {}
     participant_trials = {}
-
-    # for debugging purposes
-    participant_ids = [31]
 
     # Process each participant
     for participant_id in participant_ids:
@@ -668,134 +661,3 @@ def _finalize_figure_layout(fig, sample_ax):
         labelpad=8,
     )
     cbar.outline.set_linewidth(0.0)
-
-
-def main():
-    import json
-    import logging
-    import os
-    from pathlib import Path
-
-    import numpy as np
-    import polars as pl
-    import tomllib
-    from dotenv import load_dotenv
-
-    from src.log_config import configure_logging
-    from src.models.data_loader import create_dataloaders
-    from src.models.data_preparation import (
-        expand_feature_list,
-        prepare_data,
-    )
-    from src.models.utils import load_model
-    from src.plots.model_inference import (
-        analyze_test_dataset_for_one_stimulus,
-        plot_prediction_confidence_heatmap,
-    )
-
-    configure_logging(
-        stream_level=logging.DEBUG,
-        ignore_libs=["matplotlib", "Comm", "bokeh", "tornado"],
-    )
-
-    config_path = Path("src/experiments/measurement/measurement_config.toml")
-    with open(config_path, "rb") as file:
-        config = tomllib.load(file)
-    stimulus_seeds = config["stimulus"]["seeds"]
-    logging.info(f"Using seeds for stimulus generation: {stimulus_seeds}")
-
-    feature_lists = [
-        # ["eda_raw", "pupil"],
-        # ["eda_raw", "heart_rate"],
-        # ["eda_raw", "heart_rate", "pupil"],
-        # ["face"],
-        ["eeg"],
-    ]
-    feature_lists = expand_feature_list(feature_lists)
-
-    for feature_list in feature_lists:
-        feature_list_str = "_".join(feature_list)
-        # Load data from database
-        df = load_data_from_database(feature_list=feature_list)
-
-        # Load model
-        json_path = Path(f"results/experiment_{feature_list_str}/results.json")
-        dictionary = json.loads(json_path.read_text())
-        model_path = Path(dictionary["overall_best"]["model_path"].replace("\\", "/"))
-
-        (
-            model,
-            feature_list,
-            sample_duration_ms,
-            intervals,
-            label_mapping,
-            offsets_ms,
-        ) = load_model(model_path, device="cpu")
-
-        # Prepare data
-        _, _, _, _, X_train_val, y_train_val, X_test, y_test = prepare_data(
-            df=df,
-            feature_list=feature_list,
-            sample_duration_ms=sample_duration_ms,
-            intervals=intervals,
-            label_mapping=label_mapping,
-            offsets_ms=offsets_ms,
-            random_seed=RANDOM_SEED,
-        )
-        test_groups = prepare_data(
-            df=df,
-            feature_list=feature_list,
-            sample_duration_ms=sample_duration_ms,
-            intervals=intervals,
-            label_mapping=label_mapping,
-            offsets_ms=offsets_ms,
-            random_seed=RANDOM_SEED,
-            only_return_test_groups=True,
-        )
-        test_ids = np.unique(test_groups)
-        # train data is not used in this analysis, but we need to create the dataloaders
-        _, test_loader = create_dataloaders(
-            X_train_val, y_train_val, X_test, y_test, batch_size=64
-        )
-
-        # Analyze the entire test dataset
-        all_probabilities = {}
-        all_participant_trials = {}
-
-        for stimulus_seed in stimulus_seeds:
-            probabilities, participant_trials = analyze_test_dataset_for_one_stimulus(
-                df,
-                model,
-                feature_list,
-                test_ids,
-                stimulus_seed,
-                sample_duration_ms,
-            )
-
-            all_probabilities[stimulus_seed] = probabilities
-            all_participant_trials[stimulus_seed] = participant_trials
-
-        # Plot all available stimuli
-        fig = plot_prediction_confidence_heatmap(
-            all_probabilities,
-            sample_duration_ms,
-            classification_threshold=0.8,
-            ncols=2,
-            figure_size=(7, 2),
-            stimulus_scale=0.5,
-            stimulus_linewidth=1.5,
-            only_decreases=True,
-        )
-
-        # Save the figure
-        load_dotenv()
-        FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
-
-        fig_path = FIGURE_DIR / f"model_inference_{feature_list_str}.png"
-        # fig.savefig(fig_path, bbox_inches="tight", dpi=300)
-        logging.info(f"Saved figure to {fig_path}")
-        plt.show()
-
-
-if __name__ == "__main__":
-    main()

@@ -10,11 +10,12 @@ FEATURE_LABELS = {
     "eda_raw_heart_rate_pupil": "EDA + HR + Pupil",
     "brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise": "Facial Expressions",
     "brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise_eda_raw_heart_rate_pupil": (
-        "All combined (w/o EEG)"
+        "Combined (w/o EEG)"
     ),
     "f3_f4_c3_cz_c4_p3_p4_oz": "EEG",
+    "f3_f4_c3_cz_c4_p3_p4_oz_eda_raw": "EEG + EDA",
     "f3_f4_c3_cz_c4_p3_p4_oz_brow_furrow_cheek_raise_mouth_open_nose_wrinkle_upper_lip_raise_eda_raw_heart_rate_pupil": (
-        "All combined"
+        "Combined"
     ),
 }
 
