@@ -1,12 +1,12 @@
 # Data Pipeline
 
-The data pipeline consists of three steps (with prefixes `Raw` → `Preprocess` → `Feature`) over all modalities (EEG, EDA, PPG, pupillometry, facial expressions, and rating / temperatures), with each step corresponding to a table in the duckDB database. In a final step, the feature data is merged into a single table and labeled according to the stimulus function. Further, for exploratory analysis, `Explore` tables are created with non-causal transformations of the data.
+The database consists of two seperate pipelines (`Raw` → `Feature` and `Raw` → `Explore`) over all modalities (EEG, EDA, PPG, pupillometry, facial expressions, and rating / temperatures). In a final step, the data is merged into a single table for each pipeline and labeled according to the stimulus function. `Explore` tables are created with non-causal transformations of the data for exploratory analysis, while `Feature` tables are created with causal transformations for the classification task.
 
 - `Raw`: Raw data from iMotions .csv output (without inter-trial data).
 - `Preprocess`: Preprocessed data with cleaned and transformed columns.
 - `Feature`: Extracted features from the preprocessed data.
 - `Explore`: Tables for exploratory analysis with non-causal transformations of the data.
-- `Model_Data`: Merged feature data with stimulus labels, resampled to 10 Hz at equidistant time points. EEG data is handled seperately due its different sampling rate.
+- `Feature_Data`: Merged feature data with stimulus labels, resampled to 10 Hz at equidistant time points. EEG data is handled seperately due its different sampling rate.
 - `Explore_Data`: Merged feature data with stimulus labels, resampled to 10 Hz at equidistant time points, but with non-causal transformations for exploratory analysis.
 
 Furthermore, there are additional tables for the experiment metadata, calibration results, and questionnaire responses.

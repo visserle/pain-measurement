@@ -12,13 +12,9 @@ SAMPLE_RATE = 60
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-def preprocess_pupil(df: pl.DataFrame) -> pl.DataFrame:
+def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
     df = add_blink_threshold(df)
     df = remove_blinks_and_fill_forward(df)
-    return df
-
-
-def feature_pupil(df: pl.DataFrame) -> pl.DataFrame:
     df = median_filter_pupil(df, size_in_seconds=1)
     df = average_pupils(df, result_column="pupil")
     df = decimate(df, factor=6)

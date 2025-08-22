@@ -3,13 +3,9 @@ import polars as pl
 from src.features.scaling import scale_min_max, scale_percent_to_decimal
 
 
-def preprocess_stimulus(df: pl.DataFrame) -> pl.DataFrame:
+def feature_stimulus(df: pl.DataFrame) -> pl.DataFrame:
     df = scale_rating(df)
     df = scale_temperature(df)
-    return df
-
-
-def feature_stimulus(df: pl.DataFrame) -> pl.DataFrame:
     # no need to downsample, as the stimulus data is already at 10 Hz
     return df
 

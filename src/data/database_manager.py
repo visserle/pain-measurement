@@ -12,7 +12,6 @@ from src.data.data_processing import (
     create_feature_data_df,
     create_measurement_results_df,
     create_participants_df,
-    create_preprocess_data_df,
     create_questionnaire_df,
     create_raw_data_df,
     create_trials_df,
@@ -300,28 +299,9 @@ class DatabaseManager:
         """)
         self.conn.unregister("raw_data_df")
 
-    # Note that in constrast to raw data, preprocessed and feature-engineered data is
+    # Note that in constrast to raw data, feature-engineered data is
     # not inserted into the database per participant, but per modality over all
     # participants.
-    def insert_preprocess_data(
-        self,
-        table_name: str,
-        preprocess_data_df: pl.DataFrame,
-    ) -> None:
-        DatabaseSchema.create_preprocess_data_table(
-            self.conn,
-            table_name,
-            preprocess_data_df.schema,
-        )
-        self.conn.register("preprocess_data_df", preprocess_data_df)
-        self.execute(f"""
-            INSERT INTO {table_name}
-            SELECT *
-            FROM preprocess_data_df
-            ORDER BY participant_id, timestamp;
-        """)
-        self.conn.unregister("preprocess_data_df")
-
     def insert_feature_data(
         self,
         table_name: str,
@@ -421,19 +401,11 @@ def main():
     # anonymized data.
 
     with db:
-        # Preprocessed data
+        # Feature-engineered data
         # no check for existing data as it will be overwritten every time
         for modality in MODALITIES:
-            table_name = "Preprocess_" + modality
-            df = db.get_table("Raw_" + modality)
-            df = create_preprocess_data_df(table_name, df)
-            db.insert_preprocess_data(table_name, df)
-        logger.info("Data preprocessed.")
-
-        # Feature-engineered data
-        for modality in MODALITIES:
             table_name = f"Feature_{modality}"
-            df = db.get_table(f"Preprocess_{modality}")
+            df = db.get_table(f"Raw_{modality}")
             df = create_feature_data_df(table_name, df)
             db.insert_feature_data(table_name, df)
         logger.info("Data feature-engineered.")
@@ -460,10 +432,10 @@ def main():
             )
         trials_df = db.get_trials("Trials", exclude_problematic=False)
         df = merge_and_label_data_dfs(data_dfs, trials_df)
-        db.ctas("Model_Data", df)
+        db.ctas("Feature_Data", df)
         df_explore = merge_and_label_data_dfs(data_dfs_explore, trials_df)
         db.ctas("Explore_Data", df_explore)
-        logger.info("Modeling and exploratory data created.")
+        logger.info("Feature and exploratory data tables created.")
 
     logger.info("Data pipeline completed.")
 

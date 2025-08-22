@@ -1,12 +1,9 @@
 import polars as pl
 
-from src.features.stimulus import feature_stimulus, preprocess_stimulus
-
-# equal to feature engineering for stimulus data
+from src.features.stimulus import feature_stimulus
 
 
 def explore_stimulus(df: pl.DataFrame) -> pl.DataFrame:
-    """Explore stimulus data by preprocessing and extracting features."""
-    df = preprocess_stimulus(df)
+    # equal to feature engineering for stimulus data
     df = feature_stimulus(df)
     return df

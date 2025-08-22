@@ -82,7 +82,7 @@ class DatabaseSchema:
         ) else None
 
     @staticmethod
-    def create_preprocess_data_table(
+    def create_feature_data_table(
         conn: duckdb.DuckDBPyConnection,
         name: str,
         schema: pl.Schema,
@@ -96,22 +96,13 @@ class DatabaseSchema:
         logger.debug(f"Created table '{name}'.")
 
     @staticmethod
-    def create_feature_data_table(
-        conn: duckdb.DuckDBPyConnection,
-        name: str,
-        schema: pl.Schema,
-    ) -> None:
-        # same schema as preprocess data
-        return DatabaseSchema.create_preprocess_data_table(conn, name, schema)
-
-    @staticmethod
     def create_explore_data_table(
         conn: duckdb.DuckDBPyConnection,
         name: str,
         schema: pl.Schema,
     ) -> None:
-        # same schema as preprocess data
-        return DatabaseSchema.create_preprocess_data_table(conn, name, schema)
+        # same schema logic as feature data
+        return DatabaseSchema.create_feature_data_table(conn, name, schema)
 
     @staticmethod
     def table_exists(
