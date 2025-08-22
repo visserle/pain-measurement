@@ -143,3 +143,4 @@ reports/participants_stats.toml
 reports/participants_stats.txt
 reports/participants.json
 WARP.md
+/cache
