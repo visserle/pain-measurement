@@ -1,0 +1,30 @@
+Features: f3, f4, c3, cz, c4, p3, p4, oz, eda_raw
+Sample Duration (ms): 7000
+
+MODEL PERFORMANCE SUMMARY:
+============================================================
+Model: EEGPhysioEnsemble
+Validation Accuracy: 0.7460
+Best Parameters: {'F1': 16, 'D': 3, 'eeg_dropout': 0.4266712818569762, 'd_model': 64, 'e_layers': 3, 'd_ff': 256, 'patch_len': 16, 'stride': 16, 'physio_dropout': 0.041782290651213465, 'fusion_hidden_dim': 64, 'fusion_dropout': 0.2509290010560877, 'lr': 0.0005364067412766537}
+------------------------------------------------------------
+Model: MLP
+Validation Accuracy: 0.5735
+Best Parameters: {'hidden_size': 2048, 'depth': 3, 'dropout': 0.7080401081823836, 'lr': 1.626965869972043e-05}
+------------------------------------------------------------
+Model: iTransformer
+Validation Accuracy: 0.5703
+Best Parameters: {'d_model': 64, 'e_layers': 1, 'd_ff': 256, 'top_k': 2, 'dropout': 0.03252579649263976, 'factor': 2, 'lr': 0.00788671412999049}
+------------------------------------------------------------
+Model: LightTS
+Validation Accuracy: 0.5543
+Best Parameters: {'d_model': 128, 'dropout': 0.2637036032804471, 'lr': 1.756380738839503e-05}
+------------------------------------------------------------
+
+OVERALL BEST MODEL:
+Model: EEGPhysioEnsemble
+Validation Accuracy: 0.7460
+Parameters: {'F1': 16, 'D': 3, 'eeg_dropout': 0.4266712818569762, 'd_model': 64, 'e_layers': 3, 'd_ff': 256, 'patch_len': 16, 'stride': 16, 'physio_dropout': 0.041782290651213465, 'fusion_hidden_dim': 64, 'fusion_dropout': 0.2509290010560877, 'lr': 0.0005364067412766537}
+
+TEST PERFORMANCE:
+Test Accuracy: 0.7316
+Test Loss: 0.5657

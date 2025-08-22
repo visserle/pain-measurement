@@ -4,31 +4,31 @@ Sample Duration (ms): 7000
 MODEL PERFORMANCE SUMMARY:
 ============================================================
 Model: PatchTST
-Validation Accuracy: 0.7153
-Best Parameters: {'d_model': 64, 'e_layers': 3, 'd_ff': 512, 'patch_len': 16, 'stride': 8, 'top_k': 2, 'dropout': 0.08681094935582451, 'factor': 1, 'lr': 0.0003894893361926137}
+Validation Accuracy: 0.7476
+Best Parameters: {'d_model': 32, 'e_layers': 3, 'd_ff': 512, 'patch_len': 16, 'stride': 16, 'top_k': 2, 'dropout': 0.1792328642721363, 'factor': 1, 'lr': 0.0038842777547031426}
 ------------------------------------------------------------
 Model: LightTS
-Validation Accuracy: 0.6854
-Best Parameters: {'d_model': 128, 'dropout': 0.2247992542004105, 'lr': 0.009928729834255703}
-------------------------------------------------------------
-Model: TimesNet
-Validation Accuracy: 0.6801
-Best Parameters: {'d_model': 16, 'e_layers': 2, 'd_ff': 32, 'top_k': 2, 'num_kernels': 8, 'dropout': 0.04566433267697194, 'lr': 0.0020178913139904642}
+Validation Accuracy: 0.6741
+Best Parameters: {'d_model': 128, 'dropout': 0.4114145658682399, 'lr': 0.005276341762366452}
 ------------------------------------------------------------
 Model: MLP
-Validation Accuracy: 0.6678
-Best Parameters: {'hidden_size': 4096, 'depth': 3, 'dropout': 0.15313118621173363, 'lr': 0.0004221329465508774}
+Validation Accuracy: 0.6645
+Best Parameters: {'hidden_size': 4096, 'depth': 2, 'dropout': 0.07121600662377989, 'lr': 0.0003977689269579738}
 ------------------------------------------------------------
 Model: iTransformer
-Validation Accuracy: 0.6643
-Best Parameters: {'d_model': 64, 'e_layers': 1, 'd_ff': 512, 'top_k': 5, 'dropout': 0.005068277212814004, 'factor': 2, 'lr': 0.0006974528377703529}
+Validation Accuracy: 0.6629
+Best Parameters: {'d_model': 128, 'e_layers': 2, 'd_ff': 512, 'top_k': 3, 'dropout': 0.002870032555355365, 'factor': 1, 'lr': 0.0011541810568086906}
+------------------------------------------------------------
+Model: TimesNet
+Validation Accuracy: 0.6502
+Best Parameters: {'d_model': 16, 'e_layers': 3, 'd_ff': 32, 'top_k': 2, 'num_kernels': 7, 'dropout': 0.04262887305276709, 'lr': 0.00084578010685296}
 ------------------------------------------------------------
 
 OVERALL BEST MODEL:
 Model: PatchTST
-Validation Accuracy: 0.7153
-Parameters: {'d_model': 64, 'e_layers': 3, 'd_ff': 512, 'patch_len': 16, 'stride': 8, 'top_k': 2, 'dropout': 0.08681094935582451, 'factor': 1, 'lr': 0.0003894893361926137}
+Validation Accuracy: 0.7476
+Parameters: {'d_model': 32, 'e_layers': 3, 'd_ff': 512, 'patch_len': 16, 'stride': 16, 'top_k': 2, 'dropout': 0.1792328642721363, 'factor': 1, 'lr': 0.0038842777547031426}
 
 TEST PERFORMANCE:
-Test Accuracy: 0.7003
-Test Loss: 0.5496
+Test Accuracy: 0.7624
+Test Loss: 0.5328

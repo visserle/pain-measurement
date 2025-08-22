@@ -3,28 +3,28 @@ Sample Duration (ms): 7000
 
 MODEL PERFORMANCE SUMMARY:
 ============================================================
+Model: iTransformer
+Validation Accuracy: 0.5911
+Best Parameters: {'d_model': 64, 'e_layers': 3, 'd_ff': 512, 'top_k': 4, 'dropout': 0.07800932022121826, 'factor': 1, 'lr': 1.493656855461762e-05}
+------------------------------------------------------------
 Model: MLP
-Validation Accuracy: 0.5694
-Best Parameters: {'hidden_size': 1024, 'depth': 2, 'dropout': 0.4635650791717625, 'lr': 1.1321021804230373e-05}
+Validation Accuracy: 0.5703
+Best Parameters: {'hidden_size': 512, 'depth': 4, 'dropout': 0.5937400075587767, 'lr': 8.483475997579269e-05}
 ------------------------------------------------------------
 Model: EEGNet
-Validation Accuracy: 0.5659
+Validation Accuracy: 0.5639
 Best Parameters: {'F1': 8, 'D': 4, 'dropout': 0.2727780074568463, 'lr': 7.476312062252303e-05}
 ------------------------------------------------------------
-Model: iTransformer
-Validation Accuracy: 0.5589
-Best Parameters: {'d_model': 64, 'e_layers': 2, 'd_ff': 512, 'top_k': 5, 'dropout': 0.3099713804123697, 'factor': 1, 'lr': 1.9175443370511815e-05}
-------------------------------------------------------------
 Model: LightTS
-Validation Accuracy: 0.5308
-Best Parameters: {'d_model': 64, 'dropout': 0.4601157065095051, 'lr': 0.0011495037107507725}
+Validation Accuracy: 0.5016
+Best Parameters: {'d_model': 128, 'dropout': 0.2343526094439212, 'lr': 2.4356340122062833e-05}
 ------------------------------------------------------------
 
 OVERALL BEST MODEL:
-Model: MLP
-Validation Accuracy: 0.5694
-Parameters: {'hidden_size': 1024, 'depth': 2, 'dropout': 0.4635650791717625, 'lr': 1.1321021804230373e-05}
+Model: iTransformer
+Validation Accuracy: 0.5911
+Parameters: {'d_model': 64, 'e_layers': 3, 'd_ff': 512, 'top_k': 4, 'dropout': 0.07800932022121826, 'factor': 1, 'lr': 1.493656855461762e-05}
 
 TEST PERFORMANCE:
-Test Accuracy: 0.5627
-Test Loss: 0.7604
+Test Accuracy: 0.5368
+Test Loss: 0.7001

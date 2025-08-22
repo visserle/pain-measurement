@@ -3,32 +3,32 @@ Sample Duration (ms): 7000
 
 MODEL PERFORMANCE SUMMARY:
 ============================================================
-Model: TimesNet
-Validation Accuracy: 0.6221
-Best Parameters: {'d_model': 16, 'e_layers': 3, 'd_ff': 32, 'top_k': 3, 'num_kernels': 4, 'dropout': 0.07307000184538312, 'lr': 0.0023027780298285052}
+Model: MLP
+Validation Accuracy: 0.6086
+Best Parameters: {'hidden_size': 2048, 'depth': 1, 'dropout': 0.23371571882817455, 'lr': 0.00012562773503807024}
 ------------------------------------------------------------
 Model: LightTS
-Validation Accuracy: 0.5729
-Best Parameters: {'d_model': 128, 'dropout': 0.3843449380234663, 'lr': 0.0032994313339245952}
-------------------------------------------------------------
-Model: MLP
-Validation Accuracy: 0.5712
-Best Parameters: {'hidden_size': 4096, 'depth': 2, 'dropout': 0.38295075335840695, 'lr': 1.9380384493766833e-05}
+Validation Accuracy: 0.5958
+Best Parameters: {'d_model': 128, 'dropout': 0.004380860642733046, 'lr': 0.005284384205738849}
 ------------------------------------------------------------
 Model: iTransformer
-Validation Accuracy: 0.5694
-Best Parameters: {'d_model': 128, 'e_layers': 1, 'd_ff': 256, 'top_k': 3, 'dropout': 0.362580774849707, 'factor': 2, 'lr': 9.495091799464703e-05}
+Validation Accuracy: 0.5847
+Best Parameters: {'d_model': 32, 'e_layers': 3, 'd_ff': 128, 'top_k': 4, 'dropout': 0.15585553804470548, 'factor': 2, 'lr': 0.00043664735929796326}
 ------------------------------------------------------------
 Model: PatchTST
-Validation Accuracy: 0.5518
-Best Parameters: {'d_model': 64, 'e_layers': 1, 'd_ff': 256, 'patch_len': 4, 'stride': 16, 'top_k': 2, 'dropout': 0.49344346830025865, 'factor': 2, 'lr': 3.9459088110999965e-05}
+Validation Accuracy: 0.5751
+Best Parameters: {'d_model': 64, 'e_layers': 3, 'd_ff': 128, 'patch_len': 4, 'stride': 4, 'top_k': 3, 'dropout': 0.194338644844741, 'factor': 1, 'lr': 0.003063462210622081}
+------------------------------------------------------------
+Model: TimesNet
+Validation Accuracy: 0.5719
+Best Parameters: {'d_model': 8, 'e_layers': 1, 'd_ff': 16, 'top_k': 2, 'num_kernels': 5, 'dropout': 0.006127958896758601, 'lr': 0.0002303439191740126}
 ------------------------------------------------------------
 
 OVERALL BEST MODEL:
-Model: TimesNet
-Validation Accuracy: 0.6221
-Parameters: {'d_model': 16, 'e_layers': 3, 'd_ff': 32, 'top_k': 3, 'num_kernels': 4, 'dropout': 0.07307000184538312, 'lr': 0.0023027780298285052}
+Model: MLP
+Validation Accuracy: 0.6086
+Parameters: {'hidden_size': 2048, 'depth': 1, 'dropout': 0.23371571882817455, 'lr': 0.00012562773503807024}
 
 TEST PERFORMANCE:
-Test Accuracy: 0.5795
-Test Loss: 0.7533
+Test Accuracy: 0.5299
+Test Loss: 0.6817

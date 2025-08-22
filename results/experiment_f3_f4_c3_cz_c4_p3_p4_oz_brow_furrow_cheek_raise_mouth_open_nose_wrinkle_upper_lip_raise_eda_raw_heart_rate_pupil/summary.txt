@@ -3,28 +3,28 @@ Sample Duration (ms): 7000
 
 MODEL PERFORMANCE SUMMARY:
 ============================================================
-Model: EEGNet
-Validation Accuracy: 0.6907
-Best Parameters: {'F1': 16, 'D': 3, 'dropout': 0.270215988240026, 'lr': 0.005003781665764593}
-------------------------------------------------------------
-Model: MLP
-Validation Accuracy: 0.6661
-Best Parameters: {'hidden_size': 512, 'depth': 4, 'dropout': 0.585595153449124, 'lr': 0.0006251373574521745}
+Model: EEGFacePhysioEnsemble
+Validation Accuracy: 0.7476
+Best Parameters: {'F1': 8, 'D': 2, 'eeg_dropout': 0.44925237462576595, 'face_d_model': 32, 'face_e_layers': 2, 'face_d_ff': 128, 'face_patch_len': 8, 'face_stride': 4, 'face_dropout': 0.355833668794567, 'physio_d_model': 128, 'physio_e_layers': 1, 'physio_d_ff': 128, 'physio_patch_len': 16, 'physio_stride': 4, 'physio_dropout': 0.16674477706151522, 'fusion_hidden_dim': 64, 'fusion_dropout': 0.2758292455645209, 'lr': 0.00035263987195134654}
 ------------------------------------------------------------
 Model: LightTS
-Validation Accuracy: 0.6661
-Best Parameters: {'d_model': 64, 'dropout': 0.29620728443102123, 'lr': 1.3783237455007187e-05}
+Validation Accuracy: 0.6581
+Best Parameters: {'d_model': 32, 'dropout': 0.04843907582023582, 'lr': 2.189967308030266e-05}
 ------------------------------------------------------------
 Model: iTransformer
-Validation Accuracy: 0.6661
-Best Parameters: {'d_model': 64, 'e_layers': 2, 'd_ff': 512, 'top_k': 5, 'dropout': 0.007683868664052143, 'factor': 1, 'lr': 1.1102804974349515e-05}
+Validation Accuracy: 0.6550
+Best Parameters: {'d_model': 128, 'e_layers': 3, 'd_ff': 256, 'top_k': 5, 'dropout': 0.2560994041929563, 'factor': 2, 'lr': 2.576663129719775e-05}
+------------------------------------------------------------
+Model: MLP
+Validation Accuracy: 0.6470
+Best Parameters: {'hidden_size': 512, 'depth': 1, 'dropout': 0.5473864212097256, 'lr': 0.00020914981329035596}
 ------------------------------------------------------------
 
 OVERALL BEST MODEL:
-Model: EEGNet
-Validation Accuracy: 0.6907
-Parameters: {'F1': 16, 'D': 3, 'dropout': 0.270215988240026, 'lr': 0.005003781665764593}
+Model: EEGFacePhysioEnsemble
+Validation Accuracy: 0.7476
+Parameters: {'F1': 8, 'D': 2, 'eeg_dropout': 0.44925237462576595, 'face_d_model': 32, 'face_e_layers': 2, 'face_d_ff': 128, 'face_patch_len': 8, 'face_stride': 4, 'face_dropout': 0.355833668794567, 'physio_d_model': 128, 'physio_e_layers': 1, 'physio_d_ff': 128, 'physio_patch_len': 16, 'physio_stride': 4, 'physio_dropout': 0.16674477706151522, 'fusion_hidden_dim': 64, 'fusion_dropout': 0.2758292455645209, 'lr': 0.00035263987195134654}
 
 TEST PERFORMANCE:
-Test Accuracy: 0.7003
-Test Loss: 0.6065
+Test Accuracy: 0.7556
+Test Loss: 0.5249
