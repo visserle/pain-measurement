@@ -386,6 +386,10 @@ def plot_prediction_confidence_heatmap(
 
     # Setup plotting parameters
     seeds_to_plot = _get_seeds_to_plot(all_probabilities, seeds_to_plot)
+
+    # Get all unique participant IDs across all seeds
+    all_participant_ids = _get_all_participant_ids(all_probabilities, seeds_to_plot)
+
     fig, axes = _create_figure_and_axes(seeds_to_plot, ncols, figure_size)
     cmap = _create_colormap(only_decreases)
 
@@ -404,6 +408,7 @@ def plot_prediction_confidence_heatmap(
             ncols,
             len(seeds_to_plot) // ncols,
             only_decreases,
+            all_participant_ids,  # Pass the complete participant list
         )
 
     # Hide unused subplots
@@ -421,6 +426,17 @@ def _validate_inputs(
     """Validate input parameters."""
     if sample_duration % 1000:
         raise ValueError("Sample duration must be a multiple of 1000 milliseconds.")
+
+
+def _get_all_participant_ids(all_probabilities: dict, seeds_to_plot: list) -> list:
+    """Get sorted list of all unique participant IDs across all seeds."""
+    all_participants = set()
+    for seed in seeds_to_plot:
+        if seed in all_probabilities:
+            all_participants.update(all_probabilities[seed].keys())
+
+    # Sort participant IDs as integers
+    return sorted(all_participants, key=lambda x: int(x))
 
 
 def _get_seeds_to_plot(all_probabilities: dict, seeds_to_plot: list | None) -> list:
@@ -481,35 +497,47 @@ def _create_colormap(only_decreases) -> LinearSegmentedColormap:
 
 
 def _process_confidence_data(
-    probabilities: dict, classification_threshold: float, sample_duration: int
+    probabilities: dict,
+    classification_threshold: float,
+    sample_duration: int,
+    all_participant_ids: list | None = None,
 ):
     """Process raw probabilities into signed confidence values."""
-    confidence_data = []
+    # If no complete participant list provided, use only available participants
+    if all_participant_ids is None:
+        all_participant_ids = sorted(probabilities.keys(), key=lambda x: int(x))
+
+    # Create a mapping of participant_id to confidence array
+    confidence_map = {}
+
     for participant_id, trial_probabilities_list in probabilities.items():
         for trial_probabilities in trial_probabilities_list:
             increase_probs = np.array([probs[1] for probs in trial_probabilities])
             signed_confidences = _calculate_signed_confidence(
                 increase_probs, classification_threshold
             )
-            confidence_data.append((participant_id, signed_confidences))
 
-    # Convert to array and sort by participant ID
-    confidence_arrays = [data[1] for data in confidence_data]
-    confidence_array = np.array(confidence_arrays)
+            # Create padded array for this participant
+            padded_array = np.zeros(180)
+            padded_array[int(sample_duration / 1000 - 1) :] = signed_confidences
+            confidence_map[participant_id] = padded_array
 
-    # Add padding for initial samples
-    padded_array = np.zeros((confidence_array.shape[0], 180))
-    padded_array[:, int(sample_duration / 1000 - 1) :] = confidence_array
+    # Build the final array with all participants, using NaN for missing data
+    confidence_array = []
+    sorted_participant_ids = []
 
-    # Sort by participant ID as integers
-    participant_ids = [data[0] for data in confidence_data]
-    sort_indices = sorted(
-        range(len(participant_ids)), key=lambda i: int(participant_ids[i])
-    )
-    sorted_confidence_array = padded_array[sort_indices]
-    sorted_participant_ids = [participant_ids[i] for i in sort_indices][::-1]
+    for participant_id in all_participant_ids:
+        sorted_participant_ids.append(participant_id)
+        if participant_id in confidence_map:
+            confidence_array.append(confidence_map[participant_id])
+        else:
+            # Use NaN for missing participants (will be displayed as grey)
+            confidence_array.append(np.full(180, np.nan))
 
-    return sorted_confidence_array, sorted_participant_ids
+    sorted_confidence_array = np.array(confidence_array)
+
+    # Reverse order for display (so first participant is at top)
+    return sorted_confidence_array[::-1], sorted_participant_ids[::-1]
 
 
 def _calculate_signed_confidence(
@@ -546,20 +574,26 @@ def _plot_single_heatmap(
     ncols,
     nrows,
     only_decreases,
+    all_participant_ids=None,  # Add parameter for complete participant list
 ):
     """Plot heatmap for a single stimulus seed."""
-    # Process confidence data
+    # Process confidence data with complete participant list
     confidence_array, participant_ids = _process_confidence_data(
-        probabilities, classification_threshold, sample_duration
+        probabilities, classification_threshold, sample_duration, all_participant_ids
     )
+
+    # Create a masked array to handle NaN values (missing participants)
+    masked_array = np.ma.masked_invalid(confidence_array)
 
     # Set vmin and vmax based on only_decreases parameter
     vmin = 0 if only_decreases else -1
     vmax = 1
 
-    # Plot heatmap
+    # Plot heatmap with grey color for masked (missing) values
+    cmap.set_bad(color="#f0f0f0")  # Very light grey, almost white
+
     im = ax.imshow(
-        confidence_array,
+        masked_array,
         aspect="auto",
         cmap=cmap,
         vmin=vmin,
