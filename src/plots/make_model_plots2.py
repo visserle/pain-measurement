@@ -44,8 +44,8 @@ feature_lists = [
     ["eda_raw"],
     ["heart_rate"],
     ["pupil"],
-    ["eda_raw", "pupil"],
     ["eda_raw", "heart_rate"],
+    ["eda_raw", "pupil"],
     ["eda_raw", "heart_rate", "pupil"],
     ["face"],
     ["face", "eda_raw", "heart_rate", "pupil"],
@@ -55,17 +55,96 @@ feature_lists = [
 ]
 feature_lists = expand_feature_list(feature_lists)
 
+import os
+import pickle
+from datetime import datetime
+from pathlib import Path
+
+# ... existing imports ...
+
 
 class ModelDataCache:
     """Cache for models, data, and dataloaders to avoid redundant loading."""
 
-    def __init__(self):
+    def __init__(self, cache_dir: Path = Path("cache/model_plots")):
+        self.cache_dir = cache_dir
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
         self.models: Dict[str, nn.Module] = {}
         self.model_configs: Dict[str, Dict[str, Any]] = {}
         self.datasets: Dict[str, Any] = {}
         self.dataloaders: Dict[str, Tuple[DataLoader, DataLoader]] = {}
         self.test_groups: Dict[str, np.ndarray] = {}
         self.raw_dfs: Dict[str, Any] = {}
+
+        # Track model timestamps for cache validation
+        self.model_timestamps: Dict[str, str] = {}
+
+    def _get_model_timestamp(self, model_path: Path) -> str:
+        """Extract timestamp from model filename."""
+        # Extract timestamp from filename like PatchTST_20250819-191548.pt
+        filename = model_path.name
+        try:
+            # Split by underscore and get the timestamp part
+            parts = filename.split("_")
+            if len(parts) >= 2:
+                # Get the timestamp part (without .pt extension)
+                timestamp_part = parts[-1].replace(".pt", "")
+                return timestamp_part
+        except:
+            pass
+        # Fallback to file modification time if parsing fails
+        return str(datetime.fromtimestamp(model_path.stat().st_mtime))
+
+    def _get_cache_path(self, feature_list_str: str, cache_type: str) -> Path:
+        """Generate cache file path for a given feature list and cache type."""
+        return self.cache_dir / f"{feature_list_str}_{cache_type}.pkl"
+
+    def _is_cache_valid(self, feature_list_str: str, model_path: Path) -> bool:
+        """Check if cached data is still valid based on model timestamp."""
+        timestamp_file = self.cache_dir / f"{feature_list_str}_timestamp.txt"
+
+        if not timestamp_file.exists():
+            return False
+
+        cached_timestamp = timestamp_file.read_text().strip()
+        current_timestamp = self._get_model_timestamp(model_path)
+
+        return cached_timestamp == current_timestamp
+
+    def _save_timestamp(self, feature_list_str: str, model_path: Path):
+        """Save the model timestamp for cache validation."""
+        timestamp_file = self.cache_dir / f"{feature_list_str}_timestamp.txt"
+        timestamp = self._get_model_timestamp(model_path)
+        timestamp_file.write_text(timestamp)
+        self.model_timestamps[feature_list_str] = timestamp
+
+    def _load_from_cache(self, feature_list_str: str, cache_type: str) -> Any:
+        """Load data from cache file."""
+        cache_path = self._get_cache_path(feature_list_str, cache_type)
+        if cache_path.exists():
+            try:
+                with open(cache_path, "rb") as f:
+                    data = pickle.load(f)
+                logging.debug(f"Loaded {cache_type} for {feature_list_str} from cache")
+                return data
+            except Exception as e:
+                logging.warning(
+                    f"Failed to load cache for {feature_list_str}/{cache_type}: {e}"
+                )
+        return None
+
+    def _save_to_cache(self, feature_list_str: str, cache_type: str, data: Any):
+        """Save data to cache file."""
+        cache_path = self._get_cache_path(feature_list_str, cache_type)
+        try:
+            with open(cache_path, "wb") as f:
+                pickle.dump(data, f)
+            logging.debug(f"Saved {cache_type} for {feature_list_str} to cache")
+        except Exception as e:
+            logging.warning(
+                f"Failed to save cache for {feature_list_str}/{cache_type}: {e}"
+            )
 
     def get_model_and_config(
         self, feature_list_str: str
@@ -77,6 +156,23 @@ class ModelDataCache:
             model_path = Path(
                 dictionary["overall_best"]["model_path"].replace("\\", "/")
             )
+
+            # Check if we have valid cached data
+            if self._is_cache_valid(feature_list_str, model_path):
+                # Try to load from cache
+                cached_model = self._load_from_cache(feature_list_str, "model")
+                cached_config = self._load_from_cache(feature_list_str, "config")
+
+                if cached_model is not None and cached_config is not None:
+                    self.models[feature_list_str] = cached_model
+                    self.model_configs[feature_list_str] = cached_config
+                    logging.info(
+                        f"Loaded model and config for {feature_list_str} from cache"
+                    )
+                    return cached_model, cached_config
+
+            # Load from scratch if cache miss or invalid
+            logging.info(f"Loading model for {feature_list_str} from disk")
             (
                 model,
                 feature_list,
@@ -86,8 +182,7 @@ class ModelDataCache:
                 offsets_ms,
             ) = load_model(model_path, device="cpu")
 
-            self.models[feature_list_str] = model
-            self.model_configs[feature_list_str] = {
+            config = {
                 "feature_list": feature_list,
                 "sample_duration_ms": sample_duration_ms,
                 "intervals": intervals,
@@ -96,11 +191,56 @@ class ModelDataCache:
                 "model_name": model.__class__.__name__,
             }
 
+            self.models[feature_list_str] = model
+            self.model_configs[feature_list_str] = config
+
+            # Save to cache
+            self._save_timestamp(feature_list_str, model_path)
+            self._save_to_cache(feature_list_str, "model", model)
+            self._save_to_cache(feature_list_str, "config", config)
+
         return self.models[feature_list_str], self.model_configs[feature_list_str]
 
     def get_data_and_loaders(self, feature_list: list, feature_list_str: str) -> Tuple:
         """Load data and create dataloaders if not cached."""
         if feature_list_str not in self.datasets:
+            # Check for cached data first
+            timestamp_file = self.cache_dir / f"{feature_list_str}_timestamp.txt"
+            if timestamp_file.exists():
+                cached_datasets = self._load_from_cache(feature_list_str, "datasets")
+                cached_loaders = self._load_from_cache(feature_list_str, "dataloaders")
+                cached_test_groups = self._load_from_cache(
+                    feature_list_str, "test_groups"
+                )
+                cached_raw_df = self._load_from_cache(feature_list_str, "raw_df")
+
+                if all(
+                    x is not None
+                    for x in [
+                        cached_datasets,
+                        cached_loaders,
+                        cached_test_groups,
+                        cached_raw_df,
+                    ]
+                ):
+                    self.datasets[feature_list_str] = cached_datasets
+                    self.dataloaders[feature_list_str] = cached_loaders
+                    self.test_groups[feature_list_str] = cached_test_groups
+                    self.raw_dfs[feature_list_str] = cached_raw_df
+                    logging.info(
+                        f"Loaded data and loaders for {feature_list_str} from cache"
+                    )
+
+                    return (
+                        cached_datasets,
+                        cached_loaders,
+                        cached_test_groups,
+                        cached_raw_df,
+                    )
+
+            # Load from scratch if cache miss
+            logging.info(f"Loading data for {feature_list_str} from database")
+
             # Load raw dataframe if not cached
             if feature_list_str not in self.raw_dfs:
                 self.raw_dfs[feature_list_str] = load_data_from_database(feature_list)
@@ -138,14 +278,24 @@ class ModelDataCache:
                 X_train_val, y_train_val, X_test, y_test, batch_size=64
             )
 
-            self.datasets[feature_list_str] = {
+            datasets = {
                 "X_train_val": X_train_val,
                 "y_train_val": y_train_val,
                 "X_test": X_test,
                 "y_test": y_test,
             }
+
+            self.datasets[feature_list_str] = datasets
             self.dataloaders[feature_list_str] = (train_loader, test_loader)
             self.test_groups[feature_list_str] = test_groups
+
+            # Save to cache
+            self._save_to_cache(feature_list_str, "datasets", datasets)
+            self._save_to_cache(
+                feature_list_str, "dataloaders", (train_loader, test_loader)
+            )
+            self._save_to_cache(feature_list_str, "test_groups", test_groups)
+            self._save_to_cache(feature_list_str, "raw_df", df)
 
         return (
             self.datasets[feature_list_str],
@@ -153,6 +303,24 @@ class ModelDataCache:
             self.test_groups[feature_list_str],
             self.raw_dfs[feature_list_str],
         )
+
+    def clear_cache(self, feature_list_str: str = None):
+        """Clear cache for a specific feature list or all cache."""
+        if feature_list_str:
+            # Clear specific feature list cache
+            patterns = [
+                f"{feature_list_str}_*.pkl",
+                f"{feature_list_str}_timestamp.txt",
+            ]
+            for pattern in patterns:
+                for file in self.cache_dir.glob(pattern):
+                    file.unlink()
+                    logging.info(f"Removed cache file: {file}")
+        else:
+            # Clear all cache
+            for file in self.cache_dir.glob("*"):
+                file.unlink()
+                logging.info(f"Removed cache file: {file}")
 
 
 def model_inference(cache: ModelDataCache):
