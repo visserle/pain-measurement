@@ -11,13 +11,9 @@ MAX_HEARTRATE = 120
 # 20 bpm above the maximum normal heart_rate to account for pain and stress
 
 
-def preprocess_hr(df: pl.DataFrame) -> pl.DataFrame:
+def feature_hr(df: pl.DataFrame) -> pl.DataFrame:
     df = df.drop("ibi")
     df = remove_heart_rate_nulls_and_fill_forward(df)
-    return df
-
-
-def feature_hr(df: pl.DataFrame) -> pl.DataFrame:
     df = decimate(df, factor=10)
     return df
 

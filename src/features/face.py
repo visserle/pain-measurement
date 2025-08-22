@@ -21,12 +21,8 @@ FEATURE_COLUMNS = [
 ]
 
 
-def preprocess_face(df: pl.DataFrame) -> pl.DataFrame:
-    df = scale_face(df)
-    return df
-
-
 def feature_face(df: pl.DataFrame) -> pl.DataFrame:
+    df = scale_face(df)
     df = df.select(INFO_COLUMNS + FEATURE_COLUMNS)
     df = ema_smooth_face(df, alpha=0.05, expression_column=FEATURE_COLUMNS)
     # no need to decimate as the sample rate is already at 10 Hz (roughly)

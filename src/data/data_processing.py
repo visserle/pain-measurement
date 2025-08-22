@@ -10,24 +10,24 @@ from polars import col
 
 from src.data.data_config import DataConfig
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
-from src.features.eda import feature_eda, preprocess_eda
-from src.features.eeg import feature_eeg, preprocess_eeg
+from src.features.eda import feature_eda
+from src.features.eeg import feature_eeg
 from src.features.exploratory.explore_eda import explore_eda
 from src.features.exploratory.explore_eeg import explore_eeg
 from src.features.exploratory.explore_face import explore_face
 from src.features.exploratory.explore_hr import explore_hr
 from src.features.exploratory.explore_pupil import explore_pupil
 from src.features.exploratory.explore_stimulus import explore_stimulus
-from src.features.face import feature_face, preprocess_face
-from src.features.hr import feature_hr, preprocess_hr
+from src.features.face import feature_face
+from src.features.hr import feature_hr
 from src.features.labels import add_labels
-from src.features.pupil import feature_pupil, preprocess_pupil
+from src.features.pupil import feature_pupil
 from src.features.resampling import (
     add_normalized_timestamp,
     interpolate_and_fill_nulls_in_trials,
     resample_at_10_hz_equidistant,
 )
-from src.features.stimulus import feature_stimulus, preprocess_stimulus
+from src.features.stimulus import feature_stimulus
 from src.features.transforming import merge_dfs
 
 INVALID_PARTICIPANTS = (
@@ -271,27 +271,6 @@ def create_raw_data_df(
         pl.all().exclude(a, b),
     )
     return df
-
-
-def create_preprocess_data_df(
-    name: str,
-    df: pl.DataFrame,
-) -> pl.DataFrame:
-    name = name.lower()
-    if "stimulus" in name:
-        return preprocess_stimulus(df)
-    elif "eda" in name:
-        return preprocess_eda(df)
-    elif "eeg" in name:
-        return preprocess_eeg(df)
-    elif "hr" in name:
-        return preprocess_hr(df)
-    elif "pupil" in name:
-        return preprocess_pupil(df)
-    elif "face" in name:
-        return preprocess_face(df)
-    else:
-        raise ValueError(f"Unknown feature type: {name}")
 
 
 def create_feature_data_df(
