@@ -41,21 +41,3 @@ def non_causal_low_pass_filter_face(
         )
         .name.keep()
     )
-
-
-@map_participants
-def non_causal_median_filter_face(
-    df: pl.DataFrame,
-    size_in_seconds: int,
-    expression_columns: list = FEATURE_COLUMNS,
-) -> pl.DataFrame:
-    return df.with_columns(
-        col(expression_columns)
-        .map_batches(
-            lambda x: signal.medfilt(
-                x,
-                kernel_size=size_in_seconds * SAMPLE_RATE + 1,  # must be odd
-            )
-        )
-        .name.keep()
-    )

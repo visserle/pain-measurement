@@ -40,6 +40,7 @@ def remove_blinks_and_fill_forward(
             col(pupil)
             .forward_fill()
             .backward_fill()  # backward fill to handle initial None values
+            # for the case that an eye wasn't captured at the beginning of the recording
             # otherwise, some dl architectures will not work
             # backward fill is non-causal but this is only a minor detail
             .alias(pupil)

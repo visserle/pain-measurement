@@ -349,6 +349,7 @@ def plot_correlation_heatmap(
     averages: pl.DataFrame,
     features: list[str] | None = None,
 ):
+    """Calculated for all stimulus seeds at once, i.e. ignoring stimulus seed."""
     # Default features if none provided
     if features is None:
         features = [

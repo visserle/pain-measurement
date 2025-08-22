@@ -54,6 +54,9 @@ class DataConfig:
 
     @classmethod
     def load_invalid_trials_config(cls):
+        """Note that participant IDs are randomized later and this config is only
+        for atabase creation. Use the table in the database for actual invalid trials.
+        """
         return pl.read_csv(
             cls.INVALID_TRIALS_FILE,
             schema_overrides=dict(participant_id=pl.UInt8, trial_number=pl.UInt8),

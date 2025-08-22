@@ -352,6 +352,10 @@ def plot_multiple_pr_curves(
 ) -> plt.Figure:
     """
     Plot Precision-Recall curves for multiple models and calculate Average Precision scores for binary classification.
+
+    Note that this is redundant with the ROC curves for balanced datasets,
+    but can be useful for imbalanced datasets.
+
     Args:
         results: Dictionary where keys are model names and values are tuples of (probs, y_true)
         labels: Optional dictionary for clean model names
@@ -454,26 +458,23 @@ def calculate_performance_metrics(
 
     # Calculate metrics
     accuracy = accuracy_score(true_labels, y_pred)
-    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0  # Precision (PPV)
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0  # Recall (Sensitivity)
     specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
     f1 = f1_score(true_labels, y_pred)
     mcc = matthews_corrcoef(true_labels, y_pred)
 
     # Calculate AUC and Average Precision
     fpr, tpr, _ = roc_curve(true_labels, probabilities)
     auc_score = auc(fpr, tpr)
-    avg_precision = average_precision_score(true_labels, probabilities)
 
     return {
         "accuracy": accuracy,
-        "sensitivity": sensitivity,
-        "specificity": specificity,
         "precision": precision,
+        "recall": recall,
         "f1_score": f1,
         "mcc": mcc,
         "auroc": auc_score,
-        "auprc": avg_precision,
         "tp": tp,
         "tn": tn,
         "fp": fp,
@@ -515,13 +516,11 @@ def create_performance_table(
                 "Feature Set": feature_set,
                 "Winning Model": winning_model,
                 "Accuracy": metrics["accuracy"],
-                "Sensitivity (Recall)": metrics["sensitivity"],
-                "Specificity": metrics["specificity"],
-                "Precision (PPV)": metrics["precision"],
+                "Precision": metrics["precision"],
+                "Recall": metrics["recall"],
                 "F₁-Score": metrics["f1_score"],
                 "MCC": metrics["mcc"],
                 "AUROC": metrics["auroc"],
-                "AUPRC": metrics["auprc"],
             }
         )
 
