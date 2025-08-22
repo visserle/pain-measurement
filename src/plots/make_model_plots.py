@@ -24,7 +24,6 @@ from src.plots.model_inference import (
 from src.plots.model_performance import (
     create_performance_table,
     get_model_predictions,
-    plot_multiple_pr_curves,
     plot_multiple_roc_curves,
 )
 from src.plots.model_performance_per_participant import (
@@ -259,7 +258,6 @@ def model_performance():
         results[feature_list_str] = (probs, y_true)
 
     roc_curves = plot_multiple_roc_curves(results)
-    pr_curves = plot_multiple_pr_curves(results)
 
     # Create performance table
     performance_df = create_performance_table(
