@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 import torch
+from joblib import Memory
 from matplotlib.colors import LinearSegmentedColormap
 
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
@@ -14,6 +15,8 @@ from src.models.main_config import INTERVALS, LABEL_MAPPING, OFFSETS_MS, RANDOM_
 from src.models.scalers import StandardScaler3D
 
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
+
+memory = Memory(".cache/stimulus", verbose=0)
 
 plt.style.use("./src/plots/style.mplstyle")
 
@@ -55,16 +58,12 @@ def analyze_test_dataset_for_one_stimulus(
 
     # Process each participant
     for participant_id in participant_ids:
-        logger.info(f"Processing participant {participant_id}...")
         # Get data for this participant and stimulus seed
         participant_df = df.filter(participant_id=participant_id).filter(
             stimulus_seed=stimulus_seed
         )
 
         if participant_df.is_empty():
-            logger.info(
-                f"No data found for participant {participant_id} with stimulus seed {stimulus_seed}"
-            )
             continue
 
         # Create a proper key for the participant (use the actual ID, not the index)
@@ -78,9 +77,6 @@ def analyze_test_dataset_for_one_stimulus(
         )
 
         if samples_df is None or samples_df.is_empty():
-            logger.info(
-                f" No valid samples for trial {participant_df.get_column('trial_id').unique().item()}"
-            )
             continue
 
         # Transform samples and scale them
@@ -167,16 +163,10 @@ def _create_samples_full_stimulus(
         sample_dfs.append(sample)
 
     if not sample_dfs:
-        logger.info("No valid samples created")
         return None
 
     # Combine all samples into one DataFrame
     result_df = pl.concat(sample_dfs)
-
-    logger.info(
-        f"Created {len(sample_dfs)} samples of {sample_duration}ms duration "
-        f"with {step_size}ms spacing"
-    )
 
     return result_df.select(["sample_id"] + features)
 
@@ -614,12 +604,18 @@ def _plot_single_heatmap(
     return im
 
 
+@memory.cache
+def _get_cached_stimulus(stimulus_seed: int, sample_rate: int = 1) -> np.ndarray:
+    """Get cached normalized stimulus signal."""
+    stimulus = StimulusGenerator(
+        seed=stimulus_seed, config={"sample_rate": sample_rate}
+    ).y
+    return 2 * ((stimulus - stimulus.min()) / (stimulus.max() - stimulus.min())) - 1
+
+
 def _add_stimulus_overlay(ax, stimulus_seed, confidence_array, linewidth, scale):
     """Add stimulus signal overlay to heatmap."""
-    stimulus = StimulusGenerator(seed=stimulus_seed, config={"sample_rate": 1}).y
-    stimulus_normalized = (
-        2 * ((stimulus - stimulus.min()) / (stimulus.max() - stimulus.min())) - 1
-    )
+    stimulus_normalized = _get_cached_stimulus(stimulus_seed)
 
     time_points = np.linspace(0, 180, confidence_array.shape[1])
     y_center = len(confidence_array) / 2
