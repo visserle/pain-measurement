@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import pickle
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
@@ -41,64 +43,52 @@ FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
 plt.style.use("./src/plots/style.mplstyle")
 
 feature_lists = [
-    ["eda_raw"],
-    ["heart_rate"],
-    ["pupil"],
-    ["eda_raw", "heart_rate"],
-    ["eda_raw", "pupil"],
-    ["eda_raw", "heart_rate", "pupil"],
-    ["face"],
-    ["face", "eda_raw", "heart_rate", "pupil"],
+    # ["eda_raw"],
+    # ["heart_rate"],
+    # ["pupil"],
+    # ["eda_raw", "heart_rate"],
+    # ["eda_raw", "pupil"],
+    # ["eda_raw", "heart_rate", "pupil"],
+    # ["face"],
+    # ["face", "eda_raw", "heart_rate", "pupil"],
     ["eeg"],
-    ["eeg", "eda_raw"],
-    ["eeg", "face", "eda_raw", "heart_rate", "pupil"],
+    # ["eeg", "eda_raw"],
+    # ["eeg", "face", "eda_raw", "heart_rate", "pupil"],
 ]
 feature_lists = expand_feature_list(feature_lists)
 
-import os
-import pickle
-from datetime import datetime
-from pathlib import Path
 
-# ... existing imports ...
+class InferenceCache:
+    """Lightweight cache for model inference results only."""
 
-
-class ModelDataCache:
-    """Cache for models, data, and dataloaders to avoid redundant loading."""
-
-    def __init__(self, cache_dir: Path = Path("cache/model_plots")):
+    def __init__(self, cache_dir: Path = Path(".cache/model_inference")):
         self.cache_dir = cache_dir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
-        self.models: Dict[str, nn.Module] = {}
-        self.model_configs: Dict[str, Dict[str, Any]] = {}
-        self.datasets: Dict[str, Any] = {}
-        self.dataloaders: Dict[str, Tuple[DataLoader, DataLoader]] = {}
-        self.test_groups: Dict[str, np.ndarray] = {}
-        self.raw_dfs: Dict[str, Any] = {}
-
-        # Track model timestamps for cache validation
-        self.model_timestamps: Dict[str, str] = {}
-
     def _get_model_timestamp(self, model_path: Path) -> str:
         """Extract timestamp from model filename."""
-        # Extract timestamp from filename like PatchTST_20250819-191548.pt
         filename = model_path.name
         try:
-            # Split by underscore and get the timestamp part
             parts = filename.split("_")
             if len(parts) >= 2:
-                # Get the timestamp part (without .pt extension)
                 timestamp_part = parts[-1].replace(".pt", "")
                 return timestamp_part
         except:
             pass
-        # Fallback to file modification time if parsing fails
         return str(datetime.fromtimestamp(model_path.stat().st_mtime))
 
-    def _get_cache_path(self, feature_list_str: str, cache_type: str) -> Path:
-        """Generate cache file path for a given feature list and cache type."""
-        return self.cache_dir / f"{feature_list_str}_{cache_type}.pkl"
+    def _get_cache_key(self, feature_list_str: str, cache_type: str, **kwargs) -> str:
+        """Generate unique cache key including any additional parameters."""
+        key_parts = [feature_list_str, cache_type]
+        for k, v in sorted(kwargs.items()):
+            if isinstance(v, (list, tuple)):
+                v = "_".join(map(str, v))
+            key_parts.append(f"{k}_{v}")
+        return "_".join(key_parts)
+
+    def _get_cache_path(self, cache_key: str) -> Path:
+        """Get cache file path for a given cache key."""
+        return self.cache_dir / f"{cache_key}.pkl"
 
     def _is_cache_valid(self, feature_list_str: str, model_path: Path) -> bool:
         """Check if cached data is still valid based on model timestamp."""
@@ -112,219 +102,119 @@ class ModelDataCache:
 
         return cached_timestamp == current_timestamp
 
-    def _save_timestamp(self, feature_list_str: str, model_path: Path):
-        """Save the model timestamp for cache validation."""
+    def _update_timestamp(self, feature_list_str: str, model_path: Path):
+        """Update the model timestamp for cache validation."""
         timestamp_file = self.cache_dir / f"{feature_list_str}_timestamp.txt"
         timestamp = self._get_model_timestamp(model_path)
         timestamp_file.write_text(timestamp)
-        self.model_timestamps[feature_list_str] = timestamp
 
-    def _load_from_cache(self, feature_list_str: str, cache_type: str) -> Any:
-        """Load data from cache file."""
-        cache_path = self._get_cache_path(feature_list_str, cache_type)
+    def get(self, feature_list_str: str, cache_type: str, **kwargs) -> Any:
+        """Get cached data if available and valid."""
+        cache_key = self._get_cache_key(feature_list_str, cache_type, **kwargs)
+        cache_path = self._get_cache_path(cache_key)
+
         if cache_path.exists():
             try:
                 with open(cache_path, "rb") as f:
                     data = pickle.load(f)
-                logging.debug(f"Loaded {cache_type} for {feature_list_str} from cache")
+                logging.debug(f"Cache hit: {cache_key}")
                 return data
             except Exception as e:
-                logging.warning(
-                    f"Failed to load cache for {feature_list_str}/{cache_type}: {e}"
-                )
+                logging.warning(f"Failed to load cache {cache_key}: {e}")
+
         return None
 
-    def _save_to_cache(self, feature_list_str: str, cache_type: str, data: Any):
-        """Save data to cache file."""
-        cache_path = self._get_cache_path(feature_list_str, cache_type)
+    def set(self, feature_list_str: str, cache_type: str, data: Any, **kwargs):
+        """Save data to cache."""
+        cache_key = self._get_cache_key(feature_list_str, cache_type, **kwargs)
+        cache_path = self._get_cache_path(cache_key)
+
         try:
             with open(cache_path, "wb") as f:
                 pickle.dump(data, f)
-            logging.debug(f"Saved {cache_type} for {feature_list_str} to cache")
+            logging.debug(f"Cached: {cache_key}")
         except Exception as e:
-            logging.warning(
-                f"Failed to save cache for {feature_list_str}/{cache_type}: {e}"
-            )
+            logging.warning(f"Failed to cache {cache_key}: {e}")
 
-    def get_model_and_config(
-        self, feature_list_str: str
-    ) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Load model and its configuration if not cached."""
-        if feature_list_str not in self.models:
-            json_path = Path(f"results/experiment_{feature_list_str}/results.json")
-            dictionary = json.loads(json_path.read_text())
-            model_path = Path(
-                dictionary["overall_best"]["model_path"].replace("\\", "/")
-            )
-
-            # Check if we have valid cached data
-            if self._is_cache_valid(feature_list_str, model_path):
-                # Try to load from cache
-                cached_model = self._load_from_cache(feature_list_str, "model")
-                cached_config = self._load_from_cache(feature_list_str, "config")
-
-                if cached_model is not None and cached_config is not None:
-                    self.models[feature_list_str] = cached_model
-                    self.model_configs[feature_list_str] = cached_config
-                    logging.info(
-                        f"Loaded model and config for {feature_list_str} from cache"
-                    )
-                    return cached_model, cached_config
-
-            # Load from scratch if cache miss or invalid
-            logging.info(f"Loading model for {feature_list_str} from disk")
-            (
-                model,
-                feature_list,
-                sample_duration_ms,
-                intervals,
-                label_mapping,
-                offsets_ms,
-            ) = load_model(model_path, device="cpu")
-
-            config = {
-                "feature_list": feature_list,
-                "sample_duration_ms": sample_duration_ms,
-                "intervals": intervals,
-                "label_mapping": label_mapping,
-                "offsets_ms": offsets_ms,
-                "model_name": model.__class__.__name__,
-            }
-
-            self.models[feature_list_str] = model
-            self.model_configs[feature_list_str] = config
-
-            # Save to cache
-            self._save_timestamp(feature_list_str, model_path)
-            self._save_to_cache(feature_list_str, "model", model)
-            self._save_to_cache(feature_list_str, "config", config)
-
-        return self.models[feature_list_str], self.model_configs[feature_list_str]
-
-    def get_data_and_loaders(self, feature_list: list, feature_list_str: str) -> Tuple:
-        """Load data and create dataloaders if not cached."""
-        if feature_list_str not in self.datasets:
-            # Check for cached data first
-            timestamp_file = self.cache_dir / f"{feature_list_str}_timestamp.txt"
-            if timestamp_file.exists():
-                cached_datasets = self._load_from_cache(feature_list_str, "datasets")
-                cached_loaders = self._load_from_cache(feature_list_str, "dataloaders")
-                cached_test_groups = self._load_from_cache(
-                    feature_list_str, "test_groups"
-                )
-                cached_raw_df = self._load_from_cache(feature_list_str, "raw_df")
-
-                if all(
-                    x is not None
-                    for x in [
-                        cached_datasets,
-                        cached_loaders,
-                        cached_test_groups,
-                        cached_raw_df,
-                    ]
-                ):
-                    self.datasets[feature_list_str] = cached_datasets
-                    self.dataloaders[feature_list_str] = cached_loaders
-                    self.test_groups[feature_list_str] = cached_test_groups
-                    self.raw_dfs[feature_list_str] = cached_raw_df
-                    logging.info(
-                        f"Loaded data and loaders for {feature_list_str} from cache"
-                    )
-
-                    return (
-                        cached_datasets,
-                        cached_loaders,
-                        cached_test_groups,
-                        cached_raw_df,
-                    )
-
-            # Load from scratch if cache miss
-            logging.info(f"Loading data for {feature_list_str} from database")
-
-            # Load raw dataframe if not cached
-            if feature_list_str not in self.raw_dfs:
-                self.raw_dfs[feature_list_str] = load_data_from_database(feature_list)
-
-            df = self.raw_dfs[feature_list_str]
-
-            # Get model config to ensure we have the right parameters
-            _, config = self.get_model_and_config(feature_list_str)
-
-            # Prepare data
-            _, _, _, _, X_train_val, y_train_val, X_test, y_test = prepare_data(
-                df=df,
-                feature_list=config["feature_list"],
-                sample_duration_ms=config["sample_duration_ms"],
-                intervals=config["intervals"],
-                label_mapping=config["label_mapping"],
-                offsets_ms=config["offsets_ms"],
-                random_seed=RANDOM_SEED,
-            )
-
-            # Get test groups
-            test_groups = prepare_data(
-                df=df,
-                feature_list=config["feature_list"],
-                sample_duration_ms=config["sample_duration_ms"],
-                intervals=config["intervals"],
-                label_mapping=config["label_mapping"],
-                offsets_ms=config["offsets_ms"],
-                random_seed=RANDOM_SEED,
-                only_return_test_groups=True,
-            )
-
-            # Create dataloaders
-            train_loader, test_loader = create_dataloaders(
-                X_train_val, y_train_val, X_test, y_test, batch_size=64
-            )
-
-            datasets = {
-                "X_train_val": X_train_val,
-                "y_train_val": y_train_val,
-                "X_test": X_test,
-                "y_test": y_test,
-            }
-
-            self.datasets[feature_list_str] = datasets
-            self.dataloaders[feature_list_str] = (train_loader, test_loader)
-            self.test_groups[feature_list_str] = test_groups
-
-            # Save to cache
-            self._save_to_cache(feature_list_str, "datasets", datasets)
-            self._save_to_cache(
-                feature_list_str, "dataloaders", (train_loader, test_loader)
-            )
-            self._save_to_cache(feature_list_str, "test_groups", test_groups)
-            self._save_to_cache(feature_list_str, "raw_df", df)
-
-        return (
-            self.datasets[feature_list_str],
-            self.dataloaders[feature_list_str],
-            self.test_groups[feature_list_str],
-            self.raw_dfs[feature_list_str],
-        )
-
-    def clear_cache(self, feature_list_str: str = None):
-        """Clear cache for a specific feature list or all cache."""
+    def clear(self, feature_list_str: str = None):
+        """Clear cache for specific feature list or all."""
         if feature_list_str:
-            # Clear specific feature list cache
-            patterns = [
-                f"{feature_list_str}_*.pkl",
-                f"{feature_list_str}_timestamp.txt",
-            ]
-            for pattern in patterns:
-                for file in self.cache_dir.glob(pattern):
-                    file.unlink()
-                    logging.info(f"Removed cache file: {file}")
-        else:
-            # Clear all cache
-            for file in self.cache_dir.glob("*"):
+            pattern = f"{feature_list_str}_*"
+            for file in self.cache_dir.glob(pattern):
                 file.unlink()
-                logging.info(f"Removed cache file: {file}")
+                logging.info(f"Removed cache: {file.name}")
+        else:
+            for file in self.cache_dir.glob("*.pkl"):
+                file.unlink()
+            for file in self.cache_dir.glob("*.txt"):
+                file.unlink()
+            logging.info("Cleared all cache")
 
 
-def model_inference(cache: ModelDataCache):
-    """Run model inference analysis using cached data."""
+def load_model_and_data(feature_list: list, feature_list_str: str) -> Tuple:
+    """Load model and prepare data - no caching, direct loading."""
+    # Load model
+    json_path = Path(f"results/experiment_{feature_list_str}/results.json")
+    dictionary = json.loads(json_path.read_text())
+    model_path = Path(dictionary["overall_best"]["model_path"].replace("\\", "/"))
+
+    logging.info(f"Loading model for {feature_list_str}")
+    (
+        model,
+        feature_list_loaded,
+        sample_duration_ms,
+        intervals,
+        label_mapping,
+        offsets_ms,
+    ) = load_model(model_path, device="cpu")
+
+    # Load data
+    logging.info(f"Loading data for {feature_list_str}")
+    df = load_data_from_database(feature_list)
+
+    # Prepare data
+    _, _, _, _, X_train_val, y_train_val, X_test, y_test = prepare_data(
+        df=df,
+        feature_list=feature_list_loaded,
+        sample_duration_ms=sample_duration_ms,
+        intervals=intervals,
+        label_mapping=label_mapping,
+        offsets_ms=offsets_ms,
+        random_seed=RANDOM_SEED,
+    )
+
+    # Get test groups
+    test_groups = prepare_data(
+        df=df,
+        feature_list=feature_list_loaded,
+        sample_duration_ms=sample_duration_ms,
+        intervals=intervals,
+        label_mapping=label_mapping,
+        offsets_ms=offsets_ms,
+        random_seed=RANDOM_SEED,
+        only_return_test_groups=True,
+    )
+
+    # Create dataloaders
+    train_loader, test_loader = create_dataloaders(
+        X_train_val, y_train_val, X_test, y_test, batch_size=64
+    )
+
+    model_config = {
+        "feature_list": feature_list_loaded,
+        "sample_duration_ms": sample_duration_ms,
+        "intervals": intervals,
+        "label_mapping": label_mapping,
+        "offsets_ms": offsets_ms,
+        "model_name": model.__class__.__name__,
+        "model_path": model_path,
+    }
+
+    return model, model_config, df, test_loader, test_groups
+
+
+def model_inference(cache: InferenceCache, classification_threshold: float = 0.9):
+    """Run model inference analysis with caching of results only."""
     config_path = Path("src/experiments/measurement/measurement_config.toml")
     with open(config_path, "rb") as file:
         config = tomllib.load(file)
@@ -334,36 +224,69 @@ def model_inference(cache: ModelDataCache):
     for feature_list in feature_lists:
         feature_list_str = "_".join(feature_list)
 
-        # Get cached model and data
-        model, model_config = cache.get_model_and_config(feature_list_str)
-        datasets, loaders, test_groups, df = cache.get_data_and_loaders(
-            feature_list, feature_list_str
-        )
+        # Check cache validity first
+        json_path = Path(f"results/experiment_{feature_list_str}/results.json")
+        dictionary = json.loads(json_path.read_text())
+        model_path = Path(dictionary["overall_best"]["model_path"].replace("\\", "/"))
 
-        test_ids = np.unique(test_groups)
+        # Try to get cached inference results
+        cache_valid = cache._is_cache_valid(feature_list_str, model_path)
 
-        # Analyze the entire test dataset
-        all_probabilities = {}
-        all_participant_trials = {}
-
-        for stimulus_seed in stimulus_seeds:
-            probabilities, participant_trials = analyze_test_dataset_for_one_stimulus(
-                df,
-                model,
-                model_config["feature_list"],
-                test_ids,
-                stimulus_seed,
-                model_config["sample_duration_ms"],
+        if cache_valid:
+            cached_results = cache.get(
+                feature_list_str, "inference_probabilities", seeds=tuple(stimulus_seeds)
             )
 
-            all_probabilities[stimulus_seed] = probabilities
-            all_participant_trials[stimulus_seed] = participant_trials
+            if cached_results:
+                logging.info(f"Using cached inference results for {feature_list_str}")
+                all_probabilities = cached_results["probabilities"]
+                sample_duration_ms = cached_results["sample_duration_ms"]
+            else:
+                cached_results = None
+        else:
+            cached_results = None
+
+        if cached_results is None:
+            # Load model and data (not cached)
+            model, model_config, df, _, test_groups = load_model_and_data(
+                feature_list, feature_list_str
+            )
+
+            test_ids = np.unique(test_groups)
+
+            # Analyze the entire test dataset
+            all_probabilities = {}
+
+            for stimulus_seed in stimulus_seeds:
+                probabilities, _ = analyze_test_dataset_for_one_stimulus(
+                    df,
+                    model,
+                    model_config["feature_list"],
+                    test_ids,
+                    stimulus_seed,
+                    model_config["sample_duration_ms"],
+                )
+                all_probabilities[stimulus_seed] = probabilities
+
+            # Cache the results
+            cache._update_timestamp(feature_list_str, model_config["model_path"])
+            cache.set(
+                feature_list_str,
+                "inference_probabilities",
+                {
+                    "probabilities": all_probabilities,
+                    "sample_duration_ms": model_config["sample_duration_ms"],
+                },
+                seeds=tuple(stimulus_seeds),
+            )
+
+            sample_duration_ms = model_config["sample_duration_ms"]
 
         # Plot all available stimuli
         fig = plot_prediction_confidence_heatmap(
             all_probabilities,
-            model_config["sample_duration_ms"],
-            classification_threshold=0.88,
+            sample_duration_ms,
+            classification_threshold=classification_threshold,
             ncols=2,
             figure_size=(7, 2),
             stimulus_scale=0.5,
@@ -374,23 +297,36 @@ def model_inference(cache: ModelDataCache):
         # Save the figure
         fig_path = FIGURE_DIR / f"model_inference_{feature_list_str}.png"
         fig.savefig(fig_path, bbox_inches="tight", dpi=300)
-        plt.close(fig)  # Free memory
+        plt.close(fig)
         logging.info(f"Saved figure to {fig_path}")
 
 
-def model_performance_per_participant(cache: ModelDataCache):
-    """Analyze model performance per participant using cached data."""
+def model_performance_per_participant(cache: InferenceCache):
+    """Analyze model performance per participant with result caching."""
     results = {}
 
     for feature_list in feature_lists:
         feature_list_str = "_".join(feature_list)
 
-        # Get cached model and data
-        model, _ = cache.get_model_and_config(feature_list_str)
-        datasets, loaders, test_groups, _ = cache.get_data_and_loaders(
+        # Check cache validity
+        json_path = Path(f"results/experiment_{feature_list_str}/results.json")
+        dictionary = json.loads(json_path.read_text())
+        model_path = Path(dictionary["overall_best"]["model_path"].replace("\\", "/"))
+
+        # Try to get cached results
+        if cache._is_cache_valid(feature_list_str, model_path):
+            cached_result = cache.get(feature_list_str, "per_participant_results")
+            if cached_result:
+                logging.info(
+                    f"Using cached per-participant results for {feature_list_str}"
+                )
+                results[feature_list_str] = cached_result
+                continue
+
+        # Load and analyze if not cached
+        model, model_config, _, test_loader, test_groups = load_model_and_data(
             feature_list, feature_list_str
         )
-        _, test_loader = loaders
 
         result_df = analyze_per_participant(
             model,
@@ -400,6 +336,11 @@ def model_performance_per_participant(cache: ModelDataCache):
         )
         results[feature_list_str] = result_df
 
+        # Cache the result
+        cache._update_timestamp(feature_list_str, model_path)
+        cache.set(feature_list_str, "per_participant_results", result_df)
+
+    # Create plots
     feature_set_acc, _ = plot_feature_accuracy_comparison(results, figsize=(10, 6))
     feature_set_acc_by_participant, _ = plot_participant_accuracy_comparison(
         results, figsize=(13, 6)
@@ -422,20 +363,37 @@ def model_performance_per_participant(cache: ModelDataCache):
     )
 
 
-def model_performance(cache: ModelDataCache):
-    """Analyze overall model performance using cached data."""
+def model_performance(cache: InferenceCache):
+    """Analyze overall model performance with prediction caching."""
     results = {}
     winning_models = {}
 
     for feature_list in feature_lists:
         feature_list_str = "_".join(feature_list)
 
-        # Get cached model and data
-        model, model_config = cache.get_model_and_config(feature_list_str)
-        datasets, loaders, _, _ = cache.get_data_and_loaders(
+        # Check cache validity
+        json_path = Path(f"results/experiment_{feature_list_str}/results.json")
+        dictionary = json.loads(json_path.read_text())
+        model_path = Path(dictionary["overall_best"]["model_path"].replace("\\", "/"))
+
+        # Try to get cached predictions
+        if cache._is_cache_valid(feature_list_str, model_path):
+            cached_predictions = cache.get(feature_list_str, "test_predictions")
+            if cached_predictions:
+                logging.info(f"Using cached predictions for {feature_list_str}")
+                results[feature_list_str] = (
+                    cached_predictions["probs"],
+                    cached_predictions["y_true"],
+                )
+                winning_models[feature_list_str] = {
+                    feature_list_str: cached_predictions["model_name"]
+                }
+                continue
+
+        # Load and predict if not cached
+        model, model_config, _, test_loader, _ = load_model_and_data(
             feature_list, feature_list_str
         )
-        _, test_loader = loaders
 
         winning_models[feature_list_str] = {
             feature_list_str: model_config["model_name"]
@@ -444,9 +402,20 @@ def model_performance(cache: ModelDataCache):
         probs, y_true = get_model_predictions(model, test_loader)
         results[feature_list_str] = (probs, y_true)
 
-    roc_curves = plot_multiple_roc_curves(results)
+        # Cache the predictions
+        cache._update_timestamp(feature_list_str, model_path)
+        cache.set(
+            feature_list_str,
+            "test_predictions",
+            {
+                "probs": probs,
+                "y_true": y_true,
+                "model_name": model_config["model_name"],
+            },
+        )
 
-    # Create performance table
+    # Create plots and tables
+    roc_curves = plot_multiple_roc_curves(results)
     performance_df = create_performance_table(
         results, winning_models=winning_models, threshold=0.5
     )
@@ -464,14 +433,12 @@ if __name__ == "__main__":
         ignore_libs=["matplotlib", "Comm", "bokeh", "tornado", "filelock"],
     )
 
-    # Create cache instance to share across functions
-    cache = ModelDataCache()
+    # Create lightweight cache instance
+    cache = InferenceCache()
 
-    # Run all analyses with shared cache
+    # Run all analyses with lightweight caching
     # model_performance_per_participant(cache)
-    model_performance(cache)
-    # model_inference(cache)
+    # model_performance(cache)
+    model_inference(cache, classification_threshold=0.6)
 
-    # Log cache statistics
-    logging.info(f"Loaded {len(cache.models)} unique models")
-    logging.info(f"Cached {len(cache.raw_dfs)} dataframes")
+    logging.info("Completed all model plots")
