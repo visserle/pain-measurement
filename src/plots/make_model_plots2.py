@@ -1,17 +1,15 @@
 import json
 import logging
 import os
-import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any
 
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import tomllib
-import torch.nn as nn
 from dotenv import load_dotenv
-from torch.utils.data import DataLoader
 
 from src.log_config import configure_logging
 from src.models.data_loader import create_dataloaders
@@ -43,7 +41,7 @@ FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
 plt.style.use("./src/plots/style.mplstyle")
 
 feature_lists = [
-    # ["eda_raw"],
+    ["eda_raw"],
     # ["heart_rate"],
     # ["pupil"],
     # ["eda_raw", "heart_rate"],
@@ -51,7 +49,7 @@ feature_lists = [
     # ["eda_raw", "heart_rate", "pupil"],
     # ["face"],
     # ["face", "eda_raw", "heart_rate", "pupil"],
-    ["eeg"],
+    # ["eeg"],
     # ["eeg", "eda_raw"],
     # ["eeg", "face", "eda_raw", "heart_rate", "pupil"],
 ]
@@ -88,7 +86,9 @@ class InferenceCache:
 
     def _get_cache_path(self, cache_key: str) -> Path:
         """Get cache file path for a given cache key."""
-        return self.cache_dir / f"{cache_key}.pkl"
+        return (
+            self.cache_dir / f"{cache_key}.joblib"
+        )  # Changed extension from .pkl to .joblib
 
     def _is_cache_valid(self, feature_list_str: str, model_path: Path) -> bool:
         """Check if cached data is still valid based on model timestamp."""
@@ -115,8 +115,7 @@ class InferenceCache:
 
         if cache_path.exists():
             try:
-                with open(cache_path, "rb") as f:
-                    data = pickle.load(f)
+                data = joblib.load(cache_path)
                 logging.debug(f"Cache hit: {cache_key}")
                 return data
             except Exception as e:
@@ -130,8 +129,8 @@ class InferenceCache:
         cache_path = self._get_cache_path(cache_key)
 
         try:
-            with open(cache_path, "wb") as f:
-                pickle.dump(data, f)
+            # Use joblib instead of pickle
+            joblib.dump(data, cache_path, compress=3)  # Use compression level 3
             logging.debug(f"Cached: {cache_key}")
         except Exception as e:
             logging.warning(f"Failed to cache {cache_key}: {e}")
@@ -151,7 +150,7 @@ class InferenceCache:
             logging.info("Cleared all cache")
 
 
-def load_model_and_data(feature_list: list, feature_list_str: str) -> Tuple:
+def load_model_and_data(feature_list: list, feature_list_str: str) -> tuple:
     """Load model and prepare data - no caching, direct loading."""
     # Load model
     json_path = Path(f"results/experiment_{feature_list_str}/results.json")
@@ -347,20 +346,24 @@ def model_performance_per_participant(cache: InferenceCache):
     )
 
     # Save results
-    feature_set_acc.savefig(
-        FIGURE_DIR / "feature_set_acc.png", dpi=300, bbox_inches="tight"
-    )
+    feature_set_acc_path = FIGURE_DIR / "feature_set_acc.png"
+    feature_set_acc.savefig(feature_set_acc_path, dpi=300, bbox_inches="tight")
+    logging.info(f"Saved figure to {feature_set_acc_path}")
     plt.close(feature_set_acc)
 
-    feature_set_acc_by_participant.savefig(
-        FIGURE_DIR / "feature_set_acc_by_participant.png", dpi=300, bbox_inches="tight"
+    feature_set_acc_by_participant_path = (
+        FIGURE_DIR / "feature_set_acc_by_participant.png"
     )
+    feature_set_acc_by_participant.savefig(
+        feature_set_acc_by_participant_path, dpi=300, bbox_inches="tight"
+    )
+    logging.info(f"Saved figure to {feature_set_acc_by_participant_path}")
     plt.close(feature_set_acc_by_participant)
 
     # Save samples size per test set participant
-    results["_".join(feature_lists[0])].drop("accuracy").write_json(
-        FIGURE_DIR / "samples_per_test_participant.json"
-    )
+    samples_path = FIGURE_DIR / "samples_per_test_participant.json"
+    results["_".join(feature_lists[0])].drop("accuracy").write_json(samples_path)
+    logging.info(f"Saved data to {samples_path}")
 
 
 def model_performance(cache: InferenceCache):
@@ -421,10 +424,14 @@ def model_performance(cache: InferenceCache):
     )
 
     # Save the figures
-    roc_curves.savefig(FIGURE_DIR / "roc_curves.png", dpi=300, bbox_inches="tight")
+    roc_curves_path = FIGURE_DIR / "roc_curves.png"
+    roc_curves.savefig(roc_curves_path, dpi=300, bbox_inches="tight")
+    logging.info(f"Saved figure to {roc_curves_path}")
     plt.close(roc_curves)
 
-    performance_df.write_json(FIGURE_DIR / "performance_table.json")
+    performance_table_path = FIGURE_DIR / "performance_table.json"
+    performance_df.write_json(performance_table_path)
+    logging.info(f"Saved data to {performance_table_path}")
 
 
 if __name__ == "__main__":
@@ -437,8 +444,8 @@ if __name__ == "__main__":
     cache = InferenceCache()
 
     # Run all analyses with lightweight caching
-    # model_performance_per_participant(cache)
-    # model_performance(cache)
+    model_performance_per_participant(cache)
+    model_performance(cache)
     model_inference(cache, classification_threshold=0.6)
 
     logging.info("Completed all model plots")
