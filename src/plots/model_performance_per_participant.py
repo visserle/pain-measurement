@@ -347,8 +347,7 @@ def plot_feature_accuracy_comparison(results_dict, figsize=(10, 6)):
     ax.set_axisbelow(True)
 
     # Set y-axis limits and ticks
-    ax.set_ylim(0.35, 1.0)
-    ax.set_yticks([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    ax.set_yticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
 
     # Tight layout for proper spacing
     plt.tight_layout()
@@ -441,8 +440,7 @@ def plot_participant_accuracy_comparison(results_dict, figsize=(10, 6)):
     ax.set_axisbelow(True)
 
     # Set y-axis limits and ticks
-    ax.set_ylim(0.35, 1.0)
-    ax.set_yticks([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    ax.set_yticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
 
     # Tight layout for proper spacing
     plt.tight_layout()

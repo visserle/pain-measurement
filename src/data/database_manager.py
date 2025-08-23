@@ -401,14 +401,14 @@ def main():
     # anonymized data.
 
     with db:
-        # Feature-engineered data
         # no check for existing data as it will be overwritten every time
+        # Feature-engineered data
         for modality in MODALITIES:
             table_name = f"Feature_{modality}"
             df = db.get_table(f"Raw_{modality}")
             df = create_feature_data_df(table_name, df)
             db.insert_feature_data(table_name, df)
-        logger.info("Data feature-engineered.")
+        logger.info("Feature data created.")
 
         # Exploratory data
         for modality in MODALITIES:
@@ -416,7 +416,7 @@ def main():
             df = db.get_table(f"Raw_{modality}")
             df = create_explore_data_df(table_name, df)
             db.insert_explore_data(table_name, df)
-        logger.info("Data exploratory processed.")
+        logger.info("Exploratory data created.")
 
         # Merge data (trials only) and add labels
         data_dfs = []
