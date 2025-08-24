@@ -446,3 +446,80 @@ def plot_participant_accuracy_comparison(results_dict, figsize=(10, 6)):
     plt.tight_layout()
 
     return fig, ax
+
+
+def aggregate_accuracy_stats(
+    results_dict, decimal_places=3, sort_by_avg=False, include_ci=False
+) -> pl.DataFrame:
+    """
+    Aggregates accuracy statistics for each feature into a table suitable for publication.
+    Optimized for small sample sizes (n < 30) with accuracy data.
+
+    Args:
+        results_dict: Dictionary where keys are feature names and values are polars DataFrames
+                     containing participant accuracies
+        decimal_places: Number of decimal places to round values to
+        sort_by_avg: Whether to sort features by average accuracy (descending)
+        include_ci: Whether to include confidence intervals (not recommended for small n)
+
+    Returns:
+        A polars DataFrame with appropriate statistics for each feature
+    """
+    # Initialize lists to store results
+    features = []
+    medians = []
+    q1_values = []  # 1st quartile (25th percentile)
+    q3_values = []  # 3rd quartile (75th percentile)
+    iqr_values = []  # Interquartile range
+    min_accs = []
+    max_accs = []
+    avg_accs = []  # Still including mean but will emphasize median as primary measure
+
+    # Process each feature
+    for feature_name, df in results_dict.items():
+        # Filter out the 'overall' row and extract accuracies
+        participant_df = df.filter(pl.col("participant") != "overall")
+        participant_accs = participant_df["accuracy"].to_numpy()
+
+        # Calculate appropriate statistics for small n
+        features.append(feature_name)
+
+        # Central tendency
+        median_acc = np.median(participant_accs)
+        mean_acc = np.mean(participant_accs)  # Still included but de-emphasized
+
+        # Dispersion measures appropriate for small samples
+        q1 = np.percentile(participant_accs, 25)
+        q3 = np.percentile(participant_accs, 75)
+        iqr = q3 - q1
+        min_acc = np.min(participant_accs)
+        max_acc = np.max(participant_accs)
+
+        # Store values
+        medians.append(median_acc)
+        avg_accs.append(mean_acc)
+        q1_values.append(q1)
+        q3_values.append(q3)
+        iqr_values.append(iqr)
+        min_accs.append(min_acc)
+        max_accs.append(max_acc)
+
+    # Create results DataFrame with appropriate statistics
+    accuracy_table = {
+        "feature": features,
+        "median": [round(x, decimal_places) for x in medians],
+        "mean": [round(x, decimal_places) for x in avg_accs],
+        "q1": [round(x, decimal_places) for x in q1_values],
+        "q3": [round(x, decimal_places) for x in q3_values],
+        "iqr": [round(x, decimal_places) for x in iqr_values],
+        "min": [round(x, decimal_places) for x in min_accs],
+        "max": [round(x, decimal_places) for x in max_accs],
+    }
+
+    accuracy_table = pl.DataFrame(accuracy_table)
+
+    # Sort by median (more appropriate) or mean if requested
+    if sort_by_avg:
+        accuracy_table = accuracy_table.sort("mean", descending=True)
+
+    return accuracy_table
