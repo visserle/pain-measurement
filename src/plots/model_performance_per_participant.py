@@ -258,6 +258,165 @@ def plot_participant_performance_single_model(
     return fig
 
 
+def plot_feature_accuracy_boxplot(results_dict, figsize=(12, 7)):
+    """
+    Plot boxplots for each feature combination with individual participant points
+    at consistent x-positions for better tracking across features.
+
+    Args:
+        results_dict: Dictionary with feature combination names as keys and polars DataFrames as values
+        figsize: Tuple for figure size (width, height)
+    """
+    # Prepare data for plotting
+    plot_data = []
+    for feature_combo, df in results_dict.items():
+        # Filter out 'overall' rows
+        participant_data = df.filter(pl.col("participant") != "overall")
+        # Use the feature labels dictionary for better naming
+        display_name = FEATURE_LABELS.get(
+            feature_combo, feature_combo.replace("_", " ").title()
+        )
+
+        for row in participant_data.iter_rows(named=True):
+            plot_data.append(
+                {
+                    "participant": f"{row['participant']}",
+                    "feature": display_name,
+                    "accuracy": row["accuracy"],
+                }
+            )
+
+    # Convert to pandas DataFrame
+    plot_df = pd.DataFrame(plot_data)
+
+    # Sort participants numerically to ensure consistent ordering
+    plot_df["participant"] = plot_df["participant"].astype(int)
+    unique_participants = sorted(plot_df["participant"].unique())
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Create boxplot with academic styling
+    sns.boxplot(
+        data=plot_df,
+        x="feature",
+        y="accuracy",
+        ax=ax,
+        color="white",
+        width=0.6,
+        fliersize=0,  # Don't show outliers as they'll be plotted individually
+        linewidth=1.2,
+        boxprops={"edgecolor": "black"},
+        whiskerprops={"color": "black"},
+        medianprops={"color": "black", "linewidth": 1.5},
+        capprops={"color": "black"},
+    )
+
+    # Better professional color palette for participants
+    # Using a colorblind-friendly palette with distinct colors
+    participant_palette = sns.color_palette(
+        [
+            "#1f77b4",  # Blue
+            "#ff7f0e",  # Orange
+            "#2ca02c",  # Green
+            "#d62728",  # Red
+            "#9467bd",  # Purple
+            "#8c564b",  # Brown
+            "#e377c2",  # Pink
+            "#7f7f7f",  # Gray
+            "#bcbd22",  # Yellow-green
+            "#17becf",  # Cyan
+        ]
+    )
+
+    # Map participants to colors
+    color_map = {
+        p: participant_palette[i % len(participant_palette)]
+        for i, p in enumerate(unique_participants)
+    }
+
+    # Get feature positions on x-axis (box centers)
+    feature_positions = {feat: i for i, feat in enumerate(plot_df["feature"].unique())}
+
+    # Manually plot points with consistent x-offsets per participant
+    n_participants = len(unique_participants)
+    width = 0.5  # Width to spread participants across
+
+    for i, participant in enumerate(unique_participants):
+        # Calculate offset position for this participant
+        # This spreads participants evenly across the width
+        offset = width * (i / (n_participants - 1) - 0.5) if n_participants > 1 else 0
+
+        # Get data for this participant
+        participant_data = plot_df[plot_df["participant"] == participant]
+
+        # Plot each point for this participant
+        for _, row in participant_data.iterrows():
+            feature = row["feature"]
+            x_pos = feature_positions[feature] + offset
+            ax.plot(
+                x_pos,
+                row["accuracy"],
+                "o",
+                color=color_map[participant],
+                markersize=7,
+                alpha=0.85,
+                label=participant
+                if feature == list(feature_positions.keys())[0]
+                else "",
+            )
+
+    # Add chance level reference line
+    ax.axhline(y=0.5, color="red", linestyle="--", alpha=0.7, linewidth=1)
+
+    # Styling for academic publication
+    ax.set_xlabel("")  # No title for x-axis in academic papers
+    ax.set_ylabel("Classification Accuracy", fontsize=11)
+    ax.set_ylim(0.0, 1.0)
+    ax.grid(True, alpha=0.3, axis="y", linewidth=0.5)
+    ax.set_axisbelow(True)
+
+    # Format y-axis to show percentages
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
+
+    # Rotate x-axis labels
+    plt.xticks(rotation=45, ha="right")
+
+    # Handle legend with one entry per participant
+    handles, labels = [], []
+    for participant in unique_participants:
+        handles.append(
+            plt.Line2D(
+                [0],
+                [0],
+                marker="o",
+                color="w",
+                markerfacecolor=color_map[participant],
+                markersize=8,
+            )
+        )
+        labels.append(str(participant))
+
+    # Add legend inside the plot
+    ax.legend(
+        handles,
+        labels,
+        title="Participant ID",
+        frameon=True,
+        fancybox=False,
+        edgecolor="black",
+        shadow=False,
+        loc="lower right",
+        fontsize=9,
+        title_fontsize=10,
+    )
+
+    # Tight layout
+    plt.tight_layout()
+
+    return fig, ax
+
+
 def plot_feature_accuracy_comparison(results_dict, figsize=(10, 6)):
     """
     Plot bars for each feature combination across all participants using academic styling.

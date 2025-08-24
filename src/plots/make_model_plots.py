@@ -30,9 +30,9 @@ from src.plots.model_performance import (
     plot_multiple_roc_curves,
 )
 from src.plots.model_performance_per_participant import (
+    aggregate_accuracy_stats,
     analyze_per_participant,
-    plot_feature_accuracy_comparison,
-    plot_participant_accuracy_comparison,
+    plot_feature_accuracy_boxplot,
 )
 
 load_dotenv()
@@ -42,16 +42,16 @@ plt.style.use("./src/plots/style.mplstyle")
 
 feature_lists = [
     ["eda_raw"],
-    # ["heart_rate"],
-    # ["pupil"],
-    # ["eda_raw", "heart_rate"],
-    # ["eda_raw", "pupil"],
-    # ["eda_raw", "heart_rate", "pupil"],
-    # ["face"],
-    # ["face", "eda_raw", "heart_rate", "pupil"],
-    # ["eeg"],
-    # ["eeg", "eda_raw"],
-    # ["eeg", "face", "eda_raw", "heart_rate", "pupil"],
+    ["heart_rate"],
+    ["pupil"],
+    ["eda_raw", "heart_rate"],
+    ["eda_raw", "pupil"],
+    ["eda_raw", "heart_rate", "pupil"],
+    ["face"],
+    ["face", "eda_raw", "heart_rate", "pupil"],
+    ["eeg"],
+    ["eeg", "eda_raw"],
+    ["eeg", "face", "eda_raw", "heart_rate", "pupil"],
 ]
 feature_lists = expand_feature_list(feature_lists)
 
@@ -315,7 +315,7 @@ def model_performance_per_participant(cache: InferenceCache):
         # Try to get cached results
         if cache._is_cache_valid(feature_list_str, model_path):
             cached_result = cache.get(feature_list_str, "per_participant_results")
-            if cached_result:
+            if not cached_result.is_empty():
                 logging.info(
                     f"Using cached per-participant results for {feature_list_str}"
                 )
@@ -340,9 +340,11 @@ def model_performance_per_participant(cache: InferenceCache):
         cache.set(feature_list_str, "per_participant_results", result_df)
 
     # Create plots
-    feature_set_acc, _ = plot_feature_accuracy_comparison(results, figsize=(10, 6))
-    feature_set_acc_by_participant, _ = plot_participant_accuracy_comparison(
-        results, figsize=(13, 6)
+    feature_set_acc, _ = plot_feature_accuracy_boxplot(results, figsize=(10, 6))
+
+    # Create accuracy table
+    accuracy_stats = aggregate_accuracy_stats(
+        results, include_ci=False, sort_by_avg=False
     )
 
     # Save results
@@ -351,19 +353,15 @@ def model_performance_per_participant(cache: InferenceCache):
     logging.info(f"Saved figure to {feature_set_acc_path}")
     plt.close(feature_set_acc)
 
-    feature_set_acc_by_participant_path = (
-        FIGURE_DIR / "feature_set_acc_by_participant.png"
-    )
-    feature_set_acc_by_participant.savefig(
-        feature_set_acc_by_participant_path, dpi=300, bbox_inches="tight"
-    )
-    logging.info(f"Saved figure to {feature_set_acc_by_participant_path}")
-    plt.close(feature_set_acc_by_participant)
-
     # Save samples size per test set participant
     samples_path = FIGURE_DIR / "samples_per_test_participant.json"
     results["_".join(feature_lists[0])].drop("accuracy").write_json(samples_path)
     logging.info(f"Saved data to {samples_path}")
+
+    # Save accuracy stats
+    accuracy_stats_path = FIGURE_DIR / "accuracy_stats_per_participant.json"
+    accuracy_stats.write_json(accuracy_stats_path)
+    logging.info(f"Saved data to {accuracy_stats_path}")
 
 
 def model_performance(cache: InferenceCache):
@@ -445,7 +443,7 @@ if __name__ == "__main__":
 
     # Run all analyses with lightweight caching
     model_performance_per_participant(cache)
-    model_performance(cache)
-    model_inference(cache, classification_threshold=0.6)
+    # model_performance(cache)
+    # model_inference(cache, classification_threshold=0.5)
 
     logging.info("Completed all model plots")
