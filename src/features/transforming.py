@@ -62,9 +62,8 @@ def merge_dfs(
     """
     Merge multiple DataFrames into a single DataFrame.
 
-    Default on and sort_by columns are set for data DataFrames (raw, preprocess,
-    feature), however, these can be adjusted as needed for other DataFrames (e.g.,
-    Trials).
+    Default on and sort_by columns are set for time series data DataFrames, however,
+    these can be adjusted as needed for other DataFrames (e.g., Trials).
 
     For merging e.g. Stimulus data with Trials information, use:
     ````
@@ -72,7 +71,6 @@ def merge_dfs(
         dfs=[stimulus, trials],
         on=["trial_id", "participant_id", "trial_number"],
     )
-    # TODO: update docstring
     ````
     """
     if len(dfs) < 2:

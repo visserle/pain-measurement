@@ -54,7 +54,6 @@ MODELS = {
             "d_model": {"type": "exp", "low": 5, "high": 7},  # 32 to 256
             "e_layers": {"type": "int", "low": 1, "high": 3},
             "d_ff": {"type": "exp", "low": 7, "high": 9},  # 128 to 512
-            "top_k": {"type": "int", "low": 2, "high": 5},
             "dropout": {"type": "float", "low": 0.0, "high": 0.5},
             "factor": {"type": "int", "low": 1, "high": 2},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},

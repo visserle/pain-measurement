@@ -1,5 +1,3 @@
-# TODO: test with StimulusGenerator
-
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -102,6 +100,6 @@ def test_create_ctc_inverse_transform(thermoino):
     plt.show()
 
     # Assert that the inversely transformed temperature course is close to the original
-    assert np.allclose(
-        expanded_steps, temp_course, atol=0.5
-    ), "The reconstructed temperature does not closely match the original"
+    assert np.allclose(expanded_steps, temp_course, atol=0.5), (
+        "The reconstructed temperature does not closely match the original"
+    )

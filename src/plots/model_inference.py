@@ -290,7 +290,7 @@ def plot_single_prediction_confidence_heatmap(
         alpha=0.9,
     )
 
-    # Add colorbar - removed font size specifications
+    # Add colorbar
     cbar = fig.colorbar(im, ax=ax)
     cbar.set_label(
         "Prediction Confidence\n(+ = Decrease, - = Increase)",
@@ -298,7 +298,7 @@ def plot_single_prediction_confidence_heatmap(
         labelpad=30,
     )
 
-    # Add stimulus line overlay with improved visibility
+    # Add stimulus line overlay
     scaled_stimulus_y = len(sorted_confidence_array) / 2
     ax.plot(
         time_points,
@@ -316,7 +316,7 @@ def plot_single_prediction_confidence_heatmap(
     # Add legend for the stimulus line
     ax.legend(loc="lower right", framealpha=0.8)
 
-    # Add labels and statistics - removed font sizes and weights
+    # Add labels and statistics
     total_trials = len(sorted_confidence_array)
     ax.set_title(
         f"Stimulus {stimulus_seed}: {total_trials} trials, threshold {classification_threshold}"
@@ -324,7 +324,7 @@ def plot_single_prediction_confidence_heatmap(
     ax.set_xlabel("Time (seconds)")
     ax.set_ylabel("Participant")
 
-    # Add participant IDs as y-ticks (with improved formatting)
+    # Add participant IDs as y-ticks
     num_ticks = min(10, len(sorted_confidence_array))
     y_positions = np.linspace(0, len(sorted_confidence_array) - 1, num_ticks)
     y_positions = np.round(y_positions).astype(int)
@@ -411,7 +411,9 @@ def plot_prediction_confidence_heatmap(
 
 
 def _validate_inputs(
-    sample_duration: int, all_probabilities: dict, seeds_to_plot: list | None
+    sample_duration: int,
+    all_probabilities: dict,
+    seeds_to_plot: list | None,
 ):
     """Validate input parameters."""
     if sample_duration % 1000:
@@ -429,7 +431,10 @@ def _get_all_participant_ids(all_probabilities: dict, seeds_to_plot: list) -> li
     return sorted(all_participants, key=lambda x: int(x))
 
 
-def _get_seeds_to_plot(all_probabilities: dict, seeds_to_plot: list | None) -> list:
+def _get_seeds_to_plot(
+    all_probabilities: dict,
+    seeds_to_plot: list | None,
+) -> list:
     """Get list of seeds to plot, validating availability."""
     available_seeds = sorted(all_probabilities.keys())
 
@@ -443,7 +448,11 @@ def _get_seeds_to_plot(all_probabilities: dict, seeds_to_plot: list | None) -> l
     return valid_seeds
 
 
-def _create_figure_and_axes(seeds_to_plot: list, ncols: int, figure_size: tuple):
+def _create_figure_and_axes(
+    seeds_to_plot: list,
+    ncols: int,
+    figure_size: tuple,
+):
     """Create figure with optimized subplot layout."""
     n_seeds = len(seeds_to_plot)
     nrows = (n_seeds + ncols - 1) // ncols
@@ -531,7 +540,8 @@ def _process_confidence_data(
 
 
 def _calculate_signed_confidence(
-    increase_probs: np.ndarray, threshold: float
+    increase_probs: np.ndarray,
+    threshold: float,
 ) -> np.ndarray:
     """Calculate signed confidence values based on classification threshold."""
     signed_confidences = np.zeros_like(increase_probs)
@@ -613,7 +623,13 @@ def _get_cached_stimulus(stimulus_seed: int, sample_rate: int = 1) -> np.ndarray
     return 2 * ((stimulus - stimulus.min()) / (stimulus.max() - stimulus.min())) - 1
 
 
-def _add_stimulus_overlay(ax, stimulus_seed, confidence_array, linewidth, scale):
+def _add_stimulus_overlay(
+    ax,
+    stimulus_seed,
+    confidence_array,
+    linewidth,
+    scale,
+):
     """Add stimulus signal overlay to heatmap."""
     stimulus_normalized = _get_cached_stimulus(stimulus_seed)
 
@@ -631,7 +647,13 @@ def _add_stimulus_overlay(ax, stimulus_seed, confidence_array, linewidth, scale)
     )
 
 
-def _format_subplot_axes(ax, subplot_idx, ncols, nrows, participant_ids):
+def _format_subplot_axes(
+    ax,
+    subplot_idx,
+    ncols,
+    nrows,
+    participant_ids,
+):
     """Format individual subplot axes with minimal styling."""
 
     # X-axis formatting (bottom row only)
@@ -662,13 +684,19 @@ def _format_subplot_axes(ax, subplot_idx, ncols, nrows, participant_ids):
         spine.set_linewidth(0.5)
 
 
-def _hide_empty_subplots(axes_flat, n_used_subplots):
+def _hide_empty_subplots(
+    axes_flat,
+    n_used_subplots,
+):
     """Hide unused subplot axes."""
     for idx in range(n_used_subplots, len(axes_flat)):
         axes_flat[idx].set_visible(False)
 
 
-def _finalize_figure_layout(fig, sample_ax):
+def _finalize_figure_layout(
+    fig,
+    sample_ax,
+):
     """Add colorbar and adjust figure layout."""
     # Adjust subplot spacing
     fig.subplots_adjust(

@@ -422,7 +422,7 @@ def plot_participant_accuracy_comparison(results_dict, figsize=(10, 6)):
     ax.set_xlabel("Participant ID")
     ax.set_ylabel("Classification Accuracy")
 
-    # Customize legend - place outside the plot
+    # Customize legend
     legend = ax.legend(
         title="Feature Combination",
         frameon=True,
