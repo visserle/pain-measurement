@@ -386,11 +386,7 @@ def _process_confidence_data(
 
     sorted_confidence_array = np.array(confidence_array)
 
-    # Reverse order for display (so first participant is at top)
-    reversed_array = sorted_confidence_array[::-1]
-    reversed_ids = sorted_participant_ids[::-1]
-
-    return reversed_array, reversed_ids
+    return sorted_confidence_array, sorted_participant_ids
 
 
 def _calculate_signed_confidence(
@@ -433,7 +429,7 @@ def _plot_single_heatmap(
 ):
     """Plot heatmap for a single stimulus seed."""
     # Process confidence data with complete participant list and step_size
-    confidence_array, participant_ids, _ = _process_confidence_data(
+    confidence_array, participant_ids = _process_confidence_data(
         probabilities,
         classification_threshold,
         sample_duration,
@@ -460,7 +456,7 @@ def _plot_single_heatmap(
         extent=(0, 180, 0, len(confidence_array)),
         alpha=0.9,
         interpolation="nearest",
-        origin="lower",  # Add this to ensure correct orientation
+        origin="lower",
     )
 
     # Add stimulus overlay
@@ -548,7 +544,7 @@ def _format_subplot_axes(
         n_participants = len(participant_ids)
         y_positions = np.arange(0.5, n_participants, 1)
         ax.set_yticks(y_positions)
-        ax.set_yticklabels(participant_ids)
+        ax.set_yticklabels(participant_ids)  # Keep original order
         ax.tick_params(axis="y", which="major", pad=2)
         # No individual subplot labels - will add figure-level label
     else:
