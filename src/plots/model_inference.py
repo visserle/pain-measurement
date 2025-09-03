@@ -225,7 +225,8 @@ def plot_prediction_confidence_heatmap(
             ncols,
             len(seeds_to_plot) // ncols,
             only_decreases,
-            all_participant_ids,  # Pass the complete participant list
+            all_participant_ids,
+            step_size,
         )
 
     # Hide unused subplots
@@ -241,10 +242,18 @@ def _validate_inputs(
     sample_duration: int,
     all_probabilities: dict,
     seeds_to_plot: list | None,
+    step_size: int = 1000,  # Add step_size parameter
 ):
     """Validate input parameters."""
-    if sample_duration % 1000:
-        raise ValueError("Sample duration must be a multiple of 1000 milliseconds.")
+    if sample_duration % step_size:
+        raise ValueError(
+            f"Sample duration must be a multiple of {step_size} milliseconds."
+        )
+
+    if 180000 % step_size:
+        raise ValueError(
+            f"Step size {step_size} must evenly divide 180000 ms (180 seconds)."
+        )
 
 
 def _get_all_participant_ids(all_probabilities: dict, seeds_to_plot: list) -> list:
@@ -327,11 +336,20 @@ def _process_confidence_data(
     classification_threshold: float,
     sample_duration: int,
     all_participant_ids: list | None = None,
+    step_size: int = 1000,
 ):
     """Process raw probabilities into signed confidence values."""
     # If no complete participant list provided, use only available participants
     if all_participant_ids is None:
         all_participant_ids = sorted(probabilities.keys(), key=lambda x: int(x))
+
+    # Calculate total number of time points based on step_size
+    total_duration_ms = 180000  # 180 seconds in milliseconds
+    num_time_points = total_duration_ms // step_size
+
+    # Calculate how many steps to skip at the beginning (padding)
+    # sample_duration is the initial context window, step_size is the sampling interval
+    padding_steps = sample_duration // step_size
 
     # Create a mapping of participant_id to confidence array
     confidence_map = {}
@@ -343,9 +361,24 @@ def _process_confidence_data(
                 decrease_probs, classification_threshold
             )
 
-            # Create padded array for this participant
-            padded_array = np.zeros(180)
-            padded_array[int(sample_duration / 1000 - 1) :] = signed_confidences
+            # Create padded array with size based on step_size
+            padded_array = np.zeros(num_time_points)
+
+            # The number of predictions we have
+            num_predictions = len(signed_confidences)
+
+            # Calculate where to place the predictions
+            # We start predictions after the initial sample_duration
+            start_idx = padding_steps
+            end_idx = start_idx + num_predictions
+
+            # Make sure we don't exceed array bounds
+            if end_idx > num_time_points:
+                # Trim predictions if they would exceed the array
+                signed_confidences = signed_confidences[: num_time_points - start_idx]
+                end_idx = num_time_points
+
+            padded_array[start_idx:end_idx] = signed_confidences
             confidence_map[participant_id] = padded_array
 
     # Build the final array with all participants, using NaN for missing data
@@ -358,7 +391,7 @@ def _process_confidence_data(
             confidence_array.append(confidence_map[participant_id])
         else:
             # Use NaN for missing participants (will be displayed as grey)
-            confidence_array.append(np.full(180, np.nan))
+            confidence_array.append(np.full(num_time_points, np.nan))
 
     sorted_confidence_array = np.array(confidence_array)
 
@@ -401,12 +434,17 @@ def _plot_single_heatmap(
     ncols,
     nrows,
     only_decreases,
-    all_participant_ids=None,  # Add parameter for complete participant list
+    all_participant_ids=None,
+    step_size=1000,  # Add step_size parameter
 ):
     """Plot heatmap for a single stimulus seed."""
-    # Process confidence data with complete participant list
+    # Process confidence data with complete participant list and step_size
     confidence_array, participant_ids = _process_confidence_data(
-        probabilities, classification_threshold, sample_duration, all_participant_ids
+        probabilities,
+        classification_threshold,
+        sample_duration,
+        all_participant_ids,
+        step_size,
     )
 
     # Create a masked array to handle NaN values (missing participants)
@@ -432,7 +470,12 @@ def _plot_single_heatmap(
 
     # Add stimulus overlay
     _add_stimulus_overlay(
-        ax, stimulus_seed, confidence_array, stimulus_linewidth, stimulus_scale
+        ax,
+        stimulus_seed,
+        confidence_array,
+        stimulus_linewidth,
+        stimulus_scale,
+        step_size,
     )
 
     # Format axes
@@ -456,9 +499,21 @@ def _add_stimulus_overlay(
     confidence_array,
     linewidth,
     scale,
+    step_size=1000,  # Add step_size parameter
 ):
     """Add stimulus signal overlay to heatmap."""
-    stimulus_normalized = _get_cached_stimulus(stimulus_seed)
+    # Get stimulus at appropriate sample rate based on step_size
+    sample_rate = 1000 // step_size  # Convert step_size to sample_rate
+    stimulus_normalized = _get_cached_stimulus(stimulus_seed, sample_rate)
+
+    # Ensure stimulus matches the confidence array length
+    if len(stimulus_normalized) != confidence_array.shape[1]:
+        # Resample stimulus to match confidence array length
+        from scipy import signal
+
+        stimulus_normalized = signal.resample(
+            stimulus_normalized, confidence_array.shape[1]
+        )
 
     time_points = np.linspace(0, 180, confidence_array.shape[1])
     y_center = len(confidence_array) / 2
