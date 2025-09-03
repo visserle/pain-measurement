@@ -348,7 +348,6 @@ def _process_confidence_data(
     num_time_points = total_duration_ms // step_size
 
     # Calculate how many steps to skip at the beginning (padding)
-    # sample_duration is the initial context window, step_size is the sampling interval
     padding_steps = sample_duration // step_size
 
     # Create a mapping of participant_id to confidence array
@@ -361,20 +360,12 @@ def _process_confidence_data(
                 decrease_probs, classification_threshold
             )
 
-            # Create padded array with size based on step_size
             padded_array = np.zeros(num_time_points)
-
-            # The number of predictions we have
             num_predictions = len(signed_confidences)
-
-            # Calculate where to place the predictions
-            # We start predictions after the initial sample_duration
             start_idx = padding_steps
             end_idx = start_idx + num_predictions
 
-            # Make sure we don't exceed array bounds
             if end_idx > num_time_points:
-                # Trim predictions if they would exceed the array
                 signed_confidences = signed_confidences[: num_time_points - start_idx]
                 end_idx = num_time_points
 
@@ -396,7 +387,10 @@ def _process_confidence_data(
     sorted_confidence_array = np.array(confidence_array)
 
     # Reverse order for display (so first participant is at top)
-    return sorted_confidence_array[::-1], sorted_participant_ids[::-1]
+    reversed_array = sorted_confidence_array[::-1]
+    reversed_ids = sorted_participant_ids[::-1]
+
+    return reversed_array, reversed_ids
 
 
 def _calculate_signed_confidence(
@@ -435,11 +429,11 @@ def _plot_single_heatmap(
     nrows,
     only_decreases,
     all_participant_ids=None,
-    step_size=1000,  # Add step_size parameter
+    step_size=1000,
 ):
     """Plot heatmap for a single stimulus seed."""
     # Process confidence data with complete participant list and step_size
-    confidence_array, participant_ids = _process_confidence_data(
+    confidence_array, participant_ids, _ = _process_confidence_data(
         probabilities,
         classification_threshold,
         sample_duration,
@@ -466,6 +460,7 @@ def _plot_single_heatmap(
         extent=(0, 180, 0, len(confidence_array)),
         alpha=0.9,
         interpolation="nearest",
+        origin="lower",  # Add this to ensure correct orientation
     )
 
     # Add stimulus overlay
