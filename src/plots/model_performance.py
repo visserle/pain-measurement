@@ -280,17 +280,19 @@ def plot_multiple_roc_curves(
     """
     fig, ax = plt.subplots(figsize=(6, 4))  # Wider to accommodate external legend
 
-    # Simple color palette
+    # Updated color palette with more distinct colors
     colors = [
-        "#1f77b4",
-        "#ff7f0e",
-        "#2ca02c",
-        "#d62728",
-        "#9467bd",
-        "#8c564b",
-        "#e377c2",
-        "#17becf",
-        "#000080",
+        "#1f77b4",  # blue
+        "#ff7f0e",  # orange
+        "#2ca02c",  # green
+        "#d62728",  # red
+        "#9467bd",  # purple
+        "#8c564b",  # brown
+        "#e377c2",  # pink
+        "#17becf",  # cyan
+        "#7f7f7f",  # gray
+        "#bcbd22",  # yellow-green
+        "#aec7e8",  # light blue
     ]
 
     for i, (feature_set, (probs, y_true)) in enumerate(results.items()):
@@ -310,12 +312,12 @@ def plot_multiple_roc_curves(
             fpr,
             tpr,
             color=color,
-            linewidth=2,
+            linewidth=1.5,
             label=f"{clean_name}",
         )
 
     # Diagonal reference line
-    ax.plot([0, 1], [0, 1], "k--", alpha=0.6, linewidth=1, label="Random classifier")
+    ax.plot([0, 1], [0, 1], "k--", alpha=0.6, linewidth=0.8, label="Random classifier")
 
     # Professional styling
     ax.set_xlim([0.0, 1.0])
@@ -323,15 +325,16 @@ def plot_multiple_roc_curves(
     ax.set_xlabel("False Positive Rate")
     ax.set_ylabel("True Positive Rate")
 
-    # Legend with tighter spacing
     ax.legend(
         loc="lower right",
         frameon=True,
         fancybox=False,
         shadow=False,
-        handlelength=1.5,
-        handletextpad=0.3,
-        labelspacing=0.3,
+        handlelength=1.2,
+        handletextpad=0.2,
+        labelspacing=0.1,
+        fontsize="small",
+        ncol=1,
     )
 
     # Equal aspect ratio for square plot

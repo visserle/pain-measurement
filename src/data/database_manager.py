@@ -88,7 +88,7 @@ class DatabaseManager:
                 "Database not connected. Use 'with' statement or call connect() first."
             )
 
-    def execute(self, query: str):
+    def execute(self, query: str) -> duckdb.DuckDBPyRelation:
         """Execute a SQL query.
 
         Note: Add a .pl() to the return value to get a Polars DataFrame, e.g.
@@ -96,7 +96,7 @@ class DatabaseManager:
         self._ensure_connection()
         return self.conn.execute(query)
 
-    def sql(self, query: str):
+    def sql(self, query: str) -> duckdb.DuckDBPyRelation:
         """Run a SQL query. If it is a SELECT statement, create a relation object from
         the given SQL query, otherwise run the query as-is. (see DuckDB docs)
         """

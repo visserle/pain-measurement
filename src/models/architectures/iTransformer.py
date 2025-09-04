@@ -23,6 +23,7 @@ class iTransformer(nn.Module):
         e_layers: int = 3,
         d_ff: int = 256,
         n_heads: int = 8,
+        top_k: int = 3,
         dropout: float = 0.1,
         factor: int = 1,
         activation: nn.Module = nn.GELU(),

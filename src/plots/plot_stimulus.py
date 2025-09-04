@@ -1,10 +1,13 @@
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 from bokeh.models import BoxAnnotation, ColumnDataSource, FixedTicker, HoverTool
 from bokeh.plotting import figure, show
 
 from src.experiments.measurement.stimulus_generator import StimulusGenerator
+
+plt.style.use("./src/plots/style.mplstyle")
 
 
 def plot_stimulus(
@@ -130,3 +133,94 @@ def plot_stimulus_labels(
     plt.show()
 
     return fig
+
+
+def plot_stimulus_matplotlib(
+    stimulus,
+    filename: str = "Stimulus_Plot.png",
+    highlight_decreasing: bool = True,
+    show_arrows: bool = True,
+):
+    """
+    Plot the stimulus data using Matplotlib.
+    """
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(4, 3), dpi=300)
+
+    # Get time data
+    time = np.array(range(len(stimulus.y))) / stimulus.sample_rate
+
+    # Plot the main line
+    ax.plot(time, stimulus.y, color="navy", linewidth=2)
+
+    # Add patches for the major decreasing intervals
+    if highlight_decreasing:
+        for interval in stimulus.major_decreasing_intervals_idx:
+            start_time, end_time = (
+                interval[0] / stimulus.sample_rate,
+                interval[1] / stimulus.sample_rate,
+            )
+            ax.add_patch(
+                patches.Rectangle(
+                    (start_time, ax.get_ylim()[0]),
+                    end_time - start_time,
+                    ax.get_ylim()[1] - ax.get_ylim()[0],
+                    facecolor="salmon",
+                    alpha=0.125,
+                    zorder=0,  # Place behind the line
+                )
+            )
+
+    # Add red arrows at the start of major decreasing intervals
+    if show_arrows:
+        for interval in stimulus.major_decreasing_intervals_idx:
+            start_idx = interval[0]
+            start_time = start_idx / stimulus.sample_rate
+            peak_temp = stimulus.y[start_idx]
+
+            # Add arrow pointing diagonally down at the peak (larger and rotated)
+            ax.annotate(
+                "",
+                xy=(start_time + 8, peak_temp - 0.08),  # Arrow tip (diagonal position)
+                xytext=(
+                    start_time - 2,
+                    peak_temp + 0.08,
+                ),  # Arrow start (diagonal position)
+                arrowprops=dict(
+                    arrowstyle="->",
+                    color="red",
+                    lw=8,
+                    shrinkA=0,
+                    shrinkB=0,  # Increased line width
+                ),
+                zorder=10,  # Place on top
+            )
+
+    # Set title and labels
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Temperature (°C)")
+
+    # Customize the plot
+    ax.set_xlim(0, 180)
+
+    # Set x-axis ticks every 10 seconds
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(10))
+
+    # Remove grid
+    ax.grid(False)
+
+    # Remove top and right spines
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    # Tight layout
+    plt.tight_layout()
+
+    # Save the plot if a filename is provided
+    if filename:
+        plt.savefig(filename, dpi=300)
+
+    # Show the plot
+    plt.show()
+
+    return fig, ax
