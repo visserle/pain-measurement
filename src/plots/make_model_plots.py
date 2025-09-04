@@ -212,7 +212,11 @@ def load_model_and_data(feature_list: list, feature_list_str: str) -> tuple:
     return model, model_config, df, test_loader, test_groups
 
 
-def model_inference(cache: InferenceCache, classification_threshold: float = 0.9):
+def model_inference(
+    cache: InferenceCache,
+    classification_threshold: float = 0.9,
+    step_size: int = 1000,
+):
     """Run model inference analysis with caching of results only."""
     config_path = Path("src/experiments/measurement/measurement_config.toml")
     with open(config_path, "rb") as file:
@@ -233,7 +237,10 @@ def model_inference(cache: InferenceCache, classification_threshold: float = 0.9
 
         if cache_valid:
             cached_results = cache.get(
-                feature_list_str, "inference_probabilities", seeds=tuple(stimulus_seeds)
+                feature_list_str,
+                "inference_probabilities",
+                seeds=tuple(stimulus_seeds),
+                step_size=step_size,
             )
 
             if cached_results:
@@ -264,6 +271,7 @@ def model_inference(cache: InferenceCache, classification_threshold: float = 0.9
                     test_ids,
                     stimulus_seed,
                     model_config["sample_duration_ms"],
+                    step_size,
                 )
                 all_probabilities[stimulus_seed] = probabilities
 
@@ -277,6 +285,7 @@ def model_inference(cache: InferenceCache, classification_threshold: float = 0.9
                     "sample_duration_ms": model_config["sample_duration_ms"],
                 },
                 seeds=tuple(stimulus_seeds),
+                step_size=step_size,
             )
 
             sample_duration_ms = model_config["sample_duration_ms"]
@@ -291,6 +300,7 @@ def model_inference(cache: InferenceCache, classification_threshold: float = 0.9
             stimulus_scale=0.5,
             stimulus_linewidth=1.5,
             only_decreases=True,
+            step_size=step_size,
         )
 
         # Save the figure
@@ -442,8 +452,8 @@ if __name__ == "__main__":
     cache = InferenceCache()
 
     # Run all analyses with lightweight caching
-    model_performance_per_participant(cache)
     # model_performance(cache)
-    # model_inference(cache, classification_threshold=0.5)
+    # model_performance_per_participant(cache)
+    model_inference(cache, classification_threshold=0.9, step_size=1000)
 
     logging.info("Completed all model plots")
