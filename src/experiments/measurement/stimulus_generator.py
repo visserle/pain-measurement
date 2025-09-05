@@ -429,25 +429,24 @@ class StimulusGenerator:
     # Labeling section #
     ####################
 
+    def _convert_interval(self, interval: tuple[int, int]) -> tuple[int, int]:
+        return tuple(int(t * 1000 / self.sample_rate) for t in interval)
+
     @property
     def labels(self) -> dict[str, list[tuple[int, int]]]:
-        """Get all the labels for the stimulus in milliseconds."""
+        """Get important labels for the stimulus in milliseconds."""
         labels = {
             "decreasing_intervals": self.decreasing_intervals_idx,
             "major_decreasing_intervals": self.major_decreasing_intervals_idx,
             "increasing_intervals": self.increasing_intervals_idx,
-            "strictly_increasing_intervals": self.strictly_increasing_intervals_idx,
+            "strictly_increasing_intervals": self.strictly_increasing_intervals_idx,  # does not contain increases before plateaus by design, see below
             "strictly_increasing_intervals_without_plateaus": self.strictly_increasing_intervals_without_plateaus_idx,  # noqa E501
             "plateau_intervals": self.plateau_intervals_idx,
             "prolonged_minima_intervals": self.prolonged_minima_intervals_idx,
         }
-
-        def convert_interval(interval: tuple[int, int]) -> tuple[int, int]:
-            return tuple(int(t * 1000 / self.sample_rate) for t in interval)
-
         # Convert indexes to milliseconds
         return {
-            key: [convert_interval(interval) for interval in intervals]
+            key: [self._convert_interval(interval) for interval in intervals]
             for key, intervals in labels.items()
         }
 
@@ -530,11 +529,28 @@ class StimulusGenerator:
         self,
     ) -> list[tuple[int, int]]:
         """
+        Get the start and end indices of strictly increasing half cycles for labeling
+        without increases before plateaus. Used for the main analysis.
+        """
+        intervals = (
+            self.strictly_increasing_intervals_without_plateaus_idx
+            + self.strictly_increasing_intervals_starting_after_plateaus
+        )
+
+        intervals.sort(key=lambda x: x[0])
+        return intervals
+
+    @property
+    def strictly_increasing_intervals_complete_idx(
+        self,
+    ) -> list[tuple[int, int]]:
+        """
         Get the start and end indices of strictly increasing half cycles for labeling.
         """
         intervals = (
             self.strictly_increasing_intervals_without_plateaus_idx
             + self.strictly_increasing_intervals_starting_after_plateaus
+            + self.strictly_increasing_intervals_starting_before_plateaus
         )
 
         intervals.sort(key=lambda x: x[0])
@@ -564,6 +580,29 @@ class StimulusGenerator:
 
             if not has_plateau:
                 intervals.append((int(start), int(end)))
+
+        return intervals
+
+    @property
+    def strictly_increasing_intervals_starting_before_plateaus(
+        self,
+    ) -> list[tuple[int, int]]:
+        """
+        Get the start and end indices of strictly increasing half cycles for labeling.
+
+        This method identifies strictly increasing intervals that occur before plateaus,
+        ending where the plateau begins.
+        """
+        intervals = []
+        increasing_intervals = self.increasing_intervals_idx
+        plateau_intervals = self.plateau_intervals_idx
+
+        for start, end in increasing_intervals:
+            for plateau_start, plateau_end in plateau_intervals:
+                # Check if plateau overlaps with the increasing interval
+                if not (end <= plateau_start or start >= plateau_end):
+                    # Add the interval from start to plateau beginning
+                    intervals.append((int(start), int(plateau_start)))
 
         return intervals
 
