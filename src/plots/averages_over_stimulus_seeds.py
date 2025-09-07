@@ -164,7 +164,7 @@ def _calculate_z_score(confidence_level: float) -> float:
 def plot_averages_with_ci_plt(
     averages_with_ci_df: pl.DataFrame,
     signals: list[str] = None,
-    muted_alpha: float = 0.0,
+    alpha: float = 0.0,
 ) -> plt.Figure:
     """
     Plot confidence intervals for the given modality for all participants for each stimulus seed.
@@ -176,7 +176,7 @@ def plot_averages_with_ci_plt(
     # Create subplot grid (4x3 for 12 plots)
     n_cols = 3
     n_rows = (n_seeds + n_cols - 1) // n_cols
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 12), sharex=True, sharey=True)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(10, 7), sharex=True, sharey=True)
     axes = axes.flatten()
 
     # Color palette for different signals
@@ -191,7 +191,7 @@ def plot_averages_with_ci_plt(
         # Plot each signal
         for sig_idx, sig in enumerate(signals):
             color = colors[sig_idx]
-            alpha = muted_alpha if muted_alpha > 0 else 1.0
+            alpha = alpha if alpha > 0 else 1.0
             signal_label = LABELS.get(sig, sig)
 
             # Plot the average line
@@ -201,6 +201,7 @@ def plot_averages_with_ci_plt(
                 label=signal_label,
                 color=color,
                 alpha=alpha,
+                linewidth=0.9,
             )
 
             # Plot confidence interval
@@ -237,9 +238,9 @@ def plot_averages_with_ci_plt(
     plt.subplots_adjust(bottom=0.1, left=0.07)  # Add left padding
 
     # Add single x and y labels to the figure
-    fig.text(0.5, 0.06, "Time (s)", ha="center", va="bottom")
+    fig.text(0.5, 0.05, "Time (s)", ha="center", va="bottom")
     fig.text(
-        0.04, 0.55, "Normalized value", ha="center", va="center", rotation="vertical"
+        0.02, 0.55, "Normalized value", ha="center", va="center", rotation="vertical"
     )
 
     # Add legend to the bottom of the figure
@@ -248,7 +249,7 @@ def plot_averages_with_ci_plt(
         handles,
         labels,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.025),
+        bbox_to_anchor=(0.5, 0),
         ncol=len(signals),
     )
 
