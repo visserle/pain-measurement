@@ -1,10 +1,12 @@
 RANDOM_SEED = 42
+STABILITY_SEEDS = list(range(0, 201))
 SAMPLE_DURATION_MS = 7000
 BATCH_SIZE = 64
 N_EPOCHS = 15
 N_TRIALS = 30
 INTERVALS = {  # see stimulus generation notebook for details
-    "increases": "strictly_increasing_intervals",  # does not include increases before plateaus by design
+    "increases": "strictly_increasing_intervals",
+    # note: above does not include increases before plateaus by design
     "plateaus": "plateau_intervals",
     "decreases": "major_decreasing_intervals",
 }

@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -21,6 +22,7 @@ from src.models.main_config import (
     OFFSETS_MS,
     RANDOM_SEED,
     SAMPLE_DURATION_MS,
+    STABILITY_SEEDS,
 )
 from src.models.model_selection import (
     ExperimentTracker,
@@ -28,7 +30,11 @@ from src.models.model_selection import (
     train_evaluate_and_save_best_model,
 )
 from src.models.models_config import MODELS
-from src.models.utils import get_device, set_seed
+from src.models.stability import run_stability_evaluation
+from src.models.utils import (
+    get_device,
+    set_seed,
+)
 
 configure_logging(
     stream_level=logging.DEBUG,
@@ -38,7 +44,6 @@ optuna.logging.disable_default_handler()
 optuna.logging.enable_propagation()
 
 device = get_device()
-set_seed(RANDOM_SEED)
 
 
 def parse_args():
@@ -67,6 +72,11 @@ def parse_args():
         default=N_TRIALS,
         help=f"Number of optimization trials to run. Default: {N_TRIALS}",
     )
+    parser.add_argument(
+        "--stability",
+        action="store_true",
+        help="If set, perform stability testing with multiple random seeds.",
+    )
 
     return parser.parse_args()
 
@@ -76,58 +86,87 @@ def main():
     args.features = expand_feature_list(args.features)
     df = load_data_from_database(args.features)
 
-    # Create experiment tracker
-    experiment_tracker = ExperimentTracker(
-        features=args.features,
-        sample_duration_ms=SAMPLE_DURATION_MS,
-        intervals=INTERVALS,
-        label_mapping=LABEL_MAPPING,
-        offsets_ms=OFFSETS_MS,
-    )
+    if not args.stability:
+        # Normal run: single seed for model comparison
+        set_seed(RANDOM_SEED)
 
-    # Prepare data
-    X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
-        prepare_data(
-            df=df,
-            feature_list=args.features,
+        # Create experiment tracker
+        experiment_tracker = ExperimentTracker(
+            features=args.features,
             sample_duration_ms=SAMPLE_DURATION_MS,
             intervals=INTERVALS,
             label_mapping=LABEL_MAPPING,
             offsets_ms=OFFSETS_MS,
+        )
+
+        # Prepare data
+        X_train, y_train, X_val, y_val, X_train_val, y_train_val, X_test, y_test = (
+            prepare_data(
+                df=df,
+                feature_list=args.features,
+                sample_duration_ms=SAMPLE_DURATION_MS,
+                intervals=INTERVALS,
+                label_mapping=LABEL_MAPPING,
+                offsets_ms=OFFSETS_MS,
+                random_seed=RANDOM_SEED,
+            )
+        )
+
+        # Create dataloaders
+        train_loader, val_loader = create_dataloaders(
+            X_train, y_train, X_val, y_val, batch_size=BATCH_SIZE, is_test=False
+        )
+
+        train_val_loader, test_loader = create_dataloaders(
+            X_train_val, y_train_val, X_test, y_test, batch_size=BATCH_SIZE
+        )
+
+        # Run model selection and hyperparameter tuning
+        experiment_tracker = run_model_selection(
+            train_loader=train_loader,
+            val_loader=val_loader,
+            model_names=args.models,
+            models_config=MODELS,
+            n_trials=args.trials,
+            n_epochs=N_EPOCHS,
+            device=device,
+            experiment_tracker=experiment_tracker,
             random_seed=RANDOM_SEED,
         )
-    )
 
-    # Create dataloaders
-    train_loader, val_loader = create_dataloaders(
-        X_train, y_train, X_val, y_val, batch_size=BATCH_SIZE, is_test=False
-    )
+        # Train final model on combined training+validation data
+        experiment_tracker = train_evaluate_and_save_best_model(
+            train_val_loader=train_val_loader,
+            test_loader=test_loader,
+            n_epochs=N_EPOCHS,
+            device=device,
+            experiment_tracker=experiment_tracker,
+        )
 
-    train_val_loader, test_loader = create_dataloaders(
-        X_train_val, y_train_val, X_test, y_test, batch_size=BATCH_SIZE
-    )
+    else:
+        # stability testing: multiple seeds for the best model
+        logging.info("Starting stability testing")
 
-    # Run model selection and hyperparameter tuning
-    experiment_tracker = run_model_selection(
-        train_loader=train_loader,
-        val_loader=val_loader,
-        model_names=args.models,
-        models_config=MODELS,
-        n_trials=args.trials,
-        n_epochs=N_EPOCHS,
-        device=device,
-        experiment_tracker=experiment_tracker,
-        random_seed=RANDOM_SEED,
-    )
+        stability_results = run_stability_evaluation(
+            df=df,
+            features=args.features,
+            stability_seeds=STABILITY_SEEDS,
+            sample_duration_ms=SAMPLE_DURATION_MS,
+            intervals=INTERVALS,
+            label_mapping=LABEL_MAPPING,
+            offsets_ms=OFFSETS_MS,
+            batch_size=BATCH_SIZE,
+            n_epochs=N_EPOCHS,
+            device=device,
+            save_results=True,
+        )
 
-    # Train final model on combined training+validation data
-    experiment_tracker = train_evaluate_and_save_best_model(
-        train_val_loader=train_val_loader,
-        test_loader=test_loader,
-        n_epochs=N_EPOCHS,
-        device=device,
-        experiment_tracker=experiment_tracker,
-    )
+        # Log summary statistics
+        stats = stability_results.summary_stats()
+        logging.info(
+            f"Stability testing completed with {stats['n_runs']} runs. "
+            f"Mean accuracy: {stats['mean_accuracy']:.4f} ± {stats['std_accuracy']:.4f}"
+        )
 
     logging.info(f"Experiment with features {args.features} completed successfully")
 
