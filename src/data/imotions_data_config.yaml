@@ -1,7 +1,7 @@
 # Note that all column names will be lowercased and all spaces in column names will be
 # replaced with underscores in the resulting database table.
 
-Trials:
+Trials_Info:
   file_name: "ExternalMarker_ET_EventAPI_ExternDevice"
   load_columns:
     - "Timestamp"

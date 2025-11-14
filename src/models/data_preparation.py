@@ -57,7 +57,10 @@ def _categorize_features(feature_list: list) -> tuple:
     return eeg_features_present, non_eeg_features
 
 
-def load_data_from_database(feature_list: list) -> pl.DataFrame:
+def load_data_from_database(
+    feature_list: list,
+    participant_ids: list | None = None,
+) -> pl.DataFrame:
     """Load data from the database. Allow merging EEG and non-EEG features.
 
     Used in the main script to load data based on the provided feature list."""
@@ -71,12 +74,16 @@ def load_data_from_database(feature_list: list) -> pl.DataFrame:
             if non_eeg_features:  # mixed EEG and non-EEG features
                 # add marker to keep eeg sampling rate unchanged
                 eeg = db.get_trials(
-                    "Feature_EEG", exclude_problematic=True
+                    "Feature_EEG",
+                    exclude_problematic=True,
+                    participant_ids=participant_ids,
                 ).with_columns(marker_eeg=pl.lit(True))
 
                 data = (
                     db.get_trials(
-                        "Feature_Data", exclude_problematic=True
+                        "Feature_Data",
+                        exclude_problematic=True,
+                        participant_ids=participant_ids,
                     ).with_columns(marker_eeg=pl.lit(False))
                 ).select(
                     [
@@ -89,7 +96,7 @@ def load_data_from_database(feature_list: list) -> pl.DataFrame:
                     + non_eeg_features
                 )
 
-                trials = db.get_trials("Trials", exclude_problematic=True)
+                trials_info = db.get_trials("Trials_Info", exclude_problematic=True)
 
                 df = merge_dfs(
                     [eeg, data],
@@ -105,14 +112,22 @@ def load_data_from_database(feature_list: list) -> pl.DataFrame:
                     pl.col("marker_eeg")  # keep only original EEG rows
                 )
                 df = add_normalized_timestamp(df)
-                df = add_labels(df, trials)
+                df = add_labels(df, trials_info)
             else:  # only EEG features
-                eeg = db.get_trials("Feature_EEG", exclude_problematic=True)
-                trials = db.get_trials("Trials", exclude_problematic=True)
+                eeg = db.get_trials(
+                    "Feature_EEG",
+                    exclude_problematic=True,
+                    participant_ids=participant_ids,
+                )
+                trials_info = db.get_trials("Trials_Info", exclude_problematic=True)
                 eeg = add_normalized_timestamp(eeg)
-                df = add_labels(eeg, trials)
+                df = add_labels(eeg, trials_info)
         else:  # No EEG features
-            df = db.get_trials("Feature_Data", exclude_problematic=True)
+            df = db.get_trials(
+                "Feature_Data",
+                exclude_problematic=True,
+                participant_ids=participant_ids,
+            )
 
     return df
 

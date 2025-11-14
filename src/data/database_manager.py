@@ -14,7 +14,7 @@ from src.data.data_processing import (
     create_participants_df,
     create_questionnaire_df,
     create_raw_data_df,
-    create_trials_df,
+    create_trials_info_df,
     merge_and_label_data_dfs,
     remove_trials_with_thermode_or_rating_issues,
 )
@@ -46,10 +46,10 @@ class DatabaseManager:
     ```python
     db = DatabaseManager()
     with db:
-        df = db.execute("SELECT * FROM Trials").pl()  # .pl() for Polars DataFrame
+        df = db.execute("SELECT * FROM Trials_Info").pl()  # .pl() for Polars DataFrame
         # or alternatively
-        df = db.get_table("Trials")
-        df = db.get_trials("Trials", exclude_problematic=False)
+        df = db.get_table("Trials_Info")
+        df = db.get_trials("Trials_Info", exclude_problematic=False)  # no filter
         # Note that get_trials also can return trials from other tables, e.g. Feature_EEG
     df.head()
     ```
@@ -69,7 +69,7 @@ class DatabaseManager:
     @staticmethod
     def _initialize_tables():
         with duckdb.connect(DB_FILE.as_posix()) as conn:
-            DatabaseSchema.create_trials_table(conn)
+            DatabaseSchema.create_trials_info_table(conn)
             DatabaseSchema.create_seeds_table(conn)
 
     def connect(self) -> None:
@@ -121,13 +121,13 @@ class DatabaseManager:
         self,
         table_name: str,
         exclude_problematic: bool | str | list[str],
+        participant_ids: list[int] | None = None,
     ) -> pl.DataFrame:
         """Return the trial data from a table as a Polars DataFrame.
 
         Note that independent from addition to exclude_problematic,
         we always remove trial that had rating or thermode issues, as these trials
         are not valid for the experiment.
-
 
         Args:
             table_name: The name of the table to retrieve.
@@ -138,9 +138,11 @@ class DatabaseManager:
                 Modality matching is partial, so 'eeg' will match entries like 'eeg/eda'.
                 - If False, includes all trials.
         """
-
+        participant_filter = (
+            "where participant_id in " + str(participant_ids) if participant_ids else ""
+        )
         df = self.execute(
-            f"SELECT * FROM {table_name}"
+            f"SELECT * FROM {table_name} {participant_filter}"
         ).pl()  # could be more efficient by filtering out invalid trials in the query
 
         # Remove inter-trial rows
@@ -229,14 +231,12 @@ class DatabaseManager:
     def participant_exists(
         self,
         participant_id: int,
-        table_name: str = "Trials",
+        table_name: str = "Trials_Info",
     ) -> bool:
-        """Check if a participant exists in the database.
-
-        If they exist in Trials, they exist in all raw data tables.
-        """
+        """Check if a participant exists in the database."""
+        # If they exist in Trials_Info, they exist in all raw data tables.
         if "Raw" in table_name:
-            table_name = "Trials"
+            table_name = "Trials_Info"
         if not self.table_exists(table_name):
             return False
         result = self.execute(
@@ -264,15 +264,17 @@ class DatabaseManager:
         self.execute(f"CREATE OR REPLACE TABLE {table_name} AS SELECT * FROM temp_df")
         self.conn.unregister("temp_df")
 
-    def insert_trials_df(
+    def insert_trials_info_df(
         self,
-        trials_df: pl.DataFrame,
+        trials_info_df: pl.DataFrame,
     ) -> None:
-        columns = ", ".join(trials_df.columns)
+        columns = ", ".join(trials_info_df.columns)
         try:
-            self.conn.register("trials_df", trials_df)
-            self.execute(f"INSERT INTO Trials ({columns}) SELECT * FROM trials_df")
-            self.conn.unregister("trials_df")
+            self.conn.register("trials_info_df", trials_info_df)
+            self.execute(
+                f"INSERT INTO Trials_Info ({columns}) SELECT * FROM trials_info_df"
+            )
+            self.conn.unregister("trials_info_df")
         except duckdb.ConstraintException as e:
             logger.warning(f"Trial data already exists in the database: {e}")
 
@@ -292,7 +294,7 @@ class DatabaseManager:
             INSERT INTO {table_name}
             SELECT t.trial_id, r.*
             FROM raw_data_df AS r
-            LEFT JOIN Trials AS t -- left join to keep data that has no trial_id
+            LEFT JOIN Trials_Info AS t -- left join to keep data that has no trial_id
                 ON r.trial_number = t.trial_number 
                 AND r.participant_id = t.participant_id
             ORDER BY r.rownumber;
@@ -382,13 +384,13 @@ def main():
                     )
                     continue
 
-                df = load_imotions_data_df(participant_id, "Trials")
-                trials_df = create_trials_df(participant_id, df)
-                db.insert_trials_df(trials_df)
+                df = load_imotions_data_df(participant_id, "Trials_Info")
+                trials_info_df = create_trials_info_df(participant_id, df)
+                db.insert_trials_info_df(trials_info_df)
 
                 for modality in MODALITIES:
                     df = load_imotions_data_df(participant_id, modality)
-                    df = create_raw_data_df(participant_id, df, trials_df)
+                    df = create_raw_data_df(participant_id, df, trials_info_df)
                     db.insert_raw_data(participant_id, "Raw_" + modality, df)
                 logger.debug(f"Raw data for participant {participant_id} inserted.")
             logger.info("Raw data inserted.")
@@ -430,10 +432,10 @@ def main():
             data_dfs_explore.append(
                 db.get_trials(f"Explore_{modality}", exclude_problematic=False)
             )
-        trials_df = db.get_trials("Trials", exclude_problematic=False)
-        df = merge_and_label_data_dfs(data_dfs, trials_df)
+        trials_info_df = db.get_trials("Trials_Info", exclude_problematic=False)
+        df = merge_and_label_data_dfs(data_dfs, trials_info_df)
         db.ctas("Feature_Data", df)
-        df_explore = merge_and_label_data_dfs(data_dfs_explore, trials_df)
+        df_explore = merge_and_label_data_dfs(data_dfs_explore, trials_info_df)
         db.ctas("Explore_Data", df_explore)
         logger.info("Feature and exploratory data tables created.")
 

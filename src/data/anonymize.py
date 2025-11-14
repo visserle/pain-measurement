@@ -26,9 +26,9 @@ def anonymize_db(db):
     with db:
         tables = db.execute("SHOW TABLES").fetchall()
         tables = list(map(lambda x: x[0], tables))
-        tables.remove("Trials")
-        tables.remove("Seeds")  # no participants here
-        tables.insert(0, "Trials")  # 1st place
+        tables.remove("Trials_Info")
+        tables.remove("Seeds")  # no participants to anonymize here
+        tables.insert(0, "Trials_Info")  # 1st place
 
     Anonymizer = ID_Anonymizer(participants_with_problematic_trials_only)
 

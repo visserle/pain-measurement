@@ -140,7 +140,7 @@ def remove_trials_with_thermode_or_rating_issues(
     )
 
 
-def create_trials_df(
+def create_trials_info_df(
     participant_id: int,
     iMotions_Marker: pl.DataFrame,
 ) -> pl.DataFrame:
@@ -148,7 +148,7 @@ def create_trials_df(
     Create a table with trial information (metadata) for each participant from iMotions
     marker data.
     """
-    trials_df = (
+    trials_info_df = (
         # 'markerdescription' from imotions contains the onset and offset of each
         # stimulus
         # drop all rows where the markerdescription is null to get the start and end
@@ -172,17 +172,17 @@ def create_trials_df(
         .sort("timestamp_start")
     )
     # add column for duration of each stimulus
-    trials_df = trials_df.with_columns(
-        trials_df.select(
+    trials_info_df = trials_info_df.with_columns(
+        trials_info_df.select(
             (col("timestamp_end") - col("timestamp_start")).alias("duration")
         )
     )
     # add column for trial number
-    trials_df = trials_df.with_columns(
-        pl.arange(1, trials_df.height + 1).alias("trial_number").cast(pl.UInt8)
+    trials_info_df = trials_info_df.with_columns(
+        pl.arange(1, trials_info_df.height + 1).alias("trial_number").cast(pl.UInt8)
     )
     # add column for participant id
-    trials_df = trials_df.with_columns(
+    trials_info_df = trials_info_df.with_columns(
         pl.lit(participant_id).alias("participant_id").cast(pl.UInt8)
     )
     # add column for skin patch
@@ -199,7 +199,7 @@ def create_trials_df(
     For participants with an odd id the stimulation order is:
     1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> end.
     """
-    trials_df = trials_df.with_columns(
+    trials_info_df = trials_info_df.with_columns(
         pl.when(col("participant_id") % 2 == 1)
         .then(((col("trial_number") - 1) % 6) + 1)
         .otherwise(6 - ((col("trial_number") - 1) % 6))
@@ -208,27 +208,27 @@ def create_trials_df(
     )
 
     # change order of columns
-    trials_df = trials_df.select(
+    trials_info_df = trials_info_df.select(
         col(a := "trial_number"),
         col(b := "participant_id"),
         pl.all().exclude(a, b),
     )
 
-    logger.debug("Created Trials DataFrame for participant %s.", participant_id)
-    return trials_df
+    logger.debug("Created Trials_Info DataFrame for participant %s.", participant_id)
+    return trials_info_df
 
 
 def create_raw_data_df(
     participant_id: int,
     imotions_data_df: pl.DataFrame,
-    trials_df: pl.DataFrame,
+    trials_info_df: pl.DataFrame,
 ) -> pl.DataFrame:
     """
     Create raw data tables for each data type based on the trial information.
     We only keep rows that are part of a trial from the iMotions data.
     """
     # Create a DataFrame with the trial information only
-    trial_info_df = trials_df.select(
+    trial_info_df = trials_info_df.select(
         col("timestamp_start").alias("trial_start"),
         col("timestamp_end").alias("trial_end"),
         col("trial_number"),
@@ -319,7 +319,7 @@ def create_explore_data_df(
 
 def merge_and_label_data_dfs(
     data_dfs: list[pl.DataFrame],
-    trials_df: pl.DataFrame,
+    trials_info_df: pl.DataFrame,
 ) -> pl.DataFrame:
     """
     Merge multiple feature DataFrames into a single DataFrame. Only for data at 10 Hz.
@@ -328,5 +328,5 @@ def merge_and_label_data_dfs(
     df = interpolate_and_fill_nulls_in_trials(df)
     df = add_normalized_timestamp(df)
     df = resample_at_10_hz_equidistant(df)
-    df = add_labels(df, trials_df)  #  important: always add labels at the very end
+    df = add_labels(df, trials_info_df)  #  important: always add labels at the very end
     return df.drop("rownumber", "samplenumber", strict=False)

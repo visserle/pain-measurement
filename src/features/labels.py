@@ -10,7 +10,7 @@ from src.features.transforming import merge_dfs
 
 def add_labels(
     data_df: pl.DataFrame,
-    trials_df: pl.DataFrame,
+    trials_info_df: pl.DataFrame,
 ) -> pl.DataFrame:
     """Add labels to the data DataFrame. Note that labels are based on the temperarture
     intervals of the stimulus generator and are added as binary columns to the
@@ -22,18 +22,18 @@ def add_labels(
         "for each trial, see resampling.py."
     )
     # Add temporary markers so that we can remove rows from trials from the real data
-    trials_df = trials_df.with_columns(label_marker=pl.lit(False))
+    trials_info_df = trials_info_df.with_columns(label_marker=pl.lit(False))
     data_df = data_df.with_columns(label_marker=pl.lit(True))
 
     # Merge data and trials DataFrames
     df = (
         merge_dfs(
-            [data_df, trials_df],
+            [data_df, trials_info_df],
             on=["trial_id", "participant_id", "trial_number", "label_marker"],
         )
         .drop("duration", "timestamp_end", "timestamp_start")
         # Add stimulus seed info to all columns so that we can group after it later
-        # Note that ffill is sufficient here, because entry from trials_df is always
+        # Note that ffill is sufficient here, because entry from trials_info_df is always
         # the first for the respective trial (same for skin_patch)
         .with_columns(col(["stimulus_seed", "skin_patch"]).forward_fill())
     )
