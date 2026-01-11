@@ -452,8 +452,8 @@ if __name__ == "__main__":
     cache = InferenceCache()
 
     # Run all analyses with lightweight caching
-    # model_performance(cache)
-    # model_performance_per_participant(cache)
-    model_inference(cache, classification_threshold=0.9, step_size=1000)
+    model_performance(cache)
+    model_performance_per_participant(cache)
+    model_inference(cache, classification_threshold=0.90, step_size=250)
 
     logging.info("Completed all model plots")
