@@ -591,6 +591,3 @@ def _finalize_figure_layout(
         labelpad=8,
     )
     cbar.outline.set_linewidth(0.0)
-
-
-def latency_analysis(): ...
