@@ -45,7 +45,7 @@ def analyze_per_participant(
     sample_indices = []
 
     # Process all batches
-    with torch.no_grad():
+    with torch.inference_mode():
         for X_batch, y_batch in test_loader:
             X_batch = X_batch.to(device)
             batch_size = X_batch.shape[0]

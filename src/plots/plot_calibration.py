@@ -3,6 +3,8 @@ import numpy as np
 
 from src.experiments.calibration.estimator import BayesianEstimatorVAS
 
+plt.style.use("./src/plots/style.mplstyle")
+
 
 def plot_trials(
     estimator: BayesianEstimatorVAS,
@@ -27,7 +29,7 @@ def plot_trials(
             plt.plot(range_temperature, priors[trial], label="Prior")
             plt.plot(range_temperature, likelihoods[trial], label="Likelihood")
             plt.plot(range_temperature, posteriors[trial], label="Posterior")
-            plt.title(f"Trial {trial+1} of {trials}")
+            plt.title(f"Trial {trial + 1} of {trials}")
             plt.xlim([min_temperature, max_temperature])
             plt.ylim([0, 1])
             plt.xlabel("Temperature (°C)")
@@ -68,7 +70,7 @@ def plot_trials(
             ax[trial].plot(range_temperature, priors[trial], label="Prior")
             ax[trial].plot(range_temperature, likelihoods[trial], label="Likelihood")
             ax[trial].plot(range_temperature, posteriors[trial], label="Posterior")
-            ax[trial].set_title(f"Trial {trial+1}")
+            ax[trial].set_title(f"Trial {trial + 1}")
             ax[trial].set_xlim([min_temperature, max_temperature])
             ax[trial].set_xticks(np.arange(min_temperature, max_temperature + 1, 1))
             ax[trial].set_ylim([0, 1])
