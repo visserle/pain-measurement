@@ -1,28 +1,13 @@
-# Only share once anonymized:
-src/data/invalid_trials.*
-src/data/invalid_participants.csv
-
-# Log and data files
+# Log and raw, unanonymized data files
 /runs
 /data
 src/data/participants.json
+src/data/invalid_trials*
+src/data/invalid_participants.csv
 Experiment.duckdb.tmp
-
-# work in progress
-stuff.ipynb
-notebooks/00_stimuli_function.ipynb
-notebooks/03_dataset_size.ipynb
-notebooks/04_time_series.ipynb
-notebooks/05_preprocess_data.ipynb
-src/data/01_statistical_tests.ipynb
-src/data/05_preprocess_data Kopie.ipynb
-src/data/catboost.ipynb
-src/data/test.py
-src/models/mlp.py
-src/models/models_2.py
-src/questionnaires/archive
-src/experiments/oddball.py
-src/features/_stuff
+reports/
+db.sqlite3
+*.duckdb
 
 # Licensed questionnaires
 src/experiments/questionnaires/archive
@@ -121,26 +106,4 @@ target/
 
 # Mypy cache
 .mypy_cache/
-
-# Stuff
-*.duckdb
-src/data/protocols.md
 _stuff.ipynb
-notebooks/skorch_doctor.ipynb
-notebooks/stuff_modeling.ipynb
-notebooks/stuff_time_series.ipynb
-notebooks/thermode.ipynb
-notebooks/preprocess_data.ipynb
-notebooks/kalman.ipynb
-notebooks/dataset_size.ipynb
-/try
-db.sqlite3
-src/data/imotions_data_config_old.yaml
-*oddball*
-src/data/invalid_trials_strict.csv
-reports/measurement_participants.json
-reports/participants_stats.toml
-reports/participants_stats.txt
-reports/participants.json
-WARP.md
-/cache
