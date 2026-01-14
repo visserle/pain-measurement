@@ -97,21 +97,24 @@ def create_questionnaire_df(questionnaire: str):
 def create_seeds_df():
     config = DataConfig.load_stimulus_config()
     seeds = config["seeds"]
-    return pl.DataFrame(
-        {
-            "seed": seeds,
-            "major_decreasing_intervals": [
-                StimulusGenerator(config=config, seed=seed).labels[
-                    "major_decreasing_intervals"
-                ]
-                for seed in seeds
-            ],
-        },
-        schema={
-            "seed": pl.UInt16,
-            "major_decreasing_intervals": pl.List(pl.List(pl.UInt32)),
-        },
-    )
+
+    # Generate labels for all seeds
+    all_labels = [StimulusGenerator(config=config, seed=seed).labels for seed in seeds]
+
+    # Get label keys from first stimulus generator
+    label_keys = all_labels[0].keys()
+
+    # Build data dictionary dynamically
+    data = {"seed": seeds}
+    data.update({key: [labels[key] for labels in all_labels] for key in label_keys})
+
+    # Build schema dynamically
+    schema = {
+        "seed": pl.UInt16,
+        **{key: pl.List(pl.List(pl.UInt32)) for key in label_keys},
+    }
+
+    return pl.DataFrame(data, schema=schema)
 
 
 def remove_trials_with_thermode_or_rating_issues(
