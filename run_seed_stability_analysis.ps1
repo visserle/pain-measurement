@@ -1,0 +1,41 @@
+
+# Check for PowerShell version 6.0 or higher
+if ($PSVersionTable.PSVersion.Major -lt 6) {
+    Write-Host "Please install PowerShell 6.0 or higher to run this script."
+    Read-Host
+    exit
+}
+
+# Initialize Conda environment
+if ($IsWindows) {
+    # Windows specific Conda initialization
+    $condaPath = Join-Path $env:USERPROFILE "miniconda3"  # Dynamically find miniconda3 in user's home directory
+    & "$condaPath\shell\condabin\conda-hook.ps1"
+    # Depending on the Conda setup you might need this instead to initialize Conda
+    # & "$condaPath\Scripts\activate.ps1"
+    conda activate pain
+}
+elseif ($IsMacOS) {
+    # macOS specific Conda initialization
+    $condaPath = "$HOME/miniforge3"
+    # Use bash to activate the environment and get the Python path
+    $pythonPath = /bin/bash -c "source '$condaPath/bin/activate' pain; which python"
+    
+    # Extract the directory path of the Python executable
+    $pythonDir = Split-Path -Parent $pythonPath
+    
+    # Prepend the Python directory to the PATH environment variable
+    $env:PATH = "$pythonDir" + ":" + $env:PATH
+}
+
+# Print the welcome message
+Write-Host ""
+Write-Host "Starting seed stability analysis..."
+
+python -m src.models.main --stability --features eda_raw heart_rate 
+python -m src.models.main --stability --features eda_raw heart_rate pupil
+
+Write-Host ""
+Write-Host "Press [Enter] to exit..."
+Read-Host
+exit
