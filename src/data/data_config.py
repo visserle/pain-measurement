@@ -21,8 +21,8 @@ class DataConfig:
     QUESTIONNAIRES = [
         # same as in src/experiments/questionnaires/app.py
         "general",
-        "bdi-ii",
-        "phq-15",
+        # "bdi-ii", # removed for privacy reasons
+        # "phq-15", # removed for privacy reasons
         "panas",
         "pcs",
         "pvaq",
