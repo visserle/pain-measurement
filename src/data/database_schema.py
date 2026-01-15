@@ -13,24 +13,11 @@ class DatabaseSchema:
     Database schema for the experiment data.
 
     Consists of:
-        - metadata tables for participants, trials info, seeds, etc. and
+        - metadata tables for invalid data, trials info, seeds, etc. and
         - data tables for raw, preprocess, and feature data.
 
     Note: participant_id and trial_number are denormalized columns to avoid joins.
     """
-
-    @staticmethod
-    def create_participants_table(
-        conn: duckdb.DuckDBPyConnection,
-    ) -> None:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS Participants (
-                participant_id INTEGER PRIMARY KEY,
-                age INTEGER,
-                gender CHAR
-            );
-        """)
-        pass
 
     @staticmethod
     def create_trials_info_table(

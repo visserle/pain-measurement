@@ -37,14 +37,6 @@ INVALID_PARTICIPANTS = (
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
-def create_participants_df():
-    return (
-        pl.read_csv(DataConfig.PARTICIPANT_DATA_FILE)
-        .rename({"id": "participant_id"})
-        .drop("timestamp")  # drop timestamp column for privacy reasons
-    ).filter(~col("participant_id").is_in(INVALID_PARTICIPANTS))
-
-
 def create_calibration_results_df():
     return (
         pl.read_csv(DataConfig.CALIBRATION_RESULTS_FILE)

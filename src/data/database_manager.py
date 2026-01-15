@@ -11,7 +11,6 @@ from src.data.data_processing import (
     create_explore_data_df,
     create_feature_data_df,
     create_measurement_results_df,
-    create_participants_df,
     create_questionnaire_df,
     create_raw_data_df,
     create_trials_info_df,
@@ -360,7 +359,6 @@ def main():
                 "Invalid_Participants", DataConfig.load_invalid_participants_config()
             )
             db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
-            db.ctas("Participants", create_participants_df())
             db.ctas("Calibration_Results", create_calibration_results_df())
             db.ctas("Measurement_Results", create_measurement_results_df())
             for questionnaire in QUESTIONNAIRES:
@@ -402,6 +400,7 @@ def main():
     # NOTE: From here on, you can use the pipeline without possessing the original, de-
     # anonymized data.
 
+    logging.info("Starting data pipeline.")
     with db:
         # no check for existing data as it will be overwritten every time
         # Feature-engineered data
@@ -414,6 +413,9 @@ def main():
 
         # Exploratory data
         for modality in MODALITIES:
+            if modality == "EEG":
+                logging.debug("Skipping EEG exploratory data creation.")
+                continue
             table_name = f"Explore_{modality}"
             df = db.get_table(f"Raw_{modality}")
             df = create_explore_data_df(table_name, df)
