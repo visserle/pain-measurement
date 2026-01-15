@@ -6,7 +6,7 @@ import yaml
 
 
 class DataConfig:
-    DB_FILE = Path("data/pain-measurement.duckdb")
+    DB_FILE = Path("pain-measurement.duckdb")
 
     MODALITIES = ["Stimulus", "EDA", "EEG", "HR", "Pupil", "Face"]
 
