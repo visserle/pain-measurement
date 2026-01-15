@@ -46,14 +46,6 @@ def create_calibration_results_df():
     )
 
 
-def create_measurement_results_df():
-    return (
-        pl.read_csv(DataConfig.MAESUREMENT_RESULTS_FILE)
-        .rename({"id": "participant_id"})
-        .filter(~col("participant_id").is_in(INVALID_PARTICIPANTS))
-    )
-
-
 def create_questionnaire_df(questionnaire: str):
     questionnaire_df = pl.read_csv(
         DataConfig.QUESTIONNAIRES_DATA_PATH / (questionnaire + "_results.csv")

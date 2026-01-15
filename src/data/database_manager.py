@@ -10,7 +10,6 @@ from src.data.data_processing import (
     create_calibration_results_df,
     create_explore_data_df,
     create_feature_data_df,
-    create_measurement_results_df,
     create_questionnaire_df,
     create_raw_data_df,
     create_trials_info_df,
@@ -47,8 +46,7 @@ class DatabaseManager:
     with db:
         df = db.execute("SELECT * FROM Trials_Info").pl()  # .pl() for Polars DataFrame
         # or alternatively
-        df = db.get_table("Trials_Info")
-        df = db.get_trials("Trials_Info", exclude_problematic=False)  # no filter
+        df = db.get_trials("Trials_Info", exclude_problematic=True)
         # Note that get_trials also can return trials from other tables, e.g. Feature_EEG
     df.head()
     ```
@@ -360,7 +358,6 @@ def main():
             )
             db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
             db.ctas("Calibration_Results", create_calibration_results_df())
-            db.ctas("Measurement_Results", create_measurement_results_df())
             for questionnaire in QUESTIONNAIRES:
                 df = create_questionnaire_df(questionnaire)
                 db.ctas("Questionnaire_" + questionnaire.upper(), df)

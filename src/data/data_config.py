@@ -11,12 +11,9 @@ class DataConfig:
     MODALITIES = ["Stimulus", "EDA", "EEG", "HR", "Pupil", "Face"]
 
     NUM_PARTICIPANTS = 50
-    PARTICIPANT_DATA_FILE = Path("runs/experiments/participants.csv")
     INVALID_PARTICIPANTS_FILE = Path("src/data/invalid_participants.csv")
     INVALID_TRIALS_FILE = Path("src/data/invalid_trials.csv")
-
     CALIBRATION_RESULTS_FILE = Path("data/experiments/calibration_results.csv")
-    MAESUREMENT_RESULTS_FILE = Path("data/experiments/measurement_results.csv")
 
     QUESTIONNAIRES = [
         # same as in src/experiments/questionnaires/app.py
