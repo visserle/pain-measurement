@@ -1,3 +1,4 @@
+import argparse
 import logging
 
 import duckdb
@@ -340,103 +341,141 @@ class DatabaseManager:
         self.conn.unregister("explore_data_df")
 
 
-def main():
+def fill_and_anonymize_database(db: DatabaseManager) -> None:
     """
-    Main function for database creation.
-    The first step of this pipeline needs the original deanonymized data.
-    Later steps of this pipeline can be applied using the publicy availible anonymized
-    data.
+    Fill the database with raw data and anonymize it.
+
+    This step requires the original deanonymized data. Only runs if the database
+    file is smaller than 1MB (i.e., mostly empty).
+
+    Args:
+        db: DatabaseManager instance to use for database operations.
+    """
+    if DB_FILE.stat().st_size >= 1e6:
+        logger.debug("Database already filled, skipping initialization.")
+        return
+
+    with db:
+        # Participant data, experiment and questionnaire results
+        db.ctas("Invalid_Participants", DataConfig.load_invalid_participants_config())
+        db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
+        db.ctas("Calibration_Results", create_calibration_results_df())
+        for questionnaire in QUESTIONNAIRES:
+            df = create_questionnaire_df(questionnaire)
+            db.ctas("Questionnaire_" + questionnaire.upper(), df)
+        logger.info("Participant data inserted.")
+
+        # Raw data
+        for participant_id in range(1, NUM_PARTICIPANTS + 1):
+            if participant_id in (
+                db.execute("SELECT participant_id FROM Invalid_Participants")
+                .pl()  # returns a df
+                .to_series()
+                .to_list()
+            ):
+                logger.debug(f"Participant {participant_id} is invalid.")
+                continue
+            if db.participant_exists(participant_id):
+                logger.debug(
+                    f"Raw data for participant {participant_id} already exists."
+                )
+                continue
+
+            df = load_imotions_data_df(participant_id, "Trials_Info")
+            trials_info_df = create_trials_info_df(participant_id, df)
+            db.insert_trials_info_df(trials_info_df)
+
+            for mod in MODALITIES:
+                df = load_imotions_data_df(participant_id, mod)
+                df = create_raw_data_df(participant_id, df, trials_info_df)
+                db.insert_raw_data(participant_id, "Raw_" + mod, df)
+            logger.debug(f"Raw data for participant {participant_id} inserted.")
+        logger.info("Raw data inserted.")
+
+    # Anonymize database
+    anonymize_db(db)
+    logger.info("Anonymized Database.")
+
+
+def main(modality: str | None = None, table_type: str = "both"):
+    """
+    Main function for database creation and processing.
+
+    This function fills the database with raw data (if needed), then processes
+    it to create feature-engineered and exploratory data tables.
+
+    Args:
+        modality: Specific modality to process (e.g., 'EEG', 'EDA', etc.).
+                  If None, all modalities are processed.
+        table_type: Type of table to create ('feature', 'explore', or 'both').
     """
     db = DatabaseManager()
 
-    # Fill database
-    if DB_FILE.stat().st_size < 1e6:
-        with db:
-            # Participant data, experiment and questionnaire results
-            db.ctas(
-                "Invalid_Participants", DataConfig.load_invalid_participants_config()
-            )
-            db.ctas("Invalid_Trials", DataConfig.load_invalid_trials_config())
-            db.ctas("Calibration_Results", create_calibration_results_df())
-            for questionnaire in QUESTIONNAIRES:
-                df = create_questionnaire_df(questionnaire)
-                db.ctas("Questionnaire_" + questionnaire.upper(), df)
-            logger.info("Participant data inserted.")
-
-            # Raw data
-            for participant_id in range(1, NUM_PARTICIPANTS + 1):
-                if participant_id in (
-                    db.execute("SELECT participant_id FROM Invalid_Participants")
-                    .pl()  # returns a df
-                    .to_series()
-                    .to_list()
-                ):
-                    logger.debug(f"Participant {participant_id} is invalid.")
-                    continue
-                if db.participant_exists(participant_id):
-                    logger.debug(
-                        f"Raw data for participant {participant_id} already exists."
-                    )
-                    continue
-
-                df = load_imotions_data_df(participant_id, "Trials_Info")
-                trials_info_df = create_trials_info_df(participant_id, df)
-                db.insert_trials_info_df(trials_info_df)
-
-                for modality in MODALITIES:
-                    df = load_imotions_data_df(participant_id, modality)
-                    df = create_raw_data_df(participant_id, df, trials_info_df)
-                    db.insert_raw_data(participant_id, "Raw_" + modality, df)
-                logger.debug(f"Raw data for participant {participant_id} inserted.")
-            logger.info("Raw data inserted.")
-
-        # Anonymize database
-        anonymize_db(db)
-        logger.info("Anonymized Database.")
+    # Fill and anonymize database (requires original deanonymized data)
+    fill_and_anonymize_database(db)
 
     # NOTE: From here on, you can use the pipeline without possessing the original, de-
     # anonymized data.
 
+    # Determine which modalities to process
+    modalities_to_process = [modality] if modality else MODALITIES
+
     logging.info("Starting data pipeline.")
     with db:
-        # no check for existing data as it will be overwritten every time
         # Feature-engineered data
-        for modality in MODALITIES:
-            table_name = f"Feature_{modality}"
-            df = db.get_table(f"Raw_{modality}")
-            df = create_feature_data_df(table_name, df)
-            db.insert_feature_data(table_name, df)
-        logger.info("Feature data created.")
+        if table_type in ("feature", "both"):
+            for mod in modalities_to_process:
+                table_name = f"Feature_{mod}"
+                logger.info(f"Processing {table_name}...")
+                df = db.get_table(f"Raw_{mod}")
+                df = create_feature_data_df(table_name, df)
+                db.insert_feature_data(table_name, df)
+            logger.info("Feature data created.")
 
         # Exploratory data
-        for modality in MODALITIES:
-            if modality == "EEG":
-                logging.debug("Skipping EEG exploratory data creation.")
-                continue
-            table_name = f"Explore_{modality}"
-            df = db.get_table(f"Raw_{modality}")
-            df = create_explore_data_df(table_name, df)
-            db.insert_explore_data(table_name, df)
-        logger.info("Exploratory data created.")
+        if table_type in ("explore", "both"):
+            for mod in modalities_to_process:
+                if mod == "EEG":
+                    logging.debug("Skipping EEG exploratory data creation.")
+                    continue
+                table_name = f"Explore_{mod}"
+                logger.info(f"Processing {table_name}...")
+                df = db.get_table(f"Raw_{mod}")
+                df = create_explore_data_df(table_name, df)
+                db.insert_explore_data(table_name, df)
+            logger.info("Exploratory data created.")
 
         # Merge data (trials only) and add labels
-        data_dfs = []
-        data_dfs_explore = []
-        for modality in MODALITIES:
-            if modality == "EEG":
-                continue  # we do not merge EEG data, as it has a different sampling rate
-            data_dfs.append(
-                db.get_trials(f"Feature_{modality}", exclude_problematic=False)
+        # Only merge if processing all modalities
+        if not modality:
+            data_dfs = []
+            data_dfs_explore = []
+            for mod in MODALITIES:
+                if mod == "EEG":
+                    continue  # no merge for EEG, different sampling rate
+                if table_type in ("feature", "both"):
+                    data_dfs.append(
+                        db.get_trials(f"Feature_{mod}", exclude_problematic=False)
+                    )
+                if table_type in ("explore", "both"):
+                    data_dfs_explore.append(
+                        db.get_trials(f"Explore_{mod}", exclude_problematic=False)
+                    )
+            trials_info_df = db.get_trials("Trials_Info", exclude_problematic=False)
+
+            if table_type in ("feature", "both") and data_dfs:
+                df = merge_and_label_data_dfs(data_dfs, trials_info_df)
+                db.ctas("Feature_Data", df)
+
+            if table_type in ("explore", "both") and data_dfs_explore:
+                df_explore = merge_and_label_data_dfs(data_dfs_explore, trials_info_df)
+                db.ctas("Explore_Data", df_explore)
+
+            logger.info("Feature and exploratory data tables created.")
+        else:
+            logger.info(
+                f"Skipped merging data tables (only processing modality: {modality})"
             )
-            data_dfs_explore.append(
-                db.get_trials(f"Explore_{modality}", exclude_problematic=False)
-            )
-        trials_info_df = db.get_trials("Trials_Info", exclude_problematic=False)
-        df = merge_and_label_data_dfs(data_dfs, trials_info_df)
-        db.ctas("Feature_Data", df)
-        df_explore = merge_and_label_data_dfs(data_dfs_explore, trials_info_df)
-        db.ctas("Explore_Data", df_explore)
-        logger.info("Feature and exploratory data tables created.")
 
     logger.info("Data pipeline completed.")
 
@@ -448,7 +487,28 @@ if __name__ == "__main__":
 
     configure_logging(stream_level=logging.DEBUG)
 
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Process pain measurement data and populate the database."
+    )
+    parser.add_argument(
+        "--modality",
+        type=str,
+        default=None,
+        help="Specific modality to process (e.g., EEG, EDA, Face, EKG, Eye). "
+        "If not specified, all modalities are processed.",
+    )
+    parser.add_argument(
+        "--table",
+        type=str,
+        default="both",
+        choices=["feature", "explore", "both"],
+        help="Type of table to create: 'feature', 'explore', or 'both' (default: both).",
+    )
+
+    args = parser.parse_args()
+
     start = time.time()
-    main()
+    main(modality=args.modality, table_type=args.table)
     end = time.time()
     print(f"Runtime: {end - start:.2f} seconds.")
