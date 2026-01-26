@@ -6,7 +6,7 @@ import polars as pl
 from polars import col
 from scipy import signal
 
-from src.features.exploratory.explore_resampling import non_causal_decimate
+from src.features.explore_resampling import non_causal_decimate
 from src.features.pupil import average_pupils
 from src.features.resampling import interpolate_and_fill_nulls
 from src.features.transforming import map_participants

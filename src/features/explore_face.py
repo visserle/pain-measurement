@@ -4,7 +4,7 @@ import polars as pl
 from polars import col
 from scipy import signal
 
-from src.features.exploratory.explore_filtering import non_causal_butterworth_filter
+from src.features.explore_filtering import non_causal_butterworth_filter
 from src.features.face import FEATURE_COLUMNS, INFO_COLUMNS, scale_face
 from src.features.transforming import map_participants
 

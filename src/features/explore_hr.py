@@ -3,8 +3,8 @@
 import polars as pl
 from polars import col
 
-from src.features.exploratory.explore_filtering import non_causal_butterworth_filter
-from src.features.exploratory.explore_resampling import non_causal_decimate
+from src.features.explore_filtering import non_causal_butterworth_filter
+from src.features.explore_resampling import non_causal_decimate
 from src.features.resampling import interpolate_and_fill_nulls
 from src.features.transforming import map_participants
 
