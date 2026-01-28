@@ -1,50 +1,61 @@
-# Multimodal Pain Measurement Dataset
+# Noninvasive and Objective Near Real-Time Detection of Pain Changes in Fluctuating Pain
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+[![Preprint](https://img.shields.io/badge/bioRxiv-preprint-b31b1b.svg)](https://www.biorxiv.org/content/10.64898/2026.01.26.701710v1)
 
-This repository contains the code and data for a multimodal pain measurement study examining physiological and behavioral correlates of experimental heat pain in healthy adults. The dataset includes synchronized recordings of electrodermal activity (EDA), heart rate (HR), pupillometry, facial expressions, and electroencephalography (EEG), alongside continuous pain intensity ratings.
+Code and data accompanying [Visser & Büchel (2026, in submission)](https://doi.org/10.64898/2026.01.26.701710), a study on objective pain assessment using multimodal physiological recordings. The central goal is to reliably detect when pain intensity decreases—a building block for future interventions that leverage perceived control over pain.
+
+Synchronized recordings cover EDA, heart rate, pupil size, facial action units, and EEG, captured while participants experienced tonic heat pain with continuously varying intensity.
+
+> [!NOTE]
+> Note that all data will be made available in a forthcoming data publication. In the meantime, data will be available upon reasonable request to the corresponding author. 
 
 ## Study Overview
 
-### Experimental Design
+### Participants
 
-Participants (*N* = 50; mean age = 25.8 ± 5.0 years) underwent:
+Fifty healthy adults (right-handed, aged 18–40, BMI 18–30) were recruited. After excluding five individuals and 69 problematic trials, the dataset contains **471 valid trials from 42 participants** (23 female; mean age 26.2 years).
 
-1. **Pain Calibration**: Bayesian adaptive estimation of individual pain thresholds (VAS 0) and moderate pain intensities (VAS 70) using contact heat stimulation
-2. **Measurement Session**: 12 trials of individualized temperature stimuli with continuous pain ratings on a visual analogue scale (VAS 0–100)
+### Protocol
 
-Temperature stimuli were generated procedurally using parametric waveforms combining half-cycle cosine functions with varying periods, amplitudes, plateaus, and decreasing phases. Each participant received identical stimulus patterns scaled to their individual pain sensitivity as determined during calibration.
+1. **Calibration** — A Bayesian staircase procedure determined each participant's pain threshold and the temperature eliciting moderate pain (VAS 70). Resulting averages: threshold 44.5 °C (SD 1.5), VAS 70 at 46.8 °C (SD 0.8).
 
-### Recorded Modalities
+2. **Main task** — Twelve 3-minute heat stimuli per participant, with temperatures oscillating between the individually calibrated bounds. Participants provided continuous pain ratings on a 0–70 VAS.
 
-| Modality | Sampling Rate | Features |
-|----------|---------------|----------|
-| EEG | 250 Hz | 8 channels (F3, F4, C3, Cz, C4, P3, P4, Oz) |
-| Electrodermal Activity | 10 Hz | Raw skin conductance |
-| Heart Rate | 10 Hz | Beats per minute from PPG |
-| Pupillometry | 10 Hz | Bilateral pupil diameter |
-| Facial Expressions | 10 Hz | 5 pain-related action units (brow furrow, cheek raise, mouth open, nose wrinkle, upper lip raise) |
-| Temperature | 10 Hz | Applied thermode temperature |
-| Pain Rating | 10 Hz | Continuous VAS (0–100) |
+### Stimulus Design
+
+Temperature trajectories were constructed by chaining half-cycle cosines of randomized period (5–20 s) and amplitude:
+
+$$y(t) = A \cos(\pi f t) + y_0 - A$$
+
+Plateaus at two rising segments (15 s each) and one local minimum (5 s) discouraged anticipation. Every curve contained three identical large decreases, enabling focused evaluation of pain-decrease detection.
+
+### Modalities
+
+| Signal | Hardware | Acquired at | Stored at |
+| ------ | -------- | ----------- | --------- |
+| EEG (8 ch) | Neuroelectrics Enobio 8 | 500 Hz | 250 Hz |
+| Skin conductance | Shimmer3 GSR+ | 100 Hz | 10 Hz |
+| Heart rate | Shimmer3 GSR+ (PPG) | 100 Hz | 10 Hz |
+| Pupil diameter | Smart Eye AI-X | 60 Hz | 10 Hz |
+| Facial expressions | Affectiva / iMotions | ≈10 Hz | 10 Hz |
+| Thermode temperature | Medoc Pathways ATS | — | 10 Hz |
+| Pain rating | Custom VAS | 10 Hz | 10 Hz |
 
 ## Repository Structure
 
 ```text
-├── data/                    # Raw and processed data
-│   ├── experiments/         # Calibration and measurement results
-│   └── imotions/           # Per-participant iMotions recordings
-├── notebooks/              # Analysis and visualization notebooks
-├── reports/                # Generated figures and statistics
-├── results/                # Model training results
+├── notebooks/               # Analysis and visualization notebooks
+├── results/                 # Model weigths and training results
 ├── src/
-│   ├── data/               # Data loading and database management
-│   ├── experiments/        # Experiment control software
-│   │   ├── calibration/    # Bayesian pain threshold estimation
-│   │   └── measurement/    # Main measurement protocol
-│   ├── features/           # Signal preprocessing pipelines
-│   ├── models/             # Classification models and training
-│   └── plots/              # Visualization utilities
-└── tests/                  # Unit tests
+│   ├── data/                # Data loading and database management
+│   ├── experiments/         # Experiment control software
+│   │   ├── calibration/     # Bayesian pain threshold estimation
+│   │   └── measurement/     # Main measurement protocol
+│   ├── features/            # Signal preprocessing functions
+│   ├── models/              # Classification models and training
+│   └── plots/               # Visualization utilities
+└── pain-measurement.duckdb  # DuckDB database with dataset
 ```
 
 ## Database
@@ -70,43 +81,26 @@ with db:
     result = db.execute("SELECT * FROM Trials_Info").pl()
 ```
 
-## Preprocessing Pipeline
+## Classification
 
-All preprocessing is implemented using causal (forward-only) operations to ensure temporal validity for predictive modeling:
+A deep-learning pipeline trains binary classifiers to distinguish temperature phases:
 
-| Modality | Processing Steps |
-|----------|------------------|
-| EEG | Decimation (500→250 Hz), highpass filter (0.5 Hz), 50 Hz notch filter |
-| EDA | Decimation (100→10 Hz) |
-| Heart Rate | Artifact removal (>120 BPM), forward fill |
-| Pupillometry | Blink removal, median filter, bilateral averaging |
-| Facial Expressions | Exponential moving average smoothing (α=0.05) |
+| Label | Condition |
+| ----- | --------- |
+| 0 | Temperature rising or stable |
+| 1 | Temperature falling |
 
-## Classification Framework
+### Models
 
-The repository includes a deep learning framework for binary classification of pain states:
+Transformer variants (PatchTST, iTransformer),lightweight networks (LightTS, MLP), a CNN (TimesNet), an EEG-tailored architecture (EEGNet), and multimodal ensembles.
 
-### Task Definition
-
-Samples are extracted from stimulus intervals and labeled based on temperature trajectory:
-
-- **Class 0**: Temperature increasing or at plateau
-- **Class 1**: Temperature decreasing (pain relief anticipation)
-
-### Implemented Architectures
-
-- **Transformer-based**: PatchTST, iTransformer, TimesNet
-- **Lightweight**: LightTS, MLP
-- **EEG-specific**: EEGNet
-- **Ensemble**: EEGPhysioEnsemble, FacePhysioEnsemble
-
-### Training
+### Usage
 
 ```bash
 python -m src.models.main --features eda_raw heart_rate --models PatchTST MLP
 ```
 
-Model selection uses Optuna for hyperparameter optimization with group-aware cross-validation (participant-level splits).
+Hyperparameters are tuned with Optuna; splits respect participant identity to avoid data leakage.
 
 ## Installation
 
@@ -125,41 +119,24 @@ conda env create -f requirements.yaml
 conda activate pain
 ```
 
-## Experiment Software
-
-The experiment was implemented using [Expyriment](https://www.expyriment.org/) with:
-
-- **Thermal stimulation**: QST.Lab Thermoino device
-- **Multimodal recording**: iMotions platform
-- **Continuous ratings**: Custom visual analogue scale
-
-## Questionnaires
-
-The following validated instruments were administered:
-
-- Pain Catastrophizing Scale (PCS)
-- Pain Vigilance and Awareness Questionnaire (PVAQ)
-- State-Trait Anxiety Inventory (STAI-T-10)
-- Positive and Negative Affect Schedule (PANAS; pre/post)
-- Mindful Attention Awareness Scale (MAAS)
-
 ## Citation
 
 If you use this dataset or code, please cite:
 
 ```bibtex
-@article{,
-  title={},
-  author={},
-  journal={PAIN},
-  year={},
-  doi={}
+@article{visser2026noninvasive,
+  title={Noninvasive and Objective Near Real-Time Detection of Pain Changes in Fluctuating Pain},
+  author={Visser, Leonard and B{\"u}chel, Christian},
+  journal={bioRxiv},
+  year={2026},
+  doi={10.64898/2026.01.26.701710},
+  url={https://www.biorxiv.org/content/10.64898/2026.01.26.701710v1}
 }
 ```
 
 ## License
 
-This project is licensed under the MIT License. See [LICENCE](LICENCE) for details.
+This github repository is licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/). See [LICENCE](LICENCE) for details.
 
 ## Contact
 
