@@ -130,7 +130,7 @@ def add_ci_to_averages(
     """
     small_samples = averages_df.filter(col("sample_size") < min_sample_size)
     if small_samples.height > 0:
-        logger.warn(
+        logger.warning(
             f"Warning: {small_samples.height} bins have sample size < {min_sample_size}"
         )
 
