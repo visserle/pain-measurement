@@ -129,6 +129,7 @@ dependencies:
   - libgfortran5=14.2.0=h2c44a93_105
   - libgoogle-cloud=2.36.0=h9484b08_1
   - libgoogle-cloud-storage=2.36.0=h7081f7f_1
+  - google-cloud-texttospeech=2.18.2=pyhd8ed1ab_0
   - libgrpc=1.71.0=hf667ad3_0
   - libiconv=1.18=hfe07756_1
   - libjpeg-turbo=3.0.0=hb547adb_1
@@ -218,8 +219,10 @@ dependencies:
   - pyproject_hooks=1.2.0=pyhd8ed1ab_1
   - pyserial=3.5=pyhd8ed1ab_1
   - pysocks=1.7.1=pyha55dd90_7
+  - pytest=8.3.4=pyhd8ed1ab_0
   - python=3.12.10=hc22306f_0_cpython
   - python-build=1.2.2.post1=pyhff2d567_1
+  - python-dotenv=1.0.1=pyhd8ed1ab_0
   - python-dateutil=2.9.0.post0=pyhff2d567_1
   - python-duckdb=1.2.2=py312hd8f9ff3_0
   - python-fastjsonschema=2.21.1=pyhd8ed1ab_0
@@ -252,6 +255,8 @@ dependencies:
   - sniffio=1.3.1=pyhd8ed1ab_1
   - soupsieve=2.5=pyhd8ed1ab_1
   - stack_data=0.6.3=pyhd8ed1ab_1
+  - seaborn=0.13.2=hd8ed1ab_2
+  - seaborn-base=0.13.2=pyhd8ed1ab_2
   - terminado=0.18.1=pyh31c8845_0
   - threadpoolctl=3.6.0=pyhecae5ae_0
   - tinycss2=1.4.0=pyhd8ed1ab_0
