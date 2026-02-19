@@ -144,8 +144,7 @@ class VisualAnalogueScale:
                 3,  # round to 3 decimal places (= max precision for screen resolution)
             )
 
-            # Uncomment to print the rating
-            # print(f"Rating: {self.rating}")
+
 
         # Present the stimuli composition if allowed
         if self.rate_limiter_screen.is_allowed(timestamp):

@@ -176,8 +176,8 @@ def resample_at_10_hz_equidistant(
             .head(1801)  # we measure from second 0 to 180
             # We use head to keep all ingeter values from the original trial
             # in the new DataFrame
-            # not that this is a failure-prone, whacky hack that also assumes that
-            # integer columns only contain 1 value for a whole trial
+            # Note that this implementation assumes that integer columns 
+            # only contain 1 value for a whole trial
             # (which is not given for interval add_labels)
             # Add equally spaced timestamps
             .with_columns(
