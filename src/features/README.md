@@ -1,6 +1,6 @@
 # Features Module
 
-This module provides a decoupled framework for physiological signal processing and feature engineering, built on Top of [Polars](https://pola.rs/). It is designed to be used independently on DataFrames or as part of the main data pipeline (`src/data/main.py`).
+This module provides a decoupled framework for physiological signal processing and feature engineering, built on Top of Polars. It is designed to be used independently on DataFrames or as part of the main data pipeline (`src/data/main.py`).
 
 > [!NOTE]
 > Some operations are datatype-specific; for example, `float64` is preferred for most time-series calculations, while certain metadata columns are handled as `Int64`.
