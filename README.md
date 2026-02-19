@@ -1,6 +1,5 @@
 # Noninvasive and Objective Near Real-Time Detection of Pain Changes
 
-[![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 [![Preprint](https://img.shields.io/badge/bioRxiv-preprint-b31b1b.svg)](https://www.biorxiv.org/content/10.64898/2026.01.26.701710v1)
 
 This repository contains the source code and data management utilities for the study **"Noninvasive and Objective Near Real-Time Detection of Pain Changes in Fluctuating Pain"** ([Visser & Büchel, 2026](https://doi.org/10.64898/2026.01.26.701710)).
@@ -40,8 +39,6 @@ conda env create -f requirements.yaml
 conda activate pain
 ```
 
-This will install all dependencies, including [PyTorch](https://pytorch.org/), [DuckDB](https://duckdb.org/), and [Polars](https://pola.rs/).
-
 ## Usage
 
 ### 1. Data Access
@@ -69,7 +66,7 @@ To train a model using EDA and Heart Rate features:
 python -m src.models.main --features eda_raw heart_rate --models PatchTST MLP
 ```
 
-See the **[Models Documentation](src/models/README.md)** for detailed arguments and architecture descriptions.
+See the README and code comments for more details on available options and configurations.
 
 ### 3. Experiments
 The repository includes the experimental scripts used to collect the physiological data.
