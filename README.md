@@ -19,9 +19,9 @@ The project is organized into modular components for data handling, experimentat
 ├── results/                 # Model weights and training results
 ├── src/
 │   ├── data/                # Database management and data loading
-│   ├── experiments/         # [Experiment control software](src/experiments/README.md)
-│   ├── features/            # [Signal preprocessing and feature extraction](src/features/README.md)
-│   ├── models/              # [Deep learning models and training loop](src/models/README.md)
+│   ├── experiments/         # Experiment control software
+│   ├── features/            # Signal preprocessing and feature extraction
+│   ├── models/              # Deep learning models and training loop
 │   └── plots/               # Visualization utilities
 └── pain-measurement.duckdb  # DuckDB database (not included in repo)
 ```
@@ -71,31 +71,11 @@ python -m src.models.main --features eda_raw heart_rate --models PatchTST MLP
 
 See the **[Models Documentation](src/models/README.md)** for detailed arguments and architecture descriptions.
 
-### 3. Conducting Experiments
+### 3. Experiments
 The repository includes the experimental scripts used to collect the physiological data.
 -   **Calibration**: `src.experiments.calibration`
 -   **Measurement**: `src.experiments.measurement`
 
-See the **[Experiments Documentation](src/experiments/README.md)** for hardware requirements and protocols.
-
-## Citation
-
-If you use this code or methodology involved, please cite:
-
-```bibtex
-@article{visser2026noninvasive,
-  title={Noninvasive and Objective Near Real-Time Detection of Pain Changes in Fluctuating Pain},
-  author={Visser, Leonard and B{\"u}chel, Christian},
-  journal={bioRxiv},
-  year={2026},
-  doi={10.64898/2026.01.26.701710},
-  url={https://www.biorxiv.org/content/10.64898/2026.01.26.701710v1}
-}
-```
-
-## License
-
-This project is licensed under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
 
 ## Contact
 
