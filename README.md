@@ -1,127 +1,86 @@
-# Noninvasive and Objective Near Real-Time Detection of Pain Changes in Fluctuating Pain
+# Noninvasive and Objective Near Real-Time Detection of Pain Changes
 
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 [![Preprint](https://img.shields.io/badge/bioRxiv-preprint-b31b1b.svg)](https://www.biorxiv.org/content/10.64898/2026.01.26.701710v1)
 
-Code and data accompanying [Visser & Büchel (2026, in submission)](https://doi.org/10.64898/2026.01.26.701710), a study on objective pain assessment using multimodal physiological recordings. The central goal is to reliably detect when pain intensity decreases—a building block for future interventions that leverage perceived control over pain.
+This repository contains the source code and data management utilities for the study **"Noninvasive and Objective Near Real-Time Detection of Pain Changes in Fluctuating Pain"** ([Visser & Büchel, 2026](https://doi.org/10.64898/2026.01.26.701710)).
 
-Synchronized recordings cover EDA, heart rate, pupil size, facial action units, and EEG, captured while participants experienced tonic heat pain with continuously varying intensity.
+The codebase implements a multimodal machine learning pipeline to detect decreasing pain intensity using physiological signals (EEG, EDA, Heart Rate, Pupil Diameter, Facial Expressions).
 
 > [!NOTE]
-> Note that all data will be made available in a forthcoming data publication. In the meantime, data will be available upon reasonable request to the corresponding author. 
-
-## Study Overview
-
-### Participants
-
-Fifty healthy adults (right-handed, aged 18–40, BMI 18–30) were recruited. After excluding five individuals and 69 problematic trials, the dataset contains **471 valid trials from 42 participants** (23 female; mean age 26.2 years).
-
-### Protocol
-
-1. **Calibration** — A Bayesian staircase procedure determined each participant's pain threshold and the temperature eliciting moderate pain (VAS 70). Resulting averages: threshold 44.5 °C (SD 1.5), VAS 70 at 46.8 °C (SD 0.8).
-
-2. **Main task** — Twelve 3-minute heat stimuli per participant, with temperatures oscillating between the individually calibrated bounds. Participants provided continuous pain ratings on a 0–70 VAS.
-
-### Stimulus Design
-
-Temperature trajectories were constructed by chaining half-cycle cosines of randomized period (5–20 s) and amplitude:
-
-$$y(t) = A \cos(\pi f t) + y_0 - A$$
-
-Plateaus at two rising segments (15 s each) and one local minimum (5 s) discouraged anticipation. Every curve contained three identical large decreases, enabling focused evaluation of pain-decrease detection.
-
-### Modalities
-
-| Signal | Hardware | Acquired at | Stored at |
-| ------ | -------- | ----------- | --------- |
-| EEG (8 ch) | Neuroelectrics Enobio 8 | 500 Hz | 250 Hz |
-| Skin conductance | Shimmer3 GSR+ | 100 Hz | 10 Hz |
-| Heart rate | Shimmer3 GSR+ (PPG) | 100 Hz | 10 Hz |
-| Pupil diameter | Smart Eye AI-X | 60 Hz | 10 Hz |
-| Facial expressions | Affectiva / iMotions | ≈10 Hz | 10 Hz |
-| Thermode temperature | Medoc Pathways ATS | — | 10 Hz |
-| Pain rating | Custom VAS | 10 Hz | 10 Hz |
+> The full dataset will be made available in a forthcoming data publication. Currently, data is available upon reasonable request to the corresponding author.
 
 ## Repository Structure
 
+The project is organized into modular components for data handling, experimentation, and modeling.
+
 ```text
 ├── notebooks/               # Analysis and visualization notebooks
-├── results/                 # Model weigths and training results
+├── results/                 # Model weights and training results
 ├── src/
-│   ├── data/                # Data loading and database management
-│   ├── experiments/         # Experiment control software
-│   │   ├── calibration/     # Bayesian pain threshold estimation
-│   │   └── measurement/     # Main measurement protocol
-│   ├── features/            # Signal preprocessing functions
-│   ├── models/              # Classification models and training
+│   ├── data/                # Database management and data loading
+│   ├── experiments/         # [Experiment control software](src/experiments/README.md)
+│   ├── features/            # [Signal preprocessing and feature extraction](src/features/README.md)
+│   ├── models/              # [Deep learning models and training loop](src/models/README.md)
 │   └── plots/               # Visualization utilities
-└── pain-measurement.duckdb  # DuckDB database with dataset
+└── pain-measurement.duckdb  # DuckDB database (not included in repo)
 ```
-
-## Database
-
-The dataset is distributed as a DuckDB database file (`pain-measurement.duckdb`) containing:
-
-- **Raw tables**: Unprocessed sensor data per modality
-- **Feature tables**: Causally preprocessed data for predictive modeling
-- **Explore tables**: Non-causally preprocessed data for exploratory analysis
-- **Metadata tables**: Trial information, calibration results, and questionnaire responses
-
-### Data Access
-
-```python
-from src.data.database_manager import DatabaseManager
-
-db = DatabaseManager()
-with db:
-    # Retrieve preprocessed data with automatic invalid trial filtering
-    df = db.get_trials("Feature_Data", exclude_problematic=True)
-    
-    # Direct SQL queries
-    result = db.execute("SELECT * FROM Trials_Info").pl()
-```
-
-## Classification
-
-A deep-learning pipeline trains binary classifiers to distinguish temperature phases:
-
-| Label | Condition |
-| ----- | --------- |
-| 0 | Temperature rising or stable |
-| 1 | Temperature falling |
-
-### Models
-
-Transformer variants (PatchTST, iTransformer),lightweight networks (LightTS, MLP), a CNN (TimesNet), an EEG-tailored architecture (EEGNet), and multimodal ensembles.
-
-### Usage
-
-```bash
-python -m src.models.main --features eda_raw heart_rate --models PatchTST MLP
-```
-
-Hyperparameters are tuned with Optuna; splits respect participant identity to avoid data leakage.
 
 ## Installation
 
-### Requirements
-
-- Python ≥ 3.12
-- DuckDB ≥ 1.2
-- Polars ≥ 1.0
-- PyTorch ≥ 2.0
-- SciPy ≥ 1.15
+### Prerequisites
+-   **Python**: ≥ 3.12
+-   **Conda**: Recommended for environment management
 
 ### Setup
+Create and activate the environment using the provided `requirements.yaml`:
 
 ```bash
 conda env create -f requirements.yaml
 conda activate pain
 ```
 
+This will install all dependencies, including [PyTorch](https://pytorch.org/), [DuckDB](https://duckdb.org/), and [Polars](https://pola.rs/).
+
+## Usage
+
+### 1. Data Access
+The project uses a local DuckDB database for efficient data querying. You can interact with it using the provided `DatabaseManager`:
+
+```python
+from src.data.database_manager import DatabaseManager
+
+db = DatabaseManager()
+with db:
+    # Retrieve preprocessed feature data, automatically filtering invalid trials
+    df = db.get_trials("Feature_Data", exclude_problematic=True)
+    
+    # Or execute direct SQL queries
+    participant_info = db.execute("SELECT * FROM Participants_Info").pl()
+    print(participant_info)
+```
+
+### 2. Training Models
+The classification pipeline allows you to train and evaluate various deep learning architectures (e.g., PatchTST, TimesNet, MLP) on specific feature sets.
+
+To train a model using EDA and Heart Rate features:
+
+```bash
+python -m src.models.main --features eda_raw heart_rate --models PatchTST MLP
+```
+
+See the **[Models Documentation](src/models/README.md)** for detailed arguments and architecture descriptions.
+
+### 3. Conducting Experiments
+The repository includes the experimental scripts used to collect the physiological data.
+-   **Calibration**: `src.experiments.calibration`
+-   **Measurement**: `src.experiments.measurement`
+
+See the **[Experiments Documentation](src/experiments/README.md)** for hardware requirements and protocols.
+
 ## Citation
 
-If you use this dataset or code, please cite:
+If you use this code or methodology involved, please cite:
 
 ```bibtex
 @article{visser2026noninvasive,
@@ -136,8 +95,8 @@ If you use this dataset or code, please cite:
 
 ## License
 
-This github repository is licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/). See [LICENCE](LICENCE) for details.
+This project is licensed under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
 
 ## Contact
 
-For questions regarding the dataset or code, please open an issue or contact the corresponding author.
+For questions regarding the code or dataset, please open an issue or contact the corresponding author.
