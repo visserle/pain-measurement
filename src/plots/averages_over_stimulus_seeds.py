@@ -7,12 +7,12 @@ Cross-correlation is calculated for the given modality.
 """
 
 import logging
+from statistics import NormalDist
 
 import hvplot.polars  # noqa
 import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
-import scipy.stats as stats
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 from polars import col
@@ -24,8 +24,7 @@ from src.features.scaling import scale_min_max, scale_robust_standard, scale_sta
 plt.style.use("./src/plots/style.mplstyle")
 
 BIN_SIZE = 0.1  # in seconds
-CONFIDENCE_LEVEL = 1.96  # 95% confidence interval
-# (95% chance your population mean will fall between lower and upper limit)
+CONFIDENCE_LEVEL = 0.95
 LABELS = {
     "temperature": "Temperature",
     "pain_rating": "Pain rating",
@@ -49,10 +48,19 @@ def average_over_stimulus_seeds(
     signals: list[str],
     scaling: str | None = "min_max",
     bin_size: int | float = BIN_SIZE,
+    participant_ids: list[int] | None = None,
 ) -> pl.DataFrame:
     """Aggregate over stimulus seeds for each trial using group_by_dynamic.
     Using scaling, the data can be scaled before aggregation.
     """
+    if bin_size <= 0:
+        raise ValueError(f"bin_size must be > 0, got {bin_size}.")
+
+    required_cols = ["participant_id", "stimulus_seed", *signals]
+    missing_cols = [column for column in required_cols if column not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Missing required columns: {missing_cols}.")
+
     match scaling:
         case "min_max":
             df = scale_min_max(
@@ -76,40 +84,55 @@ def average_over_stimulus_seeds(
         case _:
             raise ValueError(f"Unknown scaling method: {scaling}")
 
-    # Zero-based timestamp in milliseconds
-    df = add_normalized_timestamp(df)
+    if participant_ids is not None:
+        df = df.filter(col("participant_id").is_in(participant_ids))
+
+    # Use the precomputed normalized time axis when available.
+    if "normalized_timestamp" not in df.columns:
+        if "timestamp" not in df.columns:
+            raise ValueError(
+                "df must contain either 'normalized_timestamp' or 'timestamp'."
+            )
+        if "trial_id" not in df.columns:
+            raise ValueError(
+                "df must contain 'trial_id' when deriving normalized timestamps."
+            )
+        df = add_normalized_timestamp(df)
+
     # Add microsecond timestamp column for better precision as group_by_dynamic uses int
     df = add_timestamp_μs_column(df, "normalized_timestamp")
+    every_us = int(bin_size * 1_000_000)
 
-    # Time binning
+    signal_columns = [(signal_name, signal_name.lower()) for signal_name in signals]
+
+    participant_level = (
+        df.sort("normalized_timestamp_µs")
+        .group_by_dynamic(
+            "normalized_timestamp_µs",
+            every=f"{every_us}i",
+            group_by=["stimulus_seed", "participant_id"],
+        )
+        .agg(
+            [
+                col(source_column).mean().alias(target_column)
+                for source_column, target_column in signal_columns
+            ]
+        )
+    )
+
+    # Aggregate participant trajectories so each participant contributes equally.
     return (
-        (
-            df.sort("normalized_timestamp_µs")
-            # Note: without group_by_dynamic, this would be something like
-            # ````
-            # df.with_columns(
-            #   [(col("normalized_timestamp") // 1000).cast(pl.Int32).alias("time_bin")]
-            #   )
-            #   .group_by(["stimulus_seed", "time_bin"])
-            # ````
-            .group_by_dynamic(
-                "normalized_timestamp_µs",
-                every=f"{int((1000 / (1 / bin_size)) * 1000)}i",
-                group_by=["stimulus_seed"],
-            )
-            .agg(
-                # Average and standard deviation for each signal
-                [
-                    col(signal).mean().alias(f"avg_{signal.lower()}")
-                    for signal in signals
-                ]
-                + [
-                    col(signal).std().alias(f"std_{signal.lower()}")
-                    for signal in signals
-                ]
-                # Sample size for each bin
-                + [pl.len().alias("sample_size")]
-            )
+        participant_level.group_by(["stimulus_seed", "normalized_timestamp_µs"])
+        .agg(
+            [
+                col(signal_column).mean().alias(f"avg_{signal_column}")
+                for _, signal_column in signal_columns
+            ]
+            + [
+                col(signal_column).std(ddof=1).alias(f"std_{signal_column}")
+                for _, signal_column in signal_columns
+            ]
+            + [pl.len().alias("sample_size")]
         )
         .with_columns((col("normalized_timestamp_µs") / 1_000_000).alias("time_bin"))
         .sort("stimulus_seed", "time_bin")
@@ -121,13 +144,18 @@ def average_over_stimulus_seeds(
 
 def add_ci_to_averages(
     averages_df: pl.DataFrame,
-    signals: str,
+    signals: list[str],
     min_sample_size: int = 30,
     confidence_level: float = CONFIDENCE_LEVEL,
 ) -> pl.DataFrame:
     """
     Create confidence intervals for visualization.
     """
+    if not 0 < confidence_level < 1:
+        raise ValueError(
+            f"confidence_level must be in (0, 1), got {confidence_level}."
+        )
+
     small_samples = averages_df.filter(col("sample_size") < min_sample_size)
     if small_samples.height > 0:
         logger.warning(
@@ -136,29 +164,34 @@ def add_ci_to_averages(
 
     z_score = _calculate_z_score(confidence_level)
 
-    return averages_df.with_columns(
-        [
-            (
-                col(f"avg_{signal}")
-                - z_score * (col(f"std_{signal}") / col("sample_size").sqrt())
-            ).alias(f"ci_lower_{signal}")
-            for signal in signals
-        ]
-        + [
-            (
-                col(f"avg_{signal}")
-                + z_score * (col(f"std_{signal}") / col("sample_size").sqrt())
-            ).alias(f"ci_upper_{signal}")
-            for signal in signals
-        ]
-    ).sort("stimulus_seed", "time_bin")
+    ci_expressions = []
+    for signal in signals:
+        sem_expr = col(f"std_{signal}") / col("sample_size").sqrt()
+        ci_expressions.append(
+            pl.when(col("sample_size") > 1)
+            .then(col(f"avg_{signal}") - z_score * sem_expr)
+            .when(col("sample_size") == 1)
+            .then(col(f"avg_{signal}"))
+            .otherwise(None)
+            .alias(f"ci_lower_{signal}")
+        )
+        ci_expressions.append(
+            pl.when(col("sample_size") > 1)
+            .then(col(f"avg_{signal}") + z_score * sem_expr)
+            .when(col("sample_size") == 1)
+            .then(col(f"avg_{signal}"))
+            .otherwise(None)
+            .alias(f"ci_upper_{signal}")
+        )
+
+    return averages_df.with_columns(ci_expressions).sort("stimulus_seed", "time_bin")
 
 
 def _calculate_z_score(confidence_level: float) -> float:
     """
     Calculate z-score for the given confidence level (e.g., 0.95 -> 1.96).
     """
-    return stats.norm.ppf((1 + confidence_level) / 2).round(2)
+    return NormalDist().inv_cdf((1 + confidence_level) / 2)
 
 
 def plot_averages_with_ci_plt(
