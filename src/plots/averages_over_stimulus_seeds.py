@@ -1,9 +1,5 @@
 """
 Global average over stimulus seeds for each trial.
-The data can be scaled before aggregation.
-Time binning is applied to the data.
-Confidence intervals are calculated for visualization.
-Cross-correlation is calculated for the given modality.
 """
 
 import logging
@@ -39,8 +35,30 @@ LABELS = {
     "brow_furrow": "Brow furrow",
 }
 
+# Explicit, high-contrast colors for consistent signal identity across plots.
+SIGNAL_COLORS = {
+    "temperature": "#0072B2",  # blue
+    "pain_rating": "#D55E00",  # vermillion
+    "pupil_diameter": "#CC79A7",  # magenta
+    "heart_rate": "#56B4E9",  # sky blue
+    "eda_tonic": "#009E73",  # green
+    "eda_phasic": "#F0E442",  # yellow
+    "cheek_raise": "#7A68A6",  # violet
+    "mouth_open": "#8C564B",  # brown
+    "upper_lip_raise": "#E377C2",  # pink
+    "nose_wrinkle": "#17BECF",  # cyan
+    "brow_furrow": "#1F77B4",  # deep blue
+}
+
 
 logger = logging.getLogger(__name__.rsplit(".", 1)[-1])
+
+
+def _calculate_z_score(confidence_level: float) -> float:
+    """
+    Calculate z-score for the given confidence level (e.g., 0.95 -> 1.96).
+    """
+    return NormalDist().inv_cdf((1 + confidence_level) / 2)
 
 
 def average_over_stimulus_seeds(
@@ -48,11 +66,12 @@ def average_over_stimulus_seeds(
     signals: list[str],
     scaling: str | None = "min_max",
     bin_size: int | float = BIN_SIZE,
+    confidence_level: float = CONFIDENCE_LEVEL,
     participant_ids: list[int] | None = None,
 ) -> pl.DataFrame:
-    """Aggregate over stimulus seeds for each trial using group_by_dynamic.
-    Using scaling, the data can be scaled before aggregation.
     """
+    Aggregate over stimulus seeds by calculating mean, std, sem, and confidence
+    intervals for each signal at each time point."""
     if bin_size <= 0:
         raise ValueError(f"bin_size must be > 0, got {bin_size}.")
 
@@ -89,109 +108,123 @@ def average_over_stimulus_seeds(
 
     # Use the precomputed normalized time axis when available.
     if "normalized_timestamp" not in df.columns:
-        if "timestamp" not in df.columns:
-            raise ValueError(
-                "df must contain either 'normalized_timestamp' or 'timestamp'."
-            )
-        if "trial_id" not in df.columns:
-            raise ValueError(
-                "df must contain 'trial_id' when deriving normalized timestamps."
-            )
-        df = add_normalized_timestamp(df)
-
-    # Add microsecond timestamp column for better precision as group_by_dynamic uses int
-    df = add_timestamp_μs_column(df, "normalized_timestamp")
-    every_us = int(bin_size * 1_000_000)
-
-    signal_columns = [(signal_name, signal_name.lower()) for signal_name in signals]
-
-    participant_level = (
-        df.sort("normalized_timestamp_µs")
-        .group_by_dynamic(
-            "normalized_timestamp_µs",
-            every=f"{every_us}i",
-            group_by=["stimulus_seed", "participant_id"],
-        )
-        .agg(
-            [
-                col(source_column).mean().alias(target_column)
-                for source_column, target_column in signal_columns
-            ]
-        )
-    )
-
-    # Aggregate participant trajectories so each participant contributes equally.
-    return (
-        participant_level.group_by(["stimulus_seed", "normalized_timestamp_µs"])
-        .agg(
-            [
-                col(signal_column).mean().alias(f"avg_{signal_column}")
-                for _, signal_column in signal_columns
-            ]
-            + [
-                col(signal_column).std(ddof=1).alias(f"std_{signal_column}")
-                for _, signal_column in signal_columns
-            ]
-            + [pl.len().alias("sample_size")]
-        )
-        .with_columns((col("normalized_timestamp_µs") / 1_000_000).alias("time_bin"))
-        .sort("stimulus_seed", "time_bin")
-        # remove measures at exactly 180s so that they don't get their own bin
-        .filter(col("time_bin") < 180)
-        .drop("normalized_timestamp_µs")
-    )
-
-
-def add_ci_to_averages(
-    averages_df: pl.DataFrame,
-    signals: list[str],
-    min_sample_size: int = 30,
-    confidence_level: float = CONFIDENCE_LEVEL,
-) -> pl.DataFrame:
-    """
-    Create confidence intervals for visualization.
-    """
-    if not 0 < confidence_level < 1:
-        raise ValueError(
-            f"confidence_level must be in (0, 1), got {confidence_level}."
-        )
-
-    small_samples = averages_df.filter(col("sample_size") < min_sample_size)
-    if small_samples.height > 0:
-        logger.warning(
-            f"Warning: {small_samples.height} bins have sample size < {min_sample_size}"
-        )
+        raise ValueError("df must contain 'normalized_timestamp'.")
 
     z_score = _calculate_z_score(confidence_level)
 
-    ci_expressions = []
-    for signal in signals:
-        sem_expr = col(f"std_{signal}") / col("sample_size").sqrt()
-        ci_expressions.append(
-            pl.when(col("sample_size") > 1)
-            .then(col(f"avg_{signal}") - z_score * sem_expr)
-            .when(col("sample_size") == 1)
-            .then(col(f"avg_{signal}"))
-            .otherwise(None)
-            .alias(f"ci_lower_{signal}")
+    # Group by stimulus seed and normalized timestamp, then calculate mean, std, sem, ci
+    return (
+        df.group_by(
+            col("stimulus_seed"), col("normalized_timestamp"), maintain_order=True
         )
-        ci_expressions.append(
-            pl.when(col("sample_size") > 1)
-            .then(col(f"avg_{signal}") + z_score * sem_expr)
-            .when(col("sample_size") == 1)
-            .then(col(f"avg_{signal}"))
-            .otherwise(None)
-            .alias(f"ci_upper_{signal}")
+        .agg(
+            *[col(c).mean().alias(f"mean_{c}") for c in signals],
+            *[col(c).std().alias(f"std_{c}") for c in signals],
+            pl.len().alias("n"),
+        )
+        .sort("normalized_timestamp")
+        .with_columns(
+            *[(col(f"std_{c}") / col("n").sqrt()).alias(f"sem_{c}") for c in signals],
+        )
+        .with_columns(
+            *[
+                (col(f"mean_{c}") - z_score * col(f"sem_{c}")).alias(f"ci_lower_{c}")
+                for c in signals
+            ],
+            *[
+                (col(f"mean_{c}") + z_score * col(f"sem_{c}")).alias(f"ci_upper_{c}")
+                for c in signals
+            ],
+        )
+    )
+
+
+def plot_single_stimulus_seed(
+    averages_with_ci_df: pl.DataFrame,
+    stimulus_seed: int,
+    signals: list[str],
+    alpha: float = 1.0,
+    show_ci: bool = True,
+) -> plt.Figure:
+    """
+    Plot averages with confidence intervals for a single stimulus seed.
+
+    Args:
+        averages_with_ci_df: DataFrame containing averages and confidence intervals
+        stimulus_seed: The stimulus seed to plot
+        signals: List of signal names to plot
+        alpha: Transparency of the lines (0-1)
+        show_ci: Whether to show confidence intervals
+
+    Returns:
+        Matplotlib figure
+    """
+    # Filter data for the specified stimulus seed
+    seed_data = averages_with_ci_df.filter(pl.col("stimulus_seed") == stimulus_seed)
+
+    if seed_data.height == 0:
+        raise ValueError(f"No data found for stimulus_seed={stimulus_seed}")
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=(9, 4))
+
+    # Color palette matching the reference image
+    color_map = {
+        # "temperature": "#5B9BD5",  # blue
+        "temperature": "#000080",  # blue
+        "pain_rating": "#FD5030",  # orange
+        "pupil_diameter": "#FFC000",  # yellow
+        "eda_tonic": "#70AD47",  # green
+        "eda_phasic": "#A6A6A6",  # gray
+        "heart_rate": "#4BACC6",  # cyan
+        "mouth_open": "#9E7BB5",  # purple
+    }
+
+    # Plot each signal
+    for sig in signals:
+        color = color_map.get(sig, plt.cm.tab10(len(signals)))
+        signal_label = LABELS.get(sig, sig)
+
+        # Plot the average line
+        ax.plot(
+            seed_data["normalized_timestamp"],
+            seed_data[f"mean_{sig}"],
+            label=signal_label,
+            color=color,
+            alpha=alpha,
+            linewidth=1.5,
         )
 
-    return averages_df.with_columns(ci_expressions).sort("stimulus_seed", "time_bin")
+        # Plot confidence interval if requested
+        if show_ci:
+            ax.fill_between(
+                seed_data["normalized_timestamp"],
+                seed_data[f"ci_lower_{sig}"],
+                seed_data[f"ci_upper_{sig}"],
+                color=color,
+                alpha=0.2,
+                linewidth=0,
+            )
 
+    # Customize plot
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Normalized value")
+    ax.set_xlim(
+        seed_data["normalized_timestamp"].min(), seed_data["normalized_timestamp"].max()
+    )
+    ax.grid(True, alpha=0.3)
 
-def _calculate_z_score(confidence_level: float) -> float:
-    """
-    Calculate z-score for the given confidence level (e.g., 0.95 -> 1.96).
-    """
-    return NormalDist().inv_cdf((1 + confidence_level) / 2)
+    # Place legend below the plot
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        ncol=1,
+        framealpha=0.9,
+    )
+
+    plt.tight_layout()
+
+    return fig
 
 
 def plot_averages_with_ci_plt(
@@ -212,9 +245,6 @@ def plot_averages_with_ci_plt(
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(10, 7), sharex=True, sharey=True)
     axes = axes.flatten()
 
-    # Color palette for different signals
-    colors = plt.cm.tab10(np.linspace(0, 1, len(signals)))
-
     for idx, seed in enumerate(stimulus_seeds):
         ax = axes[idx]
 
@@ -223,14 +253,14 @@ def plot_averages_with_ci_plt(
 
         # Plot each signal
         for sig_idx, sig in enumerate(signals):
-            color = colors[sig_idx]
+            color = SIGNAL_COLORS.get(sig, plt.get_cmap("tab10")(sig_idx % 10))
             alpha = alpha if alpha > 0 else 1.0
             signal_label = LABELS.get(sig, sig)
 
             # Plot the average line
             ax.plot(
-                seed_data["time_bin"],
-                seed_data[f"avg_{sig}"],
+                seed_data["normalized_timestamp"],
+                seed_data[f"mean_{sig}"],
                 label=signal_label,
                 color=color,
                 alpha=alpha,
@@ -239,7 +269,7 @@ def plot_averages_with_ci_plt(
 
             # Plot confidence interval
             ax.fill_between(
-                seed_data["time_bin"],
+                seed_data["normalized_timestamp"],
                 seed_data[f"ci_lower_{sig}"],
                 seed_data[f"ci_upper_{sig}"],
                 color=color,
@@ -248,7 +278,10 @@ def plot_averages_with_ci_plt(
             )
 
         # Customize subplot
-        ax.set_xlim(seed_data["time_bin"].min(), seed_data["time_bin"].max())
+        ax.set_xlim(
+            seed_data["normalized_timestamp"].min(),
+            seed_data["normalized_timestamp"].max(),
+        )
 
         # Configure ticks: only show on bottom row and leftmost column
         row = idx // n_cols
@@ -299,8 +332,8 @@ def plot_averages_with_ci(
     """
     # Create plot
     plots = averages_with_ci_df.hvplot(
-        x="time_bin",
-        y=[f"avg_{sig}" for sig in signals],
+        x="normalized_timestamp",
+        y=[f"mean_{sig}" for sig in signals],
         groupby="stimulus_seed",
         kind="line",
         xlabel="Time (s)",
@@ -310,7 +343,7 @@ def plot_averages_with_ci(
     )
     for sig in signals:
         plots *= averages_with_ci_df.hvplot.area(
-            x="time_bin",
+            x="normalized_timestamp",
             y=f"ci_lower_{sig}",
             y2=f"ci_upper_{sig}",
             groupby="stimulus_seed",
@@ -318,7 +351,7 @@ def plot_averages_with_ci(
             line_width=0,
             grid=True,
             muted_alpha=muted_alpha,
-            label=f"avg_{sig}",
+            label=f"mean_{sig}",
         )
 
     return plots
@@ -329,16 +362,21 @@ def calculate_crosscorr_matrix(
     signals: list[str],
     reference_signal: str = "temperature",
     fs: int = 10,
+    skip_first_n_seconds: float = 20,
 ):
     """Calculate cross-correlation lags between reference signal and all other signals."""
+    averages_df = averages_df.filter(
+        pl.col("normalized_timestamp") >= skip_first_n_seconds * 1000
+    )
+
     results = []
 
     for sig in signals:
         if sig == reference_signal:
             continue
 
-        col1 = f"avg_{reference_signal}"
-        col2 = f"avg_{sig}"
+        col1 = f"mean_{reference_signal}"
+        col2 = f"mean_{sig}"
 
         lag_arr = []
         stimulus_seeds = []
@@ -382,8 +420,13 @@ def calculate_crosscorr_matrix(
 def plot_correlation_heatmap(
     averages: pl.DataFrame,
     features: list[str] | None = None,
+    skip_first_n_seconds: float = 20,
 ):
     """Calculated for all stimulus seeds at once, i.e. ignoring stimulus seed."""
+    averages = averages.filter(
+        col("normalized_timestamp") >= skip_first_n_seconds * 1000
+    )
+
     # Default features if none provided
     if features is None:
         features = [
@@ -396,13 +439,13 @@ def plot_correlation_heatmap(
         ]
 
     # Get correlation matrix and create labels using LABELS dict
-    feature_cols = [f"avg_{f}" for f in features]
+    feature_cols = [f"mean_{f}" for f in features]
     corr_matrix = averages.select(feature_cols).corr()
 
     # Use LABELS dict for better feature names
     labels = [
         LABELS.get(
-            col.replace("avg_", ""), col.replace("avg_", "").replace("_", " ").title()
+            col.replace("mean_", ""), col.replace("mean_", "").replace("_", " ").title()
         )
         for col in corr_matrix.columns
     ]
