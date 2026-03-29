@@ -194,6 +194,7 @@ def plot_prediction_confidence_heatmap(
     rating_scale: float = 0.25,
     rating_color: str = "#2ca25f",
     rating_ci_alpha: float = 0.12,
+    rating_label: str = "Actual rating (mean ± CI)",
 ) -> plt.Figure:
     """
     Create compact heatmap visualizations of model predictions across all participants for multiple stimulus seeds.
@@ -215,6 +216,7 @@ def plot_prediction_confidence_heatmap(
         rating_scale: Vertical scale factor for the rating overlay.
         rating_color: Line/fill color for the rating overlay.
         rating_ci_alpha: Alpha for rating CI fill.
+        rating_label: Legend label for the actual rating overlay.
     """
     # Validate inputs
     _validate_inputs(sample_duration, all_probabilities, seeds_to_plot, step_size)
@@ -266,13 +268,14 @@ def plot_prediction_confidence_heatmap(
             rating_scale,
             rating_color,
             rating_ci_alpha,
+            rating_label,
         )
 
     # Hide unused subplots
     _hide_empty_subplots(axes.flatten(), len(seeds_to_plot))
 
     # Add colorbar and finalize layout
-    _finalize_figure_layout(fig, axes.flatten()[0])
+    _finalize_figure_layout(fig, axes.flatten()[0], only_decreases)
 
     return fig
 
@@ -386,9 +389,7 @@ def compute_actual_rating_ci_by_seed(
         return {}
 
     if not 0 < confidence_level < 1:
-        raise ValueError(
-            f"confidence_level must be in (0, 1), got {confidence_level}."
-        )
+        raise ValueError(f"confidence_level must be in (0, 1), got {confidence_level}.")
     if step_size <= 0:
         raise ValueError(f"step_size must be positive, got {step_size}.")
     if TOTAL_DURATION_MS % step_size:
@@ -483,9 +484,9 @@ def _prepare_ratings_df(ratings_df: pl.DataFrame) -> tuple[pl.DataFrame, str]:
             group_cols = ["participant_id", "stimulus_seed"]
 
         df = df.with_columns(
-            (
-                pl.col("timestamp") - pl.col("timestamp").min().over(group_cols)
-            ).alias("normalized_timestamp")
+            (pl.col("timestamp") - pl.col("timestamp").min().over(group_cols)).alias(
+                "normalized_timestamp"
+            )
         )
 
     # Ensure ratings are in [0, 1] for consistent overlay scaling.
@@ -706,6 +707,7 @@ def _plot_single_heatmap(
     rating_scale=0.25,
     rating_color="#2ca25f",
     rating_ci_alpha=0.12,
+    rating_label="Actual rating (mean ± CI)",
 ):
     """Plot heatmap for a single stimulus seed."""
     # Process confidence data with complete participant list and step_size
@@ -756,6 +758,8 @@ def _plot_single_heatmap(
         scale=rating_scale,
         color=rating_color,
         ci_alpha=rating_ci_alpha,
+        label=rating_label,
+        add_legend=(subplot_idx == 1),
     )
 
     # Format axes
@@ -817,6 +821,8 @@ def _add_rating_ci_overlay(
     scale: float,
     color: str,
     ci_alpha: float,
+    label: str = "Actual rating (mean ± CI)",
+    add_legend: bool = False,
 ):
     """Add actual rating trajectory with confidence interval as overlay."""
     if not rating_ci:
@@ -874,7 +880,14 @@ def _add_rating_ci_overlay(
             color=color,
             alpha=0.95,
             zorder=9,
+            label=label if add_legend else None,
         )
+        if add_legend:
+            ax.legend(
+                loc="upper right",
+                frameon=False,
+                handlelength=2,
+            )
 
 
 def _format_subplot_axes(
@@ -926,6 +939,7 @@ def _hide_empty_subplots(
 def _finalize_figure_layout(
     fig,
     sample_ax,
+    only_decreases,
 ):
     """Add colorbar and adjust figure layout."""
     # Adjust subplot spacing
@@ -944,8 +958,12 @@ def _finalize_figure_layout(
     # Add colorbar
     cbar_ax = fig.add_axes([0.87, 0.2, 0.015, 0.7])
     cbar = fig.colorbar(sample_ax.images[0], cax=cbar_ax)
+    if only_decreases:
+        title = "Prediction Confidence for Decreases"
+    else:
+        title = "Prediction Confidence for Increases (orange) and Decreases (blue)"
     cbar.set_label(
-        "Prediction Confidence for Decreases",
+        title,
         labelpad=8,
     )
     cbar.outline.set_linewidth(0.0)
