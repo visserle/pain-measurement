@@ -195,6 +195,7 @@ def plot_prediction_confidence_heatmap(
     rating_color: str = "#2ca25f",
     rating_ci_alpha: float = 0.12,
     rating_label: str = "Actual rating (mean ± CI)",
+    show_legend: bool = True,
 ) -> plt.Figure:
     """
     Create compact heatmap visualizations of model predictions across all participants for multiple stimulus seeds.
@@ -217,6 +218,7 @@ def plot_prediction_confidence_heatmap(
         rating_color: Line/fill color for the rating overlay.
         rating_ci_alpha: Alpha for rating CI fill.
         rating_label: Legend label for the actual rating overlay.
+        show_legend: Whether to show the figure-level legend below the plot.
     """
     # Validate inputs
     _validate_inputs(sample_duration, all_probabilities, seeds_to_plot, step_size)
@@ -275,7 +277,7 @@ def plot_prediction_confidence_heatmap(
     _hide_empty_subplots(axes.flatten(), len(seeds_to_plot))
 
     # Add colorbar and finalize layout
-    _finalize_figure_layout(fig, axes.flatten()[0], only_decreases)
+    _finalize_figure_layout(fig, axes.flatten()[0], only_decreases, show_legend)
 
     return fig
 
@@ -284,7 +286,7 @@ def _validate_inputs(
     sample_duration: int,
     all_probabilities: dict,
     seeds_to_plot: list | None,
-    step_size: int = 1000,  # Add step_size parameter
+    step_size: int = 1000,
 ):
     """Validate input parameters."""
     if sample_duration % step_size:
@@ -708,6 +710,7 @@ def _plot_single_heatmap(
     rating_color="#2ca25f",
     rating_ci_alpha=0.12,
     rating_label="Actual rating (mean ± CI)",
+    stimulus_label="Temperature",
 ):
     """Plot heatmap for a single stimulus seed."""
     # Process confidence data with complete participant list and step_size
@@ -749,6 +752,7 @@ def _plot_single_heatmap(
         stimulus_linewidth,
         stimulus_scale,
         step_size,
+        label=stimulus_label,
     )
     _add_rating_ci_overlay(
         ax,
@@ -759,7 +763,6 @@ def _plot_single_heatmap(
         color=rating_color,
         ci_alpha=rating_ci_alpha,
         label=rating_label,
-        add_legend=(subplot_idx == 1),
     )
 
     # Format axes
@@ -783,11 +786,12 @@ def _add_stimulus_overlay(
     confidence_array,
     linewidth,
     scale,
-    step_size=1000,  # Add step_size parameter
+    step_size=1000,
+    label="Temperature",
 ):
     """Add stimulus signal overlay to heatmap."""
     # Get stimulus at appropriate sample rate based on step_size
-    sample_rate = 1000 // step_size  # Convert step_size to sample_rate
+    sample_rate = 1000 // step_size
     stimulus_normalized = _get_cached_stimulus(stimulus_seed, sample_rate)
 
     # Ensure stimulus matches the confidence array length
@@ -810,6 +814,7 @@ def _add_stimulus_overlay(
         color="black",
         zorder=10,
         alpha=0.8,
+        label=label,
     )
 
 
@@ -822,7 +827,6 @@ def _add_rating_ci_overlay(
     color: str,
     ci_alpha: float,
     label: str = "Actual rating (mean ± CI)",
-    add_legend: bool = False,
 ):
     """Add actual rating trajectory with confidence interval as overlay."""
     if not rating_ci:
@@ -880,14 +884,8 @@ def _add_rating_ci_overlay(
             color=color,
             alpha=0.95,
             zorder=9,
-            label=label if add_legend else None,
+            label=label,
         )
-        if add_legend:
-            ax.legend(
-                loc="upper right",
-                frameon=False,
-                handlelength=2,
-            )
 
 
 def _format_subplot_axes(
@@ -903,20 +901,17 @@ def _format_subplot_axes(
     if subplot_idx >= (nrows - 1) * ncols:
         ax.set_xticks([0, 90, 180])
         ax.tick_params(axis="x", which="major", pad=2)
-        # No individual subplot labels - will add figure-level label
     else:
         ax.set_xlabel("")
         ax.set_xticks([])
 
     # Y-axis formatting (left column only)
     if subplot_idx % ncols == 0:
-        # Set y-ticks to show participant IDs
         n_participants = len(participant_ids)
         y_positions = np.arange(0.5, n_participants, 1)
         ax.set_yticks(y_positions)
-        ax.set_yticklabels(participant_ids)  # Keep original order
+        ax.set_yticklabels(participant_ids)
         ax.tick_params(axis="y", which="major", pad=2)
-        # No individual subplot labels - will add figure-level label
     else:
         ax.set_ylabel("")
         ax.set_yticks([])
@@ -940,20 +935,40 @@ def _finalize_figure_layout(
     fig,
     sample_ax,
     only_decreases,
+    show_legend: bool = True,
 ):
     """Add colorbar and adjust figure layout."""
-    # Adjust subplot spacing
     fig.subplots_adjust(
-        bottom=0.15,
+        bottom=0.08 if show_legend else 0.06,
         right=0.85,
         top=0.97,
         wspace=0.12,
         hspace=0.15,
     )
 
-    # Add figure-level axis labels
-    fig.text(0.488, 0.12, "Time (s)", ha="center", va="center")
+    fig.text(
+        0.488,
+        0.048 if show_legend else 0.02,
+        "Time (s)",
+        ha="center",
+        va="center",
+    )
     fig.text(0.091, 0.55, "Participant ID", ha="center", va="center", rotation=90)
+
+    if show_legend:
+        handles, labels = sample_ax.get_legend_handles_labels()
+        if handles:
+            fig.legend(
+                handles,
+                labels,
+                loc="lower center",
+                bbox_to_anchor=(0.488, 0.0),
+                ncol=len(handles),
+                frameon=True,
+                framealpha=0.8,
+                edgecolor="#cccccc",
+                fancybox=False,
+            )
 
     # Add colorbar
     cbar_ax = fig.add_axes([0.87, 0.2, 0.015, 0.7])
@@ -962,8 +977,5 @@ def _finalize_figure_layout(
         title = "Prediction Confidence for Decreases"
     else:
         title = "Prediction Confidence for Increases (orange) and Decreases (blue)"
-    cbar.set_label(
-        title,
-        labelpad=8,
-    )
+    cbar.set_label(title, labelpad=8)
     cbar.outline.set_linewidth(0.0)
