@@ -186,6 +186,7 @@ def plot_prediction_confidence_heatmap(
     seeds_to_plot: list | None = None,
     ncols: int = 2,
     only_decreases: bool = True,
+    only_non_decreases: bool = False,
     step_size: int = 1000,
     ratings_df: pl.DataFrame | None = None,
     show_actual_rating_ci: bool = False,
@@ -210,6 +211,9 @@ def plot_prediction_confidence_heatmap(
         stimulus_scale: Scale factor for stimulus amplitude
         seeds_to_plot: Optional list of specific seeds to plot. If None, plots all seeds.
         ncols: Number of columns in the subplot grid
+        only_decreases: If True, show only decrease confidence values.
+        only_non_decreases: If True, show only non-decrease confidence values.
+            Overrides only_decreases.
         ratings_df: Optional dataframe with measured ratings (e.g., Feature_Data/Feature_Stimulus).
         show_actual_rating_ci: Whether to overlay the mean rating trajectory and CI.
         rating_confidence_level: Confidence level used for CI (e.g., 0.95).
@@ -225,6 +229,7 @@ def plot_prediction_confidence_heatmap(
 
     # Setup plotting parameters
     seeds_to_plot = _get_seeds_to_plot(all_probabilities, seeds_to_plot)
+    plot_mode = _resolve_plot_mode(only_decreases, only_non_decreases)
 
     # Get all unique participant IDs across all seeds
     all_participant_ids = _get_all_participant_ids(all_probabilities, seeds_to_plot)
@@ -246,7 +251,7 @@ def plot_prediction_confidence_heatmap(
             )
 
     fig, axes = _create_figure_and_axes(seeds_to_plot, ncols, figure_size)
-    cmap = _create_colormap(only_decreases)
+    cmap = _create_colormap(plot_mode)
 
     # Plot each seed
     for idx, stimulus_seed in enumerate(seeds_to_plot):
@@ -262,7 +267,7 @@ def plot_prediction_confidence_heatmap(
             idx,
             ncols,
             nrows,
-            only_decreases,
+            plot_mode,
             all_participant_ids,
             step_size,
             rating_ci_by_seed.get(stimulus_seed),
@@ -277,7 +282,7 @@ def plot_prediction_confidence_heatmap(
     _hide_empty_subplots(axes.flatten(), len(seeds_to_plot))
 
     # Add colorbar and finalize layout
-    _finalize_figure_layout(fig, axes.flatten()[0], only_decreases, show_legend)
+    _finalize_figure_layout(fig, axes.flatten()[0], plot_mode, show_legend)
 
     return fig
 
@@ -309,6 +314,15 @@ def _get_all_participant_ids(all_probabilities: dict, seeds_to_plot: list) -> li
 
     # Sort participant IDs as integers
     return sorted(all_participants, key=lambda x: int(x))
+
+
+def _resolve_plot_mode(only_decreases: bool, only_non_decreases: bool) -> str:
+    """Resolve confidence display mode."""
+    if only_non_decreases:
+        return "only_non_decreases"
+    if only_decreases:
+        return "only_decreases"
+    return "both"
 
 
 def _get_seeds_to_plot(
@@ -356,16 +370,22 @@ def _create_figure_and_axes(
     return fig, axes
 
 
-def _create_colormap(only_decreases) -> LinearSegmentedColormap:
+def _create_colormap(plot_mode: str) -> LinearSegmentedColormap:
     """Create custom colormap."""
-    if only_decreases:
+    if plot_mode == "only_decreases":
         # For decreases only: white to blue
         colors = [
             (1, 1, 1),
             (0.0, 0.2, 0.8),
         ]
+    elif plot_mode == "only_non_decreases":
+        # For non_decreases only: orange to white
+        colors = [
+            (1.0, 0.35, 0.1),
+            (1, 1, 1),
+        ]
     else:
-        # For both increases and decreases: orange to white to blue
+        # For both non_decreases and decreases: orange to white to blue
         colors = [
             (1.0, 0.35, 0.1),
             (1, 1, 1),
@@ -674,7 +694,7 @@ def _calculate_signed_confidence(
     """Calculate signed confidence values based on classification threshold."""
     signed_confidences = np.zeros_like(decrease_probs)
 
-    # Below threshold (increase predictions)
+    # Below threshold (non-decrease predictions)
     below_mask = decrease_probs < threshold
     signed_confidences[below_mask] = (
         decrease_probs[below_mask] - threshold
@@ -701,7 +721,7 @@ def _plot_single_heatmap(
     subplot_idx,
     ncols,
     nrows,
-    only_decreases,
+    plot_mode,
     all_participant_ids=None,
     step_size=1000,
     rating_ci=None,
@@ -725,9 +745,13 @@ def _plot_single_heatmap(
     # Create a masked array to handle NaN values (missing participants)
     masked_array = np.ma.masked_invalid(confidence_array)
 
-    # Set vmin and vmax based on only_decreases parameter
-    vmin = 0 if only_decreases else -1
-    vmax = 1
+    # Set color scale bounds based on selected plot mode.
+    if plot_mode == "only_decreases":
+        vmin, vmax = 0, 1
+    elif plot_mode == "only_non_decreases":
+        vmin, vmax = -1, 0
+    else:
+        vmin, vmax = -1, 1
 
     # Plot heatmap with grey color for masked (missing) values
     cmap.set_bad(color="#f0f0f0")  # Very light grey, almost white
@@ -934,7 +958,7 @@ def _hide_empty_subplots(
 def _finalize_figure_layout(
     fig,
     sample_ax,
-    only_decreases,
+    plot_mode: str,
     show_legend: bool = True,
 ):
     """Add colorbar and adjust figure layout."""
@@ -973,9 +997,11 @@ def _finalize_figure_layout(
     # Add colorbar
     cbar_ax = fig.add_axes([0.87, 0.2, 0.015, 0.7])
     cbar = fig.colorbar(sample_ax.images[0], cax=cbar_ax)
-    if only_decreases:
+    if plot_mode == "only_decreases":
         title = "Prediction Confidence for Decreases"
+    elif plot_mode == "only_non_decreases":
+        title = "Prediction Confidence for Non-Decreases"
     else:
-        title = "Prediction Confidence for Increases (orange) and Decreases (blue)"
+        title = "Prediction Confidence for Non-Decreases (orange) and Decreases (blue)"
     cbar.set_label(title, labelpad=8)
     cbar.outline.set_linewidth(0.0)

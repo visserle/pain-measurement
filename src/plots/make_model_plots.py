@@ -216,6 +216,7 @@ def model_inference(
     cache: InferenceCache,
     classification_threshold: float = 0.9,
     step_size: int = 1000,
+    only_non_decreases: bool = False,
 ):
     """Run model inference analysis with caching of results only."""
     config_path = Path("src/experiments/measurement/measurement_config.toml")
@@ -299,7 +300,8 @@ def model_inference(
             figure_size=(7, 2),
             stimulus_scale=0.5,
             stimulus_linewidth=1.5,
-            only_decreases=True,
+            only_decreases=not only_non_decreases,
+            only_non_decreases=only_non_decreases,
             step_size=step_size,
         )
 
