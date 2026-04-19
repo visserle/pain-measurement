@@ -2,35 +2,21 @@ import os
 from pathlib import Path
 
 import altair as alt
-import holoviews as hv
-import hvplot.polars  # noqa  # noqa
-import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
-import tomllib
 from dotenv import load_dotenv
-from polars import col
 
-from src.data.database_manager import DatabaseManager
-from src.experiments.measurement.stimulus_generator import StimulusGenerator
-from src.features.scaling import scale_min_max
-from src.features.utils import to_describe
-from src.log_config import configure_logging
-from src.plots.utils import calculate_z_score
-
-load_dotenv()
-FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
-
-configure_logging(
-    ignore_libs=("Comm", "bokeh", "tornado", "matplotlib"),
-)
-
-pl.Config.set_tbl_rows(12)  # for 12 seeds
-hv.output(widget_location="bottom", size=150)
+# load_dotenv()
+# FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
 
 
 def plot_stimulus_with_physiological_signals(
-    ci_values, signals, signal_labels=None, signal_colors=None
+    ci_values,
+    signals,
+    signal_labels=None,
+    signal_colors=None,
+    width=1150,
+    height=430,
 ):
     """
     Plot mean signals with confidence interval bands using Altair.
@@ -120,7 +106,7 @@ def plot_stimulus_with_physiological_signals(
 
     return (
         alt.layer(*layers, legend_data)
-        .properties(width=800, height=400)
+        .properties(width=width, height=height)
         .configure_axis(
             grid=False,
             gridColor="#dddddd",
