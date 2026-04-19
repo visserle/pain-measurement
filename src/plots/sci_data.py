@@ -1,13 +1,6 @@
-import os
-from pathlib import Path
-
 import altair as alt
 import numpy as np
 import polars as pl
-from dotenv import load_dotenv
-
-# load_dotenv()
-# FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
 
 # Font size constants
 FONT_SIZE_SMALL = 12
@@ -58,22 +51,26 @@ def plot_stimulus_with_physiological_signals(
         "#7b4fa0",  # Mouth Open - purple
     ]
 
+    ci_values = ci_values.with_columns(
+        (pl.col("normalized_timestamp") / 1000).round(2).alias("time_s")
+    )
+
     layers = []
     for sig, color in zip(signals, SIGNAL_COLORS):
         label = SIGNAL_LABELS[sig]
         base = alt.Chart(ci_values).transform_calculate(label=f"'{label}'")
 
         line = base.mark_line(color=color).encode(
-            x=alt.X("normalized_timestamp:Q", title="Time (ms)"),
+            x=alt.X("time_s:Q", title="Time (s)"),
             y=alt.Y(f"mean_{sig}:Q", title="Normalized Value"),
             tooltip=[
-                alt.Tooltip("normalized_timestamp:Q", title="Time (ms)"),
+                alt.Tooltip("time_s:Q", title="Time (s)"),
                 alt.Tooltip(f"mean_{sig}:Q", title=label, format=".2f"),
             ],
         )
 
         band = base.mark_area(opacity=0.2, color=color).encode(
-            x=alt.X("normalized_timestamp:Q"),
+            x=alt.X("time_s:Q"),
             y=alt.Y(f"ci_lower_{sig}:Q"),
             y2=alt.Y2(f"ci_upper_{sig}:Q"),
         )
@@ -117,6 +114,8 @@ def plot_stimulus_with_physiological_signals(
             grid=False,
             gridColor="#dddddd",
             gridOpacity=0.8,
+            labelFontSize=FONT_SIZE_LARGE,
+            titleFontSize=FONT_SIZE_LARGE,
             titleFontWeight=FONT_WEIGHT_NORMAL,
             labelFontWeight=FONT_WEIGHT_NORMAL,
         )
@@ -214,9 +213,8 @@ def plot_stimulus_with_labels(
     temp_df = pl.DataFrame({"time_s": time_s, "temperature": temp})
 
     interval_order = [label_names[k] for k in order]
-    interval_axis_df = pl.DataFrame({"interval_label": interval_order})
 
-    tick_step = 10 if duration <= 120 else 20
+    tick_step = 10
     x_ticks = np.arange(0, int(np.floor(duration)) + 1, tick_step).tolist()
     if not x_ticks:
         x_ticks = [0]
@@ -239,10 +237,11 @@ def plot_stimulus_with_labels(
             orient="right",
             title="Interval Type",
             titleAngle=270,
-            titlePadding=-30,
+            titlePadding=-10,
             ticks=True,
             tickSize=6,
-            labelAngle=40,
+            labelLimit=1000,
+            labelAngle=30,
             labelAlign="left",
             labelBaseline="middle",
         ),
@@ -271,16 +270,6 @@ def plot_stimulus_with_labels(
         )
     )
 
-    # Invisible points keep all interval labels on the right axis even if one type has no spans.
-    interval_axis = (
-        alt.Chart(interval_axis_df)
-        .mark_point(opacity=0)
-        .encode(
-            x=alt.value(0),
-            y=interval_y,
-        )
-    )
-
     line = (
         alt.Chart(temp_df)
         .mark_line(color="#000080", strokeWidth=4)
@@ -290,7 +279,7 @@ def plot_stimulus_with_labels(
                 "temperature:Q",
                 title="Temperature (°C)",
                 scale=y_temp_scale,
-                axis=alt.Axis(tickMinStep=0.5, titlePadding=15),
+                axis=alt.Axis(tickMinStep=0.5),  # , titlePadding=5),
             ),
             tooltip=[
                 alt.Tooltip("time_s:Q", title="Time (s)", format=".2f"),
@@ -299,7 +288,7 @@ def plot_stimulus_with_labels(
         )
     )
     chart = (
-        alt.layer(bands, interval_axis, line)
+        alt.layer(bands, line)
         .resolve_scale(y="independent")
         .properties(width=width, height=height)
         .configure_axis(
