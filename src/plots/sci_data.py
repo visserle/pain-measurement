@@ -9,6 +9,12 @@ from dotenv import load_dotenv
 # load_dotenv()
 # FIGURE_DIR = Path(os.getenv("FIGURE_DIR"))
 
+# Font size constants
+FONT_SIZE_SMALL = 12
+FONT_SIZE_LARGE = 14
+FONT_WEIGHT_NORMAL = "normal"
+LABEL_PADDING = 6
+
 
 def plot_stimulus_with_physiological_signals(
     ci_values,
@@ -97,7 +103,7 @@ def plot_stimulus_with_physiological_signals(
                     symbolType="stroke",
                     symbolStrokeWidth=3,
                     symbolSize=400,
-                    labelFontSize=12,
+                    labelFontSize=FONT_SIZE_LARGE,
                     rowPadding=4,
                 ),
             )
@@ -111,8 +117,8 @@ def plot_stimulus_with_physiological_signals(
             grid=False,
             gridColor="#dddddd",
             gridOpacity=0.8,
-            titleFontWeight="normal",
-            labelFontWeight="normal",
+            titleFontWeight=FONT_WEIGHT_NORMAL,
+            labelFontWeight=FONT_WEIGHT_NORMAL,
         )
         .configure_view(stroke=None, fill="white")
     )
@@ -232,11 +238,11 @@ def plot_stimulus_with_labels(
         axis=alt.Axis(
             orient="right",
             title="Interval Type",
-            titleAngle=90,
-            titlePadding=16,
+            titleAngle=270,
+            titlePadding=-30,
             ticks=True,
             tickSize=6,
-            labelAngle=30,
+            labelAngle=40,
             labelAlign="left",
             labelBaseline="middle",
         ),
@@ -282,9 +288,9 @@ def plot_stimulus_with_labels(
             x=alt.X("time_s:Q", scale=x_scale, axis=x_axis),
             y=alt.Y(
                 "temperature:Q",
-                title="Temperature (deg C)",
+                title="Temperature (°C)",
                 scale=y_temp_scale,
-                axis=alt.Axis(tickMinStep=0.5),
+                axis=alt.Axis(tickMinStep=0.5, titlePadding=15),
             ),
             tooltip=[
                 alt.Tooltip("time_s:Q", title="Time (s)", format=".2f"),
@@ -292,7 +298,6 @@ def plot_stimulus_with_labels(
             ],
         )
     )
-
     chart = (
         alt.layer(bands, interval_axis, line)
         .resolve_scale(y="independent")
@@ -302,12 +307,12 @@ def plot_stimulus_with_labels(
             gridColor="#d9d9d9",
             gridDash=[4, 4],
             gridOpacity=0.55,
-            labelFontSize=12,
-            titleFontSize=14,
-            titleFontWeight="normal",
-            labelFontWeight="normal",
+            labelFontSize=FONT_SIZE_LARGE,
+            titleFontSize=FONT_SIZE_LARGE,
+            titleFontWeight=FONT_WEIGHT_NORMAL,
+            labelFontWeight=FONT_WEIGHT_NORMAL,
         )
-        .configure_view(stroke="#b7b7b7")
+        .configure_view(stroke="#b7b7b7", strokeOpacity=0)
     )
 
     if filename:
@@ -371,10 +376,10 @@ def plot_stimulus_seed_grid(
         .configure_view(stroke=None)
         .configure_facet(spacing=10)
         .configure_header(
-            labelFontSize=14,
-            labelFontWeight="normal",
+            labelFontSize=FONT_SIZE_LARGE,
+            labelFontWeight=FONT_WEIGHT_NORMAL,
             labelOrient="top",
-            labelPadding=6,
+            labelPadding=LABEL_PADDING,
             title=None,
         )
     )
