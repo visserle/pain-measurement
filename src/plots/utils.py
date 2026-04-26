@@ -1,3 +1,5 @@
+from statistics import NormalDist
+
 import polars as pl
 from polars import col
 
@@ -18,6 +20,13 @@ FEATURE_LABELS = {
         "Combined"
     ),
 }
+
+
+def calculate_z_score(confidence_level: float) -> float:
+    """
+    Calculate z-score for the given confidence level (e.g., 0.95 -> 1.96).
+    """
+    return NormalDist().inv_cdf((1 + confidence_level) / 2)
 
 
 def add_normalized_timestamp(

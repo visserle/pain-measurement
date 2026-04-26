@@ -85,7 +85,8 @@ def average_over_stimulus_seeds(
             df = scale_min_max(
                 df,
                 exclude_additional_columns=[
-                    "temperature",  # already normalized
+                    # already normalized:
+                    "temperature",
                     "pain_rating",
                     "brow_furrow",
                     "cheek_raise",

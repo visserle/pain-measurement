@@ -2,7 +2,7 @@
 
 [![Preprint](https://img.shields.io/badge/bioRxiv-preprint-b31b1b.svg)](https://www.biorxiv.org/content/10.64898/2026.01.26.701710v1)
 
-This repository contains the source code and data management utilities for the study **"Noninvasive and Objective Near Real-Time Detection of Pain Changes in Fluctuating Pain"** ([Visser & Büchel, 2026](https://doi.org/10.64898/2026.01.26.701710)).
+This repository contains the source code and data management utilities for the study **"Noninvasive and Objective Near Real-Time Detection of Pain Changes During Tonic Fluctuating Noxious Heat Stimulation"** ([Visser & Büchel, 2026](https://doi.org/10.64898/2026.01.26.701710v3)).
 
 The codebase implements a multimodal machine learning pipeline to detect decreasing pain intensity using physiological signals (EEG, EDA, Heart Rate, Pupil Diameter, Facial Expressions).
 

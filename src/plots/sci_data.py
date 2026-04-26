@@ -1,7 +1,20 @@
+import base64
+import os
+from copy import deepcopy
+from pathlib import Path
+
 import altair as alt
 import numpy as np
 import polars as pl
+from dotenv import load_dotenv
+from lxml import etree
+from PIL import Image
 
+load_dotenv()
+FIGURE_DIR = Path(os.getenv("SCI_DATA_FIGURE_DIR"))
+
+SVG_NS = "http://www.w3.org/2000/svg"
+_RASTER_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 # Font size constants
 FONT_SIZE_SMALL = 12
 FONT_SIZE_LARGE = 14
@@ -223,11 +236,16 @@ def plot_stimulus_with_labels(
 
     t_min = float(temp.min())
     t_max = float(temp.max())
-    t_span = max(t_max - t_min, 0.25)
+    y_tick_step = 0.5
+    y_min = np.floor(t_min / y_tick_step) * y_tick_step
+    y_max = np.ceil(t_max / y_tick_step) * y_tick_step
+    if y_max <= y_min:
+        y_max = y_min + y_tick_step
+    y_ticks = np.arange(y_min, y_max + 0.5 * y_tick_step, y_tick_step).tolist()
 
     x_scale = alt.Scale(domain=[0, duration])
     x_axis = alt.Axis(values=x_ticks, title="Time (s)")
-    y_temp_scale = alt.Scale(domain=[t_min - 0.05 * t_span, t_max + 0.05 * t_span])
+    y_temp_scale = alt.Scale(domain=[y_min, y_max], nice=False)
 
     interval_y = alt.Y(
         "interval_label:N",
@@ -240,6 +258,7 @@ def plot_stimulus_with_labels(
             titlePadding=-10,
             ticks=True,
             tickSize=6,
+            # tickBand="extent",
             labelLimit=1000,
             labelAngle=30,
             labelAlign="left",
@@ -272,14 +291,14 @@ def plot_stimulus_with_labels(
 
     line = (
         alt.Chart(temp_df)
-        .mark_line(color="#000080", strokeWidth=4)
+        .mark_line(color="#000080", strokeWidth=3)
         .encode(
             x=alt.X("time_s:Q", scale=x_scale, axis=x_axis),
             y=alt.Y(
                 "temperature:Q",
                 title="Temperature (°C)",
                 scale=y_temp_scale,
-                axis=alt.Axis(tickMinStep=0.5),  # , titlePadding=5),
+                axis=alt.Axis(tickMinStep=0.5, values=y_ticks),  # , titlePadding=5),
             ),
             tooltip=[
                 alt.Tooltip("time_s:Q", title="Time (s)", format=".2f"),
@@ -315,6 +334,8 @@ def plot_stimulus_seed_grid(
     columns: int = 3,
     width: int = 220,
     height: int = 130,
+    font_size: int = FONT_SIZE_LARGE,
+    title_x_offset: int = 8,
 ) -> alt.Chart:
     """Plot each stimulus seed as a faceted Altair line chart using Polars data."""
     required_columns = {"seed", "time", "y"}
@@ -333,42 +354,149 @@ def plot_stimulus_seed_grid(
         )
     )
 
-    base = (
-        alt.Chart(chart_data)
-        .mark_line(color="#1f77b4", strokeWidth=2)
-        .encode(
-            x=alt.X(
-                "time:Q",
-                axis=None,
-                scale=alt.Scale(zero=False),
-            ),
-            y=alt.Y(
-                "y:Q",
-                axis=None,
-                scale=alt.Scale(zero=False, nice=False),
-            ),
-            tooltip=[
-                alt.Tooltip("seed:Q", title="Seed"),
-                alt.Tooltip("time:Q", title="Time", format=".0f"),
-                alt.Tooltip("y:Q", title="Temperature", format=".3f"),
-            ],
+    seed_labels = chart_data.select("seed_label").unique().sort("seed_label")
+
+    charts = []
+    for row in seed_labels.iter_rows(named=True):
+        seed_label = row["seed_label"]
+        seed_data = chart_data.filter(pl.col("seed_label") == seed_label)
+
+        line = (
+            alt.Chart(seed_data)
+            .mark_line(color="#1f77b4", strokeWidth=2)
+            .encode(
+                x=alt.X("time:Q", axis=None, scale=alt.Scale(zero=False)),
+                y=alt.Y("y:Q", axis=None, scale=alt.Scale(zero=False, nice=False)),
+                tooltip=[
+                    alt.Tooltip("seed:Q", title="Seed"),
+                    alt.Tooltip("time:Q", title="Time", format=".0f"),
+                    alt.Tooltip("y:Q", title="Temperature", format=".3f"),
+                ],
+            )
+            .properties(width=width, height=height)
         )
-        .properties(width=width, height=height)
-    )
+
+        title = (
+            alt.Chart({"values": [{"label": seed_label}]})
+            .mark_text(
+                align="center",
+                baseline="bottom",
+                fontSize=font_size,
+                fontWeight=FONT_WEIGHT_NORMAL,
+                clip=False,
+            )
+            .encode(
+                text="label:N",
+                x=alt.value(width / 2 - title_x_offset),
+                y=alt.value(-LABEL_PADDING),
+            )
+        )
+
+        charts.append(alt.layer(line, title))
 
     return (
-        base.facet(
-            facet=alt.Facet("seed_label:N", title=None),
-            columns=columns,
-        )
-        .resolve_scale(x="shared", y="independent")
+        alt.concat(*charts, columns=columns)
+        .resolve_scale(x="independent", y="independent")
         .configure_view(stroke=None)
-        .configure_facet(spacing=10)
-        .configure_header(
-            labelFontSize=FONT_SIZE_LARGE,
-            labelFontWeight=FONT_WEIGHT_NORMAL,
-            labelOrient="top",
-            labelPadding=LABEL_PADDING,
-            title=None,
-        )
+        .configure_concat(spacing=10)
     )
+
+
+def _viewbox_dims(path: Path) -> tuple[float, float]:
+    if path.suffix.lower() in _RASTER_SUFFIXES:
+        with Image.open(path) as img:
+            return float(img.width), float(img.height)
+    root = etree.parse(str(path)).getroot()
+    vb = root.get("viewBox")
+    if vb:
+        _, _, w, h = vb.split()
+        return float(w), float(h)
+    return float(root.get("width", 0)), float(root.get("height", 0))
+
+
+def compose_panel_figure(
+    output_path: Path | str,
+    row1: Path,
+    row2_left: Path,
+    row2_right: Path,
+    gap: int = 16,
+    label_size: int = 18,
+) -> None:
+    """Compose three SVGs/images: one full-width top row, two side-by-side bottom row.
+
+    Scales both bottom panels to the same height so they fill the canvas width.
+    Adds lowercase alphabetical panel labels (a, b, c).
+    Supports SVG and raster images (PNG, JPEG, etc.) for any panel.
+    """
+    w_a, h_a = _viewbox_dims(row1)
+    w_b, h_b = _viewbox_dims(row2_left)
+    w_c, h_c = _viewbox_dims(row2_right)
+
+    canvas_w = int(w_a)
+
+    # Scale B and C to equal height so (wB + gap + wC) == canvas_w
+    ar_b, ar_c = w_b / h_b, w_c / h_c
+    h2 = (canvas_w - gap) / (ar_b + ar_c)
+    w_panel_b = round(h2 * ar_b)
+    w_panel_c = canvas_w - gap - w_panel_b
+    h_row2 = round(h2)
+
+    canvas_h = round(h_a) + gap + h_row2
+
+    nsmap = {None: SVG_NS}
+    root_svg = etree.Element(f"{{{SVG_NS}}}svg", nsmap=nsmap)
+    root_svg.set("width", str(canvas_w))
+    root_svg.set("height", str(canvas_h))
+    root_svg.set("viewBox", f"0 0 {canvas_w} {canvas_h}")
+
+    bg = etree.SubElement(root_svg, f"{{{SVG_NS}}}rect")
+    bg.set("width", "100%")
+    bg.set("height", "100%")
+    bg.set("fill", "white")
+
+    y2 = round(h_a) + gap
+    panels = [
+        # (label, path, x, y, w, h, vb_w, vb_h)
+        ("a", row1, 0, 0, canvas_w, round(h_a), int(w_a), int(h_a)),
+        ("b", row2_left, 0, y2, w_panel_b, h_row2, int(w_b), int(h_b)),
+        ("c", row2_right, w_panel_b + gap, y2, w_panel_c, h_row2, int(w_c), int(h_c)),
+    ]
+
+    for label, path, x, y, w, h, vb_w, vb_h in panels:
+        if path.suffix.lower() in _RASTER_SUFFIXES:
+            mime = "image/png" if path.suffix.lower() == ".png" else "image/jpeg"
+            encoded = base64.b64encode(path.read_bytes()).decode()
+            img_elem = etree.SubElement(root_svg, f"{{{SVG_NS}}}image")
+            img_elem.set("x", str(x))
+            img_elem.set("y", str(y))
+            img_elem.set("width", str(w))
+            img_elem.set("height", str(h))
+            img_elem.set("href", f"data:{mime};base64,{encoded}")
+            img_elem.set("preserveAspectRatio", "xMidYMid meet")
+        else:
+            src_root = etree.parse(str(path)).getroot()
+            child_svg = etree.SubElement(root_svg, f"{{{SVG_NS}}}svg")
+            child_svg.set("x", str(x))
+            child_svg.set("y", str(y))
+            child_svg.set("width", str(w))
+            child_svg.set("height", str(h))
+            child_svg.set("viewBox", f"0 0 {vb_w} {vb_h}")
+            child_svg.set("preserveAspectRatio", "xMidYMid meet")
+            for child in src_root:
+                child_svg.append(deepcopy(child))
+
+        text = etree.SubElement(root_svg, f"{{{SVG_NS}}}text")
+        text.set("x", str(x))
+        text.set("y", str(y + label_size - 3))
+        text.set("font-family", "Arial, Helvetica, sans-serif")
+        text.set("font-size", str(label_size))
+        text.set("font-weight", "bold")
+        text.text = label
+
+    etree.ElementTree(root_svg).write(
+        str(output_path),
+        pretty_print=True,
+        xml_declaration=True,
+        encoding="utf-8",
+    )
+    print(f"Saved → {output_path}")
