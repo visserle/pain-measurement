@@ -327,7 +327,7 @@ def model_performance_per_participant(cache: InferenceCache):
         # Try to get cached results
         if cache._is_cache_valid(feature_list_str, model_path):
             cached_result = cache.get(feature_list_str, "per_participant_results")
-            if not cached_result.is_empty():
+            if cached_result is not None and not cached_result.is_empty():
                 logging.info(
                     f"Using cached per-participant results for {feature_list_str}"
                 )
@@ -456,6 +456,6 @@ if __name__ == "__main__":
     # Run all analyses with lightweight caching
     model_performance(cache)
     model_performance_per_participant(cache)
-    model_inference(cache, classification_threshold=0.90, step_size=250)
+    # model_inference(cache, classification_threshold=0.90, step_size=250)
 
     logging.info("Completed all model plots")
