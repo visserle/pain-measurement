@@ -111,12 +111,21 @@ def _title(text: str) -> alt.TitleParams:
     return alt.TitleParams(text=text, anchor="middle")
 
 
+def _with_optional_title(
+    chart: alt.TopLevelMixin,
+    title: str | None,
+) -> alt.TopLevelMixin:
+    if title is None:
+        return chart
+    return chart.properties(title=_title(title))
+
+
 def plot_stimulus_temperature(
     stimulus,
     *,
     width: int = 720,
     height: int = 250,
-    title: str = "Temperature over time",
+    title: str | None = "Temperature over time",
 ) -> alt.LayerChart:
     """Plot a generated temperature stimulus and its major decreases."""
     temperature = np.asarray(stimulus.y, dtype=float)
@@ -185,11 +194,12 @@ def plot_stimulus_temperature(
         )
     )
 
-    return (
+    chart = (
         alt.layer(highlights, threshold_rules, line)
-        .properties(width=width, height=height, title=_title(title))
+        .properties(width=width, height=height)
         .resolve_scale(x="shared", y="shared")
     )
+    return _with_optional_title(chart, title)
 
 
 def plot_correlation_heatmap(
@@ -199,7 +209,7 @@ def plot_correlation_heatmap(
     skip_first_n_seconds: float = 20,
     width: int = 250,
     height: int = 250,
-    title: str = "Pearson correlations",
+    title: str | None = "Pearson correlations",
 ) -> alt.LayerChart:
     """Plot the lower triangle of the Pearson correlation matrix."""
     if features is None:
@@ -245,18 +255,26 @@ def plot_correlation_heatmap(
 
     cells = (
         alt.Chart(data)
-        .mark_rect(stroke="white", strokeWidth=0.7)
+        .mark_rect(stroke="white", strokeWidth=0.3)
         .encode(
             x=x,
             y=y,
             color=alt.Color(
                 "correlation:Q",
-                scale=alt.Scale(domain=[-0.2, 1.0], scheme="blues"),
+                scale=alt.Scale(
+                    domain=[0, 1],
+                    range=["#e8eef7", "#0033cc"],
+                    clamp=True,
+                ),
                 legend=alt.Legend(
                     title="Pearson correlation coefficient",
-                    gradientLength=170,
-                    gradientThickness=12,
-                    values=[-0.2, 0, 0.5, 1],
+                    orient="right",
+                    titleOrient="left",
+                    titlePadding=8,
+                    gradientLength=height,
+                    gradientThickness=10,
+                    values=[0, 0.2, 0.4, 0.6, 0.8, 1],
+                    format=".1f",
                 ),
             ),
             tooltip=[
@@ -281,11 +299,8 @@ def plot_correlation_heatmap(
         )
     )
 
-    return (cells + values).properties(
-        width=width,
-        height=height,
-        title=_title(title),
-    )
+    chart = (cells + values).properties(width=width, height=height)
+    return _with_optional_title(chart, title)
 
 
 def plot_roc_curves(
@@ -293,7 +308,7 @@ def plot_roc_curves(
     *,
     width: int = 390,
     height: int = 270,
-    title: str = "ROC curves (All models)",
+    title: str | None = "ROC curves (All models)",
 ) -> alt.LayerChart:
     """Plot ROC curves for multiple feature sets."""
     model_order = list(results)
@@ -336,13 +351,13 @@ def plot_roc_curves(
 
     x = alt.X(
         "false_positive_rate:Q",
-        title="False Positive Rate",
+        title="False positive rate",
         scale=alt.Scale(domain=[0, 1], nice=False),
         axis=alt.Axis(format=".1f", tickCount=6),
     )
     y = alt.Y(
         "true_positive_rate:Q",
-        title="True Positive Rate",
+        title="True positive rate",
         scale=alt.Scale(domain=[0, 1], nice=False),
         axis=alt.Axis(format=".1f", tickCount=6),
     )
@@ -392,11 +407,8 @@ def plot_roc_curves(
         )
     )
 
-    return curves.properties(
-        width=width,
-        height=height,
-        title=_title(title),
-    )
+    chart = curves.properties(width=width, height=height)
+    return _with_optional_title(chart, title)
 
 
 def plot_accuracy_distributions(
@@ -406,7 +418,7 @@ def plot_accuracy_distributions(
     bin_width: float = 0.01,
     width: int = 280,
     height: int = 210,
-    title: str = "Accuracy distributions",
+    title: str | None = "Accuracy distributions",
 ) -> alt.HConcatChart:
     """Plot model-stability histograms with shared bins and axes."""
     if distributions.keys() != reference_accuracies.keys():
@@ -425,10 +437,22 @@ def plot_accuracy_distributions(
     bins = np.arange(x_min, x_max + bin_width * 0.5, bin_width)
     if bins[-1] < x_max:
         bins = np.append(bins, x_max)
+    histograms = {
+        label: np.histogram(values, bins=bins) for label, values in arrays.items()
+    }
+    largest_count = max(int(counts.max()) for counts, _ in histograms.values())
+    y_step = 5
+    y_max = max(
+        y_step,
+        y_step * np.ceil(largest_count * 1.25 / y_step),
+    )
+    y_scale = alt.Scale(domain=[0, float(y_max)], nice=False)
+    rule_top = min(largest_count * 1.05, y_max - y_step)
+    rule_y = round(height * (1 - rule_top / y_max))
 
     panels = []
-    for panel_index, (label, values) in enumerate(arrays.items()):
-        counts, edges = np.histogram(values, bins=bins)
+    for panel_index, label in enumerate(arrays):
+        counts, edges = histograms[label]
         histogram_data = alt.Data(
             values=[
                 {
@@ -441,7 +465,7 @@ def plot_accuracy_distributions(
         )
         x = alt.X(
             "bin_start:Q",
-            title="Accuracy",
+            title="Test set accuracy",
             scale=alt.Scale(domain=[x_min, x_max], nice=False),
             axis=alt.Axis(
                 format=".2f", tickCount=max(2, round((x_max - x_min) / step) + 1)
@@ -459,7 +483,11 @@ def plot_accuracy_distributions(
             .encode(
                 x=x,
                 x2="bin_end:Q",
-                y=alt.Y("count:Q", title="Count" if panel_index == 0 else None),
+                y=alt.Y(
+                    "count:Q",
+                    title="Number of train-test splits" if panel_index == 0 else None,
+                    scale=y_scale,
+                ),
                 y2=alt.Y2(datum=0),
                 tooltip=[
                     alt.Tooltip("bin_start:Q", title="From", format=".2f"),
@@ -470,36 +498,45 @@ def plot_accuracy_distributions(
         )
         reference = (
             alt.Chart(
-                alt.Data(values=[{"reference": float(reference_accuracies[label])}])
+                alt.Data(
+                    values=[
+                        {
+                            "reference": float(reference_accuracies[label]),
+                        }
+                    ]
+                )
             )
             .mark_rule(color="black", strokeDash=[6, 4], strokeWidth=1.5)
-            .encode(x=alt.X("reference:Q", scale=alt.Scale(domain=[x_min, x_max])))
+            .encode(
+                x=alt.X("reference:Q", scale=alt.Scale(domain=[x_min, x_max])),
+                y=alt.value(rule_y),
+                y2=alt.value(height),
+            )
         )
-        panel_letter = (
-            alt.Chart(alt.Data(values=[{"label": chr(ord("a") + panel_index)}]))
+        subplot_label = (
+            alt.Chart(alt.Data(values=[{"label": label}]))
             .mark_text(
-                align="left",
-                baseline="bottom",
+                align="center",
+                baseline="top",
+                dy=5,
                 font=FONT,
                 fontSize=FONT_SIZE,
-                fontWeight="bold",
-                clip=False,
+                fontWeight="normal",
             )
-            .encode(text="label:N", x=alt.value(-28), y=alt.value(-12))
-        )
-        panels.append(
-            alt.layer(bars, reference, panel_letter).properties(
-                width=width,
-                height=height,
-                title=_title(label),
+            .encode(
+                x=alt.value(width / 2),
+                y=alt.value(5),
+                text="label:N",
             )
         )
+        panel = alt.layer(bars, reference, subplot_label).properties(
+            width=width,
+            height=height,
+        )
+        panels.append(panel)
 
-    return (
-        alt.hconcat(*panels, spacing=20)
-        .resolve_scale(x="shared", y="shared")
-        .properties(title=_title(title))
-    )
+    chart = alt.hconcat(*panels, spacing=20).resolve_scale(x="shared", y="shared")
+    return _with_optional_title(chart, title)
 
 
 def plot_participant_accuracies(
@@ -507,7 +544,7 @@ def plot_participant_accuracies(
     *,
     width: int = 1320,
     height: int = 210,
-    title: str = "Classification accuracy across models and participants",
+    title: str | None = "Classification accuracy across models and participants",
 ) -> alt.LayerChart:
     """Plot per-model accuracy box plots and consistently offset participants."""
     feature_order = list(results)
@@ -542,17 +579,19 @@ def plot_participant_accuracies(
     for row in rows:
         feature_index = feature_indices[row["feature"]]
         row["feature_index"] = feature_index
-        row["feature_position"] = feature_index + participant_jitter[
-            row["participant"]
-        ]
+        row["feature_position"] = feature_index + participant_jitter[row["participant"]]
 
     data = alt.Data(values=rows)
     x_axis = alt.Axis(
         values=list(range(len(feature_labels))),
         labelExpr=f"{feature_labels!r}[datum.value]",
-        labelAngle=0,
+        labelAngle=-45,
+        labelAlign="right",
+        labelBaseline="middle",
         labelFontSize=11,
-        labelLimit=145,
+        labelLimit=180,
+        labelOverlap=False,
+        labelPadding=5,
     )
     x_scale = alt.Scale(
         domain=[-0.5, len(feature_labels) - 0.5],
@@ -572,7 +611,7 @@ def plot_participant_accuracies(
     )
     y = alt.Y(
         "accuracy:Q",
-        title="Classification Accuracy",
+        title="Test set accuracy",
         scale=alt.Scale(domain=[0, 1], nice=False),
         axis=alt.Axis(
             format=".0%", tickCount=6, grid=True, gridColor="#dedede", gridOpacity=0.7
@@ -620,11 +659,8 @@ def plot_participant_accuracies(
         .encode(y=alt.Y("accuracy:Q", scale=alt.Scale(domain=[0, 1])))
     )
 
-    return alt.layer(chance, boxes, points).properties(
-        width=width,
-        height=height,
-        title=_title(title),
-    )
+    chart = alt.layer(chance, boxes, points).properties(width=width, height=height)
+    return _with_optional_title(chart, title)
 
 
 def _panel_label_layer(label: str, *, x: int = -42, y: int = -24) -> alt.Chart:
@@ -642,6 +678,35 @@ def _panel_label_layer(label: str, *, x: int = -42, y: int = -24) -> alt.Chart:
     )
 
 
+def _without_title(chart: alt.TopLevelMixin) -> alt.TopLevelMixin:
+    titleless = chart.copy(deep=True)
+    titleless.title = alt.Undefined
+    return titleless
+
+
+def _without_panel_titles(
+    panel_a: alt.LayerChart,
+    panel_b: alt.LayerChart,
+    panel_c: alt.LayerChart,
+    panel_d: alt.HConcatChart,
+    panel_e: alt.LayerChart,
+) -> tuple[
+    alt.LayerChart,
+    alt.LayerChart,
+    alt.LayerChart,
+    alt.HConcatChart,
+    alt.LayerChart,
+]:
+    titleless_d = _without_title(panel_d)
+    return (
+        _without_title(panel_a),
+        _without_title(panel_b),
+        _without_title(panel_c),
+        titleless_d,
+        _without_title(panel_e),
+    )
+
+
 def compose_figure_altair(
     panel_a: alt.LayerChart,
     panel_b: alt.LayerChart,
@@ -649,22 +714,25 @@ def compose_figure_altair(
     panel_d: alt.HConcatChart,
     panel_e: alt.LayerChart,
 ) -> alt.VConcatChart:
-    """Arrange the five panels as one native Altair composition."""
+    """Arrange the five panels without redundant chart titles."""
+    panel_a, panel_b, panel_c, panel_d, panel_e = _without_panel_titles(
+        panel_a,
+        panel_b,
+        panel_c,
+        panel_d,
+        panel_e,
+    )
     labeled_a = panel_a + _panel_label_layer("A")
     labeled_b = panel_b + _panel_label_layer("B")
     labeled_c = panel_c + _panel_label_layer("C")
-    panel_d_label = _panel_label_layer("D", x=-42, y=-46)
-    # Match the label overhang so the histogram titles stay vertically aligned.
+    panel_d_label = _panel_label_layer("D")
+    # Match the label overhang so both histograms stay vertically aligned.
     panel_d_spacer = panel_d_label.encode(opacity=alt.value(0))
-    labeled_d = (
-        alt.hconcat(
-            panel_d.hconcat[0] + panel_d_label,
-            *(panel + panel_d_spacer for panel in panel_d.hconcat[1:]),
-            spacing=panel_d.spacing,
-        )
-        .resolve_scale(x="shared", y="shared")
-        .properties(title=panel_d.title)
-    )
+    labeled_d = alt.hconcat(
+        panel_d.hconcat[0] + panel_d_label,
+        *(panel + panel_d_spacer for panel in panel_d.hconcat[1:]),
+        spacing=panel_d.spacing,
+    ).resolve_scale(x="shared", y="shared")
     labeled_e = panel_e + _panel_label_layer("E")
 
     top_row = alt.hconcat(labeled_a, labeled_b, spacing=25).resolve_scale(
@@ -705,7 +773,14 @@ def compose_figure_svg(
     row_gap: int = 20,
     label_gutter: int = 36,
 ) -> str:
-    """Arrange standalone panel renders on one SVG canvas."""
+    """Arrange titleless standalone panel renders on one SVG canvas."""
+    panel_a, panel_b, panel_c, panel_d, panel_e = _without_panel_titles(
+        panel_a,
+        panel_b,
+        panel_c,
+        panel_d,
+        panel_e,
+    )
     rendered = {
         label: _render_svg(chart)
         for label, chart in zip(
@@ -759,7 +834,5 @@ def compose_figure_svg(
         f'width="{canvas_width:g}" height="{canvas_height:g}" '
         f'viewBox="0 0 {canvas_width:g} {canvas_height:g}" '
         'style="max-width:100%;height:auto;background:white">'
-        '<rect width="100%" height="100%" fill="white"/>'
-        + "".join(elements)
-        + "</svg>"
+        '<rect width="100%" height="100%" fill="white"/>' + "".join(elements) + "</svg>"
     )
