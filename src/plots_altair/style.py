@@ -3,7 +3,7 @@
 import altair as alt
 
 FONT = "Arial"
-FONT_SIZE = 15
+FONT_SIZE = 16
 TITLE_FONT_SIZE = 18
 BLUE = "#2171b5"
 NAVY = "#000080"

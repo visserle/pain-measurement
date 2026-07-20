@@ -16,6 +16,7 @@ def plot_participant_accuracies(
     *,
     width: int = 1320,
     height: int = 210,
+    x_label_angle: float = -45,
     title: str | None = "Classification accuracy across models and participants",
 ) -> alt.LayerChart:
     """Plot per-model accuracy box plots and consistently offset participants."""
@@ -57,10 +58,9 @@ def plot_participant_accuracies(
     x_axis = alt.Axis(
         values=list(range(len(feature_labels))),
         labelExpr=f"{feature_labels!r}[datum.value]",
-        labelAngle=-45,
+        labelAngle=x_label_angle,
         labelAlign="right",
         labelBaseline="middle",
-        labelFontSize=11,
         labelLimit=180,
         labelOverlap=False,
         labelPadding=5,

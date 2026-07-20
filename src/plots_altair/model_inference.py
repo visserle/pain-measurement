@@ -223,7 +223,6 @@ def plot_model_inference(
             alt.Axis(
                 values=participant_ticks,
                 labelExpr=participant_label_expr,
-                labelFontSize=11,
                 labelOverlap=False,
                 title=("Participant ID" if panel_row == (nrows - 1) // 2 else None),
                 tickSize=0,

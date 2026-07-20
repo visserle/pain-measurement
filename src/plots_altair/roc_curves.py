@@ -69,6 +69,21 @@ def plot_roc_curves(
         scale=alt.Scale(domain=[0, 1], nice=False),
         axis=alt.Axis(format=".1f", tickCount=6),
     )
+    legend = alt.Legend(
+        title="Feature set",
+        orient="right",
+        direction="vertical",
+        offset=8,
+        padding=0,
+        titlePadding=4,
+        rowPadding=2,
+        labelLimit=180,
+        symbolDash=alt.ExprRef(
+            expr=f"datum.value === '{chance_label}' ? [5, 4] : [1, 0]"
+        ),
+        symbolStrokeWidth=2,
+        symbolSize=400,
+    )
     curves = (
         alt.Chart(alt.Data(values=rows))
         .mark_line(strokeWidth=1.7)
@@ -82,18 +97,7 @@ def plot_roc_curves(
                     domain=legend_order,
                     range=[*MODEL_COLORS[: len(model_labels)], CHANCE_RED],
                 ),
-                legend=alt.Legend(
-                    title="Feature set",
-                    orient="right",
-                    direction="vertical",
-                    offset=8,
-                    padding=0,
-                    titlePadding=4,
-                    rowPadding=2,
-                    labelLimit=180,
-                    symbolStrokeWidth=2,
-                    symbolSize=400,
-                ),
+                legend=legend,
             ),
             strokeDash=alt.StrokeDash(
                 "line_type:N",
