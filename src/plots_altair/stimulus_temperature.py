@@ -17,6 +17,8 @@ def plot_stimulus_temperature(
     """Plot a generated temperature stimulus and its major decreases."""
     temperature = np.asarray(stimulus.y, dtype=float)
     time_s = np.arange(temperature.size, dtype=float) / float(stimulus.sample_rate)
+    duration_s = temperature.size / float(stimulus.sample_rate)
+    tick_values = np.arange(0, duration_s + 1e-9, 10, dtype=float).tolist()
     stimulus_data = pl.DataFrame({"time_s": time_s, "temperature": temperature})
 
     intervals = [
@@ -45,15 +47,27 @@ def plot_stimulus_temperature(
     x = alt.X(
         "time_s:Q",
         title="Time (s)",
-        scale=alt.Scale(domain=[0, float(time_s.max())], nice=False),
-        axis=alt.Axis(tickCount=10),
+        scale=alt.Scale(domain=[0, duration_s], nice=False),
+        axis=alt.Axis(
+            values=tick_values,
+            labelOverlap=False,
+            labelFlush=False,
+        ),
     )
 
     highlights = (
         alt.Chart(interval_data)
         .mark_rect(color="salmon", opacity=0.12)
         .encode(
-            x=alt.X("start_s:Q", scale=alt.Scale(domain=[0, float(time_s.max())])),
+            x=alt.X(
+                "start_s:Q",
+                scale=alt.Scale(domain=[0, duration_s]),
+                axis=alt.Axis(
+                    values=tick_values,
+                    labelOverlap=False,
+                    labelFlush=False,
+                ),
+            ),
             x2="end_s:Q",
         )
     )
