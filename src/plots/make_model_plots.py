@@ -22,7 +22,6 @@ from src.models.main_config import RANDOM_SEED
 from src.models.utils import load_model
 from src.plots.model_inference import (
     analyze_test_dataset_for_one_stimulus,
-    plot_prediction_confidence_heatmap,
 )
 from src.plots.model_performance import (
     create_performance_table,
@@ -54,6 +53,19 @@ feature_lists = [
     ["eeg", "face", "eda_raw", "heart_rate", "pupil"],
 ]
 feature_lists = expand_feature_list(feature_lists)
+threshold_values = [
+    0.85,
+    0.6,
+    0.5,
+    0.85,
+    0.9,
+    0.7,
+    0.65,
+    0.9,
+    0.9,
+    0.9,
+    0.5,
+]
 
 
 class InferenceCache:
@@ -219,6 +231,8 @@ def model_inference(
     only_non_decreases: bool = False,
 ):
     """Run model inference analysis with caching of results only."""
+    from src.plots_altair import plot_model_inference, style_figure
+
     config_path = Path("src/experiments/measurement/measurement_config.toml")
     with open(config_path, "rb") as file:
         config = tomllib.load(file)
@@ -292,23 +306,37 @@ def model_inference(
             sample_duration_ms = model_config["sample_duration_ms"]
 
         # Plot all available stimuli
-        fig = plot_prediction_confidence_heatmap(
+        chart = plot_model_inference(
             all_probabilities,
-            sample_duration_ms,
+            sample_duration_ms=sample_duration_ms,
             classification_threshold=classification_threshold,
-            ncols=2,
-            figure_size=(7, 2),
-            stimulus_scale=0.5,
-            stimulus_linewidth=1.5,
+            step_size_ms=step_size,
+            display_step_size_ms=1000,
+            seeds_to_plot=stimulus_seeds,
             only_decreases=not only_non_decreases,
             only_non_decreases=only_non_decreases,
-            step_size=step_size,
+            ncols=2,
+            width=500,
+            height=110,
+            stimulus_scale=0.5,
+            stimulus_linewidth=1.5,
+            ratings_df=None,
+            show_actual_rating_ci=False,
+            rating_confidence_level=0.95,
+            rating_linewidth=1.2,
+            rating_scale=0.25,
+            rating_color="#2ca25f",
+            rating_ci_opacity=0.12,
+            rating_label="Actual rating (mean ± CI)",
+            show_legend=True,
+            column_spacing=20,
+            row_spacing=10,
+            title=None,
         )
 
         # Save the figure
-        fig_path = FIGURE_DIR / f"model_inference_{feature_list_str}.png"
-        fig.savefig(fig_path, bbox_inches="tight", dpi=300)
-        plt.close(fig)
+        fig_path = FIGURE_DIR / f"model_inference_{feature_list_str}.svg"
+        style_figure(chart).save(fig_path)
         logging.info(f"Saved figure to {fig_path}")
 
 
@@ -454,8 +482,8 @@ if __name__ == "__main__":
     cache = InferenceCache()
 
     # Run all analyses with lightweight caching
-    model_performance(cache)
-    model_performance_per_participant(cache)
-    # model_inference(cache, classification_threshold=0.90, step_size=250)
+    # model_performance(cache)
+    # model_performance_per_participant(cache)
+    model_inference(cache, classification_threshold=0.90, step_size=250)
 
     logging.info("Completed all model plots")

@@ -1,9 +1,13 @@
-"""Compatibility imports for the Altair plotting package.
+"""Reusable Altair figures for the pain-measurement project."""
 
-New code should import these functions from :mod:`src.plots_altair`.
-"""
-
-from src.plots_altair import (
+from .accuracy_distributions import plot_accuracy_distributions
+from .composition import compose_figure_altair
+from .correlation_heatmap import plot_correlation_heatmap
+from .model_inference import plot_model_inference
+from .participant_accuracies import plot_participant_accuracies
+from .roc_curves import plot_roc_curves
+from .stimulus_temperature import plot_stimulus_temperature
+from .style import (
     BLUE,
     CHANCE_RED,
     FONT,
@@ -14,13 +18,6 @@ from src.plots_altair import (
     PARTICIPANT_COLORS,
     SIGNAL_LABELS,
     TITLE_FONT_SIZE,
-    compose_figure_altair,
-    plot_accuracy_distributions,
-    plot_correlation_heatmap,
-    plot_model_inference,
-    plot_participant_accuracies,
-    plot_roc_curves,
-    plot_stimulus_temperature,
     style_figure,
 )
 
