@@ -3,7 +3,7 @@
 import altair as alt
 import polars as pl
 
-from .style import BLUE, FONT, FONT_SIZE, _with_optional_title
+from .style import FONT, FONT_SIZE, SIGNAL_COLORS, _with_optional_title
 
 
 def plot_stimulus_seed_grid(
@@ -12,7 +12,7 @@ def plot_stimulus_seed_grid(
     columns: int = 3,
     width: int = 300,
     height: int = 105,
-    line_color: str = BLUE,
+    line_color: str = SIGNAL_COLORS["temperature"],
     line_width: float = 2,
     panel_spacing: int = 12,
     header_font_size: int = FONT_SIZE,

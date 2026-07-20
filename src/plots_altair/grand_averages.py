@@ -5,31 +5,7 @@ from collections.abc import Mapping, Sequence
 import altair as alt
 import polars as pl
 
-from .style import SIGNAL_LABELS, _with_optional_title
-
-GRAND_AVERAGE_SIGNAL_COLORS = {
-    "temperature": "#1f77b4",
-    "pain_rating": "#2ca02c",
-    "pupil_diameter": "#9467bd",
-    "eda_tonic": "#e377c2",
-    "eda_phasic": "#bcbd22",
-    "heart_rate": "#17becf",
-    "brow_furrow": "#2ca02c",
-    "cheek_raise": "#9467bd",
-    "mouth_open": "#e377c2",
-    "nose_wrinkle": "#bcbd22",
-    "upper_lip_raise": "#17becf",
-}
-
-SINGLE_GRAND_AVERAGE_SIGNAL_COLORS = {
-    "temperature": "#17396b",
-    "pain_rating": "#d45f3c",
-    "pupil_diameter": "#e8a020",
-    "eda_tonic": "#5a7a2e",
-    "eda_phasic": "#3a9e5f",
-    "heart_rate": "#3ab8b8",
-    "mouth_open": "#7b4fa0",
-}
+from .style import SIGNAL_COLORS, SIGNAL_LABELS, _with_optional_title
 
 
 def _grand_averages_long_data(
@@ -95,6 +71,7 @@ def plot_grand_averaged_signals(
     line_opacity: float = 0.95,
     show_ci: bool = True,
     ci_opacity: float = 0.15,
+    legend_title: str | None = "Signal",
     legend_orient: str = "right",
     legend_columns: int = 1,
     title: str | None = None,
@@ -106,9 +83,7 @@ def plot_grand_averaged_signals(
         raise ValueError("ci_opacity must be between 0 and 1")
 
     labels = SIGNAL_LABELS if signal_labels is None else signal_labels
-    colors = (
-        SINGLE_GRAND_AVERAGE_SIGNAL_COLORS if signal_colors is None else signal_colors
-    )
+    colors = SIGNAL_COLORS if signal_colors is None else signal_colors
     missing_colors = set(signals).difference(colors)
     if missing_colors:
         raise ValueError(f"Missing signal colors: {', '.join(sorted(missing_colors))}")
@@ -133,7 +108,7 @@ def plot_grand_averaged_signals(
             range=[colors[signal] for signal in signals],
         ),
         legend=alt.Legend(
-            title=None,
+            title=legend_title,
             orient=legend_orient,
             direction=(
                 "vertical" if legend_orient in {"left", "right"} else "horizontal"
@@ -236,7 +211,7 @@ def plot_grand_averages_grid(
         raise ValueError("panel_border_width must be non-negative")
 
     labels = SIGNAL_LABELS if signal_labels is None else signal_labels
-    colors = GRAND_AVERAGE_SIGNAL_COLORS if signal_colors is None else signal_colors
+    colors = SIGNAL_COLORS if signal_colors is None else signal_colors
     missing_colors = set(signals).difference(colors)
     if missing_colors:
         raise ValueError(f"Missing signal colors: {', '.join(sorted(missing_colors))}")

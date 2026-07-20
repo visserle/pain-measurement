@@ -5,15 +5,7 @@ from collections.abc import Mapping, Sequence
 import altair as alt
 import polars as pl
 
-from .style import SIGNAL_LABELS, _with_optional_title
-
-CORRELATION_COLORS = [
-    "#ff3b30",
-    "#304ffe",
-    "#2ca02c",
-    "#ffad32",
-    "#a23ea0",
-]
+from .style import SIGNAL_COLORS, SIGNAL_LABELS, _with_optional_title
 
 
 def plot_participant_correlations(
@@ -22,7 +14,7 @@ def plot_participant_correlations(
     *,
     reference: str = "temperature",
     signal_labels: Mapping[str, str] | None = None,
-    signal_colors: Sequence[str] = CORRELATION_COLORS,
+    signal_colors: Sequence[str] | None = None,
     width: int = 1200,
     height: int = 440,
     y_domain: tuple[float, float] = (-0.4, 1.0),
@@ -39,7 +31,12 @@ def plot_participant_correlations(
     """Plot participant means and ±SD for correlations with a reference signal."""
     if not targets:
         raise ValueError("targets must not be empty")
-    if len(signal_colors) < len(targets):
+    colors = (
+        [SIGNAL_COLORS[target] for target in targets]
+        if signal_colors is None
+        else list(signal_colors)
+    )
+    if len(colors) < len(targets):
         raise ValueError("signal_colors must contain at least one color per target")
     if not 0 <= participant_group_padding < 1:
         raise ValueError("participant_group_padding must be between 0 and 1")
@@ -117,7 +114,7 @@ def plot_participant_correlations(
         sort=label_order,
         scale=alt.Scale(
             domain=label_order,
-            range=list(signal_colors[: len(targets)]),
+            range=colors[: len(targets)],
         ),
         legend=alt.Legend(
             title=None,

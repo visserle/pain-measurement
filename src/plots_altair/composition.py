@@ -55,6 +55,9 @@ def compose_figure_altair(
     panel_c: alt.LayerChart,
     panel_d: alt.HConcatChart,
     panel_e: alt.LayerChart,
+    *,
+    row_spacing: int = 6,
+    middle_row_label_y: int = -10,
 ) -> alt.VConcatChart:
     """Arrange the five panels without redundant chart titles."""
     panel_a, panel_b, panel_c, panel_d, panel_e = _without_panel_titles(
@@ -66,8 +69,8 @@ def compose_figure_altair(
     )
     labeled_a = panel_a + _panel_label_layer("A")
     labeled_b = panel_b + _panel_label_layer("B")
-    labeled_c = panel_c + _panel_label_layer("C")
-    panel_d_label = _panel_label_layer("D")
+    labeled_c = panel_c + _panel_label_layer("C", y=middle_row_label_y)
+    panel_d_label = _panel_label_layer("D", y=middle_row_label_y)
     # Match the label overhang so both histograms stay vertically aligned.
     panel_d_spacer = panel_d_label.encode(opacity=alt.value(0))
     labeled_d = alt.hconcat(
@@ -89,7 +92,7 @@ def compose_figure_altair(
     )
 
     return (
-        alt.vconcat(top_row, middle_row, labeled_e, spacing=20)
+        alt.vconcat(top_row, middle_row, labeled_e, spacing=row_spacing)
         .resolve_scale(x="independent", y="independent", color="independent")
         .properties(autosize=alt.AutoSizeParams(type="pad", contains="padding"))
     )

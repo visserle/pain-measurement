@@ -51,6 +51,20 @@ SIGNAL_LABELS = {
     "nose_wrinkle": "Nose wrinkle",
 }
 
+SIGNAL_COLORS = {
+    "temperature": "#17396b",
+    "pain_rating": "#d45f3c",
+    "pupil_diameter": "#e8a020",
+    "eda_tonic": "#5a7a2e",
+    "eda_phasic": "#3a9e5f",
+    "heart_rate": "#3ab8b8",
+    "mouth_open": "#7b4fa0",
+    "brow_furrow": "#d45f3c",
+    "cheek_raise": "#e8a020",
+    "nose_wrinkle": "#5a7a2e",
+    "upper_lip_raise": "#3ab8b8",
+}
+
 
 def style_figure(chart: alt.TopLevelMixin) -> alt.TopLevelMixin:
     """Apply the shared publication style to a complete chart."""
