@@ -75,8 +75,8 @@ def plot_model_inference(
     *,
     sample_duration_ms: int = 7000,
     classification_threshold: float = 0.9,
-    step_size_ms: int = 1000,
-    display_step_size_ms: int = 1000,
+    step_size_ms: int = 250,
+    display_step_size_ms: int = 250,
     seeds_to_plot: Sequence[int] | None = None,
     only_decreases: bool = True,
     only_non_decreases: bool = False,
@@ -258,7 +258,7 @@ def plot_model_inference(
         confidence_cells = (
             alt.Chart(heatmap_data)
             .transform_filter("isValid(datum.confidence)")
-            .mark_rect(opacity=0.9)
+            .mark_rect(opacity=1)
             .encode(
                 x=x,
                 x2="time_end_s:Q",
