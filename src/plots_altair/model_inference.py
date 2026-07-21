@@ -199,14 +199,43 @@ def plot_model_inference(
                 aggregation_factor,
             ).mean(axis=1)
 
+        background_rows = []
         heatmap_rows = []
         for participant_index, participant in enumerate(participants):
             participant_confidence = confidence_by_participant.get(participant)
-            for time_index in range(time_point_count):
-                if participant_confidence is None:
-                    confidence_value = None
-                else:
-                    confidence_value = float(participant_confidence[time_index])
+            if participant_confidence is None:
+                # One full-width mark replaces a gray rectangle for every time cell.
+                background_rows.append(
+                    {
+                        "time_start_s": 0,
+                        "time_end_s": 180,
+                        "participant_start": participant_index,
+                        "participant_end": participant_index + 1,
+                    }
+                )
+                continue
+
+            finite_confidence = np.isfinite(participant_confidence)
+            for time_index in np.flatnonzero(~finite_confidence):
+                background_rows.append(
+                    {
+                        "time_start_s": time_index * time_step_s,
+                        "time_end_s": (time_index + 1) * time_step_s,
+                        "participant_start": participant_index,
+                        "participant_end": participant_index + 1,
+                    }
+                )
+
+            # Confidence outside the selected domain renders as white, so omitting
+            # those marks preserves the image while keeping the SVG sparse.
+            if only_non_decreases:
+                visible_confidence = participant_confidence < 0
+            elif only_decreases:
+                visible_confidence = participant_confidence > 0
+            else:
+                visible_confidence = participant_confidence != 0
+            visible_confidence &= finite_confidence
+            for time_index in np.flatnonzero(visible_confidence):
                 heatmap_rows.append(
                     {
                         "time_start_s": time_index * time_step_s,
@@ -214,7 +243,7 @@ def plot_model_inference(
                         "participant_start": participant_index,
                         "participant_end": participant_index + 1,
                         "participant": participant,
-                        "confidence": confidence_value,
+                        "confidence": float(participant_confidence[time_index]),
                         "seed": str(seed),
                     }
                 )
@@ -244,9 +273,8 @@ def plot_model_inference(
             scale=alt.Scale(domain=[0, participant_count], nice=False),
             axis=y_axis,
         )
-        heatmap_data = alt.Data(values=heatmap_rows)
         missing_background = (
-            alt.Chart(heatmap_data)
+            alt.Chart(alt.Data(values=background_rows))
             .mark_rect(color="#f0f0f0")
             .encode(
                 x=x,
@@ -256,8 +284,7 @@ def plot_model_inference(
             )
         )
         confidence_cells = (
-            alt.Chart(heatmap_data)
-            .transform_filter("isValid(datum.confidence)")
+            alt.Chart(alt.Data(values=heatmap_rows))
             .mark_rect(opacity=1)
             .encode(
                 x=x,
