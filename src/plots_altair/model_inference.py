@@ -96,6 +96,8 @@ def plot_model_inference(
     show_legend: bool = True,
     column_spacing: int = 20,
     row_spacing: int = 10,
+    panel_border_color: str = "#606060",
+    panel_border_width: float = 0.8,
     title: str | None = None,
 ) -> alt.VConcatChart:
     """Plot participant-level prediction confidence over time for each stimulus."""
@@ -120,6 +122,8 @@ def plot_model_inference(
         raise ValueError("rating_confidence_level must be between 0 and 1")
     if not 0 <= rating_ci_opacity <= 1:
         raise ValueError("rating_ci_opacity must be between 0 and 1")
+    if panel_border_width < 0:
+        raise ValueError("panel_border_width must be non-negative")
     if show_actual_rating_ci and ratings_df is None:
         raise ValueError("ratings_df is required when show_actual_rating_ci is True")
 
@@ -437,14 +441,49 @@ def plot_model_inference(
                 )
             )
             rating_layers = [rating_band, rating_line]
-        panels.append(
-            alt.layer(
-                missing_background,
-                confidence_cells,
-                *rating_layers,
-                stimulus_line,
-            ).properties(width=width, height=height)
-        )
+        panel_layers = [
+            missing_background,
+            confidence_cells,
+            *rating_layers,
+            stimulus_line,
+        ]
+        if panel_border_width > 0:
+            frame_data = alt.Data(
+                values=[
+                    {
+                        "x_min": 0,
+                        "x_max": 180,
+                        "y_min": 0,
+                        "y_max": participant_count,
+                    }
+                ]
+            )
+            panel_layers.append(
+                alt.Chart(frame_data)
+                .mark_rect(
+                    fillOpacity=0,
+                    stroke=panel_border_color,
+                    strokeWidth=panel_border_width,
+                )
+                .encode(
+                    x=alt.X(
+                        "x_min:Q",
+                        scale=alt.Scale(domain=[0, 180], nice=False),
+                        axis=x_axis,
+                    ),
+                    x2="x_max:Q",
+                    y=alt.Y(
+                        "y_min:Q",
+                        scale=alt.Scale(
+                            domain=[0, participant_count],
+                            nice=False,
+                        ),
+                        axis=y_axis,
+                    ),
+                    y2="y_max:Q",
+                )
+            )
+        panels.append(alt.layer(*panel_layers).properties(width=width, height=height))
 
     rows = [
         alt.hconcat(
