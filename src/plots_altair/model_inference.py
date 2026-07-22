@@ -10,6 +10,13 @@ from src.experiments.measurement.stimulus_generator import StimulusGenerator
 
 from .style import FONT, FONT_SIZE, MODEL_INFERENCE_DURATION_MS, _with_optional_title
 
+RATING_CONFIDENCE_LEVEL = 0.95
+RATING_LINEWIDTH = 1.2
+RATING_SCALE = 0.5
+RATING_COLOR = "#2ca25f"
+RATING_CI_OPACITY = 0.12
+RATING_LABEL = "Pain rating (mean ± 95% CI)"
+
 
 def _signed_prediction_confidence(
     decrease_probabilities: np.ndarray,
@@ -46,7 +53,7 @@ def _model_inference_color_encoding(
         domain = [-1, 0, 1]
         color_range = ["#ff591a", "white", "#0033cc"]
         values = [-1, -0.5, 0, 0.5, 1]
-        legend_title = "Prediction confidence"
+        legend_title = "Prediction confidence (decreases vs. non-decreases)"
 
     color_scale = alt.Scale(
         domain=domain,
@@ -78,7 +85,7 @@ def _model_inference_color_encoding(
         alt.Chart(
             alt.Data(values=[{"value_start": domain[0], "value_end": domain[-1]}])
         )
-        .mark_rect(fill=gradient, stroke="black", strokeWidth=0.8)
+        .mark_rect(fill=gradient)  # , stroke="black", strokeWidth=0.8)
         .encode(
             x=alt.value(0),
             x2=alt.value(12),
@@ -108,6 +115,7 @@ def _model_inference_color_encoding(
 def plot_model_inference(
     all_probabilities: Mapping[int, Mapping[str, Sequence]],
     *,
+    ratings_df: pl.DataFrame,
     sample_duration_ms: int = 7000,
     classification_threshold: float = 0.9,
     step_size_ms: int = 250,
@@ -120,15 +128,6 @@ def plot_model_inference(
     height: int = 110,
     stimulus_scale: float = 0.5,
     stimulus_linewidth: float = 1.5,
-    ratings_df: pl.DataFrame | None = None,
-    show_actual_rating_ci: bool = False,
-    rating_confidence_level: float = 0.95,
-    rating_linewidth: float = 1.2,
-    rating_scale: float = 0.25,
-    rating_color: str = "#2ca25f",
-    rating_ci_opacity: float = 0.12,
-    rating_label: str = "Actual rating (mean ± CI)",
-    show_legend: bool = True,
     column_spacing: int = 20,
     row_spacing: int = 10,
     panel_border_color: str = "#606060",
@@ -153,14 +152,8 @@ def plot_model_inference(
         )
     if ncols <= 0:
         raise ValueError("ncols must be positive")
-    if not 0 < rating_confidence_level < 1:
-        raise ValueError("rating_confidence_level must be between 0 and 1")
-    if not 0 <= rating_ci_opacity <= 1:
-        raise ValueError("rating_ci_opacity must be between 0 and 1")
     if panel_border_width < 0:
         raise ValueError("panel_border_width must be non-negative")
-    if show_actual_rating_ci and ratings_df is None:
-        raise ValueError("ratings_df is required when show_actual_rating_ci is True")
 
     available_seeds = sorted(all_probabilities)
     seeds = (
@@ -193,17 +186,15 @@ def plot_model_inference(
         only_non_decreases=only_non_decreases,
         legend_height=plot_height,
     )
-    rating_ci_by_seed = {}
-    if show_actual_rating_ci:
-        from src.plots.model_inference import compute_actual_rating_ci_by_seed
+    from src.plots.model_inference import compute_actual_rating_ci_by_seed
 
-        rating_ci_by_seed = compute_actual_rating_ci_by_seed(
-            ratings_df=ratings_df,
-            all_probabilities=all_probabilities,
-            seeds_to_plot=seeds,
-            step_size=display_step_size_ms,
-            confidence_level=rating_confidence_level,
-        )
+    rating_ci_by_seed = compute_actual_rating_ci_by_seed(
+        ratings_df=ratings_df,
+        all_probabilities=all_probabilities,
+        seeds_to_plot=seeds,
+        step_size=display_step_size_ms,
+        confidence_level=RATING_CONFIDENCE_LEVEL,
+    )
 
     panels = []
     for panel_index, seed in enumerate(seeds):
@@ -394,7 +385,7 @@ def plot_model_inference(
             rating_lower = np.asarray(rating_ci["ci_lower"], dtype=float)
             rating_upper = np.asarray(rating_ci["ci_upper"], dtype=float)
             rating_time_s = np.asarray(rating_ci["time_points_s"], dtype=float)
-            rating_y_amplitude = y_center * rating_scale
+            rating_y_amplitude = y_center * RATING_SCALE
             rating_data = alt.Data(
                 values=[
                     {
@@ -439,8 +430,8 @@ def plot_model_inference(
             rating_band = (
                 alt.Chart(rating_data)
                 .mark_area(
-                    color=rating_color,
-                    opacity=rating_ci_opacity,
+                    color=RATING_COLOR,
+                    opacity=RATING_CI_OPACITY,
                     clip=True,
                 )
                 .encode(
@@ -463,9 +454,9 @@ def plot_model_inference(
             rating_line = (
                 alt.Chart(rating_data)
                 .mark_line(
-                    color=rating_color,
+                    color=RATING_COLOR,
                     opacity=0.95,
-                    strokeWidth=rating_linewidth,
+                    strokeWidth=RATING_LINEWIDTH,
                     clip=True,
                 )
                 .encode(
@@ -486,17 +477,17 @@ def plot_model_inference(
                         alt.Tooltip("time_s:Q", title="Time (s)", format=".1f"),
                         alt.Tooltip(
                             "rating_mean:Q",
-                            title=rating_label,
+                            title=RATING_LABEL,
                             format=".2f",
                         ),
                         alt.Tooltip(
                             "rating_lower:Q",
-                            title=f"{rating_confidence_level:.0%} CI lower",
+                            title="95% CI lower",
                             format=".2f",
                         ),
                         alt.Tooltip(
                             "rating_upper:Q",
-                            title=f"{rating_confidence_level:.0%} CI upper",
+                            title="95% CI upper",
                             format=".2f",
                         ),
                     ],
@@ -559,107 +550,102 @@ def plot_model_inference(
         y="shared",
         color="shared",
     )
-    if show_legend:
-        used_columns = min(ncols, len(panels))
-        plot_width = used_columns * width + (used_columns - 1) * column_spacing
-        legend_entries = [
+    used_columns = min(ncols, len(panels))
+    plot_width = used_columns * width + (used_columns - 1) * column_spacing
+    legend_entries = [
+        {
+            "label": "Temperature",
+            "color": "black",
+            "show_band": False,
+        },
+        {
+            "label": RATING_LABEL,
+            "color": RATING_COLOR,
+            "show_band": True,
+        },
+    ]
+    legend_font_size = FONT_SIZE - 1
+    sample_width = 26
+    sample_label_gap = 8
+    item_gap = 28
+    approximate_character_width = legend_font_size * 0.52
+    label_widths = [
+        max(60, len(entry["label"]) * approximate_character_width)
+        for entry in legend_entries
+    ]
+    legend_width = sum(
+        sample_width + sample_label_gap + label_width for label_width in label_widths
+    ) + item_gap * (len(legend_entries) - 1)
+    legend_start = max(0, (plot_width - legend_width) / 2)
+    legend_rows = []
+    legend_cursor = legend_start
+    for entry, label_width in zip(legend_entries, label_widths, strict=True):
+        legend_rows.append(
             {
-                "label": "Temperature",
-                "color": "black",
-                "show_band": False,
+                **entry,
+                "sample_start": legend_cursor,
+                "sample_end": legend_cursor + sample_width,
+                "text_x": legend_cursor + sample_width + sample_label_gap,
             }
-        ]
-        if show_actual_rating_ci:
-            legend_entries.append(
-                {
-                    "label": rating_label,
-                    "color": rating_color,
-                    "show_band": True,
-                }
-            )
-        legend_font_size = FONT_SIZE - 1
-        sample_width = 26
-        sample_label_gap = 8
-        item_gap = 28
-        approximate_character_width = legend_font_size * 0.52
-        label_widths = [
-            max(60, len(entry["label"]) * approximate_character_width)
-            for entry in legend_entries
-        ]
-        legend_width = sum(
-            sample_width + sample_label_gap + label_width
-            for label_width in label_widths
-        ) + item_gap * (len(legend_entries) - 1)
-        legend_start = max(0, (plot_width - legend_width) / 2)
-        legend_rows = []
-        legend_cursor = legend_start
-        for entry, label_width in zip(legend_entries, label_widths, strict=True):
-            legend_rows.append(
-                {
-                    **entry,
-                    "sample_start": legend_cursor,
-                    "sample_end": legend_cursor + sample_width,
-                    "text_x": legend_cursor + sample_width + sample_label_gap,
-                }
-            )
-            legend_cursor += sample_width + sample_label_gap + label_width + item_gap
-        legend_data = alt.Data(values=legend_rows)
-        legend_x = alt.X(
-            "sample_start:Q",
-            scale=alt.Scale(domain=[0, plot_width], nice=False),
-            axis=None,
         )
-        legend_band = (
-            alt.Chart(legend_data)
-            .transform_filter("datum.show_band")
-            .mark_rect(opacity=rating_ci_opacity)
-            .encode(
-                x=legend_x,
-                x2="sample_end:Q",
-                y=alt.value(5),
-                y2=alt.value(17),
-                color=alt.Color("color:N", scale=None, legend=None),
-            )
+        legend_cursor += sample_width + sample_label_gap + label_width + item_gap
+    legend_data = alt.Data(values=legend_rows)
+    legend_x = alt.X(
+        "sample_start:Q",
+        scale=alt.Scale(domain=[0, plot_width], nice=False),
+        axis=None,
+    )
+    legend_band = (
+        alt.Chart(legend_data)
+        .transform_filter("datum.show_band")
+        .mark_rect(opacity=RATING_CI_OPACITY)
+        .encode(
+            x=legend_x,
+            x2="sample_end:Q",
+            y=alt.value(5),
+            y2=alt.value(17),
+            color=alt.Color("color:N", scale=None, legend=None),
         )
-        legend_lines = (
-            alt.Chart(legend_data)
-            .mark_rule(strokeWidth=1.5)
-            .encode(
-                x=legend_x,
-                x2="sample_end:Q",
-                y=alt.value(11),
-                color=alt.Color("color:N", scale=None, legend=None),
-            )
+    )
+    legend_lines = (
+        alt.Chart(legend_data)
+        .mark_rule(strokeWidth=1.5)
+        .encode(
+            x=legend_x,
+            x2="sample_end:Q",
+            y=alt.value(11),
+            color=alt.Color("color:N", scale=None, legend=None),
         )
-        legend_labels = (
-            alt.Chart(legend_data)
-            .mark_text(
-                align="left",
-                baseline="middle",
-                font=FONT,
-                fontSize=legend_font_size,
-                color="black",
-            )
-            .encode(
-                x=alt.X(
-                    "text_x:Q",
-                    scale=alt.Scale(domain=[0, plot_width], nice=False),
-                    axis=None,
-                ),
-                y=alt.value(11),
-                text="label:N",
-            )
+    )
+    legend_labels = (
+        alt.Chart(legend_data)
+        .mark_text(
+            align="left",
+            baseline="middle",
+            font=FONT,
+            fontSize=legend_font_size,
+            color="black",
         )
-        overlay_legend = alt.layer(
-            legend_band,
-            legend_lines,
-            legend_labels,
-        ).properties(width=plot_width, height=20)
-        chart = alt.vconcat(chart, overlay_legend, spacing=2).resolve_scale(
-            x="independent",
-            y="independent",
-            color="independent",
+        .encode(
+            x=alt.X(
+                "text_x:Q",
+                scale=alt.Scale(domain=[0, plot_width], nice=False),
+                axis=None,
+            ),
+            y=alt.value(11),
+            text="label:N",
         )
+    )
+    overlay_legend = alt.layer(
+        legend_band,
+        legend_lines,
+        legend_labels,
+    ).properties(width=plot_width, height=20)
+    chart = alt.vconcat(chart, overlay_legend, spacing=2).resolve_scale(
+        x="independent",
+        y="independent",
+        color="independent",
+    )
     participant_axis_title = (
         alt.Chart(alt.Data(values=[{"label": "Participant ID"}]))
         .mark_text(
