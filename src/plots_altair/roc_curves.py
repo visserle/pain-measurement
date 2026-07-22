@@ -83,6 +83,7 @@ def plot_roc_curves(
         ),
         symbolStrokeWidth=2,
         symbolSize=400,
+        # labelFontSize=12,  # default is 10, reduce as needed
     )
     curves = (
         alt.Chart(alt.Data(values=rows))

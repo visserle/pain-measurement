@@ -94,7 +94,7 @@ def plot_stimulus_intervals(
                 "interval_label:N",
                 title=None,
                 sort=label_order,
-                axis=alt.Axis(labelLimit=360),
+                axis=alt.Axis(labelLimit=360, zindex=1),
             ),
             color=alt.Color(
                 "interval_type:N",

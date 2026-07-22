@@ -143,7 +143,7 @@ def plot_participant_correlations(
             xOffset=x_offset,
             y=alt.Y(
                 "lower:Q",
-                title=f"Mean correlation with {reference_label} (±SD)",
+                title=f"Mean correlation with {reference_label.lower()} (±SD)",
                 scale=y_scale,
                 axis=alt.Axis(grid=True, gridColor="#dedede", gridOpacity=0.65),
             ),

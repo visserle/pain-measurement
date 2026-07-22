@@ -15,7 +15,7 @@ def plot_correlation_heatmap(
     skip_first_n_seconds: float = 20,
     width: int = 250,
     height: int = 250,
-    legend_title: str = "Pearson correlation coefficient",
+    legend_title: str = "Correlation coefficient",
     title: str | None = "Pearson correlations",
 ) -> alt.LayerChart:
     """Plot the lower triangle of the Pearson correlation matrix."""
@@ -75,10 +75,10 @@ def plot_correlation_heatmap(
                 ),
                 legend=alt.Legend(
                     title=legend_title,
-                    titleLimit=height,
                     orient="right",
-                    titleOrient="left",
+                    titleOrient="right",
                     titlePadding=8,
+                    titleLimit=height,
                     gradientLength=height,
                     gradientThickness=10,
                     values=[0, 0.2, 0.4, 0.6, 0.8, 1],
@@ -92,6 +92,7 @@ def plot_correlation_heatmap(
             ],
         )
     )
+
     values = (
         alt.Chart(data)
         .mark_text(fontSize=FONT_SIZE, baseline="middle")

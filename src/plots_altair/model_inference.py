@@ -30,8 +30,8 @@ def _model_inference_color_encoding(
     *,
     only_decreases: bool,
     only_non_decreases: bool,
-    gradient_length: int,
-) -> alt.Color:
+    legend_height: int,
+) -> tuple[alt.Color, alt.Chart]:
     if only_non_decreases:
         domain = [-1, 0]
         color_range = ["#ff591a", "white"]
@@ -48,26 +48,61 @@ def _model_inference_color_encoding(
         values = [-1, -0.5, 0, 0.5, 1]
         legend_title = "Prediction confidence"
 
-    return alt.Color(
-        "confidence:Q",
-        scale=alt.Scale(
-            domain=domain,
-            range=color_range,
-            clamp=True,
-            interpolate="rgb",
-        ),
-        legend=alt.Legend(
-            title=legend_title,
-            orient="right",
-            titleOrient="left",
-            titlePadding=8,
-            titleLimit=gradient_length,
-            gradientLength=gradient_length,
-            gradientThickness=12,
-            values=values,
-            format=".2f",
-        ),
+    color_scale = alt.Scale(
+        domain=domain,
+        range=color_range,
+        clamp=True,
+        interpolate="rgb",
     )
+    color = alt.Color(
+        "confidence:Q",
+        scale=color_scale,
+        legend=None,
+    )
+    gradient = alt.Gradient(
+        gradient="linear",
+        stops=[
+            alt.GradientStop(
+                color=color_value,
+                offset=(domain_value - domain[0]) / (domain[-1] - domain[0]),
+            )
+            for domain_value, color_value in zip(domain, color_range, strict=True)
+        ],
+        x1=0,
+        y1=1,
+        x2=0,
+        y2=0,
+    )
+    legend_inset = min(10, legend_height / 10)
+    legend = (
+        alt.Chart(
+            alt.Data(values=[{"value_start": domain[0], "value_end": domain[-1]}])
+        )
+        .mark_rect(fill=gradient, stroke="black", strokeWidth=0.8)
+        .encode(
+            x=alt.value(0),
+            x2=alt.value(12),
+            y=alt.Y(
+                "value_start:Q",
+                scale=alt.Scale(
+                    domain=[domain[0], domain[-1]],
+                    range=[legend_height - legend_inset, legend_inset],
+                    nice=False,
+                ),
+                axis=alt.Axis(
+                    orient="right",
+                    domain=False,
+                    values=values,
+                    format=".2f",
+                    title=legend_title,
+                    titlePadding=8,
+                ),
+            ),
+            y2="value_end:Q",
+        )
+        .properties(width=12, height=legend_height)
+    )
+    return color, legend
 
 
 def plot_model_inference(
@@ -99,7 +134,7 @@ def plot_model_inference(
     panel_border_color: str = "#606060",
     panel_border_width: float = 0.8,
     title: str | None = None,
-) -> alt.VConcatChart:
+) -> alt.TopLevelMixin:
     """Plot participant-level prediction confidence over time for each stimulus."""
     if not 0 < classification_threshold < 1:
         raise ValueError("classification_threshold must be between 0 and 1")
@@ -152,10 +187,11 @@ def plot_model_inference(
     time_step_s = display_step_size_ms / 1000
     padding_steps = sample_duration_ms // step_size_ms
     nrows = (len(seeds) + ncols - 1) // ncols
-    color = _model_inference_color_encoding(
+    plot_height = nrows * height + (nrows - 1) * row_spacing
+    color, confidence_legend = _model_inference_color_encoding(
         only_decreases=only_decreases,
         only_non_decreases=only_non_decreases,
-        gradient_length=nrows * height + (nrows - 1) * row_spacing,
+        legend_height=plot_height,
     )
     rating_ci_by_seed = {}
     if show_actual_rating_ci:
@@ -257,8 +293,7 @@ def plot_model_inference(
                 values=participant_ticks,
                 labelExpr=participant_label_expr,
                 labelOverlap=False,
-                title=("Participant ID" if panel_row == (nrows - 1) // 2 else None),
-                tickSize=0,
+                title=None,
             )
             if left_column
             else None
@@ -625,4 +660,23 @@ def plot_model_inference(
             y="independent",
             color="independent",
         )
+    participant_axis_title = (
+        alt.Chart(alt.Data(values=[{"label": "Participant ID"}]))
+        .mark_text(
+            align="center",
+            baseline="middle",
+            angle=270,
+            font=FONT,
+            fontSize=FONT_SIZE,
+            color="black",
+        )
+        .encode(
+            x=alt.value(10),
+            y=alt.value(plot_height / 2),
+            text="label:N",
+        )
+        .properties(width=20, height=plot_height)
+    )
+    chart = alt.hconcat(participant_axis_title, chart, spacing=0)
+    chart = alt.hconcat(chart, confidence_legend, spacing=10)
     return _with_optional_title(chart, title)
