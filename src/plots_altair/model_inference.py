@@ -42,18 +42,21 @@ def _model_inference_color_encoding(
     if only_non_decreases:
         domain = [-1, 0]
         color_range = ["#ff591a", "white"]
-        values = [-1, -0.75, -0.5, -0.25, 0]
+        legend_domain = [0, 1]
+        values = [0, 0.25, 0.5, 0.75, 1]
         legend_title = "Prediction confidence for non-decreases"
     elif only_decreases:
         domain = [0, 1]
         color_range = ["white", "#0033cc"]
+        legend_domain = domain
         values = [0, 0.25, 0.5, 0.75, 1]
         legend_title = "Prediction confidence for decreases"
     else:
         domain = [-1, 0, 1]
         color_range = ["#ff591a", "white", "#0033cc"]
+        legend_domain = domain
         values = [-1, -0.5, 0, 0.5, 1]
-        legend_title = "Prediction confidence (decreases vs. non-decreases)"
+        legend_title = "Prediction confidence (+ = decreases, - = non-decreases)"
 
     color_scale = alt.Scale(
         domain=domain,
@@ -81,9 +84,21 @@ def _model_inference_color_encoding(
         y2=0,
     )
     legend_inset = min(10, legend_height / 10)
+    legend_range = (
+        [legend_inset, legend_height - legend_inset]
+        if only_non_decreases
+        else [legend_height - legend_inset, legend_inset]
+    )
     legend = (
         alt.Chart(
-            alt.Data(values=[{"value_start": domain[0], "value_end": domain[-1]}])
+            alt.Data(
+                values=[
+                    {
+                        "value_start": legend_domain[0],
+                        "value_end": legend_domain[-1],
+                    }
+                ]
+            )
         )
         .mark_rect(fill=gradient)  # , stroke="black", strokeWidth=0.8)
         .encode(
@@ -92,8 +107,8 @@ def _model_inference_color_encoding(
             y=alt.Y(
                 "value_start:Q",
                 scale=alt.Scale(
-                    domain=[domain[0], domain[-1]],
-                    range=[legend_height - legend_inset, legend_inset],
+                    domain=[legend_domain[0], legend_domain[-1]],
+                    range=legend_range,
                     nice=False,
                 ),
                 axis=alt.Axis(
@@ -311,13 +326,18 @@ def plot_model_inference(
         )
         confidence_cells = (
             alt.Chart(alt.Data(values=heatmap_rows))
-            .mark_rect(opacity=1)
+            .mark_rect(opacity=1, strokeWidth=0.25)
             .encode(
                 x=x,
                 x2="time_end_s:Q",
                 y=y,
                 y2="participant_end:Q",
                 color=color,
+                stroke=alt.Stroke(
+                    "confidence:Q",
+                    scale=color.to_dict()["scale"],
+                    legend=None,
+                ),
                 tooltip=[
                     alt.Tooltip("seed:N", title="Stimulus seed"),
                     alt.Tooltip("participant:N", title="Participant ID"),
